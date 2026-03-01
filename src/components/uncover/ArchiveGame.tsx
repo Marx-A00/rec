@@ -12,7 +12,6 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
-import { StatsModal } from '@/components/uncover/StatsModal';
 
 interface ArchiveGameProps {
   /** Date of the challenge to play (normalized UTC midnight) */
@@ -44,7 +43,6 @@ export function ArchiveGame({
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const [showStats, setShowStats] = useState(false);
 
   // Format in UTC to avoid timezone shift displaying wrong date
   const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -94,15 +92,6 @@ export function ArchiveGame({
     game.sessionId,
     isInitializing,
   ]);
-
-  // Auto-show stats modal when game ends
-  useEffect(() => {
-    if (game.isGameOver && !showStats) {
-      // Delay slightly for game-over animation to complete
-      const timer = setTimeout(() => setShowStats(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [game.isGameOver, showStats]);
 
   // AUTH-01: Show login prompt for unauthenticated users
   if (!game.isAuthenticated) {
@@ -258,15 +247,6 @@ export function ArchiveGame({
             </div>
           )}
         </div>
-
-        {/* Stats Modal - archive mode */}
-        <StatsModal
-          open={showStats}
-          onClose={() => setShowStats(false)}
-          won={game.won}
-          attemptCount={game.attemptCount}
-          mode='archive'
-        />
       </div>
     );
   }
