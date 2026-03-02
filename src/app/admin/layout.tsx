@@ -1,10 +1,11 @@
 // src/app/admin/layout.tsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 import { isAdmin } from '@/lib/permissions';
 import { UserAvatar } from '@/components/navigation/UserAvatar';
@@ -17,6 +18,12 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const isDailiesRoute = pathname?.startsWith('/admin/game-pool');
+  const [dailiesOpen, setDailiesOpen] = useState(isDailiesRoute);
+
+  useEffect(() => {
+    if (isDailiesRoute) setDailiesOpen(true);
+  }, [isDailiesRoute]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -87,16 +94,37 @@ export default function AdminLayout({
             >
               <span>Music Database</span>
             </Link>
-            <Link
-              href='/admin/game-pool'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/game-pool'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Game Pool</span>
-            </Link>
+            <div className='mb-1'>
+              <button
+                onClick={() => setDailiesOpen(!dailiesOpen)}
+                className={`flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors ${
+                  isDailiesRoute
+                    ? 'text-white bg-zinc-800'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <span>Dailies</span>
+                {dailiesOpen ? (
+                  <ChevronDown className='h-4 w-4' />
+                ) : (
+                  <ChevronRight className='h-4 w-4' />
+                )}
+              </button>
+              {dailiesOpen && (
+                <div className='ml-4 mt-1'>
+                  <Link
+                    href='/admin/game-pool'
+                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
+                      pathname === '/admin/game-pool'
+                        ? 'text-white bg-zinc-800/70'
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <span>Uncover</span>
+                  </Link>
+                </div>
+              )}
+            </div>
             <Link
               href='/admin/job-history'
               className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
