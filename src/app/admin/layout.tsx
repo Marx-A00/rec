@@ -18,7 +18,7 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const isDailiesRoute = pathname?.startsWith('/admin/game-pool');
+  const isDailiesRoute = pathname?.startsWith('/admin/dailies');
   const [dailiesOpen, setDailiesOpen] = useState(isDailiesRoute);
 
   useEffect(() => {
@@ -113,9 +113,9 @@ export default function AdminLayout({
               {dailiesOpen && (
                 <div className='ml-4 mt-1'>
                   <Link
-                    href='/admin/game-pool'
+                    href='/admin/dailies/uncover'
                     className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname === '/admin/game-pool'
+                      pathname?.startsWith('/admin/dailies/uncover')
                         ? 'text-white bg-zinc-800/70'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                     }`}

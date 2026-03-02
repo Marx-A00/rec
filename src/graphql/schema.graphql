@@ -2564,6 +2564,11 @@ type Query {
   Admin: Preview upcoming challenges for the next N days
   """
   upcomingChallenges(days: Int!): [UpcomingChallenge!]!
+
+  """
+  Admin: Get challenge history (past + today) in reverse chronological order
+  """
+  challengeHistory(limit: Int = 50, offset: Int = 0): [ChallengeHistoryEntry!]!
 }
 
 # =============================================
@@ -2729,6 +2734,21 @@ type UpcomingChallenge {
   album: Album
 }
 
+"""
+Challenge history entry for admin (past + today)
+"""
+type ChallengeHistoryEntry {
+  id: UUID!
+  date: DateTime!
+  albumTitle: String!
+  artistName: String!
+  coverUrl: String
+  cloudflareImageId: String
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+}
+
 # =============================================
 # GAME POOL TYPES
 # =============================================
@@ -2863,6 +2883,21 @@ type UpcomingChallenge {
   sequence: Int!
   isPinned: Boolean!
   album: Album
+}
+
+"""
+Challenge history entry for admin (past + today)
+"""
+type ChallengeHistoryEntry {
+  id: UUID!
+  date: DateTime!
+  albumTitle: String!
+  artistName: String!
+  coverUrl: String
+  cloudflareImageId: String
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
 }
 
 # MUTATIONS (Placeholder for future implementation)

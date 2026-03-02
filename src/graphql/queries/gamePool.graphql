@@ -43,6 +43,20 @@ query SuggestedGameAlbums($limit: Int, $offset: Int, $syncSource: String, $searc
   }
 }
 
+query ChallengeHistory($limit: Int, $offset: Int) {
+  challengeHistory(limit: $limit, offset: $offset) {
+    id
+    date
+    albumTitle
+    artistName
+    coverUrl
+    cloudflareImageId
+    totalPlays
+    totalWins
+    avgAttempts
+  }
+}
+
 mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {
   updateAlbumGameStatus(input: $input) {
     success

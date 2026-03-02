@@ -623,6 +623,20 @@ export type CategorizedDiscography = {
   soundtracks: Array<UnifiedRelease>;
 };
 
+/** Challenge history entry for admin (past + today) */
+export type ChallengeHistoryEntry = {
+  __typename?: 'ChallengeHistoryEntry';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+};
+
 /** Five-state classification for field changes in correction previews. */
 export enum ChangeType {
   /** Field exists in source but not in current (e.g., missing release date) */
@@ -1893,6 +1907,8 @@ export type Query = {
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
+  /** Admin: Get challenge history (past + today) in reverse chronological order */
+  challengeHistory: Array<ChallengeHistoryEntry>;
   collection?: Maybe<Collection>;
   /** Generate a preview of changes between album and selected MusicBrainz release */
   correctionPreview: CorrectionPreview;
@@ -2032,6 +2048,11 @@ export type QueryArtistRecommendationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
+export type QueryChallengeHistoryArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryCollectionArgs = {
@@ -3285,6 +3306,7 @@ export type ResolversTypes = ResolversObject<{
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CategorizedDiscography: ResolverTypeWrapper<CategorizedDiscography>;
+  ChallengeHistoryEntry: ResolverTypeWrapper<ChallengeHistoryEntry>;
   ChangeType: ChangeType;
   Collection: ResolverTypeWrapper<Collection>;
   CollectionAlbum: ResolverTypeWrapper<CollectionAlbum>;
@@ -3496,6 +3518,7 @@ export type ResolversParentTypes = ResolversObject<{
   BatchEnrichmentResult: BatchEnrichmentResult;
   Boolean: Scalars['Boolean']['output'];
   CategorizedDiscography: CategorizedDiscography;
+  ChallengeHistoryEntry: ChallengeHistoryEntry;
   Collection: Collection;
   CollectionAlbum: CollectionAlbum;
   CollectionAlbumInput: CollectionAlbumInput;
@@ -4449,6 +4472,31 @@ export type CategorizedDiscographyResolvers<
     ParentType,
     ContextType
   >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ChallengeHistoryEntryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ChallengeHistoryEntry'] = ResolversParentTypes['ChallengeHistoryEntry'],
+> = ResolversObject<{
+  albumTitle?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  avgAttempts?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  coverUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5945,6 +5993,12 @@ export type QueryResolvers<
       QueryArtistRecommendationsArgs,
       'artistId' | 'limit' | 'offset' | 'sort'
     >
+  >;
+  challengeHistory?: Resolver<
+    Array<ResolversTypes['ChallengeHistoryEntry']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryChallengeHistoryArgs, 'limit' | 'offset'>
   >;
   collection?: Resolver<
     Maybe<ResolversTypes['Collection']>,
@@ -7600,6 +7654,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AudioFeatures?: AudioFeaturesResolvers<ContextType>;
   BatchEnrichmentResult?: BatchEnrichmentResultResolvers<ContextType>;
   CategorizedDiscography?: CategorizedDiscographyResolvers<ContextType>;
+  ChallengeHistoryEntry?: ChallengeHistoryEntryResolvers<ContextType>;
   Collection?: CollectionResolvers<ContextType>;
   CollectionAlbum?: CollectionAlbumResolvers<ContextType>;
   ComponentHealth?: ComponentHealthResolvers<ContextType>;

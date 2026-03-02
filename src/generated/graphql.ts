@@ -649,6 +649,20 @@ export type CategorizedDiscography = {
   soundtracks: Array<UnifiedRelease>;
 };
 
+/** Challenge history entry for admin (past + today) */
+export type ChallengeHistoryEntry = {
+  __typename?: 'ChallengeHistoryEntry';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+};
+
 /** Five-state classification for field changes in correction previews. */
 export enum ChangeType {
   /** Field exists in source but not in current (e.g., missing release date) */
@@ -1919,6 +1933,8 @@ export type Query = {
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
+  /** Admin: Get challenge history (past + today) in reverse chronological order */
+  challengeHistory: Array<ChallengeHistoryEntry>;
   collection?: Maybe<Collection>;
   /** Generate a preview of changes between album and selected MusicBrainz release */
   correctionPreview: CorrectionPreview;
@@ -2058,6 +2074,11 @@ export type QueryArtistRecommendationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
+export type QueryChallengeHistoryArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryCollectionArgs = {
@@ -4792,6 +4813,27 @@ export type SuggestedGameAlbumsQuery = {
       __typename?: 'ArtistCredit';
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
+  }>;
+};
+
+export type ChallengeHistoryQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type ChallengeHistoryQuery = {
+  __typename?: 'Query';
+  challengeHistory: Array<{
+    __typename?: 'ChallengeHistoryEntry';
+    id: string;
+    date: Date;
+    albumTitle: string;
+    artistName: string;
+    coverUrl?: string | null;
+    cloudflareImageId?: string | null;
+    totalPlays: number;
+    totalWins: number;
+    avgAttempts?: number | null;
   }>;
 };
 
@@ -10480,6 +10522,100 @@ useInfiniteSuggestedGameAlbumsQuery.getKey = (
   variables === undefined
     ? ['SuggestedGameAlbums.infinite']
     : ['SuggestedGameAlbums.infinite', variables];
+
+export const ChallengeHistoryDocument = `
+    query ChallengeHistory($limit: Int, $offset: Int) {
+  challengeHistory(limit: $limit, offset: $offset) {
+    id
+    date
+    albumTitle
+    artistName
+    coverUrl
+    cloudflareImageId
+    totalPlays
+    totalWins
+    avgAttempts
+  }
+}
+    `;
+
+export const useChallengeHistoryQuery = <
+  TData = ChallengeHistoryQuery,
+  TError = unknown,
+>(
+  variables?: ChallengeHistoryQueryVariables,
+  options?: Omit<
+    UseQueryOptions<ChallengeHistoryQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      ChallengeHistoryQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<ChallengeHistoryQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['ChallengeHistory']
+        : ['ChallengeHistory', variables],
+    queryFn: fetcher<ChallengeHistoryQuery, ChallengeHistoryQueryVariables>(
+      ChallengeHistoryDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useChallengeHistoryQuery.getKey = (
+  variables?: ChallengeHistoryQueryVariables
+) =>
+  variables === undefined
+    ? ['ChallengeHistory']
+    : ['ChallengeHistory', variables];
+
+export const useInfiniteChallengeHistoryQuery = <
+  TData = InfiniteData<ChallengeHistoryQuery>,
+  TError = unknown,
+>(
+  variables: ChallengeHistoryQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<ChallengeHistoryQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      ChallengeHistoryQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<ChallengeHistoryQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['ChallengeHistory.infinite']
+            : ['ChallengeHistory.infinite', variables],
+        queryFn: metaData =>
+          fetcher<ChallengeHistoryQuery, ChallengeHistoryQueryVariables>(
+            ChallengeHistoryDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteChallengeHistoryQuery.getKey = (
+  variables?: ChallengeHistoryQueryVariables
+) =>
+  variables === undefined
+    ? ['ChallengeHistory.infinite']
+    : ['ChallengeHistory.infinite', variables];
 
 export const UpdateAlbumGameStatusDocument = `
     mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {

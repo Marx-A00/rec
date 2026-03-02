@@ -3709,6 +3709,55 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  challengeHistory: async (
+    _,
+    { limit, offset }: { limit?: number; offset?: number },
+    { prisma, user }
+  ) => {
+    try {
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      const today = new Date();
+      today.setUTCHours(23, 59, 59, 999);
+
+      const challenges = await prisma.uncoverChallenge.findMany({
+        where: {
+          date: { lte: today },
+        },
+        take: limit ?? 50,
+        skip: offset ?? 0,
+        orderBy: { date: 'desc' },
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: { artist: true },
+              },
+            },
+          },
+        },
+      });
+
+      return challenges.map(c => ({
+        id: c.id,
+        date: c.date,
+        albumTitle: c.album.title,
+        artistName:
+          c.album.artists.map(a => a.artist.name).join(', ') || 'Unknown',
+        coverUrl: c.album.coverUrl,
+        cloudflareImageId: c.album.cloudflareImageId,
+        totalPlays: c.totalPlays,
+        totalWins: c.totalWins,
+        avgAttempts: c.avgAttempts,
+      }));
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch challenge history:', { error });
+      throw new GraphQLError(`Failed to fetch challenge history: ${error}`);
+    }
+  },
+
   myUncoverStats: async (_parent, _args, context) => {
     // Require authentication
     if (!context.user) {
