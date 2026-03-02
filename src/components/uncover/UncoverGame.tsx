@@ -534,7 +534,7 @@ export function UncoverGame() {
 
         {/* Dots + Attempt label */}
         <div className='flex items-center gap-3'>
-          <AttemptDots attemptCount={game.attemptCount} />
+          <AttemptDots attemptCount={game.attemptCount} isActive />
           <span className='text-xs text-zinc-500'>
             Attempt {game.attemptCount + 1} of 4
           </span>

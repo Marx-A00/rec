@@ -203,7 +203,7 @@ export default function GameTestPage() {
             <>
               {/* Attempt dots */}
               <div className='shrink-0 py-1.5'>
-                <AttemptDots attemptCount={attemptCount} />
+                <AttemptDots attemptCount={attemptCount} isActive />
               </div>
 
               {/* Search input */}

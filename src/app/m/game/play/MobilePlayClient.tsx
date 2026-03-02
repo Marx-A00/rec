@@ -213,7 +213,7 @@ export function MobilePlayClient() {
 
       {/* Attempt dots */}
       <div className='shrink-0 py-1'>
-        <AttemptDots attemptCount={game.attemptCount} />
+        <AttemptDots attemptCount={game.attemptCount} isActive />
       </div>
 
       {/* Search input */}
