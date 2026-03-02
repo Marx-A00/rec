@@ -81,20 +81,20 @@ class MusicBrainzScheduler {
   /**
    * Stop the automated scheduler.
    * Persists enabled=false to the database.
+   * Always cleans up Redis regardless of in-memory state.
    */
   async stop() {
-    if (!this.isRunning) {
-      console.log('⏸️  MusicBrainz scheduler is not running');
-      return;
-    }
-
     console.log('🛑 Stopping MusicBrainz automated scheduler...');
 
     // Persist disabled state to database
     await setSchedulerEnabled('musicbrainz', false);
 
-    // Remove repeatable jobs from BullMQ
+    // Remove repeatable job definitions from BullMQ (prevents future job creation)
     await this.removeExistingSchedules();
+
+    // Drain any already-queued concrete job instances that were spawned
+    // before the repeatable definition was removed
+    await this.drainQueuedJobs();
 
     this.isRunning = false;
 
@@ -265,6 +265,39 @@ class MusicBrainzScheduler {
       }
     } catch (error) {
       console.warn('⚠️  Failed to remove existing schedules:', error);
+    }
+  }
+
+  /**
+   * Drain already-queued concrete job instances from delayed/waiting queues.
+   * removeRepeatableByKey() only removes the repeatable definition — any job
+   * instances it already spawned remain in the queue and will execute.
+   */
+  private async drainQueuedJobs() {
+    try {
+      const queue = getMusicBrainzQueue();
+      const q = queue.getQueue();
+
+      const delayed = await q.getDelayed();
+      const waiting = await q.getWaiting();
+      const allJobs = [...delayed, ...waiting];
+
+      let removed = 0;
+      for (const job of allJobs) {
+        if (
+          job.name === JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES &&
+          job.data?.source === 'scheduled'
+        ) {
+          await job.remove();
+          removed++;
+        }
+      }
+
+      if (removed > 0) {
+        console.log(`  🗑️  Drained ${removed} queued MusicBrainz sync job(s)`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Failed to drain queued MusicBrainz jobs:', error);
     }
   }
 

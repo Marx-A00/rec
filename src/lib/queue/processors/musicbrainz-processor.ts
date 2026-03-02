@@ -3,6 +3,7 @@
 
 import { prisma } from '@/lib/prisma';
 
+import { getSchedulerEnabled } from '../../config/app-config';
 import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
 import type {
   MusicBrainzSearchArtistsJobData,
@@ -134,6 +135,17 @@ export async function handleBrowseReleaseGroupsByArtist(data: {
 export async function handleMusicBrainzSyncNewReleases(
   data: MusicBrainzSyncNewReleasesJobData
 ): Promise<unknown> {
+  // Safety net: skip execution if scheduler was disabled after this job was queued
+  if (data.source === 'scheduled') {
+    const enabled = await getSchedulerEnabled('musicbrainz');
+    if (!enabled) {
+      console.log(
+        '⏭️  Skipping MusicBrainz sync — scheduler is disabled in DB (orphaned job)'
+      );
+      return { success: true, skipped: true, reason: 'scheduler_disabled' };
+    }
+  }
+
   console.log(
     `🎵 Syncing MusicBrainz new releases (limit: ${data.limit || 50})`
   );

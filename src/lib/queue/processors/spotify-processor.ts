@@ -5,6 +5,7 @@ import type {
   SpotifySyncNewReleasesJobData,
   SpotifySyncFeaturedPlaylistsJobData,
 } from '../jobs';
+import { getSchedulerEnabled } from '../../config/app-config';
 
 // ============================================================================
 // Spotify New Releases Helper
@@ -208,6 +209,17 @@ export async function handleSpotifySyncNewReleases(
   data: SpotifySyncNewReleasesJobData,
   jobId?: string
 ): Promise<any> {
+  // Safety net: skip execution if scheduler was disabled after this job was queued
+  if (data.source === 'scheduled') {
+    const enabled = await getSchedulerEnabled('spotify');
+    if (!enabled) {
+      console.log(
+        '⏭️  Skipping Spotify sync — scheduler is disabled in DB (orphaned job)'
+      );
+      return { success: true, skipped: true, reason: 'scheduler_disabled' };
+    }
+  }
+
   const year = data.year || new Date().getFullYear();
   const startTime = Date.now();
 
