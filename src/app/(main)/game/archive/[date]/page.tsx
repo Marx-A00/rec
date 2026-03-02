@@ -1,9 +1,22 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { parseISO, isBefore, isAfter, isSameDay, format } from 'date-fns';
+import { format } from 'date-fns';
 
-import { GAME_EPOCH, toUTCMidnight } from '@/lib/daily-challenge/date-utils';
+import { GAME_EPOCH } from '@/lib/daily-challenge/date-utils';
 import { ArchiveGame } from '@/components/uncover/ArchiveGame';
+
+/**
+ * Parse a YYYY-MM-DD string directly as a UTC midnight Date.
+ * Avoids timezone-dependent parsing (parseISO uses local TZ).
+ */
+function parseDateUTC(dateStr: string): Date | null {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const d = new Date(
+    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  );
+  return isNaN(d.getTime()) ? null : d;
+}
 
 interface PageProps {
   params: Promise<{ date: string }>;
@@ -14,45 +27,33 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { date } = await params;
 
-  try {
-    const parsedDate = parseISO(date);
-    const formattedDate = format(parsedDate, 'MMMM d, yyyy');
-
+  const parsed = parseDateUTC(date);
+  if (parsed) {
+    const formattedDate = format(parsed, 'MMMM d, yyyy');
     return {
       title: `Archive - ${formattedDate} | Uncover`,
       description: `Play the daily album art challenge from ${formattedDate}`,
     };
-  } catch {
-    return {
-      title: 'Archive | Uncover',
-      description: 'Play past daily album art challenges',
-    };
   }
+
+  return {
+    title: 'Archive | Uncover',
+    description: 'Play past daily album art challenges',
+  };
 }
 
 export default async function ArchiveGamePage({ params }: PageProps) {
   const { date } = await params;
 
-  // Validate date format
-  let parsedDate: Date;
-  try {
-    parsedDate = parseISO(date);
-    if (isNaN(parsedDate.getTime())) {
-      notFound();
-    }
-  } catch {
-    notFound();
-  }
+  // Parse as explicit UTC to avoid timezone-dependent shifts
+  const normalizedDate = parseDateUTC(date);
+  if (!normalizedDate) notFound();
 
-  const normalizedDate = toUTCMidnight(parsedDate);
-  const today = toUTCMidnight(new Date());
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
 
-  // Validate date range: must be >= GAME_EPOCH and < today (strictly less than)
-  if (
-    isBefore(normalizedDate, GAME_EPOCH) ||
-    isAfter(normalizedDate, today) ||
-    isSameDay(normalizedDate, today)
-  ) {
+  // Validate: must be >= GAME_EPOCH and strictly before today (UTC)
+  if (normalizedDate < GAME_EPOCH || normalizedDate >= today) {
     notFound();
   }
 
