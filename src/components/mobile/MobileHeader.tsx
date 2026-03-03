@@ -52,8 +52,10 @@ export default function MobileHeader() {
     [query, router, searchType, addRecentSearch]
   );
 
-  // Hide header on auth pages (must be after all hooks)
-  const isAuthPage = pathname.startsWith('/m/auth');
+  // Hide header on auth and onboarding pages (must be after all hooks)
+  const isAuthPage =
+    pathname.startsWith('/m/auth') ||
+    pathname.startsWith('/m/complete-profile');
   if (isAuthPage) return null;
 
   return (

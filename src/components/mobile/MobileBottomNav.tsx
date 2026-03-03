@@ -33,8 +33,10 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // Hide nav on auth pages
-  const isAuthPage = pathname.startsWith('/m/auth');
+  // Hide nav on auth and onboarding pages
+  const isAuthPage =
+    pathname.startsWith('/m/auth') ||
+    pathname.startsWith('/m/complete-profile');
   if (isAuthPage) return null;
 
   // Update profile link to include user ID if available

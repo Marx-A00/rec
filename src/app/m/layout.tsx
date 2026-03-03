@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
+import { auth } from '@/../auth';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 
@@ -16,11 +19,32 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function MobileLayout({
+// Routes that should not enforce username completion (to avoid redirect loops)
+const USERNAME_EXEMPT_ROUTES = ['/m/auth', '/m/complete-profile'];
+
+export default async function MobileLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check if authenticated user needs to complete their profile
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const isExempt = USERNAME_EXEMPT_ROUTES.some(route =>
+    pathname.startsWith(route)
+  );
+
+  if (!isExempt) {
+    const session = await auth();
+    if (session?.user) {
+      const hasUsername =
+        session.user.username && session.user.username.trim() !== '';
+      if (!hasUsername) {
+        redirect('/m/complete-profile');
+      }
+    }
+  }
+
   return (
     <div className='min-h-screen bg-black text-white'>
       {/* Sticky header with search */}
