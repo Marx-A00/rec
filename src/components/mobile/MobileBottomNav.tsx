@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Home, User } from 'lucide-react';
+import { Home, TreePalm, User } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,12 @@ const navItems: NavItem[] = [
     label: 'Home',
     href: '/m',
     isActive: pathname => pathname === '/m' || pathname === '/m/',
+  },
+  {
+    icon: TreePalm,
+    label: 'Browse',
+    href: '/m/browse',
+    isActive: pathname => pathname.startsWith('/m/browse'),
   },
   {
     icon: User,

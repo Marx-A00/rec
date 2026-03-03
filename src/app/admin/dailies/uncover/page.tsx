@@ -9,8 +9,12 @@ import { EligibleAlbumsTable } from '@/components/admin/game-pool/EligibleAlbums
 import { SuggestedAlbumsTable } from '@/components/admin/game-pool/SuggestedAlbumsTable';
 import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
 import { ChallengeHistoryTable } from '@/components/admin/game-pool/ChallengeHistoryTable';
+import { useCuratedChallengeCountQuery } from '@/generated/graphql';
 
 export default function UncoverPage() {
+  const { data: curatedData } = useCuratedChallengeCountQuery();
+  const curatedCount = curatedData?.curatedChallengeCount ?? 0;
+
   return (
     <div className='p-8'>
       {/* Header */}
@@ -32,8 +36,13 @@ export default function UncoverPage() {
 
       {/* Uncover Top-Level Tabs */}
       <Tabs defaultValue='album-cover-pool' className='space-y-6'>
-        <TabsList className='bg-zinc-900 border border-zinc-800'>
-          <TabsTrigger value='album-cover-pool'>Album Cover Pool</TabsTrigger>
+        <TabsList className='bg-transparent border-b border-zinc-800 rounded-none p-0 h-auto'>
+          <TabsTrigger
+            value='album-cover-pool'
+            className='rounded-none border-b-2 border-transparent px-4 pb-3 pt-2.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-300 data-[state=active]:border-zinc-50 data-[state=active]:text-zinc-50 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            Album Cover Pool
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='album-cover-pool' className='space-y-8'>
@@ -45,6 +54,20 @@ export default function UncoverPage() {
               </h2>
               <p className='text-sm text-zinc-400 mt-1'>
                 Manage album covers eligible for the daily Uncover game
+              </p>
+              <p className='text-sm mt-1'>
+                <span
+                  className={
+                    curatedCount > 30
+                      ? 'text-green-400'
+                      : curatedCount > 7
+                        ? 'text-amber-400'
+                        : 'text-red-400'
+                  }
+                >
+                  {curatedCount} days
+                </span>
+                <span className='text-zinc-500'> of albums in rotation</span>
               </p>
             </div>
             <PlaylistImportDialog />
