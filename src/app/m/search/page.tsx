@@ -36,6 +36,8 @@ function getResultIcon(type: string): React.ReactNode {
       return <Music className='h-5 w-5 text-zinc-500' />;
     case 'artist':
       return <User className='h-5 w-5 text-zinc-500' />;
+    case 'user':
+      return <User className='h-5 w-5 text-zinc-500' />;
     case 'label':
       return <Building2 className='h-5 w-5 text-zinc-500' />;
     default:
@@ -50,6 +52,8 @@ function getTypeBadgeColor(type: string): string {
       return 'bg-blue-900/50 text-blue-300';
     case 'artist':
       return 'bg-green-900/50 text-green-300';
+    case 'user':
+      return 'bg-indigo-900/50 text-indigo-300';
     case 'label':
       return 'bg-purple-900/50 text-purple-300';
     default:
@@ -65,6 +69,8 @@ function getResultPath(result: UnifiedSearchResult): string {
       return `/m/albums/${result.id}${sourceParam}`;
     case 'artist':
       return `/m/artists/${result.id}${sourceParam}`;
+    case 'user':
+      return `/m/profile/${result.id}`;
     default:
       return `/m/search`;
   }
@@ -369,7 +375,9 @@ export default function MobileSearchPage() {
                         ? sanitizeArtistName(result.artist)
                         : result.type === 'artist'
                           ? 'Artist'
-                          : result.type}
+                          : result.type === 'user'
+                            ? 'User'
+                            : result.type}
                     </p>
                   </div>
 

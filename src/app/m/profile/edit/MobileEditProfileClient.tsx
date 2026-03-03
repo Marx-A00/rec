@@ -31,13 +31,16 @@ export default function MobileEditProfileClient({
   const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [nameError, setNameError] = useState<string | null>(null);
+  const [imageChanged, setImageChanged] = useState(false);
 
-  const isDirty = useMemo(() => {
+  const textDirty = useMemo(() => {
     return (
       username.trim() !== (user.username || '') ||
       bio.trim() !== (user.bio || '')
     );
   }, [username, bio, user.username, user.bio]);
+
+  const isDirty = textDirty || imageChanged;
 
   const { mutate: updateProfile, isPending } = useUpdateProfileMutation({
     onSuccess: () => {
@@ -64,6 +67,14 @@ export default function MobileEditProfileClient({
     const validation = validateNameForProfile(username);
     if (!validation.isValid) {
       setNameError(validation.message || 'Invalid username');
+      return;
+    }
+
+    // If only the image changed (already saved via upload), just navigate back
+    if (!textDirty && imageChanged) {
+      queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
+      showToast('Profile updated', 'success');
+      router.push(`/m/profile/${user.id}`);
       return;
     }
 
@@ -100,7 +111,11 @@ export default function MobileEditProfileClient({
           <AvatarUpload
             currentImage={user.image}
             onUploadSuccess={() => {
+              setImageChanged(true);
               queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
+            }}
+            onClear={() => {
+              setImageChanged(true);
             }}
           />
           <p className='text-sm text-zinc-400'>Tap to change photo</p>
