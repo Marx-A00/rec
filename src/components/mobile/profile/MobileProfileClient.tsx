@@ -174,34 +174,25 @@ export default function MobileProfileClient({
         )}
 
         {/* Stats Row */}
-        {/* TODO: Re-enable followers/following links once fetching is refactored */}
         <div className='flex gap-8 mb-4'>
-          {/* <Link
+          <Link
             href={`/m/profile/${user.id}/followers`}
-            className='flex flex-col items-center min-h-[44px] justify-center'
+            className='flex flex-col items-center min-h-[44px] justify-center active:opacity-70 transition-opacity'
           >
             <span className='text-lg font-semibold text-white'>
               {displayedFollowersCount}
             </span>
             <span className='text-xs text-zinc-500'>Followers</span>
-          </Link> */}
-          <div className='flex flex-col items-center min-h-[44px] justify-center'>
-            <span className='text-lg font-semibold text-white'>∞</span>
-            <span className='text-xs text-zinc-500'>Followers</span>
-          </div>
-          {/* <Link
+          </Link>
+          <Link
             href={`/m/profile/${user.id}/following`}
-            className='flex flex-col items-center min-h-[44px] justify-center'
+            className='flex flex-col items-center min-h-[44px] justify-center active:opacity-70 transition-opacity'
           >
             <span className='text-lg font-semibold text-white'>
               {user.followingCount}
             </span>
             <span className='text-xs text-zinc-500'>Following</span>
-          </Link> */}
-          <div className='flex flex-col items-center min-h-[44px] justify-center'>
-            <span className='text-lg font-semibold text-white'>∞</span>
-            <span className='text-xs text-zinc-500'>Following</span>
-          </div>
+          </Link>
           <div className='flex flex-col items-center'>
             <span className='text-lg font-semibold text-white'>
               {user.recommendationsCount}
