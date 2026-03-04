@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, Menu, Bell } from 'lucide-react';
 
 import {
   Select,
@@ -12,9 +12,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSearchStore, SearchType } from '@/stores/useSearchStore';
+import { MobileSideDrawer } from '@/components/mobile/MobileSideDrawer';
 
 export default function MobileHeader() {
   const [query, setQuery] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -59,44 +61,74 @@ export default function MobileHeader() {
   if (isAuthPage) return null;
 
   return (
-    <header className='sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-800 pt-[env(safe-area-inset-top)]'>
-      <div className='flex items-center gap-2 px-3 py-2'>
-        {/* Search Type Dropdown */}
-        <Select value={searchType} onValueChange={handleSearchTypeChange}>
-          <SelectTrigger className='h-10 w-[90px] border-zinc-700 bg-zinc-800 text-white text-sm focus:ring-1 focus:ring-emeraled-green'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='bg-zinc-800 border-zinc-700 text-white'>
-            <SelectItem value='albums'>Albums</SelectItem>
-            <SelectItem value='artists'>Artists</SelectItem>
-            <SelectItem value='tracks'>Tracks</SelectItem>
-            <SelectItem value='users'>Users</SelectItem>
-          </SelectContent>
-        </Select>
+    <>
+      <header className='sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-800 pt-[env(safe-area-inset-top)]'>
+        {/* Top Row: Hamburger | Logo | Bell */}
+        <div className='flex items-center justify-between px-4 py-3'>
+          <button
+            type='button'
+            onClick={() => setDrawerOpen(true)}
+            className='flex items-center justify-center h-10 w-10 -ml-1 rounded-lg active:bg-zinc-800 transition-colors'
+            aria-label='Open menu'
+          >
+            <Menu className='h-6 w-6 text-white' strokeWidth={2} />
+          </button>
 
-        {/* Search Input */}
-        <div className='flex-1 relative'>
-          <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500' />
-          <input
-            type='text'
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder='Search...'
-            className='w-full h-10 pl-9 pr-9 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-emeraled-green transition-colors'
-          />
-          {query && (
-            <button
-              type='button'
-              onClick={() => setQuery('')}
-              className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-300 transition-colors'
-              aria-label='Clear search'
-            >
-              <X className='h-4 w-4' />
-            </button>
-          )}
+          <span className='text-2xl font-bold text-white font-serif tracking-tight select-none'>
+            rec
+          </span>
+
+          <button
+            type='button'
+            className='relative flex items-center justify-center h-10 w-10 -mr-1 rounded-full bg-zinc-800 active:bg-zinc-700 transition-colors'
+            aria-label='Notifications'
+          >
+            <Bell className='h-5 w-5 text-white' strokeWidth={2} />
+            {/* Notification dot */}
+            <span className='absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-zinc-900' />
+          </button>
         </div>
-      </div>
-    </header>
+
+        {/* Search Row: Type Selector + Search Input */}
+        <div className='flex items-center gap-2 px-3 pb-3'>
+          <Select value={searchType} onValueChange={handleSearchTypeChange}>
+            <SelectTrigger className='h-10 w-[90px] border-zinc-700 bg-zinc-800 text-white text-sm focus:ring-1 focus:ring-emerald-500'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className='bg-zinc-800 border-zinc-700 text-white'>
+              <SelectItem value='albums'>Albums</SelectItem>
+              <SelectItem value='artists'>Artists</SelectItem>
+              <SelectItem value='tracks'>Tracks</SelectItem>
+              <SelectItem value='users'>Users</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className='flex-1 relative'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500' />
+            <input
+              type='text'
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder='Search...'
+              className='w-full h-10 pl-9 pr-9 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors'
+            />
+            {query && (
+              <button
+                type='button'
+                onClick={() => setQuery('')}
+                className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-300 transition-colors'
+                aria-label='Clear search'
+              >
+                <X className='h-4 w-4' />
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Side Drawer */}
+      <MobileSideDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+    </>
   );
 }
