@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 
 import { GAME_EPOCH } from '@/lib/daily-challenge/date-utils';
-import { ArchiveGame } from '@/components/uncover/ArchiveGame';
+import { MobileArchivePlayClient } from './MobileArchivePlayClient';
 
 /**
  * Parse a YYYY-MM-DD string directly as a UTC midnight Date.
@@ -57,9 +57,5 @@ export default async function MobileArchiveGamePage({ params }: PageProps) {
     notFound();
   }
 
-  return (
-    <div className='min-h-screen'>
-      <ArchiveGame challengeDate={normalizedDate} mobile={true} />
-    </div>
-  );
+  return <MobileArchivePlayClient challengeDate={normalizedDate} />;
 }

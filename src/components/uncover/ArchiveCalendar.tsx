@@ -114,7 +114,7 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='flex flex-col items-center space-y-6'>
       {/* Calendar */}
       {isLoading ? (
         <div className='flex h-64 items-center justify-center'>
@@ -145,7 +145,7 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       )}
 
       {/* Legend */}
-      <div className='flex flex-wrap gap-4 text-sm'>
+      <div className='flex flex-wrap justify-center gap-4 text-sm'>
         <div className='flex items-center gap-2'>
           <div className='h-4 w-4 rounded bg-emerald-500/20 border border-emerald-500/40' />
           <span className='text-zinc-300'>Won</span>

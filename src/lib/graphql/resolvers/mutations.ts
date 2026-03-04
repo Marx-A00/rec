@@ -203,7 +203,7 @@ function formatGuessResult(result: GuessServiceResult) {
         isSkipped: guess.guessedAlbumId === null,
         isCorrect: guess.isCorrect,
         guessedAt: guess.guessedAt,
-        guessedAlbum: null, // Will be populated by field resolver
+        guessedAlbum: null, // Not needed — client uses the individual guess result
       })),
     },
     gameOver: result.gameOver,
@@ -3645,7 +3645,16 @@ export const mutationResolvers: MutationResolvers = {
             isSkipped: guess.guessedAlbumId === null,
             isCorrect: guess.isCorrect,
             guessedAt: guess.guessedAt,
-            guessedAlbum: null, // Will be populated by field resolver
+            guessedAlbum: guess.guessedAlbum
+              ? {
+                  id: guess.guessedAlbum.id,
+                  title: guess.guessedAlbum.title,
+                  cloudflareImageId: guess.guessedAlbum.cloudflareImageId,
+                  artistName:
+                    guess.guessedAlbum.artists?.[0]?.artist.name ??
+                    'Unknown Artist',
+                }
+              : null,
           })),
         },
         challengeId: result.challenge.id,
@@ -3821,7 +3830,16 @@ export const mutationResolvers: MutationResolvers = {
             isSkipped: guess.guessedAlbumId === null,
             isCorrect: guess.isCorrect,
             guessedAt: guess.guessedAt,
-            guessedAlbum: null, // Will be populated by field resolver
+            guessedAlbum: guess.guessedAlbum
+              ? {
+                  id: guess.guessedAlbum.id,
+                  title: guess.guessedAlbum.title,
+                  cloudflareImageId: guess.guessedAlbum.cloudflareImageId,
+                  artistName:
+                    guess.guessedAlbum.artists?.[0]?.artist.name ??
+                    'Unknown Artist',
+                }
+              : null,
           })),
         },
         challengeId: result.challenge.id,

@@ -10,6 +10,7 @@ import type {
   UncoverSession,
   UncoverGuess,
 } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 
 import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
@@ -22,10 +23,41 @@ import {
   calculateGameResult,
 } from './game-validation';
 
+// ----- Constants -----
+
+/** Shared Prisma include for session guesses with album data */
+const GUESSES_INCLUDE = {
+  guesses: {
+    orderBy: { guessNumber: 'asc' as const },
+    include: {
+      guessedAlbum: {
+        select: {
+          id: true,
+          title: true,
+          cloudflareImageId: true,
+          artists: {
+            select: { artist: { select: { name: true } } },
+            take: 1,
+          },
+        },
+      },
+    },
+  },
+};
+
 // ----- Types -----
 
+interface GuessWithAlbumRelation extends UncoverGuess {
+  guessedAlbum: {
+    id: string;
+    title: string;
+    cloudflareImageId: string | null;
+    artists: Array<{ artist: { name: string } }>;
+  } | null;
+}
+
 interface SessionWithGuesses extends UncoverSession {
-  guesses: UncoverGuess[];
+  guesses: GuessWithAlbumRelation[];
 }
 
 interface ChallengeWithAlbum {
@@ -106,11 +138,7 @@ export async function startSession(
         userId,
       },
     },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
-      },
-    },
+    include: GUESSES_INCLUDE,
   });
 
   if (existingSession) {
@@ -121,35 +149,59 @@ export async function startSession(
     };
   }
 
-  // Create new session
-  const newSession = await prisma.uncoverSession.create({
-    data: {
-      userId,
-      challengeId: challenge.id,
-      status: 'IN_PROGRESS',
-      attemptCount: 0,
-      won: false,
-    },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
+  // Create new session - handle race condition where another request
+  // created the session between our findUnique and create calls
+  try {
+    const newSession = await prisma.uncoverSession.create({
+      data: {
+        userId,
+        challengeId: challenge.id,
+        status: 'IN_PROGRESS',
+        attemptCount: 0,
+        won: false,
       },
-    },
-  });
+      include: GUESSES_INCLUDE,
+    });
 
-  // Increment challenge totalPlays
-  await prisma.uncoverChallenge.update({
-    where: { id: challenge.id },
-    data: {
-      totalPlays: { increment: 1 },
-    },
-  });
+    // Increment challenge totalPlays
+    await prisma.uncoverChallenge.update({
+      where: { id: challenge.id },
+      data: {
+        totalPlays: { increment: 1 },
+      },
+    });
 
-  return {
-    session: newSession,
-    challenge: challenge as ChallengeWithAlbum,
-    isNew: true,
-  };
+    return {
+      session: newSession,
+      challenge: challenge as ChallengeWithAlbum,
+      isNew: true,
+    };
+  } catch (error) {
+    // Handle race condition: another request created the session first
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const raceSession = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId,
+          },
+        },
+        include: GUESSES_INCLUDE,
+      });
+
+      if (raceSession) {
+        return {
+          session: raceSession,
+          challenge: challenge as ChallengeWithAlbum,
+          isNew: false,
+        };
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -172,11 +224,7 @@ export async function startArchiveSession(
         userId,
       },
     },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
-      },
-    },
+    include: GUESSES_INCLUDE,
   });
 
   if (existingSession) {
@@ -187,35 +235,59 @@ export async function startArchiveSession(
     };
   }
 
-  // Create new session
-  const newSession = await prisma.uncoverSession.create({
-    data: {
-      userId,
-      challengeId: challenge.id,
-      status: 'IN_PROGRESS',
-      attemptCount: 0,
-      won: false,
-    },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
+  // Create new session - handle race condition where another request
+  // created the session between our findUnique and create calls
+  try {
+    const newSession = await prisma.uncoverSession.create({
+      data: {
+        userId,
+        challengeId: challenge.id,
+        status: 'IN_PROGRESS',
+        attemptCount: 0,
+        won: false,
       },
-    },
-  });
+      include: GUESSES_INCLUDE,
+    });
 
-  // Increment challenge totalPlays
-  await prisma.uncoverChallenge.update({
-    where: { id: challenge.id },
-    data: {
-      totalPlays: { increment: 1 },
-    },
-  });
+    // Increment challenge totalPlays
+    await prisma.uncoverChallenge.update({
+      where: { id: challenge.id },
+      data: {
+        totalPlays: { increment: 1 },
+      },
+    });
 
-  return {
-    session: newSession,
-    challenge: challenge as ChallengeWithAlbum,
-    isNew: true,
-  };
+    return {
+      session: newSession,
+      challenge: challenge as ChallengeWithAlbum,
+      isNew: true,
+    };
+  } catch (error) {
+    // Handle race condition: another request created the session first
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const raceSession = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId,
+          },
+        },
+        include: GUESSES_INCLUDE,
+      });
+
+      if (raceSession) {
+        return {
+          session: raceSession,
+          challenge: challenge as ChallengeWithAlbum,
+          isNew: false,
+        };
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -334,11 +406,7 @@ export async function submitGuess(
       won: isCorrect,
       completedAt: gameResult.gameOver ? new Date() : null,
     },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
-      },
-    },
+    include: GUESSES_INCLUDE,
   });
 
   // Update player stats if game ended
@@ -516,11 +584,7 @@ export async function skipGuess(
       won: false,
       completedAt: gameResult.gameOver ? new Date() : null,
     },
-    include: {
-      guesses: {
-        orderBy: { guessNumber: 'asc' },
-      },
-    },
+    include: GUESSES_INCLUDE,
   });
 
   // Update player stats if game ended
