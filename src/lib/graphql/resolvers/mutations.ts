@@ -3427,12 +3427,6 @@ export const mutationResolvers: MutationResolvers = {
         );
       }
 
-      // Get next sequence number
-      const maxSeq = await prisma.curatedChallenge.aggregate({
-        _max: { sequence: true },
-      });
-      const nextSequence = (maxSeq._max.sequence ?? -1) + 1;
-
       // Create curated challenge entry
       const pinnedDateValue = pinnedDate
         ? toUTCMidnight(new Date(pinnedDate))
@@ -3441,7 +3435,6 @@ export const mutationResolvers: MutationResolvers = {
       const entry = await prisma.curatedChallenge.create({
         data: {
           albumId,
-          sequence: nextSequence,
           pinnedDate: pinnedDateValue,
         },
         include: {
@@ -3457,7 +3450,6 @@ export const mutationResolvers: MutationResolvers = {
 
       graphqlLogger.info('Added album to curated challenge list:', {
         albumId,
-        sequence: nextSequence,
       });
       return entry;
     } catch (error) {
@@ -3492,20 +3484,6 @@ export const mutationResolvers: MutationResolvers = {
       await prisma.curatedChallenge.delete({
         where: { id },
       });
-
-      // Resequence remaining entries to maintain contiguous sequence
-      const remaining = await prisma.curatedChallenge.findMany({
-        orderBy: { sequence: 'asc' },
-        select: { id: true },
-      });
-
-      // Update sequences to be contiguous (0, 1, 2, ...)
-      for (let i = 0; i < remaining.length; i++) {
-        await prisma.curatedChallenge.update({
-          where: { id: remaining[i].id },
-          data: { sequence: i },
-        });
-      }
 
       graphqlLogger.info('Removed album from curated challenge list:', { id });
       return true;
@@ -3602,6 +3580,72 @@ export const mutationResolvers: MutationResolvers = {
     } catch (error) {
       graphqlLogger.error('Failed to unpin curated challenge:', { error, id });
       throw new GraphQLError(`Failed to unpin curated challenge: ${error}`);
+    }
+  },
+
+  updateUncoverSettings: async (
+    _,
+    {
+      selectionMode,
+      poolExhaustedMode,
+    }: { selectionMode?: string; poolExhaustedMode?: string },
+    { prisma, user }
+  ) => {
+    try {
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      // Validate enum values
+      const validSelectionModes = ['RANDOM', 'FIFO'];
+      const validPoolModes = ['AUTO_RESET', 'STOP'];
+
+      if (selectionMode && !validSelectionModes.includes(selectionMode)) {
+        throw new GraphQLError(
+          `Invalid selectionMode: ${selectionMode}. Must be RANDOM or FIFO.`
+        );
+      }
+      if (poolExhaustedMode && !validPoolModes.includes(poolExhaustedMode)) {
+        throw new GraphQLError(
+          `Invalid poolExhaustedMode: ${poolExhaustedMode}. Must be AUTO_RESET or STOP.`
+        );
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (selectionMode) {
+        updateData.uncoverSelectionMode = selectionMode;
+      }
+      if (poolExhaustedMode) {
+        updateData.uncoverPoolExhaustedMode = poolExhaustedMode;
+      }
+
+      const config = await prisma.appConfig.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          uncoverSelectionMode: selectionMode ?? 'RANDOM',
+          uncoverPoolExhaustedMode: poolExhaustedMode ?? 'AUTO_RESET',
+        },
+        update: updateData,
+        select: {
+          uncoverSelectionMode: true,
+          uncoverPoolExhaustedMode: true,
+        },
+      });
+
+      graphqlLogger.info('Updated uncover settings:', {
+        selectionMode: config.uncoverSelectionMode,
+        poolExhaustedMode: config.uncoverPoolExhaustedMode,
+      });
+
+      return {
+        selectionMode: config.uncoverSelectionMode,
+        poolExhaustedMode: config.uncoverPoolExhaustedMode,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to update uncover settings:', { error });
+      if (error instanceof GraphQLError) throw error;
+      throw new GraphQLError(`Failed to update uncover settings: ${error}`);
     }
   },
 
@@ -3879,11 +3923,15 @@ export const mutationResolvers: MutationResolvers = {
         throw new GraphQLError('Admin access required');
       }
 
-      const { getOrCreateDailyChallenge } = await import(
+      const { getLatestChallenge } = await import(
         '@/lib/daily-challenge/challenge-service'
       );
 
-      const challenge = await getOrCreateDailyChallenge();
+      const challenge = await getLatestChallenge();
+
+      if (!challenge) {
+        throw new GraphQLError('No challenge available yet');
+      }
 
       const existing = await prisma.uncoverSession.findUnique({
         where: {
@@ -4292,17 +4340,10 @@ export const mutationResolvers: MutationResolvers = {
           data: { gameStatus: 'ELIGIBLE' },
         });
 
-        // 2. Get next sequence number
-        const maxSeq = await tx.curatedChallenge.aggregate({
-          _max: { sequence: true },
-        });
-        const nextSequence = (maxSeq._max.sequence ?? -1) + 1;
-
-        // 3. Create curated challenge entry
+        // 2. Create curated challenge entry
         const curatedEntry = await tx.curatedChallenge.create({
           data: {
             albumId,
-            sequence: nextSequence,
             pinnedDate: null,
           },
           include: {
@@ -4337,7 +4378,6 @@ export const mutationResolvers: MutationResolvers = {
       graphqlLogger.info('Added album to game queue:', {
         albumId,
         gameStatus: 'ELIGIBLE',
-        curatedSequence: result.curatedEntry.sequence,
       });
 
       return {

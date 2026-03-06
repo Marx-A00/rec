@@ -545,6 +545,16 @@ enum UncoverSessionStatus {
   LOST
 }
 
+enum UncoverSelectionMode {
+  RANDOM  // Pick a random unused album from the pool
+  FIFO    // Pick the oldest-added unused album (first in, first out)
+}
+
+enum UncoverPoolExhaustedMode {
+  AUTO_RESET  // When all albums have been used, reset and reuse the full pool
+  STOP        // Stop creating challenges until admin adds more albums
+}
+
 model SyncJob {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   jobId           String        @unique @map("job_id") @db.VarChar(100) // BullMQ job ID for linking
@@ -703,27 +713,27 @@ model UncoverArchiveStats {
 /// Global app configuration (single row, id = "default")
 /// Used for persistent settings like scheduler toggles that survive Redis clears
 model AppConfig {
-  id                          String   @id @default("default")
-  spotifySchedulerEnabled     Boolean  @default(false) @map("spotify_scheduler_enabled")
-  musicbrainzSchedulerEnabled Boolean  @default(false) @map("musicbrainz_scheduler_enabled")
-  updatedAt                   DateTime @updatedAt @map("updated_at")
-  createdAt                   DateTime @default(now()) @map("created_at")
+  id                          String                   @id @default("default")
+  spotifySchedulerEnabled     Boolean                  @default(false) @map("spotify_scheduler_enabled")
+  musicbrainzSchedulerEnabled Boolean                  @default(false) @map("musicbrainz_scheduler_enabled")
+  uncoverSelectionMode        UncoverSelectionMode     @default(RANDOM) @map("uncover_selection_mode")
+  uncoverPoolExhaustedMode    UncoverPoolExhaustedMode @default(AUTO_RESET) @map("uncover_pool_exhausted_mode")
+  updatedAt                   DateTime                 @updatedAt @map("updated_at")
+  createdAt                   DateTime                 @default(now()) @map("created_at")
 
   @@map("app_config")
 }
 
-/// Admin pre-curates an ordered list; selection uses sequence number
+/// Admin-curated pool of albums available for the daily Uncover game
 model CuratedChallenge {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  albumId     String    @map("album_id") @db.Uuid
+  albumId     String    @unique @map("album_id") @db.Uuid
   album       Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
   
-  sequence    Int       @unique  // Position in ordered list (0, 1, 2, ...)
   pinnedDate  DateTime? @unique @db.Date @map("pinned_date")  // Optional: Force this album on this date
   
   createdAt   DateTime  @default(now()) @map("created_at")
   
-  @@index([sequence])
   @@index([pinnedDate])
   @@index([albumId])
   @@map("curated_challenges")

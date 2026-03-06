@@ -76,9 +76,6 @@ export class QueueActivityMonitor {
       return;
     }
 
-    console.log(
-      `🚀 Starting QueueActivityMonitor (checking every ${checkIntervalMs / 1000}s)`
-    );
     this.isRunning = true;
     this.startTime = new Date();
     this.lastCheckTime = new Date();

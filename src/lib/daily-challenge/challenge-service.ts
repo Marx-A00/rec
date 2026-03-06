@@ -1,19 +1,25 @@
 /**
  * Daily Challenge Service
  *
- * Manages UncoverChallenge records. Creates challenges on-demand
- * when first requested for a date, handling race conditions gracefully.
+ * Manages UncoverChallenge records.
+ *
+ * Challenge creation is handled ONLY by the scheduler (7 AM Central daily).
+ * Public-facing code should use:
+ *   - getLatestChallenge()  — for the live game (returns most recent challenge)
+ *   - getChallengeByDate()  — for archive playback (returns challenge for a specific date)
+ *
+ * getOrCreateDailyChallenge() is reserved for the scheduler processor.
  */
 
 import { UncoverChallenge, Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 
-import { toUTCMidnight, getToday, formatDateUTC } from './date-utils';
+import { toUTCMidnight, formatDateUTC } from './date-utils';
 import {
   selectAlbumForDate,
   NoCuratedAlbumsError,
-  AlbumNotFoundError,
+  PoolExhaustedError,
 } from './selection-service';
 
 // Type for challenge info (safe for public API - does NOT include answer)
@@ -42,19 +48,88 @@ export type DailyChallengeWithAlbum = UncoverChallenge & {
   };
 };
 
+/** Shared include clause for album details */
+const ALBUM_INCLUDE = {
+  album: {
+    select: {
+      id: true,
+      title: true,
+      cloudflareImageId: true,
+      artists: {
+        select: {
+          artist: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// Read-only queries (used by game, resolvers, UI)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get the latest (most recent) challenge.
+ *
+ * This is the primary entry point for the live game. It returns whichever
+ * challenge was most recently created by the scheduler, regardless of the
+ * current UTC date. Before the scheduler runs at 7 AM Central, users still
+ * see yesterday's challenge.
+ *
+ * @returns The most recent challenge, or null if none exist yet.
+ */
+export async function getLatestChallenge(): Promise<DailyChallengeWithAlbum | null> {
+  const latest = await prisma.uncoverChallenge.findFirst({
+    orderBy: { date: 'desc' },
+    include: ALBUM_INCLUDE,
+  });
+
+  return latest as DailyChallengeWithAlbum | null;
+}
+
+/**
+ * Get the challenge for a specific date (read-only, no creation).
+ *
+ * Used for archive playback — looks up a challenge by its date.
+ * Returns null if no challenge exists for that date.
+ *
+ * @param date - The date to look up
+ * @returns The challenge for that date, or null if none exists.
+ */
+export async function getChallengeByDate(
+  date: Date
+): Promise<DailyChallengeWithAlbum | null> {
+  const normalizedDate = toUTCMidnight(date);
+
+  const challenge = await prisma.uncoverChallenge.findUnique({
+    where: { date: normalizedDate },
+    include: ALBUM_INCLUDE,
+  });
+
+  return challenge as DailyChallengeWithAlbum | null;
+}
+
+// ---------------------------------------------------------------------------
+// Creation (scheduler only)
+// ---------------------------------------------------------------------------
+
 /**
  * Get or create the challenge for a specific date.
  *
- * This is the main entry point for retrieving daily challenges.
- * If the challenge doesn not exist, it will be created on-demand
- * using deterministic album selection.
+ * WARNING: This should ONLY be called by the scheduler processor.
+ * Public-facing code should use getLatestChallenge() or getChallengeByDate().
  *
  * Race condition handling: Uses database unique constraint on date.
  * If two requests try to create simultaneously, one will fail with
  * P2002 error and fall back to reading the created record.
  *
  * @param date - The date to get/create challenge for (defaults to today)
- * @returns The challenge record with album details (for internal use)
+ * @returns The challenge record with album details
  * @throws NoCuratedAlbumsError if no curated albums exist
  */
 export async function getOrCreateDailyChallenge(
@@ -65,32 +140,14 @@ export async function getOrCreateDailyChallenge(
   // Try to find existing challenge
   const existing = await prisma.uncoverChallenge.findUnique({
     where: { date: normalizedDate },
-    include: {
-      album: {
-        select: {
-          id: true,
-          title: true,
-          cloudflareImageId: true,
-          artists: {
-            select: {
-              artist: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    include: ALBUM_INCLUDE,
   });
 
   if (existing) {
     return existing as DailyChallengeWithAlbum;
   }
 
-  // Select album deterministically
+  // Select album from the pool
   const albumId = await selectAlbumForDate(normalizedDate);
 
   // Try to create new challenge
@@ -101,25 +158,7 @@ export async function getOrCreateDailyChallenge(
         albumId,
         maxAttempts: 4,
       },
-      include: {
-        album: {
-          select: {
-            id: true,
-            title: true,
-            cloudflareImageId: true,
-            artists: {
-              select: {
-                artist: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: ALBUM_INCLUDE,
     });
 
     const dateStr = formatDateUTC(normalizedDate);
@@ -138,25 +177,7 @@ export async function getOrCreateDailyChallenge(
 
       const raceResolved = await prisma.uncoverChallenge.findUnique({
         where: { date: normalizedDate },
-        include: {
-          album: {
-            select: {
-              id: true,
-              title: true,
-              cloudflareImageId: true,
-              artists: {
-                select: {
-                  artist: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        include: ALBUM_INCLUDE,
       });
 
       if (!raceResolved) {
@@ -172,31 +193,9 @@ export async function getOrCreateDailyChallenge(
   }
 }
 
-/**
- * Get today's challenge (convenience wrapper).
- */
-export async function getTodayChallenge(): Promise<DailyChallengeWithAlbum> {
-  return getOrCreateDailyChallenge(getToday());
-}
-
-/**
- * Get public challenge info (safe to expose to clients).
- * Does NOT include albumId or album details - that's the answer!
- */
-export async function getDailyChallengeInfo(
-  date: Date = new Date()
-): Promise<DailyChallengeInfo> {
-  const challenge = await getOrCreateDailyChallenge(date);
-
-  return {
-    id: challenge.id,
-    date: challenge.date,
-    maxAttempts: challenge.maxAttempts,
-    totalPlays: challenge.totalPlays,
-    totalWins: challenge.totalWins,
-    avgAttempts: challenge.avgAttempts,
-  };
-}
+// ---------------------------------------------------------------------------
+// Utility queries
+// ---------------------------------------------------------------------------
 
 /**
  * Check if a challenge exists for a date (without creating it).
@@ -210,4 +209,4 @@ export async function challengeExistsForDate(date: Date): Promise<boolean> {
 }
 
 // Re-export errors for convenience
-export { NoCuratedAlbumsError, AlbumNotFoundError };
+export { NoCuratedAlbumsError, PoolExhaustedError };

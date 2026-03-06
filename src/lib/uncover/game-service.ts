@@ -13,7 +13,10 @@ import type {
 import { Prisma } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 
-import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
+import {
+  getLatestChallenge,
+  getChallengeByDate,
+} from '@/lib/daily-challenge/challenge-service';
 
 import { updatePlayerStats } from './stats-service';
 import { updateArchiveStats } from './archive-stats-service';
@@ -120,15 +123,20 @@ interface SkipGuessResult {
 // ----- Service Functions -----
 
 /**
- * Start a session for today's challenge.
+ * Start a session for the current challenge.
+ * Uses the most recent challenge created by the scheduler.
  * Returns existing session if already started (no replay).
  */
 export async function startSession(
   userId: string,
   prisma: PrismaClient
 ): Promise<StartSessionResult> {
-  // Get today's challenge (creates if doesn't exist)
-  const challenge = await getOrCreateDailyChallenge();
+  // Get the most recent challenge (created by the scheduler)
+  const challenge = await getLatestChallenge();
+
+  if (!challenge) {
+    throw new GraphQLError('No challenge available yet');
+  }
 
   // Check for existing session
   const existingSession = await prisma.uncoverSession.findUnique({
@@ -207,14 +215,19 @@ export async function startSession(
 /**
  * Start a session for an archive challenge (specific date).
  * Returns existing session if already started for this date.
+ * Does NOT create challenges — only looks up existing ones.
  */
 export async function startArchiveSession(
   userId: string,
   challengeDate: Date,
   prisma: PrismaClient
 ): Promise<StartSessionResult> {
-  // Get challenge for specific date (creates if doesn't exist)
-  const challenge = await getOrCreateDailyChallenge(challengeDate);
+  // Look up the challenge for this date (read-only, no creation)
+  const challenge = await getChallengeByDate(challengeDate);
+
+  if (!challenge) {
+    throw new GraphQLError('No challenge found for this date');
+  }
 
   // Check for existing session
   const existingSession = await prisma.uncoverSession.findUnique({

@@ -3542,19 +3542,23 @@ export const queryResolvers: QueryResolvers = {
     { prisma, user }
   ) => {
     try {
-      const { toUTCMidnight } = await import(
-        '@/lib/daily-challenge/date-utils'
-      );
-      const { getOrCreateDailyChallenge } = await import(
+      const { getLatestChallenge, getChallengeByDate } = await import(
         '@/lib/daily-challenge/challenge-service'
       );
 
-      const targetDate = date
-        ? toUTCMidnight(new Date(date))
-        : toUTCMidnight(new Date());
+      // If a date is provided, look up that specific challenge (archive mode).
+      // Otherwise, return the most recent challenge (live game).
+      const challenge = date
+        ? await getChallengeByDate(new Date(date))
+        : await getLatestChallenge();
 
-      // Get or create the challenge (this is safe - doesn't expose answer)
-      const challenge = await getOrCreateDailyChallenge(targetDate);
+      if (!challenge) {
+        throw new GraphQLError(
+          date
+            ? 'No challenge found for this date'
+            : 'No challenge available yet'
+        );
+      }
 
       // Fetch user's session if authenticated
       let mySession = null;
@@ -3617,10 +3621,10 @@ export const queryResolvers: QueryResolvers = {
       const limitValue = limit ?? 50;
       const offsetValue = offset ?? 0;
 
-      return prisma.curatedChallenge.findMany({
+      const curated = await prisma.curatedChallenge.findMany({
         take: limitValue,
         skip: offsetValue,
-        orderBy: { sequence: 'asc' },
+        orderBy: { createdAt: 'asc' },
         include: {
           album: {
             include: {
@@ -3631,6 +3635,21 @@ export const queryResolvers: QueryResolvers = {
           },
         },
       });
+
+      // Join with uncover_challenges to get used dates
+      const albumIds = curated.map(c => c.albumId);
+      const usedChallenges = await prisma.uncoverChallenge.findMany({
+        where: { albumId: { in: albumIds } },
+        select: { albumId: true, date: true },
+      });
+      const usedDateMap = new Map(
+        usedChallenges.map(uc => [uc.albumId, uc.date])
+      );
+
+      return curated.map(c => ({
+        ...c,
+        usedDate: usedDateMap.get(c.albumId) ?? null,
+      }));
     } catch (error) {
       graphqlLogger.error('Failed to fetch curated challenges:', { error });
       throw new GraphQLError(`Failed to fetch curated challenges: ${error}`);
@@ -3651,61 +3670,69 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  upcomingChallenges: async (
-    _,
-    { days }: { days: number },
-    { prisma, user }
-  ) => {
+  uncoverPoolStatus: async (_, __, { prisma, user }) => {
     try {
-      // Admin check
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
 
-      const { toUTCMidnight } = await import(
-        '@/lib/daily-challenge/date-utils'
-      );
-      const { getSelectionInfo } = await import(
-        '@/lib/daily-challenge/selection-service'
-      );
+      const totalCurated = await prisma.curatedChallenge.count();
 
-      const results = [];
-      const today = toUTCMidnight(new Date());
+      // Count how many curated albums have already been used in challenges
+      const usedAlbumIds = await prisma.uncoverChallenge.findMany({
+        select: { albumId: true },
+      });
+      const usedSet = new Set(usedAlbumIds.map(c => c.albumId));
 
-      for (let i = 0; i < days; i++) {
-        const date = new Date(today);
-        date.setUTCDate(date.getUTCDate() + i);
+      const curatedAlbumIds = await prisma.curatedChallenge.findMany({
+        select: { albumId: true },
+      });
+      const totalUsed = curatedAlbumIds.filter(c =>
+        usedSet.has(c.albumId)
+      ).length;
 
-        const info = await getSelectionInfo(date);
+      const config = await prisma.appConfig.findUnique({
+        where: { id: 'default' },
+        select: {
+          uncoverSelectionMode: true,
+          uncoverPoolExhaustedMode: true,
+        },
+      });
 
-        let album = null;
-        if (info.albumId) {
-          album = await prisma.album.findUnique({
-            where: { id: info.albumId },
-            include: {
-              artists: {
-                include: { artist: true },
-              },
-            },
-          });
-        }
+      return {
+        totalCurated,
+        totalUsed,
+        remaining: totalCurated - totalUsed,
+        selectionMode: config?.uncoverSelectionMode ?? 'RANDOM',
+        poolExhaustedMode: config?.uncoverPoolExhaustedMode ?? 'AUTO_RESET',
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch pool status:', { error });
+      throw new GraphQLError(`Failed to fetch pool status: ${error}`);
+    }
+  },
 
-        results.push({
-          date: info.date,
-          daysSinceEpoch: info.daysSinceEpoch,
-          sequence: info.sequence,
-          isPinned: info.isPinned,
-          album,
-        });
+  uncoverSettings: async (_, __, { prisma, user }) => {
+    try {
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
       }
 
-      return results;
-    } catch (error) {
-      graphqlLogger.error('Failed to fetch upcoming challenges:', {
-        error,
-        days,
+      const config = await prisma.appConfig.findUnique({
+        where: { id: 'default' },
+        select: {
+          uncoverSelectionMode: true,
+          uncoverPoolExhaustedMode: true,
+        },
       });
-      throw new GraphQLError(`Failed to fetch upcoming challenges: ${error}`);
+
+      return {
+        selectionMode: config?.uncoverSelectionMode ?? 'RANDOM',
+        poolExhaustedMode: config?.uncoverPoolExhaustedMode ?? 'AUTO_RESET',
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch uncover settings:', { error });
+      throw new GraphQLError(`Failed to fetch uncover settings: ${error}`);
     }
   },
 

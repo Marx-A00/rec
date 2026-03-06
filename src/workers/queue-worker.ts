@@ -33,6 +33,10 @@ import {
   musicBrainzScheduler,
 } from '@/lib/musicbrainz/new-releases-scheduler';
 import {
+  initializeUncoverScheduler,
+  shutdownUncoverScheduler,
+} from '@/lib/daily-challenge/scheduler';
+import {
   healthChecker,
   metricsCollector,
   alertManager,
@@ -62,9 +66,12 @@ class MusicBrainzWorkerService {
   private prisma: PrismaClient;
 
   async start() {
-    console.log(
-      '🎵 Worker started | Rate: 1/sec | Dashboard: http://localhost:3001'
-    );
+    const line = '═'.repeat(60);
+
+    console.log('');
+    console.log(chalk.bold.cyan(`  Rec Worker`));
+    console.log(chalk.gray(line));
+    console.log('');
 
     // Initialize Prisma
     this.prisma = new PrismaClient();
@@ -74,32 +81,52 @@ class MusicBrainzWorkerService {
 
     // Start queue activity monitor
     startQueueActivityMonitor(this.prisma, 15000); // Check every 15 seconds
-    console.log('🔄 Queue activity monitor started');
+    console.log('  🔄 Queue activity monitor started (checking every 15s)');
 
-    // Initialize Spotify scheduler (weekly automated syncs)
-    console.log('🎧 Initializing Spotify scheduler...');
+    // Initialize schedulers
+    console.log('');
+    console.log(chalk.gray('  ── Schedulers ──'));
+    console.log('');
+
+    // Spotify scheduler
     const spotifySchedulerStarted = await initializeSpotifyScheduler();
     if (spotifySchedulerStarted) {
-      console.log('✅ Spotify scheduler started successfully (weekly sync)');
+      console.log('  ✅ Spotify scheduler enabled');
     } else {
-      console.log(
-        '⏭️  Spotify scheduler disabled (check environment variables)'
-      );
+      console.log('  ⏸️  Spotify scheduler disabled');
     }
 
-    // Initialize MusicBrainz scheduler (weekly automated syncs)
-    console.log('🎵 Initializing MusicBrainz scheduler...');
+    // MusicBrainz scheduler
     const mbSchedulerStarted = await initializeMusicBrainzScheduler();
     if (mbSchedulerStarted) {
-      console.log(
-        '✅ MusicBrainz scheduler started successfully (weekly sync)'
-      );
+      console.log('  ✅ MusicBrainz scheduler enabled');
     } else {
-      console.log('⏭️  MusicBrainz scheduler disabled');
+      console.log('  ⏸️  MusicBrainz scheduler disabled');
+    }
+
+    // Uncover daily challenge scheduler
+    const uncoverSchedulerStarted = await initializeUncoverScheduler();
+    if (uncoverSchedulerStarted) {
+      console.log('  ✅ Uncover scheduler enabled (7 AM Central daily)');
+    } else {
+      console.log('  ⏸️  Uncover scheduler failed to start');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
     this.startHttpServer();
+
+    // Final ready banner
+    console.log('');
+    console.log(chalk.gray(line));
+    console.log(
+      chalk.bold.green('  ✅ Ready') +
+        chalk.gray(' | ') +
+        chalk.white('Rate: 1/sec') +
+        chalk.gray(' | ') +
+        chalk.white(`Dashboard: http://localhost:${HTTP_PORT}`)
+    );
+    console.log(chalk.gray(line));
+    console.log('');
 
     // Keep process alive
     this.keepAlive();
@@ -118,7 +145,6 @@ class MusicBrainzWorkerService {
 
       // Enhanced logging for production
       this.worker.on('ready', () => {
-        console.log('✅ Ready');
         this.restartAttempts = 0;
       });
 
@@ -863,9 +889,7 @@ class MusicBrainzWorkerService {
 
     // Listen
     this.server = app.listen(HTTP_PORT, () => {
-      console.log(`📊 Bull Board: http://localhost:${HTTP_PORT}/admin/queues`);
-      console.log(`📈 Metrics API: http://localhost:${HTTP_PORT}/metrics`);
-      console.log(`🏥 Health Check: http://localhost:${HTTP_PORT}/health`);
+      // URLs logged in the final ready banner
     });
 
     this.server.on('error', (err: Error) => {
@@ -931,6 +955,10 @@ class MusicBrainzWorkerService {
         // Stop MusicBrainz scheduler
         console.log('🛑 Stopping MusicBrainz scheduler...');
         shutdownMusicBrainzScheduler();
+
+        // Stop Uncover scheduler
+        console.log('🛑 Stopping Uncover scheduler...');
+        await shutdownUncoverScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');

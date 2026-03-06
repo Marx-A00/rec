@@ -37,6 +37,8 @@ export const JOB_TYPES = {
   // Cover Art Caching Jobs
   CACHE_ALBUM_COVER_ART: 'cache:album-cover-art',
   CACHE_ARTIST_IMAGE: 'cache:artist-image',
+  // Uncover Daily Challenge
+  UNCOVER_CREATE_DAILY_CHALLENGE: 'uncover:create-daily-challenge',
   // Discogs Jobs
   DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
@@ -299,6 +301,17 @@ export interface CacheArtistImageJobData {
 }
 
 // ============================================================================
+// Uncover Daily Challenge Job Data Interface
+// ============================================================================
+
+export interface UncoverCreateDailyChallengeJobData {
+  /** ISO date string override (defaults to today if omitted) */
+  date?: string;
+  requestId?: string;
+  source?: 'scheduled' | 'manual';
+}
+
+// ============================================================================
 // Discogs Job Data Interfaces
 // ============================================================================
 
@@ -364,6 +377,7 @@ export type MusicBrainzJobData =
   | RunDiscogsMigrationJobData
   | CacheAlbumCoverArtJobData
   | CacheArtistImageJobData
+  | UncoverCreateDailyChallengeJobData
   | DiscogsSearchArtistJobData
   | DiscogsGetArtistJobData
   | DiscogsSearchAlbumJobData
@@ -466,6 +480,10 @@ export interface MusicBrainzJobOptions {
      * Cron pattern for scheduling
      */
     pattern?: string;
+    /**
+     * IANA timezone for cron pattern (e.g. 'America/Chicago')
+     */
+    tz?: string;
   };
 }
 

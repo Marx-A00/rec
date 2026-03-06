@@ -14,13 +14,6 @@ function isMobileDevice(request: NextRequest): boolean {
   const userAgent = request.headers.get('user-agent') || '';
   const isMobile = MOBILE_USER_AGENTS.test(userAgent);
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log(
-      `📱 Mobile check: ${isMobile ? 'YES' : 'NO'} | UA: ${userAgent.substring(0, 80)}...`
-    );
-  }
-
   return isMobile;
 }
 
@@ -253,7 +246,9 @@ function handlePreflight(request: NextRequest): NextResponse {
 
   // Check if origin is allowed
   if (!isOriginAllowed(origin)) {
-    console.warn(`CORS: Rejected preflight request from origin: ${origin}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`   CORS preflight rejected: ${origin}`);
+    }
     return new NextResponse(null, {
       status: 403,
       statusText: 'Forbidden - CORS policy violation',
@@ -264,7 +259,9 @@ function handlePreflight(request: NextRequest): NextResponse {
   const response = new NextResponse(null, { status: 200 });
   setCorsHeaders(response, origin);
 
-  console.log(`CORS: Preflight request allowed for origin: ${origin}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`   CORS preflight OK: ${origin}`);
+  }
   return response;
 }
 
@@ -490,7 +487,7 @@ function checkRateLimit(
   if (entry.blockedUntil && now < entry.blockedUntil) {
     const blockedFor = Math.ceil((entry.blockedUntil - now) / 1000);
     console.warn(
-      `[RATE LIMIT] BLOCKED | ${key} | ${request.method} ${pathname} | bucket=${bucket} | blocked for ${blockedFor}s more | count=${entry.count}/${config.maxRequests}`
+      `   Rate limit BLOCKED • ${key} • ${bucket} • ${blockedFor}s remaining`
     );
     return { allowed: false, entry, config };
   }
@@ -509,7 +506,7 @@ function checkRateLimit(
   const usage = entry.count / config.maxRequests;
   if (usage > 0.75) {
     console.warn(
-      `[RATE LIMIT] WARNING | ${key} | ${request.method} ${pathname} | bucket=${bucket} | ${entry.count}/${config.maxRequests} (${Math.round(usage * 100)}%) | window resets ${Math.ceil((config.windowMs - (now - entry.lastReset)) / 1000)}s`
+      `   Rate limit ${Math.round(usage * 100)}% • ${key} • ${bucket} • ${entry.count}/${config.maxRequests}`
     );
   }
 
@@ -518,7 +515,7 @@ function checkRateLimit(
     entry.blockedUntil = now + config.blockDurationMs;
     rateLimitStore.set(key, entry);
     console.error(
-      `[RATE LIMIT] EXCEEDED | ${key} | ${request.method} ${pathname} | bucket=${bucket} | ${entry.count}/${config.maxRequests} | blocking for ${config.blockDurationMs / 1000}s`
+      `   Rate limit EXCEEDED • ${key} • ${bucket} • blocking ${config.blockDurationMs / 1000}s`
     );
     return { allowed: false, entry, config };
   }
@@ -723,8 +720,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  // Debug: Log every middleware invocation
-  console.log(`🔧 Middleware running: ${method} ${pathname}`);
+  // Compact dev log
+  if (process.env.NODE_ENV === 'development') {
+    const border = '─'.repeat(50);
+    const isMobile = MOBILE_USER_AGENTS.test(
+      request.headers.get('user-agent') || ''
+    );
+    const device = isMobile ? 'mobile' : 'desktop';
+    console.log(`${border}\nMW • ${method} ${pathname} • ${device}\n${border}`);
+  }
 
   // 0. Mobile detection and redirect
   const mobileRedirect = handleMobileRedirect(request, pathname);
@@ -740,23 +744,12 @@ export async function middleware(request: NextRequest) {
     const rateLimitResult = checkRateLimit(request, pathname);
 
     if (!rateLimitResult.allowed) {
-      // Development logging for rate limiting
       if (process.env.NODE_ENV === 'development') {
-        console.log(
-          `⛔ Rate limit exceeded: ${method} ${pathname} by ${getRateLimitKey(request)}`
-        );
+        console.log(`   Rate limited: ${getRateLimitKey(request)}`);
       }
-
       return createRateLimitResponse(
         rateLimitResult.entry,
         rateLimitResult.config
-      );
-    }
-
-    // Development logging for successful rate limit check
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `✅ Rate limit check passed: ${method} ${pathname} (${rateLimitResult.entry.count}/${rateLimitResult.config.maxRequests})`
       );
     }
   }
@@ -774,9 +767,9 @@ export async function middleware(request: NextRequest) {
 
     // For actual requests, check origin and set CORS headers
     if (origin && !isNextAuthRoute && !isOriginAllowed(origin)) {
-      console.warn(
-        `CORS: Rejected request from origin: ${origin} to ${pathname}`
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`   CORS rejected: ${origin} -> ${pathname}`);
+      }
       return new NextResponse(
         JSON.stringify({
           error: 'CORS policy violation',
@@ -798,13 +791,6 @@ export async function middleware(request: NextRequest) {
 
     // Add middleware-specific security headers for API routes
     addMiddlewareSecurityHeaders(response, pathname);
-
-    // Log successful CORS handling (in development only)
-    if (process.env.NODE_ENV === 'development' && origin) {
-      console.log(
-        `CORS: Request allowed from origin: ${origin} to ${pathname}`
-      );
-    }
 
     return response;
   }

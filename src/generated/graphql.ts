@@ -953,7 +953,8 @@ export type CuratedChallengeEntry = {
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
   pinnedDate?: Maybe<Scalars['DateTime']['output']>;
-  sequence: Scalars['Int']['output'];
+  /** Date this album was used as a daily challenge (null if not yet used) */
+  usedDate?: Maybe<Scalars['DateTime']['output']>;
 };
 
 /** Daily challenge info - does NOT include the answer album */
@@ -1258,38 +1259,12 @@ export enum JobStatus {
 
 export type JobStatusUpdate = {
   __typename?: 'JobStatusUpdate';
-  /** Admin: Add an album to the curated challenge list */
-  addCuratedChallenge: CuratedChallengeEntry;
   jobId: Scalars['String']['output'];
   message?: Maybe<Scalars['String']['output']>;
-  /** Admin: Pin a curated challenge to a specific date */
-  pinCuratedChallenge: CuratedChallengeEntry;
   progress?: Maybe<Scalars['Float']['output']>;
-  /** Admin: Remove an album from the curated challenge list */
-  removeCuratedChallenge: Scalars['Boolean']['output'];
   status: JobStatus;
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
-  /** Admin: Unpin a curated challenge (remove date override) */
-  unpinCuratedChallenge: CuratedChallengeEntry;
-};
-
-export type JobStatusUpdateAddCuratedChallengeArgs = {
-  albumId: Scalars['UUID']['input'];
-  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-};
-
-export type JobStatusUpdatePinCuratedChallengeArgs = {
-  date: Scalars['DateTime']['input'];
-  id: Scalars['UUID']['input'];
-};
-
-export type JobStatusUpdateRemoveCuratedChallengeArgs = {
-  id: Scalars['UUID']['input'];
-};
-
-export type JobStatusUpdateUnpinCuratedChallengeArgs = {
-  id: Scalars['UUID']['input'];
 };
 
 export type LlamaLog = {
@@ -1577,6 +1552,8 @@ export type Mutation = {
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
   updateTrack: Track;
+  /** Admin: Update uncover game settings */
+  updateUncoverSettings: UncoverSettings;
   updateUserRole: UpdateUserRolePayload;
   updateUserSettings: UserSettings;
 };
@@ -1837,6 +1814,11 @@ export type MutationUpdateTrackArgs = {
   input: UpdateTrackInput;
 };
 
+export type MutationUpdateUncoverSettingsArgs = {
+  poolExhaustedMode?: InputMaybe<Scalars['String']['input']>;
+  selectionMode?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type MutationUpdateUserRoleArgs = {
   role: UserRole;
   userId: Scalars['String']['input'];
@@ -1942,7 +1924,7 @@ export type Query = {
   correctionSearch: CorrectionSearchResponse;
   /** Admin: Get count of curated challenges */
   curatedChallengeCount: Scalars['Int']['output'];
-  /** Admin: Get curated challenge list (ordered) */
+  /** Admin: Get curated challenge list */
   curatedChallenges: Array<CuratedChallengeEntry>;
   /**
    * Get the daily challenge for a date (defaults to today).
@@ -2005,8 +1987,10 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
-  /** Admin: Preview upcoming challenges for the next N days */
-  upcomingChallenges: Array<UpcomingChallenge>;
+  /** Admin: Get pool status (total, used, remaining) */
+  uncoverPoolStatus: UncoverPoolStatus;
+  /** Admin: Get uncover game settings */
+  uncoverSettings: UncoverSettings;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
   userFollowers: Array<User>;
@@ -2275,10 +2259,6 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-export type QueryUpcomingChallengesArgs = {
-  days: Scalars['Int']['input'];
 };
 
 export type QueryUserArgs = {
@@ -2955,6 +2935,16 @@ export type UncoverPlayerStats = {
   winRate: Scalars['Float']['output'];
 };
 
+/** Pool status showing how many albums remain unused */
+export type UncoverPoolStatus = {
+  __typename?: 'UncoverPoolStatus';
+  poolExhaustedMode: Scalars['String']['output'];
+  remaining: Scalars['Int']['output'];
+  selectionMode: Scalars['String']['output'];
+  totalCurated: Scalars['Int']['output'];
+  totalUsed: Scalars['Int']['output'];
+};
+
 /**
  * Session history entry for calendar display.
  * Shows which days were played and won/lost.
@@ -2986,6 +2976,13 @@ export enum UncoverSessionStatus {
   Won = 'WON',
 }
 
+/** Uncover game settings (admin-configurable) */
+export type UncoverSettings = {
+  __typename?: 'UncoverSettings';
+  poolExhaustedMode: Scalars['String']['output'];
+  selectionMode: Scalars['String']['output'];
+};
+
 export type UnifiedRelease = {
   __typename?: 'UnifiedRelease';
   artistCredits?: Maybe<Array<ArtistCredit>>;
@@ -2999,16 +2996,6 @@ export type UnifiedRelease = {
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
-};
-
-/** Upcoming challenge preview for admin */
-export type UpcomingChallenge = {
-  __typename?: 'UpcomingChallenge';
-  album?: Maybe<Album>;
-  date: Scalars['DateTime']['output'];
-  daysSinceEpoch: Scalars['Int']['output'];
-  isPinned: Scalars['Boolean']['output'];
-  sequence: Scalars['Int']['output'];
 };
 
 export type UpdateAlbumGameStatusInput = {
@@ -3492,7 +3479,6 @@ export type AddAlbumToQueueMutation = {
     curatedChallenge?: {
       __typename?: 'CuratedChallengeEntry';
       id: string;
-      sequence: number;
     } | null;
   };
 };
@@ -4435,14 +4421,15 @@ export type CuratedChallengesQuery = {
   curatedChallenges: Array<{
     __typename?: 'CuratedChallengeEntry';
     id: string;
-    sequence: number;
     pinnedDate?: Date | null;
     createdAt: Date;
+    usedDate?: Date | null;
     album: {
       __typename?: 'Album';
       id: string;
       title: string;
       cloudflareImageId?: string | null;
+      coverArtUrl?: string | null;
       releaseDate?: Date | null;
       artists: Array<{
         __typename?: 'ArtistCredit';
@@ -4461,30 +4448,29 @@ export type CuratedChallengeCountQuery = {
   curatedChallengeCount: number;
 };
 
-export type UpcomingChallengesQueryVariables = Exact<{
-  days: Scalars['Int']['input'];
-}>;
+export type UncoverPoolStatusQueryVariables = Exact<{ [key: string]: never }>;
 
-export type UpcomingChallengesQuery = {
+export type UncoverPoolStatusQuery = {
   __typename?: 'Query';
-  upcomingChallenges: Array<{
-    __typename?: 'UpcomingChallenge';
-    date: Date;
-    daysSinceEpoch: number;
-    sequence: number;
-    isPinned: boolean;
-    album?: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      cloudflareImageId?: string | null;
-      releaseDate?: Date | null;
-      artists: Array<{
-        __typename?: 'ArtistCredit';
-        artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
-    } | null;
-  }>;
+  uncoverPoolStatus: {
+    __typename?: 'UncoverPoolStatus';
+    totalCurated: number;
+    totalUsed: number;
+    remaining: number;
+    selectionMode: string;
+    poolExhaustedMode: string;
+  };
+};
+
+export type UncoverSettingsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type UncoverSettingsQuery = {
+  __typename?: 'Query';
+  uncoverSettings: {
+    __typename?: 'UncoverSettings';
+    selectionMode: string;
+    poolExhaustedMode: string;
+  };
 };
 
 export type AddCuratedChallengeMutationVariables = Exact<{
@@ -4497,7 +4483,6 @@ export type AddCuratedChallengeMutation = {
   addCuratedChallenge: {
     __typename?: 'CuratedChallengeEntry';
     id: string;
-    sequence: number;
     pinnedDate?: Date | null;
     album: { __typename?: 'Album'; id: string; title: string };
   };
@@ -4522,7 +4507,6 @@ export type PinCuratedChallengeMutation = {
   pinCuratedChallenge: {
     __typename?: 'CuratedChallengeEntry';
     id: string;
-    sequence: number;
     pinnedDate?: Date | null;
     album: { __typename?: 'Album'; id: string; title: string };
   };
@@ -4537,9 +4521,22 @@ export type UnpinCuratedChallengeMutation = {
   unpinCuratedChallenge: {
     __typename?: 'CuratedChallengeEntry';
     id: string;
-    sequence: number;
     pinnedDate?: Date | null;
     album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
+export type UpdateUncoverSettingsMutationVariables = Exact<{
+  selectionMode?: InputMaybe<Scalars['String']['input']>;
+  poolExhaustedMode?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type UpdateUncoverSettingsMutation = {
+  __typename?: 'Mutation';
+  updateUncoverSettings: {
+    __typename?: 'UncoverSettings';
+    selectionMode: string;
+    poolExhaustedMode: string;
   };
 };
 
@@ -7269,7 +7266,6 @@ export const AddAlbumToQueueDocument = `
     }
     curatedChallenge {
       id
-      sequence
     }
   }
 }
@@ -9271,13 +9267,14 @@ export const CuratedChallengesDocument = `
     query CuratedChallenges($limit: Int, $offset: Int) {
   curatedChallenges(limit: $limit, offset: $offset) {
     id
-    sequence
     pinnedDate
     createdAt
+    usedDate
     album {
       id
       title
       cloudflareImageId
+      coverArtUrl
       releaseDate
       artists {
         artist {
@@ -9455,83 +9452,81 @@ useInfiniteCuratedChallengeCountQuery.getKey = (
     ? ['CuratedChallengeCount.infinite']
     : ['CuratedChallengeCount.infinite', variables];
 
-export const UpcomingChallengesDocument = `
-    query UpcomingChallenges($days: Int!) {
-  upcomingChallenges(days: $days) {
-    date
-    daysSinceEpoch
-    sequence
-    isPinned
-    album {
-      id
-      title
-      cloudflareImageId
-      releaseDate
-      artists {
-        artist {
-          id
-          name
-        }
-      }
-    }
+export const UncoverPoolStatusDocument = `
+    query UncoverPoolStatus {
+  uncoverPoolStatus {
+    totalCurated
+    totalUsed
+    remaining
+    selectionMode
+    poolExhaustedMode
   }
 }
     `;
 
-export const useUpcomingChallengesQuery = <
-  TData = UpcomingChallengesQuery,
+export const useUncoverPoolStatusQuery = <
+  TData = UncoverPoolStatusQuery,
   TError = unknown,
 >(
-  variables: UpcomingChallengesQueryVariables,
+  variables?: UncoverPoolStatusQueryVariables,
   options?: Omit<
-    UseQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    UseQueryOptions<UncoverPoolStatusQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseQueryOptions<
-      UpcomingChallengesQuery,
+      UncoverPoolStatusQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useQuery<UpcomingChallengesQuery, TError, TData>({
-    queryKey: ['UpcomingChallenges', variables],
-    queryFn: fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
-      UpcomingChallengesDocument,
+  return useQuery<UncoverPoolStatusQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['UncoverPoolStatus']
+        : ['UncoverPoolStatus', variables],
+    queryFn: fetcher<UncoverPoolStatusQuery, UncoverPoolStatusQueryVariables>(
+      UncoverPoolStatusDocument,
       variables
     ),
     ...options,
   });
 };
 
-useUpcomingChallengesQuery.getKey = (
-  variables: UpcomingChallengesQueryVariables
-) => ['UpcomingChallenges', variables];
+useUncoverPoolStatusQuery.getKey = (
+  variables?: UncoverPoolStatusQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverPoolStatus']
+    : ['UncoverPoolStatus', variables];
 
-export const useInfiniteUpcomingChallengesQuery = <
-  TData = InfiniteData<UpcomingChallengesQuery>,
+export const useInfiniteUncoverPoolStatusQuery = <
+  TData = InfiniteData<UncoverPoolStatusQuery>,
   TError = unknown,
 >(
-  variables: UpcomingChallengesQueryVariables,
+  variables: UncoverPoolStatusQueryVariables,
   options: Omit<
-    UseInfiniteQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    UseInfiniteQueryOptions<UncoverPoolStatusQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseInfiniteQueryOptions<
-      UpcomingChallengesQuery,
+      UncoverPoolStatusQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useInfiniteQuery<UpcomingChallengesQuery, TError, TData>(
+  return useInfiniteQuery<UncoverPoolStatusQuery, TError, TData>(
     (() => {
       const { queryKey: optionsQueryKey, ...restOptions } = options;
       return {
-        queryKey: optionsQueryKey ?? ['UpcomingChallenges.infinite', variables],
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['UncoverPoolStatus.infinite']
+            : ['UncoverPoolStatus.infinite', variables],
         queryFn: metaData =>
-          fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
-            UpcomingChallengesDocument,
+          fetcher<UncoverPoolStatusQuery, UncoverPoolStatusQueryVariables>(
+            UncoverPoolStatusDocument,
             { ...variables, ...(metaData.pageParam ?? {}) }
           )(),
         ...restOptions,
@@ -9540,15 +9535,98 @@ export const useInfiniteUpcomingChallengesQuery = <
   );
 };
 
-useInfiniteUpcomingChallengesQuery.getKey = (
-  variables: UpcomingChallengesQueryVariables
-) => ['UpcomingChallenges.infinite', variables];
+useInfiniteUncoverPoolStatusQuery.getKey = (
+  variables?: UncoverPoolStatusQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverPoolStatus.infinite']
+    : ['UncoverPoolStatus.infinite', variables];
+
+export const UncoverSettingsDocument = `
+    query UncoverSettings {
+  uncoverSettings {
+    selectionMode
+    poolExhaustedMode
+  }
+}
+    `;
+
+export const useUncoverSettingsQuery = <
+  TData = UncoverSettingsQuery,
+  TError = unknown,
+>(
+  variables?: UncoverSettingsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<UncoverSettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<UncoverSettingsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<UncoverSettingsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['UncoverSettings']
+        : ['UncoverSettings', variables],
+    queryFn: fetcher<UncoverSettingsQuery, UncoverSettingsQueryVariables>(
+      UncoverSettingsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useUncoverSettingsQuery.getKey = (variables?: UncoverSettingsQueryVariables) =>
+  variables === undefined
+    ? ['UncoverSettings']
+    : ['UncoverSettings', variables];
+
+export const useInfiniteUncoverSettingsQuery = <
+  TData = InfiniteData<UncoverSettingsQuery>,
+  TError = unknown,
+>(
+  variables: UncoverSettingsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<UncoverSettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      UncoverSettingsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<UncoverSettingsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['UncoverSettings.infinite']
+            : ['UncoverSettings.infinite', variables],
+        queryFn: metaData =>
+          fetcher<UncoverSettingsQuery, UncoverSettingsQueryVariables>(
+            UncoverSettingsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteUncoverSettingsQuery.getKey = (
+  variables?: UncoverSettingsQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverSettings.infinite']
+    : ['UncoverSettings.infinite', variables];
 
 export const AddCuratedChallengeDocument = `
     mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
   addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
     id
-    sequence
     pinnedDate
     album {
       id
@@ -9626,7 +9704,6 @@ export const PinCuratedChallengeDocument = `
     mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
   pinCuratedChallenge(id: $id, date: $date) {
     id
-    sequence
     pinnedDate
     album {
       id
@@ -9669,7 +9746,6 @@ export const UnpinCuratedChallengeDocument = `
     mutation UnpinCuratedChallenge($id: UUID!) {
   unpinCuratedChallenge(id: $id) {
     id
-    sequence
     pinnedDate
     album {
       id
@@ -9707,6 +9783,47 @@ export const useUnpinCuratedChallengeMutation = <
 };
 
 useUnpinCuratedChallengeMutation.getKey = () => ['UnpinCuratedChallenge'];
+
+export const UpdateUncoverSettingsDocument = `
+    mutation UpdateUncoverSettings($selectionMode: String, $poolExhaustedMode: String) {
+  updateUncoverSettings(
+    selectionMode: $selectionMode
+    poolExhaustedMode: $poolExhaustedMode
+  ) {
+    selectionMode
+    poolExhaustedMode
+  }
+}
+    `;
+
+export const useUpdateUncoverSettingsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateUncoverSettingsMutation,
+    TError,
+    UpdateUncoverSettingsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateUncoverSettingsMutation,
+    TError,
+    UpdateUncoverSettingsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateUncoverSettings'],
+    mutationFn: (variables?: UpdateUncoverSettingsMutationVariables) =>
+      fetcher<
+        UpdateUncoverSettingsMutation,
+        UpdateUncoverSettingsMutationVariables
+      >(UpdateUncoverSettingsDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateUncoverSettingsMutation.getKey = () => ['UpdateUncoverSettings'];
 
 export const GetLlamaLogsDocument = `
     query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {

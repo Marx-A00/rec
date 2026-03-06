@@ -6,57 +6,67 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockCuratedChallengeFindFirst = vi.fn();
 const mockCuratedChallengeCount = vi.fn();
-const mockCuratedChallengeFindUnique = vi.fn();
+const mockCuratedChallengeFindMany = vi.fn();
 const mockUncoverChallengeFindMany = vi.fn();
+const mockAppConfigFindUnique = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     curatedChallenge: {
       findFirst: (...args: unknown[]) => mockCuratedChallengeFindFirst(...args),
       count: (...args: unknown[]) => mockCuratedChallengeCount(...args),
-      findUnique: (...args: unknown[]) =>
-        mockCuratedChallengeFindUnique(...args),
+      findMany: (...args: unknown[]) => mockCuratedChallengeFindMany(...args),
     },
     uncoverChallenge: {
       findMany: (...args: unknown[]) => mockUncoverChallengeFindMany(...args),
     },
+    appConfig: {
+      findUnique: (...args: unknown[]) => mockAppConfigFindUnique(...args),
+    },
   },
 }));
 
-// Mock date-utils so we can control getDaysSinceEpoch without worrying about
-// real epoch arithmetic.  toUTCMidnight is left as pass-through (identity).
-const mockGetDaysSinceEpoch = vi.fn();
-
 vi.mock('@/lib/daily-challenge/date-utils', () => ({
   GAME_EPOCH: new Date('2026-01-01T00:00:00Z'),
-  toUTCMidnight: (d: Date) => d, // pass-through for tests
-  getDaysSinceEpoch: (...args: unknown[]) => mockGetDaysSinceEpoch(...args),
+  toUTCMidnight: (d: Date) => d,
 }));
 
 // Import after mocks
 import {
   selectAlbumForDate,
   NoCuratedAlbumsError,
-  AlbumNotFoundError,
+  PoolExhaustedError,
 } from '@/lib/daily-challenge/selection-service';
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-/** Fixed test date — the exact value doesn't matter since we mock getDaysSinceEpoch */
 const TEST_DATE = new Date('2026-02-10T00:00:00Z');
 
-/**
- * Set up mock for curatedChallenge.findUnique to return album IDs by sequence.
- * Pass a map of sequence → albumId.  Unmatched sequences return null.
- */
-function setupCuratedAlbums(albums: Record<number, string>) {
-  mockCuratedChallengeFindUnique.mockImplementation(
-    (args: { where: { sequence: number } }) => {
-      const albumId = albums[args.where.sequence];
-      return Promise.resolve(albumId ? { albumId } : null);
-    }
+/** Set up default settings (RANDOM + AUTO_RESET) */
+function setupSettings(
+  selectionMode: 'RANDOM' | 'FIFO' = 'RANDOM',
+  poolExhaustedMode: 'AUTO_RESET' | 'STOP' = 'AUTO_RESET'
+) {
+  mockAppConfigFindUnique.mockResolvedValue({
+    uncoverSelectionMode: selectionMode,
+    uncoverPoolExhaustedMode: poolExhaustedMode,
+  });
+}
+
+/** Set up curated albums pool with given IDs */
+function setupCuratedPool(albumIds: string[]) {
+  mockCuratedChallengeCount.mockResolvedValue(albumIds.length);
+  mockCuratedChallengeFindMany.mockResolvedValue(
+    albumIds.map(albumId => ({ albumId }))
+  );
+}
+
+/** Set up used albums (already in uncover_challenges) */
+function setupUsedAlbums(albumIds: string[]) {
+  mockUncoverChallengeFindMany.mockResolvedValue(
+    albumIds.map(albumId => ({ albumId }))
   );
 }
 
@@ -67,9 +77,10 @@ function setupCuratedAlbums(albums: Record<number, string>) {
 describe('selectAlbumForDate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Defaults: no pinned album, no recent challenges
+    // Defaults: no pinned album, no used albums, RANDOM + AUTO_RESET
     mockCuratedChallengeFindFirst.mockResolvedValue(null);
     mockUncoverChallengeFindMany.mockResolvedValue([]);
+    setupSettings('RANDOM', 'AUTO_RESET');
   });
 
   // --------------------------------------------------------------------------
@@ -85,9 +96,9 @@ describe('selectAlbumForDate', () => {
       const result = await selectAlbumForDate(TEST_DATE);
 
       expect(result).toBe('pinned-album-id');
-      // Should not query count or curated list at all
+      // Should not query count or pool at all
       expect(mockCuratedChallengeCount).not.toHaveBeenCalled();
-      expect(mockCuratedChallengeFindUnique).not.toHaveBeenCalled();
+      expect(mockCuratedChallengeFindMany).not.toHaveBeenCalled();
     });
 
     it('queries pinnedDate with the normalized date', async () => {
@@ -105,152 +116,53 @@ describe('selectAlbumForDate', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 2. Basic modulo selection (no duplicates)
+  // 2. FIFO selection from unused pool
   // --------------------------------------------------------------------------
 
-  describe('basic modulo selection', () => {
-    it('picks correct album using daysSinceEpoch % totalCurated', async () => {
-      // 5 curated albums, day 7 → sequence = 7 % 5 = 2
-      mockCuratedChallengeCount.mockResolvedValue(5);
-      mockGetDaysSinceEpoch.mockReturnValue(7);
-      setupCuratedAlbums({
-        0: 'album-a',
-        1: 'album-b',
-        2: 'album-c',
-        3: 'album-d',
-        4: 'album-e',
-      });
+  describe('FIFO selection', () => {
+    it('picks the oldest unused album (first in pool order)', async () => {
+      setupSettings('FIFO');
+      setupCuratedPool(['album-a', 'album-b', 'album-c']);
+      // album-a already used, so unused = [album-b, album-c]
+      setupUsedAlbums(['album-a']);
+
+      // findMany for unused will filter and return ordered by createdAt
+      // We need to mock the "unused" query specifically
+      mockCuratedChallengeFindMany.mockResolvedValueOnce(
+        // First call: unused albums query (notIn used)
+        [{ albumId: 'album-b' }, { albumId: 'album-c' }]
+      );
+      mockUncoverChallengeFindMany.mockResolvedValue([{ albumId: 'album-a' }]);
 
       const result = await selectAlbumForDate(TEST_DATE);
 
-      expect(result).toBe('album-c'); // sequence 2
-    });
-
-    it('selects sequence 0 when daysSinceEpoch is a multiple of totalCurated', async () => {
-      // 3 curated albums, day 9 → sequence = 9 % 3 = 0
-      mockCuratedChallengeCount.mockResolvedValue(3);
-      mockGetDaysSinceEpoch.mockReturnValue(9);
-      setupCuratedAlbums({
-        0: 'album-x',
-        1: 'album-y',
-        2: 'album-z',
-      });
-
-      const result = await selectAlbumForDate(TEST_DATE);
-
-      expect(result).toBe('album-x'); // sequence 0
+      expect(result).toBe('album-b'); // oldest unused
     });
   });
 
   // --------------------------------------------------------------------------
-  // 3. Skips recent duplicates
+  // 3. Random selection from unused pool
   // --------------------------------------------------------------------------
 
-  describe('recent duplicate avoidance', () => {
-    it('skips album already used in a recent challenge', async () => {
-      // 3 curated albums, day 4 → start sequence = 4 % 3 = 1
-      // album-b at sequence 1 was already used → should walk to sequence 2 (album-c)
+  describe('random selection', () => {
+    it('picks an album from the unused pool', async () => {
+      setupSettings('RANDOM');
       mockCuratedChallengeCount.mockResolvedValue(3);
-      mockGetDaysSinceEpoch.mockReturnValue(4);
-      setupCuratedAlbums({
-        0: 'album-a',
-        1: 'album-b',
-        2: 'album-c',
-      });
-      mockUncoverChallengeFindMany.mockResolvedValue([
-        { albumId: 'album-b' }, // recently used
-      ]);
-
-      const result = await selectAlbumForDate(TEST_DATE);
-
-      expect(result).toBe('album-c'); // walked forward from seq 1 → seq 2
-    });
-
-    it('skips multiple recently used albums', async () => {
-      // 5 albums, day 10 → start sequence = 10 % 5 = 0
-      // album-a (seq 0) and album-b (seq 1) are both recently used
-      // → should pick album-c at seq 2
-      mockCuratedChallengeCount.mockResolvedValue(5);
-      mockGetDaysSinceEpoch.mockReturnValue(10);
-      setupCuratedAlbums({
-        0: 'album-a',
-        1: 'album-b',
-        2: 'album-c',
-        3: 'album-d',
-        4: 'album-e',
-      });
-      mockUncoverChallengeFindMany.mockResolvedValue([
-        { albumId: 'album-a' },
+      mockUncoverChallengeFindMany.mockResolvedValue([{ albumId: 'album-a' }]);
+      // Unused albums query returns album-b, album-c
+      mockCuratedChallengeFindMany.mockResolvedValueOnce([
         { albumId: 'album-b' },
-      ]);
-
-      const result = await selectAlbumForDate(TEST_DATE);
-
-      expect(result).toBe('album-c');
-    });
-
-    it('queries recent challenges with correct limit (totalCurated - 1)', async () => {
-      mockCuratedChallengeCount.mockResolvedValue(10);
-      mockGetDaysSinceEpoch.mockReturnValue(0);
-      setupCuratedAlbums({ 0: 'album-a' });
-
-      await selectAlbumForDate(TEST_DATE);
-
-      expect(mockUncoverChallengeFindMany).toHaveBeenCalledWith({
-        where: { date: { lt: TEST_DATE } },
-        orderBy: { date: 'desc' },
-        take: 9, // 10 - 1
-        select: { albumId: true },
-      });
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // 4. Wrap-around
-  // --------------------------------------------------------------------------
-
-  describe('walk-forward wrap-around', () => {
-    it('wraps from end of list back to beginning', async () => {
-      // 3 albums, day 5 → start sequence = 5 % 3 = 2
-      // album-c (seq 2) recently used → wraps to seq 0 (album-a)
-      mockCuratedChallengeCount.mockResolvedValue(3);
-      mockGetDaysSinceEpoch.mockReturnValue(5);
-      setupCuratedAlbums({
-        0: 'album-a',
-        1: 'album-b',
-        2: 'album-c',
-      });
-      mockUncoverChallengeFindMany.mockResolvedValue([{ albumId: 'album-c' }]);
-
-      const result = await selectAlbumForDate(TEST_DATE);
-
-      expect(result).toBe('album-a'); // wrapped around to seq 0
-    });
-
-    it('wraps past multiple used albums at end of list', async () => {
-      // 4 albums, day 6 → start sequence = 6 % 4 = 2
-      // seq 2 (album-c) and seq 3 (album-d) used → wraps to seq 0 (album-a)
-      mockCuratedChallengeCount.mockResolvedValue(4);
-      mockGetDaysSinceEpoch.mockReturnValue(6);
-      setupCuratedAlbums({
-        0: 'album-a',
-        1: 'album-b',
-        2: 'album-c',
-        3: 'album-d',
-      });
-      mockUncoverChallengeFindMany.mockResolvedValue([
         { albumId: 'album-c' },
-        { albumId: 'album-d' },
       ]);
 
       const result = await selectAlbumForDate(TEST_DATE);
 
-      expect(result).toBe('album-a'); // wrapped around past seq 3 → seq 0
+      expect(['album-b', 'album-c']).toContain(result);
     });
   });
 
   // --------------------------------------------------------------------------
-  // 5. Throws NoCuratedAlbumsError
+  // 4. Empty curated list
   // --------------------------------------------------------------------------
 
   describe('empty curated list', () => {
@@ -272,53 +184,81 @@ describe('selectAlbumForDate', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 6. Fallback when all albums used recently
+  // 5. Pool exhausted — AUTO_RESET mode
   // --------------------------------------------------------------------------
 
-  describe('fallback when all albums used', () => {
-    it('returns deterministic pick when every album was recently used', async () => {
-      // 3 albums, day 1 → start sequence = 1 % 3 = 1
-      // All 3 are in recent challenges → but take is totalCurated-1 = 2
-      // So at most 2 albums are in the "recent" set, meaning 1 is always free.
-      // However, if all 3 are somehow in the set the fallback kicks in.
-      //
-      // To trigger the fallback, we need all candidates in the walk-through
-      // to be in recentAlbumIds. Since take = totalCurated - 1 = 2,
-      // we can only have 2 recent. With 3 albums and 2 recent, one WILL be free.
-      //
-      // The true fallback scenario: findUnique returns null for every sequence
-      // (gaps in the curated list). Let's test that path.
-      mockCuratedChallengeCount.mockResolvedValue(3);
-      mockGetDaysSinceEpoch.mockReturnValue(1);
-
-      // Sequences 0, 1, 2 all return null (gap) during the walk
-      // but the fallback at startSequence=1 returns an album
-      let callCount = 0;
-      mockCuratedChallengeFindUnique.mockImplementation(() => {
-        callCount++;
-        // First 3 calls are the walk-through (all return null / gaps)
-        if (callCount <= 3) return Promise.resolve(null);
-        // 4th call is the fallback at startSequence
-        return Promise.resolve({ albumId: 'fallback-album' });
-      });
+  describe('pool exhausted with AUTO_RESET', () => {
+    it('picks from full pool when all albums have been used', async () => {
+      setupSettings('FIFO', 'AUTO_RESET');
+      mockCuratedChallengeCount.mockResolvedValue(2);
+      // All albums used
+      mockUncoverChallengeFindMany.mockResolvedValue([
+        { albumId: 'album-a' },
+        { albumId: 'album-b' },
+      ]);
+      // Unused query returns empty
+      mockCuratedChallengeFindMany
+        .mockResolvedValueOnce([]) // unused = empty
+        .mockResolvedValueOnce([
+          // full pool fallback
+          { albumId: 'album-a' },
+          { albumId: 'album-b' },
+        ]);
 
       const result = await selectAlbumForDate(TEST_DATE);
 
-      expect(result).toBe('fallback-album');
+      expect(result).toBe('album-a'); // FIFO picks first from full pool
     });
 
-    it('throws AlbumNotFoundError when even fallback has no album', async () => {
+    it('uses random when mode is RANDOM even in reset', async () => {
+      setupSettings('RANDOM', 'AUTO_RESET');
       mockCuratedChallengeCount.mockResolvedValue(2);
-      mockGetDaysSinceEpoch.mockReturnValue(3); // start seq = 3 % 2 = 1
+      mockUncoverChallengeFindMany.mockResolvedValue([
+        { albumId: 'album-a' },
+        { albumId: 'album-b' },
+      ]);
+      mockCuratedChallengeFindMany
+        .mockResolvedValueOnce([]) // unused = empty
+        .mockResolvedValueOnce([
+          // full pool fallback
+          { albumId: 'album-a' },
+          { albumId: 'album-b' },
+        ]);
 
-      // All findUnique calls return null (complete gaps)
-      mockCuratedChallengeFindUnique.mockResolvedValue(null);
+      const result = await selectAlbumForDate(TEST_DATE);
+
+      expect(['album-a', 'album-b']).toContain(result);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 6. Pool exhausted — STOP mode
+  // --------------------------------------------------------------------------
+
+  describe('pool exhausted with STOP', () => {
+    it('throws PoolExhaustedError when all albums used', async () => {
+      setupSettings('RANDOM', 'STOP');
+      mockCuratedChallengeCount.mockResolvedValue(2);
+      mockUncoverChallengeFindMany.mockResolvedValue([
+        { albumId: 'album-a' },
+        { albumId: 'album-b' },
+      ]);
+      // Unused query returns empty
+      mockCuratedChallengeFindMany.mockResolvedValueOnce([]);
 
       await expect(selectAlbumForDate(TEST_DATE)).rejects.toThrow(
-        AlbumNotFoundError
+        PoolExhaustedError
       );
+    });
+
+    it('throws with descriptive message', async () => {
+      setupSettings('FIFO', 'STOP');
+      mockCuratedChallengeCount.mockResolvedValue(1);
+      mockUncoverChallengeFindMany.mockResolvedValue([{ albumId: 'album-a' }]);
+      mockCuratedChallengeFindMany.mockResolvedValueOnce([]);
+
       await expect(selectAlbumForDate(TEST_DATE)).rejects.toThrow(
-        'No album found at sequence 1'
+        'pool exhausted mode is set to STOP'
       );
     });
   });
@@ -328,61 +268,58 @@ describe('selectAlbumForDate', () => {
   // --------------------------------------------------------------------------
 
   describe('single curated album', () => {
-    it('always returns the only album available', async () => {
+    it('returns the only album when unused', async () => {
+      setupSettings('RANDOM');
       mockCuratedChallengeCount.mockResolvedValue(1);
-      mockGetDaysSinceEpoch.mockReturnValue(42); // 42 % 1 = 0
-      setupCuratedAlbums({ 0: 'only-album' });
-      // take = totalCurated - 1 = 0, so no recent challenges are loaded
+      mockUncoverChallengeFindMany.mockResolvedValue([]);
+      mockCuratedChallengeFindMany.mockResolvedValueOnce([
+        { albumId: 'only-album' },
+      ]);
 
       const result = await selectAlbumForDate(TEST_DATE);
 
       expect(result).toBe('only-album');
     });
 
-    it('returns the only album even on different days', async () => {
+    it('uses auto-reset to return album again after it was used', async () => {
+      setupSettings('RANDOM', 'AUTO_RESET');
       mockCuratedChallengeCount.mockResolvedValue(1);
-      setupCuratedAlbums({ 0: 'only-album' });
+      mockUncoverChallengeFindMany.mockResolvedValue([
+        { albumId: 'only-album' },
+      ]);
+      mockCuratedChallengeFindMany
+        .mockResolvedValueOnce([]) // unused = empty
+        .mockResolvedValueOnce([{ albumId: 'only-album' }]); // full pool
 
-      // Day 0
-      mockGetDaysSinceEpoch.mockReturnValue(0);
-      expect(await selectAlbumForDate(TEST_DATE)).toBe('only-album');
+      const result = await selectAlbumForDate(TEST_DATE);
 
-      // Day 100
-      mockGetDaysSinceEpoch.mockReturnValue(100);
-      expect(await selectAlbumForDate(TEST_DATE)).toBe('only-album');
+      expect(result).toBe('only-album');
     });
   });
 
   // --------------------------------------------------------------------------
-  // 8. Sequence gap handling
+  // 8. Default settings fallback
   // --------------------------------------------------------------------------
 
-  describe('sequence gaps', () => {
-    it('skips null sequences and continues walking', async () => {
-      // 4 albums but sequence 1 has a gap (null)
-      // day 3 → start seq = 3 % 4 = 3
-      // seq 3 (album-d) recently used → walk to seq 0
-      // seq 0 has album-a → not recently used → pick it
-      mockCuratedChallengeCount.mockResolvedValue(4);
-      mockGetDaysSinceEpoch.mockReturnValue(3);
-      mockUncoverChallengeFindMany.mockResolvedValue([{ albumId: 'album-d' }]);
+  describe('default settings', () => {
+    it('uses RANDOM + AUTO_RESET when no AppConfig exists', async () => {
+      mockAppConfigFindUnique.mockResolvedValue(null);
+      mockCuratedChallengeCount.mockResolvedValue(2);
+      mockUncoverChallengeFindMany.mockResolvedValue([
+        { albumId: 'album-a' },
+        { albumId: 'album-b' },
+      ]);
+      mockCuratedChallengeFindMany
+        .mockResolvedValueOnce([]) // unused = empty
+        .mockResolvedValueOnce([
+          // full pool (auto-reset kicks in)
+          { albumId: 'album-a' },
+          { albumId: 'album-b' },
+        ]);
 
-      mockCuratedChallengeFindUnique.mockImplementation(
-        (args: { where: { sequence: number } }) => {
-          const map: Record<number, string | null> = {
-            0: 'album-a',
-            1: null, // gap
-            2: 'album-c',
-            3: 'album-d',
-          };
-          const albumId = map[args.where.sequence];
-          return Promise.resolve(albumId ? { albumId } : null);
-        }
-      );
-
+      // Should not throw (AUTO_RESET default), should pick from full pool
       const result = await selectAlbumForDate(TEST_DATE);
-
-      expect(result).toBe('album-a');
+      expect(['album-a', 'album-b']).toContain(result);
     });
   });
 });

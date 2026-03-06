@@ -10,7 +10,6 @@ mutation AddAlbumToQueue($albumId: UUID!) {
     }
     curatedChallenge {
       id
-      sequence
     }
   }
 }

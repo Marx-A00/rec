@@ -25,13 +25,14 @@ query DailyChallenge($date: DateTime) {
 query CuratedChallenges($limit: Int, $offset: Int) {
   curatedChallenges(limit: $limit, offset: $offset) {
     id
-    sequence
     pinnedDate
     createdAt
+    usedDate
     album {
       id
       title
       cloudflareImageId
+      coverArtUrl
       releaseDate
       artists {
         artist {
@@ -47,24 +48,20 @@ query CuratedChallengeCount {
   curatedChallengeCount
 }
 
-query UpcomingChallenges($days: Int!) {
-  upcomingChallenges(days: $days) {
-    date
-    daysSinceEpoch
-    sequence
-    isPinned
-    album {
-      id
-      title
-      cloudflareImageId
-      releaseDate
-      artists {
-        artist {
-          id
-          name
-        }
-      }
-    }
+query UncoverPoolStatus {
+  uncoverPoolStatus {
+    totalCurated
+    totalUsed
+    remaining
+    selectionMode
+    poolExhaustedMode
+  }
+}
+
+query UncoverSettings {
+  uncoverSettings {
+    selectionMode
+    poolExhaustedMode
   }
 }
 
@@ -72,7 +69,6 @@ query UpcomingChallenges($days: Int!) {
 mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
   addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
     id
-    sequence
     pinnedDate
     album {
       id
@@ -88,7 +84,6 @@ mutation RemoveCuratedChallenge($id: UUID!) {
 mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
   pinCuratedChallenge(id: $id, date: $date) {
     id
-    sequence
     pinnedDate
     album {
       id
@@ -100,11 +95,17 @@ mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
 mutation UnpinCuratedChallenge($id: UUID!) {
   unpinCuratedChallenge(id: $id) {
     id
-    sequence
     pinnedDate
     album {
       id
       title
     }
+  }
+}
+
+mutation UpdateUncoverSettings($selectionMode: String, $poolExhaustedMode: String) {
+  updateUncoverSettings(selectionMode: $selectionMode, poolExhaustedMode: $poolExhaustedMode) {
+    selectionMode
+    poolExhaustedMode
   }
 }

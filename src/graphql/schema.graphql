@@ -2551,7 +2551,7 @@ type Query {
   myUncoverSessions(fromDate: DateTime, toDate: DateTime): [UncoverSessionHistory!]!
 
   """
-  Admin: Get curated challenge list (ordered)
+  Admin: Get curated challenge list
   """
   curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
 
@@ -2561,9 +2561,14 @@ type Query {
   curatedChallengeCount: Int!
 
   """
-  Admin: Preview upcoming challenges for the next N days
+  Admin: Get pool status (total, used, remaining)
   """
-  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
+  uncoverPoolStatus: UncoverPoolStatus!
+
+  """
+  Admin: Get uncover game settings
+  """
+  uncoverSettings: UncoverSettings!
 
   """
   Admin: Get challenge history (past + today) in reverse chronological order
@@ -2717,21 +2722,30 @@ Curated challenge entry for admin management
 """
 type CuratedChallengeEntry {
   id: UUID!
-  sequence: Int!
   pinnedDate: DateTime
   album: Album!
   createdAt: DateTime!
+  "Date this album was used as a daily challenge (null if not yet used)"
+  usedDate: DateTime
 }
 
 """
-Upcoming challenge preview for admin
+Pool status showing how many albums remain unused
 """
-type UpcomingChallenge {
-  date: DateTime!
-  daysSinceEpoch: Int!
-  sequence: Int!
-  isPinned: Boolean!
-  album: Album
+type UncoverPoolStatus {
+  totalCurated: Int!
+  totalUsed: Int!
+  remaining: Int!
+  selectionMode: String!
+  poolExhaustedMode: String!
+}
+
+"""
+Uncover game settings (admin-configurable)
+"""
+type UncoverSettings {
+  selectionMode: String!
+  poolExhaustedMode: String!
 }
 
 """
@@ -2863,42 +2877,6 @@ enum UncoverSessionStatus {
   LOST
 }
 
-"""
-Curated challenge entry for admin management
-"""
-type CuratedChallengeEntry {
-  id: UUID!
-  sequence: Int!
-  pinnedDate: DateTime
-  album: Album!
-  createdAt: DateTime!
-}
-
-"""
-Upcoming challenge preview for admin
-"""
-type UpcomingChallenge {
-  date: DateTime!
-  daysSinceEpoch: Int!
-  sequence: Int!
-  isPinned: Boolean!
-  album: Album
-}
-
-"""
-Challenge history entry for admin (past + today)
-"""
-type ChallengeHistoryEntry {
-  id: UUID!
-  date: DateTime!
-  albumTitle: String!
-  artistName: String!
-  coverUrl: String
-  cloudflareImageId: String
-  totalPlays: Int!
-  totalWins: Int!
-  avgAttempts: Float
-}
 
 # MUTATIONS (Placeholder for future implementation)
 # =============================================
@@ -3110,6 +3088,11 @@ type Mutation {
   """
   unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
 
+  """
+  Admin: Update uncover game settings
+  """
+  updateUncoverSettings(selectionMode: String, poolExhaustedMode: String): UncoverSettings!
+
   # Uncover Game mutations
   """
   Start a new session for today's challenge (requires auth).
@@ -3237,31 +3220,6 @@ type JobStatusUpdate {
   status: JobStatus!
   progress: Float
   message: String
-
-  # Daily Challenge mutations (Admin)
-  """
-  Admin: Add an album to the curated challenge list
-  """
-  addCuratedChallenge(
-    albumId: UUID!
-    pinnedDate: DateTime
-  ): CuratedChallengeEntry!
-
-  """
-  Admin: Remove an album from the curated challenge list
-  """
-  removeCuratedChallenge(id: UUID!): Boolean!
-
-  """
-  Admin: Pin a curated challenge to a specific date
-  """
-  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
-
-  """
-  Admin: Unpin a curated challenge (remove date override)
-  """
-  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
-
   timestamp: DateTime!
 }
 

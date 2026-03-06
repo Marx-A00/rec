@@ -1,0 +1,1486 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Frame",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "frame",
+      "id": "4uFDP",
+      "x": 0,
+      "y": 0,
+      "name": "Uncover Play Page",
+      "clip": true,
+      "width": 1440,
+      "fill": "#0A0A0A",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "OZDHX",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "#0A0A0A",
+          "padding": [
+            0,
+            48
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "rHgeP",
+              "name": "headerLeft",
+              "height": "fill_container",
+              "gap": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "P1n6P",
+                  "name": "avatar",
+                  "fill": "#2A2A2A",
+                  "width": 32,
+                  "height": 32
+                },
+                {
+                  "type": "text",
+                  "id": "Jvt1G",
+                  "name": "username",
+                  "fill": "#FFFFFF",
+                  "content": "mr-x",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "0eVpe",
+              "name": "headerCenter",
+              "height": 40,
+              "fill": "#1A1A1A",
+              "cornerRadius": 8,
+              "gap": 8,
+              "padding": [
+                0,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "DKx8F",
+                  "name": "searchIcon",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "search",
+                  "iconFontFamily": "lucide",
+                  "fill": "#666666"
+                },
+                {
+                  "type": "text",
+                  "id": "GsYwf",
+                  "name": "searchText",
+                  "fill": "#555555",
+                  "content": "Search albums, artists, and labels...",
+                  "fontFamily": "Inter",
+                  "fontSize": 14
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "9i1uK",
+              "name": "headerRight",
+              "width": "fit_content(0)",
+              "height": "fit_content(0)",
+              "gap": 16,
+              "alignItems": "center"
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "DtUGD",
+          "name": "divider",
+          "fill": "#1A1A1A",
+          "width": "fill_container",
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "mYLie",
+          "name": "Main Content",
+          "width": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "FREdp",
+              "name": "Sidebar",
+              "width": 64,
+              "height": "fill_container",
+              "fill": "#0A0A0A",
+              "layout": "vertical",
+              "gap": 32,
+              "padding": [
+                24,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "OhmU9",
+                  "name": "navHome",
+                  "width": 24,
+                  "height": 24,
+                  "iconFontName": "house",
+                  "iconFontFamily": "lucide",
+                  "fill": "#666666"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "ppOSu",
+                  "name": "navDisc",
+                  "width": 24,
+                  "height": 24,
+                  "iconFontName": "disc-3",
+                  "iconFontFamily": "lucide",
+                  "fill": "#666666"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "FTZCd",
+                  "name": "navTarget",
+                  "width": 24,
+                  "height": 24,
+                  "iconFontName": "target",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "Hmngr",
+                  "name": "navHelp",
+                  "width": 24,
+                  "height": 24,
+                  "iconFontName": "circle-help",
+                  "iconFontFamily": "lucide",
+                  "fill": "#666666"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bNV8e",
+              "name": "Content Area",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "B3V9L",
+                  "name": "Hero Section",
+                  "width": "fill_container",
+                  "fill": "#0A0A0A",
+                  "gap": 64,
+                  "padding": 64,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lUuzm",
+                      "name": "Hero Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Nf6hM",
+                          "name": "tagRow",
+                          "gap": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "FbiPu",
+                              "name": "puzzleBadge",
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 20,
+                              "gap": 6,
+                              "padding": [
+                                6,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "U48AA",
+                                  "name": "puzzleHash",
+                                  "fill": "#10B981",
+                                  "content": "#47",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "4m6NM",
+                              "name": "streakBadge",
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 20,
+                              "gap": 6,
+                              "padding": [
+                                6,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "1KTsM",
+                                  "name": "fireIcon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "flame",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#F59E0B"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Jq1xh",
+                                  "name": "streakText",
+                                  "fill": "#F59E0B",
+                                  "content": "5 day streak",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "WBpCb",
+                          "name": "title",
+                          "fill": "#FFFFFF",
+                          "content": "Uncover",
+                          "fontFamily": "Sora",
+                          "fontSize": 56,
+                          "fontWeight": "800",
+                          "letterSpacing": -2
+                        },
+                        {
+                          "type": "text",
+                          "id": "ixPNG",
+                          "name": "subtitle",
+                          "fill": "#888888",
+                          "textGrowth": "fixed-width",
+                          "width": 380,
+                          "content": "Guess the album from its pixelated cover art.\n4 attempts. A new mystery every day.",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Inter",
+                          "fontSize": 16
+                        },
+                        {
+                          "type": "frame",
+                          "id": "35Tlz",
+                          "name": "tabRow",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "eECk3",
+                              "name": "tabPlay",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": [
+                                12,
+                                20
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "BJ6MZ",
+                                  "name": "tabPlayText",
+                                  "fill": "#FFFFFF",
+                                  "content": "Play",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "rectangle",
+                                  "id": "VAML7",
+                                  "name": "tabPlayLine",
+                                  "fill": "#10B981",
+                                  "width": "fill_container",
+                                  "height": 2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "P4UGD",
+                              "name": "tabArchive",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": [
+                                12,
+                                20
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "W0cGy",
+                                  "name": "tabArchiveText",
+                                  "fill": "#555555",
+                                  "content": "Archive",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "bcxGF",
+                              "name": "tabStats",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": [
+                                12,
+                                20
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tpCnP",
+                                  "name": "tabStatsText",
+                                  "fill": "#555555",
+                                  "content": "Stats",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Ik2uc",
+                          "name": "ctaBtn",
+                          "fill": {
+                            "type": "gradient",
+                            "gradientType": "linear",
+                            "enabled": true,
+                            "rotation": 90,
+                            "size": {
+                              "height": 1
+                            },
+                            "colors": [
+                              {
+                                "color": "#10B981",
+                                "position": 0
+                              },
+                              {
+                                "color": "#059669",
+                                "position": 1
+                              }
+                            ]
+                          },
+                          "cornerRadius": 12,
+                          "gap": 10,
+                          "padding": [
+                            16,
+                            32
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gBVBv",
+                              "name": "ctaText",
+                              "fill": "#FFFFFF",
+                              "content": "Start today's puzzle",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "sIKx9",
+                              "name": "ctaArrow",
+                              "width": 18,
+                              "height": 18,
+                              "iconFontName": "arrow-right",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S9a7x",
+                      "name": "Album Art Container",
+                      "width": 420,
+                      "height": 420,
+                      "fill": "#111111",
+                      "cornerRadius": 20,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "#10B98130",
+                        "blur": 60,
+                        "spread": 8
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "xbsoo",
+                          "x": 40,
+                          "y": 40,
+                          "name": "Pixelated Art",
+                          "width": 340,
+                          "height": 340,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "./images/generated-1772821448097.png",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": 12
+                        },
+                        {
+                          "type": "frame",
+                          "id": "2RGwT",
+                          "x": 0,
+                          "y": 0,
+                          "name": "lockOverlay",
+                          "width": 420,
+                          "height": 420,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "p5tQJ",
+                              "x": 178,
+                              "y": 178,
+                              "name": "lockCircle",
+                              "fill": "#00000099",
+                              "width": 64,
+                              "height": 64
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "pDiIH",
+                              "x": 198,
+                              "y": 198,
+                              "name": "lockIcon",
+                              "width": 24,
+                              "height": 24,
+                              "iconFontName": "lock",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF88"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "UqTOv",
+                  "name": "divider1",
+                  "width": "fill_container",
+                  "height": 1,
+                  "padding": [
+                    0,
+                    64
+                  ],
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "y2jTs",
+                      "name": "divLine",
+                      "fill": "#1A1A1A",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "X383j",
+                  "name": "Stats Section",
+                  "width": "fill_container",
+                  "fill": "#0A0A0A",
+                  "padding": [
+                    32,
+                    64
+                  ],
+                  "justifyContent": "space_between",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "YnRvb",
+                      "name": "stat1",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WItaz",
+                          "name": "stat1val",
+                          "fill": "#FFFFFF",
+                          "content": "23",
+                          "fontFamily": "Sora",
+                          "fontSize": 36,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "yztXQ",
+                          "name": "stat1label",
+                          "fill": "#666666",
+                          "content": "Played",
+                          "fontFamily": "Inter",
+                          "fontSize": 13
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gun6F",
+                      "name": "stat2",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k8CL8",
+                          "name": "stat2val",
+                          "fill": "#10B981",
+                          "content": "78%",
+                          "fontFamily": "Sora",
+                          "fontSize": 36,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TYBAA",
+                          "name": "stat2label",
+                          "fill": "#666666",
+                          "content": "Win Rate",
+                          "fontFamily": "Inter",
+                          "fontSize": 13
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kCQwD",
+                      "name": "stat3",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kOxcT",
+                          "name": "stat3val",
+                          "fill": "#F59E0B",
+                          "content": "5",
+                          "fontFamily": "Sora",
+                          "fontSize": 36,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZxVHN",
+                          "name": "stat3label",
+                          "fill": "#666666",
+                          "content": "Current Streak",
+                          "fontFamily": "Inter",
+                          "fontSize": 13
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "buqxD",
+                      "name": "stat4",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "416OV",
+                          "name": "stat4val",
+                          "fill": "#FFFFFF",
+                          "content": "12",
+                          "fontFamily": "Sora",
+                          "fontSize": 36,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Apsg0",
+                          "name": "stat4label",
+                          "fill": "#666666",
+                          "content": "Best Streak",
+                          "fontFamily": "Inter",
+                          "fontSize": 13
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CwAQh",
+                  "name": "divider2",
+                  "width": "fill_container",
+                  "height": 1,
+                  "padding": [
+                    0,
+                    64
+                  ],
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "9ErHC",
+                      "name": "divLine2",
+                      "fill": "#1A1A1A",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hsT9c",
+                  "name": "How to Play",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 32,
+                  "padding": [
+                    40,
+                    64
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SryjC",
+                      "name": "howTitle",
+                      "fill": "#FFFFFF",
+                      "content": "How to Play",
+                      "fontFamily": "Sora",
+                      "fontSize": 24,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CVW2U",
+                      "name": "stepsRow",
+                      "width": "fill_container",
+                      "gap": 20,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VLco2",
+                          "name": "step1",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 16,
+                          "padding": 24,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "tf8T3",
+                              "name": "step1num",
+                              "width": 40,
+                              "height": 40,
+                              "fill": "#10B98120",
+                              "cornerRadius": 20,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mvj1F",
+                                  "name": "step1numText",
+                                  "fill": "#10B981",
+                                  "content": "1",
+                                  "fontFamily": "Sora",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "G0pgc",
+                              "name": "step1title",
+                              "fill": "#FFFFFF",
+                              "content": "Study the art",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "aC1XA",
+                              "name": "step1desc",
+                              "fill": "#777777",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Each day features a new album with its cover art heavily pixelated",
+                              "lineHeight": 1.5,
+                              "fontFamily": "Inter",
+                              "fontSize": 14
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "oPnzP",
+                          "name": "step2",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 16,
+                          "padding": 24,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "btTHA",
+                              "name": "step2num",
+                              "width": 40,
+                              "height": 40,
+                              "fill": "#F59E0B20",
+                              "cornerRadius": 20,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Tndgz",
+                                  "name": "step2numText",
+                                  "fill": "#F59E0B",
+                                  "content": "2",
+                                  "fontFamily": "Sora",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "BQVlN",
+                              "name": "step2title",
+                              "fill": "#FFFFFF",
+                              "content": "Make your guess",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "1HwC7",
+                              "name": "step2desc",
+                              "fill": "#777777",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Search for the album you think it is. You have 4 attempts to get it right",
+                              "lineHeight": 1.5,
+                              "fontFamily": "Inter",
+                              "fontSize": 14
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JgCaK",
+                          "name": "step3",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 16,
+                          "padding": 24,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "xMqZt",
+                              "name": "step3num",
+                              "width": 40,
+                              "height": 40,
+                              "fill": "#8B5CF620",
+                              "cornerRadius": 20,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hu8OZ",
+                                  "name": "step3numText",
+                                  "fill": "#8B5CF6",
+                                  "content": "3",
+                                  "fontFamily": "Sora",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Pl4lk",
+                              "name": "step3title",
+                              "fill": "#FFFFFF",
+                              "content": "Art reveals",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "9USro",
+                              "name": "step3desc",
+                              "fill": "#777777",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "With each wrong guess, the image becomes clearer, revealing more detail",
+                              "lineHeight": 1.5,
+                              "fontFamily": "Inter",
+                              "fontSize": 14
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "K7Njh",
+                          "name": "step4",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 16,
+                          "padding": 24,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "6n0UH",
+                              "name": "step4num",
+                              "width": 40,
+                              "height": 40,
+                              "fill": "#EF444420",
+                              "cornerRadius": 20,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "7trdN",
+                                  "name": "step4numText",
+                                  "fill": "#EF4444",
+                                  "content": "4",
+                                  "fontFamily": "Sora",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "utu3N",
+                              "name": "step4title",
+                              "fill": "#FFFFFF",
+                              "content": "Share results",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZFLiv",
+                              "name": "step4desc",
+                              "fill": "#777777",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Share your score with friends and compare how you did on today's puzzle",
+                              "lineHeight": 1.5,
+                              "fontFamily": "Inter",
+                              "fontSize": 14
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vdOXr",
+                  "name": "divider3",
+                  "width": "fill_container",
+                  "height": 1,
+                  "padding": [
+                    0,
+                    64
+                  ],
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "bBaaZ",
+                      "name": "divLine3",
+                      "fill": "#1A1A1A",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zvdfw",
+                  "name": "Recent Games",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": [
+                    40,
+                    64
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "y2jVI",
+                      "name": "recentHeader",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KtYr2",
+                          "name": "recentTitle",
+                          "fill": "#FFFFFF",
+                          "content": "Recent Puzzles",
+                          "fontFamily": "Sora",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YcZ6X",
+                          "name": "viewAllBtn",
+                          "fill": "#1A1A1A",
+                          "cornerRadius": 8,
+                          "gap": 6,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "if9Vr",
+                              "name": "viewAllText",
+                              "fill": "#888888",
+                              "content": "View Archive",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "UXOb3",
+                              "name": "viewAllIcon",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "arrow-right",
+                              "iconFontFamily": "lucide",
+                              "fill": "#888888"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "2ooBe",
+                      "name": "gamesGrid",
+                      "width": "fill_container",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "rD4F6",
+                          "name": "game1",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "k0umm",
+                              "name": "game1art",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "blenderdesigner",
+                                "link": "https://unsplash.com/@blenderdesigner",
+                                "author": "Sufyan"
+                              },
+                              "width": "fill_container",
+                              "height": 180,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "./images/generated-1772821595441.png",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 10
+                            },
+                            {
+                              "type": "frame",
+                              "id": "xvKLi",
+                              "name": "game1info",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Ko4Q9",
+                                  "name": "game1num",
+                                  "fill": "#666666",
+                                  "content": "#46",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "iesfN",
+                                  "name": "game1name",
+                                  "fill": "#FFFFFF",
+                                  "content": "OK Computer",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 15,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "x7kn0",
+                                  "name": "game1artist",
+                                  "fill": "#777777",
+                                  "content": "Radiohead",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ho2P7",
+                              "name": "game1result",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Y4MZN",
+                                  "name": "game1badge",
+                                  "fill": "#10B98120",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    4,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "EKw2V",
+                                      "name": "game1badgeText",
+                                      "fill": "#10B981",
+                                      "content": "Solved in 2",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "I4qNu",
+                          "name": "game2",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "JBKe8",
+                              "name": "game2art",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "sanches812",
+                                "link": "https://unsplash.com/@sanches812",
+                                "author": "Alexander Nedviga"
+                              },
+                              "width": "fill_container",
+                              "height": 180,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "./images/generated-1772821601335.png",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 10
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Re4aX",
+                              "name": "game2info",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "5dWjy",
+                                  "name": "game2num",
+                                  "fill": "#666666",
+                                  "content": "#45",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rwsXA",
+                                  "name": "game2name",
+                                  "fill": "#FFFFFF",
+                                  "content": "In Rainbows",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 15,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "NR7W0",
+                                  "name": "game2artist",
+                                  "fill": "#777777",
+                                  "content": "Radiohead",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "wTovH",
+                              "name": "game2result",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ibzpM",
+                                  "name": "game2badge",
+                                  "fill": "#F59E0B20",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    4,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "YuQe1",
+                                      "name": "game2badgeText",
+                                      "fill": "#F59E0B",
+                                      "content": "Solved in 3",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "dUFKg",
+                          "name": "game3",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "wuEAa",
+                              "name": "game3art",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "dosbenjamin",
+                                "link": "https://unsplash.com/@dosbenjamin",
+                                "author": "Benjamin Dos Santos"
+                              },
+                              "width": "fill_container",
+                              "height": 180,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "./images/generated-1772821607193.png",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 10
+                            },
+                            {
+                              "type": "frame",
+                              "id": "rgjRE",
+                              "name": "game3info",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Tm6O6",
+                                  "name": "game3num",
+                                  "fill": "#666666",
+                                  "content": "#44",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "UZsfK",
+                                  "name": "game3name",
+                                  "fill": "#FFFFFF",
+                                  "content": "Abbey Road",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 15,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "zAYTj",
+                                  "name": "game3artist",
+                                  "fill": "#777777",
+                                  "content": "The Beatles",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "UGxtw",
+                              "name": "game3result",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "oWMs6",
+                                  "name": "game3badge",
+                                  "fill": "#EF444420",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    4,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fBOHi",
+                                      "name": "game3badgeText",
+                                      "fill": "#EF4444",
+                                      "content": "Failed",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "L2zjN",
+                          "name": "game4",
+                          "width": "fill_container",
+                          "fill": "#111111",
+                          "cornerRadius": 16,
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "bFhrU",
+                              "name": "game4art",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "loganvoss",
+                                "link": "https://unsplash.com/@loganvoss",
+                                "author": "Logan Voss"
+                              },
+                              "width": "fill_container",
+                              "height": 180,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "./images/generated-1772821612814.png",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 10
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ySyGm",
+                              "name": "game4info",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "vLOKT",
+                                  "name": "game4num",
+                                  "fill": "#666666",
+                                  "content": "#43",
+                                  "fontFamily": "Space Mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "QMjZe",
+                                  "name": "game4name",
+                                  "fill": "#FFFFFF",
+                                  "content": "Currents",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 15,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "7jUHG",
+                                  "name": "game4artist",
+                                  "fill": "#777777",
+                                  "content": "Tame Impala",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "xLC3N",
+                              "name": "game4result",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ns57D",
+                                  "name": "game4badge",
+                                  "fill": "#10B98120",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    4,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "4LaiC",
+                                      "name": "game4badgeText",
+                                      "fill": "#10B981",
+                                      "content": "Solved in 1",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "InXv2",
+                  "name": "bottomPad",
+                  "width": "fill_container",
+                  "height": 48
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

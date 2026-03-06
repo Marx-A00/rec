@@ -126,7 +126,7 @@ export function EligibleAlbumsTable() {
             <TableHead>Artist</TableHead>
             <TableHead className='w-24'>Year</TableHead>
             <TableHead className='w-40'>Status</TableHead>
-            <TableHead className='w-40'>Curated</TableHead>
+            <TableHead className='w-40'>Pool</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -178,9 +178,7 @@ export function EligibleAlbumsTable() {
                 </TableCell>
                 <TableCell>
                   {curatedAlbumIds.has(album.id) ? (
-                    <span className='text-sm text-emerald-400'>
-                      In rotation
-                    </span>
+                    <span className='text-sm text-emerald-400'>In pool</span>
                   ) : (
                     <Button
                       variant='outline'
@@ -188,7 +186,7 @@ export function EligibleAlbumsTable() {
                       disabled={isAddingCurated}
                       onClick={() => handleAddToCurated(album.id, album.title)}
                     >
-                      Add to curated
+                      Add to pool
                     </Button>
                   )}
                 </TableCell>

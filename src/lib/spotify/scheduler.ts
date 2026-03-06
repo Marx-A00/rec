@@ -57,7 +57,6 @@ class SpotifyScheduler {
       return;
     }
 
-    console.log('🚀 Starting Spotify automated scheduler...');
     this.isRunning = true;
 
     // Persist enabled state to database (survives Redis clears + worker restarts)
@@ -71,8 +70,7 @@ class SpotifyScheduler {
       await this.scheduleNewReleases();
     }
 
-    console.log('✅ Spotify scheduler started successfully');
-    this.logScheduleInfo();
+    // Detailed schedule info only logged when explicitly requested
   }
 
   /**
@@ -168,21 +166,6 @@ class SpotifyScheduler {
       removeOnComplete: 10,
       removeOnFail: 5,
     });
-
-    console.log(
-      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes (BullMQ repeatable job)`
-    );
-    if (jobData.genreTags && jobData.genreTags.length > 0) {
-      console.log(`   Genre filters: ${jobData.genreTags.join(', ')}`);
-    }
-    if (jobData.pages && jobData.pages > 1) {
-      console.log(
-        `   Pages: ${jobData.pages} (up to ${jobData.pages * (jobData.limit || 50)} albums)`
-      );
-    }
-    if (jobData.minFollowers) {
-      console.log(`   Min followers: ${jobData.minFollowers.toLocaleString()}`);
-    }
   }
 
   /**
@@ -197,7 +180,6 @@ class SpotifyScheduler {
       for (const job of repeatableJobs) {
         if (job.key.includes('spotify-new-releases-schedule')) {
           await queue.getQueue().removeRepeatableByKey(job.key);
-          console.log(`  🗑️  Removed existing schedule: ${job.key}`);
         }
       }
     } catch (error) {
@@ -390,7 +372,6 @@ export async function initializeSpotifyScheduler() {
     process.env.SPOTIFY_CLIENT_SECRET || process.env.AUTH_SPOTIFY_SECRET;
 
   if (!spotifyClientId || !spotifyClientSecret) {
-    console.log('⚠️  Spotify credentials not found, scheduler will not start');
     return false;
   }
 
@@ -398,9 +379,6 @@ export async function initializeSpotifyScheduler() {
   let dbEnabled = false;
   try {
     dbEnabled = await getSchedulerEnabled('spotify');
-    console.log(
-      `📡 Spotify scheduler DB state: ${dbEnabled ? 'enabled' : 'disabled'}`
-    );
   } catch (error) {
     console.warn(
       '⚠️  Failed to read Spotify scheduler state from DB, defaulting to disabled:',
@@ -425,25 +403,14 @@ export async function initializeSpotifyScheduler() {
   if (!dbEnabled) {
     if (bullmqHasJobs) {
       // DB says off but orphaned jobs exist — clean them up
-      console.log(
-        '🧹 Cleaning up orphaned Spotify BullMQ jobs (DB says disabled)'
-      );
       await spotifyScheduler.removeExistingSchedules();
     }
-    console.log('⏸️  Spotify scheduler disabled (DB)');
     return false;
   }
 
   // DB says enabled — load config from env vars and start
   const config = readSpotifyConfigFromEnv();
   await spotifyScheduler.updateConfig(config);
-
-  if (!bullmqHasJobs) {
-    // DB says on but no BullMQ jobs — recreate them (Redis was likely wiped)
-    console.log(
-      '🔄 Recreating Spotify BullMQ jobs (DB says enabled, jobs missing)'
-    );
-  }
 
   await spotifyScheduler.start();
   return true;

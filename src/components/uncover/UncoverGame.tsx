@@ -436,33 +436,55 @@ export function UncoverGame() {
   // ─── Pre-game home state ───────────────────────────────────────
   if (!hasStarted && !isInitializing) {
     return (
-      <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
-        {/* Album art teaser */}
-        <div className='relative w-[300px]'>
-          <div className='overflow-hidden rounded-2xl shadow-[0_0_80px_rgba(16,185,129,0.08),0_0_200px_rgba(16,185,129,0.04)]'>
+      <div className='flex h-full flex-col items-center justify-center gap-8 px-4'>
+        {/* Puzzle info */}
+        <div className='flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-500'>
+          <span>PUZZLE #47</span>
+          <span className='text-zinc-700'>·</span>
+          <span>5 DAY STREAK</span>
+        </div>
+
+        {/* Album art teaser — center stage */}
+        <div className='relative w-[340px]'>
+          <div className='overflow-hidden rounded-2xl shadow-[0_0_120px_rgba(255,255,255,0.03)]'>
             <TeaserImage />
           </div>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-14 w-14 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
-              <Lock className='h-6 w-6 text-zinc-400' />
+            <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
+              <Lock className='h-7 w-7 text-zinc-400' />
             </div>
           </div>
         </div>
 
-        {/* Description */}
-        <p className='max-w-[340px] text-center text-sm leading-relaxed text-zinc-500'>
-          Guess today&apos;s album from its cover art.
-          <br />4 attempts. A new mystery every day.
+        {/* Hook line */}
+        <p className='text-xl font-medium text-white'>
+          Can you name this album?
         </p>
 
-        {/* Start button */}
+        {/* Start button — pill shaped */}
         <button
           onClick={() => setHasStarted(true)}
-          className='flex items-center gap-2.5 rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
+          className='flex items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
         >
           Start today&apos;s puzzle
           <span aria-hidden>→</span>
         </button>
+
+        {/* Inline stats */}
+        <div className='flex items-center gap-10 pt-2'>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-semibold text-white'>23</span>
+            <span className='text-xs text-zinc-600'>played</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-semibold text-white'>78%</span>
+            <span className='text-xs text-zinc-600'>win rate</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-semibold text-white'>5</span>
+            <span className='text-xs text-zinc-600'>streak</span>
+          </div>
+        </div>
       </div>
     );
   }

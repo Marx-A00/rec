@@ -60,7 +60,6 @@ class MusicBrainzScheduler {
       return;
     }
 
-    console.log('🚀 Starting MusicBrainz automated scheduler...');
     this.isRunning = true;
 
     // Persist enabled state to database (survives Redis clears + worker restarts)
@@ -74,8 +73,7 @@ class MusicBrainzScheduler {
       await this.scheduleNewReleases();
     }
 
-    console.log('✅ MusicBrainz scheduler started successfully');
-    this.logScheduleInfo();
+    // Detailed schedule info only logged when explicitly requested
   }
 
   /**
@@ -185,10 +183,6 @@ class MusicBrainzScheduler {
       removeOnComplete: 10,
       removeOnFail: 5,
     });
-
-    console.log(
-      `📅 Scheduled MusicBrainz new releases sync every ${this.config.newReleases.intervalMinutes} minutes (${Math.round(this.config.newReleases.intervalMinutes / 1440)} days) - BullMQ repeatable job`
-    );
   }
 
   /**
@@ -260,7 +254,6 @@ class MusicBrainzScheduler {
       for (const job of repeatableJobs) {
         if (job.key.includes('musicbrainz-new-releases-schedule')) {
           await queue.getQueue().removeRepeatableByKey(job.key);
-          console.log(`  🗑️  Removed existing schedule: ${job.key}`);
         }
       }
     } catch (error) {
@@ -378,9 +371,6 @@ export async function initializeMusicBrainzScheduler() {
   let dbEnabled = false;
   try {
     dbEnabled = await getSchedulerEnabled('musicbrainz');
-    console.log(
-      `📡 MusicBrainz scheduler DB state: ${dbEnabled ? 'enabled' : 'disabled'}`
-    );
   } catch (error) {
     console.warn(
       '⚠️  Failed to read MusicBrainz scheduler state from DB, defaulting to disabled:',
@@ -404,24 +394,14 @@ export async function initializeMusicBrainzScheduler() {
   // Reconcile DB state with BullMQ state
   if (!dbEnabled) {
     if (bullmqHasJobs) {
-      console.log(
-        '🧹 Cleaning up orphaned MusicBrainz BullMQ jobs (DB says disabled)'
-      );
       await musicBrainzScheduler.removeExistingSchedules();
     }
-    console.log('⏸️  MusicBrainz scheduler disabled (DB)');
     return false;
   }
 
   // DB says enabled — load config from env vars and start
   const config = readMusicBrainzConfigFromEnv();
   await musicBrainzScheduler.updateConfig(config);
-
-  if (!bullmqHasJobs) {
-    console.log(
-      '🔄 Recreating MusicBrainz BullMQ jobs (DB says enabled, jobs missing)'
-    );
-  }
 
   await musicBrainzScheduler.start();
   return true;
