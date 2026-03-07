@@ -485,6 +485,11 @@ export interface MusicBrainzJobOptions {
      */
     tz?: string;
   };
+
+  /**
+   * Suppress the QUEUING JOB log block (used during startup to keep banner clean)
+   */
+  silent?: boolean;
 }
 
 // ============================================================================

@@ -165,6 +165,7 @@ class SpotifyScheduler {
       backoff: { type: 'exponential', delay: 5000 },
       removeOnComplete: 10,
       removeOnFail: 5,
+      silent: true,
     });
   }
 

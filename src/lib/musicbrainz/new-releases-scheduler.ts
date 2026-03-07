@@ -182,6 +182,7 @@ class MusicBrainzScheduler {
       backoff: { type: 'exponential', delay: 10000 },
       removeOnComplete: 10,
       removeOnFail: 5,
+      silent: true,
     });
   }
 

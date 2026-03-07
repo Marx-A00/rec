@@ -37,6 +37,7 @@ export async function initializeUncoverScheduler(): Promise<boolean> {
         backoff: { type: 'exponential', delay: 10000 },
         removeOnComplete: 1,
         removeOnFail: 1,
+        silent: true,
       }
     );
 
@@ -59,6 +60,7 @@ export async function initializeUncoverScheduler(): Promise<boolean> {
       backoff: { type: 'exponential', delay: 10000 },
       removeOnComplete: 7,
       removeOnFail: 7,
+      silent: true,
     });
 
     return true;

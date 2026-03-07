@@ -69,8 +69,10 @@ class MusicBrainzWorkerService {
     const line = '═'.repeat(60);
 
     console.log('');
-    console.log(chalk.bold.cyan(`  Rec Worker`));
-    console.log(chalk.gray(line));
+    const purple = chalk.hex('#A78BFA');
+
+    console.log(chalk.bold.hex('#A78BFA')(`  Rec Worker`));
+    console.log(purple(line));
     console.log('');
 
     // Initialize Prisma
@@ -117,7 +119,6 @@ class MusicBrainzWorkerService {
 
     // Final ready banner
     console.log('');
-    console.log(chalk.gray(line));
     console.log(
       chalk.bold.green('  ✅ Ready') +
         chalk.gray(' | ') +
@@ -125,7 +126,8 @@ class MusicBrainzWorkerService {
         chalk.gray(' | ') +
         chalk.white(`Dashboard: http://localhost:${HTTP_PORT}`)
     );
-    console.log(chalk.gray(line));
+    console.log('');
+    console.log(purple(line));
     console.log('');
 
     // Keep process alive

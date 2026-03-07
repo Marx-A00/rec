@@ -97,7 +97,7 @@ export class MetricsCollector extends EventEmitter {
       return;
     }
 
-    console.log(`📊 Starting metrics collection (interval: ${intervalMs}ms)`);
+    // Metrics collection started silently
 
     // Collect immediately
     this.collectMetrics();

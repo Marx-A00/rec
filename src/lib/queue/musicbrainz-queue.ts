@@ -93,24 +93,26 @@ export class MusicBrainzQueue {
     }
 
     // Color-coded queue logging (cyan borders for job queuing)
-    const border = chalk.cyan('─'.repeat(60));
-    console.log('\n' + border);
-    console.log(
-      `${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`
-    );
-    console.log(border);
-    console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
-    console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
-    console.log(
-      `  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`
-    );
-    console.log(
-      `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`
-    );
-    if (queryInfo) {
-      console.log(`  ${chalk.cyan('Details:')}    ${chalk.white(queryInfo)}`);
+    if (!options.silent) {
+      const border = chalk.cyan('─'.repeat(60));
+      console.log('\n' + border);
+      console.log(
+        `${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`
+      );
+      console.log(border);
+      console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
+      console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
+      console.log(
+        `  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`
+      );
+      console.log(
+        `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`
+      );
+      if (queryInfo) {
+        console.log(`  ${chalk.cyan('Details:')}    ${chalk.white(queryInfo)}`);
+      }
+      console.log(border + '\n');
     }
-    console.log(border + '\n');
 
     return job;
   }
@@ -146,7 +148,7 @@ export class MusicBrainzQueue {
 
     // Worker event handlers
     this.worker.on('ready', () => {
-      console.log('✅ MusicBrainz Worker ready (Rate limited: 1 req/sec)');
+      // Ready status logged by the worker service banner
     });
 
     this.worker.on('active', job => {
