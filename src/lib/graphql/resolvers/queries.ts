@@ -3986,5 +3986,180 @@ export const queryResolvers: QueryResolvers = {
       throw new GraphQLError(`Failed to fetch session history: ${error}`);
     }
   },
+  // ---------------------------------------------------------------
+  // Client-side game model queries (Wordle-style)
+  // ---------------------------------------------------------------
+
+  dailyPuzzle: async (_, __, { prisma, user }) => {
+    if (!user?.id) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      const { getLatestChallenge } = await import(
+        '@/lib/daily-challenge/challenge-service'
+      );
+      const { getImageUrl } = await import('@/lib/cloudflare-images');
+
+      const challenge = await getLatestChallenge();
+      if (!challenge) return null;
+
+      // Build artist name from the album's artist credits
+      const artistName =
+        challenge.album.artists.map(a => a.artist.name).join(', ') ||
+        'Unknown Artist';
+
+      // Check for existing completed session
+      let existingResult = null;
+      const session = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId: user.id,
+          },
+        },
+        include: {
+          guesses: {
+            orderBy: { guessNumber: 'asc' },
+            include: {
+              guessedAlbum: {
+                select: {
+                  id: true,
+                  title: true,
+                  artists: {
+                    select: { artist: { select: { name: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (session && session.status !== 'IN_PROGRESS') {
+        existingResult = {
+          won: session.won,
+          attemptCount: session.attemptCount,
+          completedAt: session.completedAt,
+          guesses: session.guesses.map(g => ({
+            guessNumber: g.guessNumber,
+            albumId: g.guessedAlbumId,
+            albumTitle: g.guessedAlbum?.title ?? null,
+            artistName:
+              g.guessedAlbum?.artists.map(a => a.artist.name).join(', ') ??
+              null,
+            isCorrect: g.isCorrect,
+            isSkipped: g.guessedAlbumId === null,
+          })),
+        };
+      }
+
+      return {
+        challengeId: challenge.id,
+        date: challenge.date,
+        maxAttempts: challenge.maxAttempts,
+        imageUrl: challenge.album.cloudflareImageId
+          ? getImageUrl(challenge.album.cloudflareImageId)
+          : null,
+        cloudflareImageId: challenge.album.cloudflareImageId,
+        correctAlbumId: challenge.album.id,
+        correctAlbumTitle: challenge.album.title,
+        correctAlbumArtist: artistName,
+        correctAlbumCloudflareImageId: challenge.album.cloudflareImageId,
+        existingResult,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch daily puzzle:', { error });
+      throw new GraphQLError(`Failed to fetch daily puzzle: ${error}`);
+    }
+  },
+
+  archivePuzzle: async (_, { date }, { prisma, user }) => {
+    if (!user?.id) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    if (!date) {
+      throw new GraphQLError('Date is required for archive puzzles');
+    }
+
+    try {
+      const { getChallengeByDate } = await import(
+        '@/lib/daily-challenge/challenge-service'
+      );
+      const { getImageUrl } = await import('@/lib/cloudflare-images');
+
+      const challenge = await getChallengeByDate(new Date(date));
+      if (!challenge) return null;
+
+      const artistName =
+        challenge.album.artists.map(a => a.artist.name).join(', ') ||
+        'Unknown Artist';
+
+      // Check for existing completed session
+      let existingResult = null;
+      const session = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId: user.id,
+          },
+        },
+        include: {
+          guesses: {
+            orderBy: { guessNumber: 'asc' },
+            include: {
+              guessedAlbum: {
+                select: {
+                  id: true,
+                  title: true,
+                  artists: {
+                    select: { artist: { select: { name: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (session && session.status !== 'IN_PROGRESS') {
+        existingResult = {
+          won: session.won,
+          attemptCount: session.attemptCount,
+          completedAt: session.completedAt,
+          guesses: session.guesses.map(g => ({
+            guessNumber: g.guessNumber,
+            albumId: g.guessedAlbumId,
+            albumTitle: g.guessedAlbum?.title ?? null,
+            artistName:
+              g.guessedAlbum?.artists.map(a => a.artist.name).join(', ') ??
+              null,
+            isCorrect: g.isCorrect,
+            isSkipped: g.guessedAlbumId === null,
+          })),
+        };
+      }
+
+      return {
+        challengeId: challenge.id,
+        date: challenge.date,
+        maxAttempts: challenge.maxAttempts,
+        imageUrl: challenge.album.cloudflareImageId
+          ? getImageUrl(challenge.album.cloudflareImageId)
+          : null,
+        cloudflareImageId: challenge.album.cloudflareImageId,
+        correctAlbumId: challenge.album.id,
+        correctAlbumTitle: challenge.album.title,
+        correctAlbumArtist: artistName,
+        correctAlbumCloudflareImageId: challenge.album.cloudflareImageId,
+        existingResult,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch archive puzzle:', { error, date });
+      throw new GraphQLError(`Failed to fetch archive puzzle: ${error}`);
+    }
+  },
+
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

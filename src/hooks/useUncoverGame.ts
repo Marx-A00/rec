@@ -1,92 +1,192 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { useUncoverGameStore } from '@/stores/useUncoverGameStore';
+import type { Guess } from '@/stores/useUncoverGameStore';
 import {
-  useStartUncoverSessionMutation,
-  useSubmitGuessMutation,
-  useSkipGuessMutation,
+  useDailyPuzzleQuery,
+  useSubmitGameResultMutation,
+  UncoverGameMode,
 } from '@/generated/graphql';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
+import {
+  isCorrectGuess,
+  isGameOver as checkGameOver,
+  getGameResult,
+  isDuplicateGuess,
+  MAX_ATTEMPTS,
+  type ClientGuess,
+} from '@/lib/uncover/client-game-logic';
 
 /**
- * Coordination hook for Uncover game.
- * Connects GraphQL mutations with Zustand store updates.
+ * Coordination hook for Uncover game (client-side, Wordle-style).
  *
- * Responsibilities:
- * - Start session and sync to store
- * - Submit guess and update store
- * - Skip guess and update store
- * - Calculate reveal stage from attempt count
- * - Handle loading/error states
+ * Key differences from the old mutation-based hook:
+ * - Puzzle data (including correct answer) loads upfront via query
+ * - Guesses are validated instantly on the client
+ * - Server is notified once at game end (fire-and-forget)
+ * - Failed submissions are retried on next mount
  */
 export function useUncoverGame() {
   const { data: session, status: authStatus } = useSession();
   const gameStore = useUncoverGameStore();
 
-  // Local error state (in addition to store error)
   const [localError, setLocalError] = useState<string | null>(null);
+  const retryAttempted = useRef(false);
 
-  // GraphQL mutations
-  const startMutation = useStartUncoverSessionMutation();
-  const submitMutation = useSubmitGuessMutation();
-  const skipMutation = useSkipGuessMutation();
+  // Fetch puzzle data (includes correct answer)
+  const puzzleQuery = useDailyPuzzleQuery(
+    {},
+    { enabled: authStatus === 'authenticated' }
+  );
 
-  /**
-   * Start a new session for today's challenge.
-   * Syncs session and guesses to store.
-   * Returns challenge image info for RevealImage component.
-   */
+  const submitResultMutation = useSubmitGameResultMutation();
+
+  // Extract puzzle data
+  const puzzle = puzzleQuery.data?.dailyPuzzle;
+  const correctAlbumId = puzzle?.correctAlbumId ?? null;
+
+  // ----- Submit result to server (fire-and-forget) -----
+
+  const submitResultToServer = useCallback(
+    async (
+      challengeId: string,
+      guesses: Guess[],
+      won: boolean,
+      attemptCount: number
+    ) => {
+      try {
+        gameStore.setSubmitting(true);
+
+        const guessInputs = guesses.map((g, i) => ({
+          guessNumber: g.guessNumber ?? i + 1,
+          albumId: g.guessedAlbumId ?? null,
+          albumTitle: g.guessedText ?? null,
+          artistName: null as string | null,
+          isCorrect: g.isCorrect,
+          isSkipped: !g.guessedText && !g.guessedAlbumId,
+        }));
+
+        await submitResultMutation.mutateAsync({
+          input: {
+            challengeId,
+            guesses: guessInputs,
+            won,
+            attemptCount,
+            mode: UncoverGameMode.Daily,
+          },
+        });
+
+        gameStore.markResultSubmitted();
+      } catch (error) {
+        console.error(
+          '[useUncoverGame] Failed to submit result to server:',
+          error
+        );
+        // Don't mark as submitted — will retry on next mount
+      } finally {
+        gameStore.setSubmitting(false);
+      }
+    },
+    [gameStore, submitResultMutation]
+  );
+
+  // ----- Retry failed submissions on mount -----
+
+  useEffect(() => {
+    if (retryAttempted.current) return;
+
+    const { challengeId, status, resultSubmitted, guesses, won, attemptCount } =
+      gameStore;
+
+    if (
+      challengeId &&
+      (status === 'WON' || status === 'LOST') &&
+      !resultSubmitted
+    ) {
+      retryAttempted.current = true;
+      submitResultToServer(challengeId, guesses, won, attemptCount);
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ----- Start game -----
+
   const startGame = useCallback(async () => {
     try {
-      gameStore.setSubmitting(true);
       gameStore.clearError();
       setLocalError(null);
 
-      const result = await startMutation.mutateAsync({});
-
-      if (!result.startUncoverSession) {
-        throw new Error('Failed to start session');
+      // Wait for puzzle data if not yet loaded
+      let puzzleData = puzzle;
+      if (!puzzleData) {
+        const result = await puzzleQuery.refetch();
+        puzzleData = result.data?.dailyPuzzle;
       }
 
-      const {
-        session: sessionData,
-        imageUrl,
-        cloudflareImageId,
-        challengeId,
-      } = result.startUncoverSession;
+      if (!puzzleData) {
+        throw new Error('No puzzle available');
+      }
 
-      // Sync session to store
-      gameStore.setSession({
-        id: sessionData.id,
-        challengeId: challengeId,
-      });
+      // Check if server has an existing completed result
+      if (puzzleData.existingResult) {
+        const existing = puzzleData.existingResult;
 
-      // Sync guesses to store (for resumed sessions)
-      gameStore.clearGuesses();
-      sessionData.guesses.forEach(guess => {
-        gameStore.addGuess({
-          guessNumber: guess.guessNumber,
-          guessedText: guess.guessedText ?? null,
-          isCorrect: guess.isCorrect,
+        gameStore.setSession({
+          id: crypto.randomUUID(),
+          challengeId: puzzleData.challengeId,
+          mode: 'daily',
         });
-      });
 
-      // Update attempt count
-      gameStore.updateAttemptCount(sessionData.attemptCount);
+        // Restore guesses from server
+        gameStore.clearGuesses();
+        existing.guesses.forEach(g => {
+          gameStore.addGuess({
+            guessNumber: g.guessNumber,
+            guessedText: g.albumTitle ?? null,
+            isCorrect: g.isCorrect,
+            guessedAlbumId: g.albumId ?? undefined,
+          });
+        });
 
-      // Check if session is already completed (resumed session)
-      if (sessionData.status === 'WON') {
-        gameStore.endSession(true);
-      } else if (sessionData.status === 'LOST') {
-        gameStore.endSession(false);
+        gameStore.updateAttemptCount(existing.attemptCount);
+        gameStore.endSession(existing.won);
+        gameStore.markResultSubmitted();
+
+        return {
+          imageUrl: puzzleData.imageUrl ?? '',
+          cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
+        };
       }
+
+      // Check if localStorage has an in-progress session for this challenge
+      if (
+        gameStore.challengeId === puzzleData.challengeId &&
+        gameStore.status === 'IN_PROGRESS' &&
+        gameStore.sessionId
+      ) {
+        // Resume existing session — store already has the state
+        return {
+          imageUrl: puzzleData.imageUrl ?? '',
+          cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
+        };
+      }
+
+      // Fresh session
+      gameStore.setSession({
+        id: crypto.randomUUID(),
+        challengeId: puzzleData.challengeId,
+        mode: 'daily',
+      });
+      gameStore.clearGuesses();
+      gameStore.updateAttemptCount(0);
 
       return {
-        imageUrl,
-        cloudflareImageId: cloudflareImageId ?? undefined,
+        imageUrl: puzzleData.imageUrl ?? '',
+        cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
       };
     } catch (error) {
       const errorMessage =
@@ -94,132 +194,169 @@ export function useUncoverGame() {
       gameStore.setError(errorMessage);
       setLocalError(errorMessage);
       throw error;
-    } finally {
-      gameStore.setSubmitting(false);
     }
-  }, [gameStore, startMutation]);
+  }, [gameStore, puzzle, puzzleQuery]);
 
-  /**
-   * Submit a guess for the current session.
-   * Updates store with guess result and checks for game over.
-   */
+  // ----- Submit guess (instant) -----
+
   const submitGuess = useCallback(
     async (guessText: string, localAlbumId?: string) => {
-      if (!gameStore.sessionId) {
+      if (!gameStore.sessionId || !gameStore.challengeId) {
         throw new Error('No active session');
       }
-
-      try {
-        gameStore.setSubmitting(true);
-        gameStore.clearError();
-        setLocalError(null);
-
-        const result = await submitMutation.mutateAsync({
-          sessionId: gameStore.sessionId,
-          guessText,
-          albumId: localAlbumId,
-        });
-
-        if (!result.submitGuess) {
-          throw new Error('Failed to submit guess');
-        }
-
-        const { guess, session, gameOver } = result.submitGuess;
-
-        // Add guess to store
-        gameStore.addGuess({
-          guessNumber: guess.guessNumber,
-          guessedText: guess.guessedText ?? guessText,
-          isCorrect: guess.isCorrect,
-        });
-
-        // Update attempt count
-        gameStore.updateAttemptCount(session.attemptCount);
-
-        // End session if game over
-        if (gameOver) {
-          gameStore.endSession(session.won);
-        }
-
-        return {
-          isCorrect: guess.isCorrect,
-          gameOver,
-          won: session.won,
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to submit guess';
-        gameStore.setError(errorMessage);
-        setLocalError(errorMessage);
-        throw error;
-      } finally {
-        gameStore.setSubmitting(false);
+      if (!correctAlbumId) {
+        throw new Error('Puzzle data not loaded');
       }
-    },
-    [gameStore, submitMutation]
-  );
 
-  /**
-   * Skip the current guess.
-   * Counts as a wrong guess, advances reveal stage.
-   */
-  const skipGuess = useCallback(async () => {
-    if (!gameStore.sessionId) {
-      throw new Error('No active session');
-    }
-
-    try {
-      gameStore.setSubmitting(true);
       gameStore.clearError();
       setLocalError(null);
 
-      const result = await skipMutation.mutateAsync({
-        sessionId: gameStore.sessionId,
-      });
+      // Check for duplicate
+      if (localAlbumId) {
+        const clientGuesses: ClientGuess[] = gameStore.guesses.map(g => ({
+          guessNumber: g.guessNumber,
+          albumId: g.guessedAlbumId ?? null,
+          albumTitle: g.guessedText,
+          artistName: null,
+          isCorrect: g.isCorrect,
+          isSkipped: !g.guessedText && !g.guessedAlbumId,
+        }));
 
-      if (!result.skipGuess) {
-        throw new Error('Failed to skip guess');
+        if (isDuplicateGuess(localAlbumId, clientGuesses)) {
+          const msg = 'You have already guessed this album';
+          gameStore.setError(msg);
+          setLocalError(msg);
+          return { isCorrect: false, gameOver: false, won: false };
+        }
       }
 
-      const { guess, session, gameOver } = result.skipGuess;
+      // Check correctness instantly
+      const correct = localAlbumId
+        ? isCorrectGuess(localAlbumId, correctAlbumId)
+        : false;
 
-      // Add skip to store
+      const newGuessNumber = gameStore.guesses.length + 1;
+
+      // Add guess to store
       gameStore.addGuess({
-        guessNumber: guess.guessNumber,
-        guessedText: null,
-        isCorrect: false,
+        guessNumber: newGuessNumber,
+        guessedText: guessText,
+        isCorrect: correct,
+        guessedAlbumId: localAlbumId,
       });
 
-      // Update attempt count
-      gameStore.updateAttemptCount(session.attemptCount);
+      const newAttemptCount = gameStore.attemptCount + 1;
+      gameStore.updateAttemptCount(newAttemptCount);
 
-      // End session if game over
-      if (gameOver) {
-        gameStore.endSession(session.won);
+      // Calculate game result
+      const updatedGuesses: ClientGuess[] = [
+        ...gameStore.guesses.map(g => ({
+          guessNumber: g.guessNumber,
+          albumId: g.guessedAlbumId ?? null,
+          albumTitle: g.guessedText,
+          artistName: null,
+          isCorrect: g.isCorrect,
+          isSkipped: !g.guessedText && !g.guessedAlbumId,
+        })),
+        {
+          guessNumber: newGuessNumber,
+          albumId: localAlbumId ?? null,
+          albumTitle: guessText,
+          artistName: null,
+          isCorrect: correct,
+          isSkipped: false,
+        },
+      ];
+
+      const result = getGameResult(updatedGuesses, MAX_ATTEMPTS);
+
+      if (result.gameOver) {
+        gameStore.endSession(result.won);
+
+        // Fire-and-forget server submission
+        // Use the store's guesses which now include the new one
+        const allGuesses = [...gameStore.guesses];
+        submitResultToServer(
+          gameStore.challengeId,
+          allGuesses,
+          result.won,
+          newAttemptCount
+        );
       }
 
       return {
-        gameOver,
+        isCorrect: correct,
+        gameOver: result.gameOver,
+        won: result.won,
       };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to skip guess';
-      gameStore.setError(errorMessage);
-      setLocalError(errorMessage);
-      throw error;
-    } finally {
-      gameStore.setSubmitting(false);
-    }
-  }, [gameStore, skipMutation]);
+    },
+    [gameStore, correctAlbumId, submitResultToServer]
+  );
 
-  /**
-   * Calculate reveal stage from attempt count.
-   * Stages 1-4 are in-game (15% → 25% → 35% → 50%).
-   * Stage 5 (full reveal) = game over.
-   */
+  // ----- Skip guess (instant) -----
+
+  const skipGuess = useCallback(async () => {
+    if (!gameStore.sessionId || !gameStore.challengeId) {
+      throw new Error('No active session');
+    }
+
+    gameStore.clearError();
+    setLocalError(null);
+
+    const newGuessNumber = gameStore.guesses.length + 1;
+
+    // Add skip to store
+    gameStore.addGuess({
+      guessNumber: newGuessNumber,
+      guessedText: null,
+      isCorrect: false,
+    });
+
+    const newAttemptCount = gameStore.attemptCount + 1;
+    gameStore.updateAttemptCount(newAttemptCount);
+
+    // Calculate game result
+    const updatedGuesses: ClientGuess[] = [
+      ...gameStore.guesses.map(g => ({
+        guessNumber: g.guessNumber,
+        albumId: g.guessedAlbumId ?? null,
+        albumTitle: g.guessedText,
+        artistName: null,
+        isCorrect: g.isCorrect,
+        isSkipped: !g.guessedText && !g.guessedAlbumId,
+      })),
+      {
+        guessNumber: newGuessNumber,
+        albumId: null,
+        albumTitle: null,
+        artistName: null,
+        isCorrect: false,
+        isSkipped: true,
+      },
+    ];
+
+    const result = getGameResult(updatedGuesses, MAX_ATTEMPTS);
+
+    if (result.gameOver) {
+      gameStore.endSession(result.won);
+
+      const allGuesses = [...gameStore.guesses];
+      submitResultToServer(
+        gameStore.challengeId,
+        allGuesses,
+        result.won,
+        newAttemptCount
+      );
+    }
+
+    return { gameOver: result.gameOver };
+  }, [gameStore, submitResultToServer]);
+
+  // ----- Reveal stage -----
+
   const revealStage =
     gameStore.status === 'WON' || gameStore.status === 'LOST'
-      ? TOTAL_STAGES // Full reveal on game over
+      ? TOTAL_STAGES
       : Math.min(gameStore.attemptCount + 1, TOTAL_STAGES - 1);
 
   return {
@@ -236,8 +373,14 @@ export function useUncoverGame() {
     won: gameStore.won,
     guesses: gameStore.guesses,
 
+    // Puzzle data
+    correctAlbumId,
+    correctAlbumTitle: puzzle?.correctAlbumTitle ?? null,
+    correctAlbumArtist: puzzle?.correctAlbumArtist ?? null,
+
     // UI state
     isSubmitting: gameStore.isSubmitting,
+    isPuzzleLoading: puzzleQuery.isLoading,
     error: gameStore.error || localError,
 
     // Computed values

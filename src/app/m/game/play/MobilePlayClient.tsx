@@ -208,7 +208,6 @@ export function MobilePlayClient() {
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
               stage={game.revealStage}
-              isSubmitting={game.isSubmitting}
               className='h-full w-full overflow-hidden rounded-lg'
             />
           </div>
@@ -226,7 +225,6 @@ export function MobilePlayClient() {
           onGuess={game.submitGuess}
           onSkip={game.skipGuess}
           disabled={game.isGameOver}
-          isSubmitting={game.isSubmitting}
         />
       </div>
 

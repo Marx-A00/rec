@@ -76,7 +76,7 @@ export function ArchiveGame({
       setIsInitializing(true);
       try {
         const result = await game.startGame();
-        setChallengeImageUrl(result.imageUrl);
+        if (result) setChallengeImageUrl(result.imageUrl);
       } catch (error) {
         console.error('Failed to start archive game:', error);
       } finally {
@@ -265,7 +265,6 @@ export function ArchiveGame({
                 challengeId={game.challengeId}
                 stage={game.revealStage}
                 revealMode='regions'
-                isSubmitting={game.isSubmitting}
                 className='h-full w-full'
               />
             </div>
@@ -292,7 +291,6 @@ export function ArchiveGame({
             onGuess={game.submitGuess}
             onSkip={game.skipGuess}
             disabled={game.isGameOver}
-            isSubmitting={game.isSubmitting}
           />
         </div>
 

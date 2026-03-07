@@ -134,85 +134,6 @@ function transformSelectionsInput(input: {
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues
 // TODO: Fix GraphQL resolver return types to match generated types
 
-// ============================================================================
-// Uncover Game Helper Functions
-// ============================================================================
-
-/**
- * Format guess result for GraphQL response.
- * Shared between submitGuess and skipGuess resolvers.
- */
-interface GuessServiceResult {
-  guess: {
-    id: string;
-    guessNumber: number;
-    isCorrect: boolean;
-    guessedAt: Date;
-    guessedAlbumId: string | null;
-    guessedAlbum: {
-      id: string;
-      title: string;
-      cloudflareImageId: string | null;
-      artistName: string;
-    } | null;
-  };
-  session: {
-    id: string;
-    status: string;
-    attemptCount: number;
-    won: boolean;
-    startedAt: Date;
-    completedAt: Date | null;
-    guesses: Array<{
-      id: string;
-      guessNumber: number;
-      isCorrect: boolean;
-      guessedAt: Date;
-      guessedAlbumId: string | null;
-    }>;
-  };
-  gameOver: boolean;
-  correctAlbum: {
-    id: string;
-    title: string;
-    cloudflareImageId: string | null;
-    artistName: string;
-  } | null;
-}
-
-function formatGuessResult(result: GuessServiceResult) {
-  return {
-    guess: {
-      id: result.guess.id,
-      guessNumber: result.guess.guessNumber,
-      guessedText: result.guess.guessedText ?? null,
-      isSkipped: result.guess.guessedAlbumId === null,
-      isCorrect: result.guess.isCorrect,
-      guessedAt: result.guess.guessedAt,
-      guessedAlbum: result.guess.guessedAlbum,
-    },
-    session: {
-      id: result.session.id,
-      status: result.session.status,
-      attemptCount: result.session.attemptCount,
-      won: result.session.won,
-      startedAt: result.session.startedAt,
-      completedAt: result.session.completedAt,
-      guesses: result.session.guesses.map(guess => ({
-        id: guess.id,
-        guessNumber: guess.guessNumber,
-        guessedText: guess.guessedText ?? null,
-        isSkipped: guess.guessedAlbumId === null,
-        isCorrect: guess.isCorrect,
-        guessedAt: guess.guessedAt,
-        guessedAlbum: null, // Not needed — client uses the individual guess result
-      })),
-    },
-    gameOver: result.gameOver,
-    correctAlbum: result.correctAlbum,
-  };
-}
-
 export const mutationResolvers: MutationResolvers = {
   // Queue Management mutations
   pauseQueue: async (_, __, { user }) => {
@@ -3656,270 +3577,6 @@ export const mutationResolvers: MutationResolvers = {
   // ========================================================================
 
   /**
-   * Start a new session for today's challenge.
-   * Returns existing session if already started (no replay).
-   */
-  startUncoverSession: async (_, {}, { prisma, user }) => {
-    try {
-      // AUTH-01: Authentication required
-      if (!user?.id) {
-        throw new GraphQLError('Authentication required to play');
-      }
-
-      // Dynamic import to avoid circular dependencies
-      const { startSession } = await import('@/lib/uncover/game-service');
-
-      const result = await startSession(user.id, prisma);
-
-      graphqlLogger.info('Started/retrieved uncover session:', {
-        sessionId: result.session.id,
-        challengeId: result.challenge.id,
-        isNew: result.isNew,
-      });
-
-      return {
-        session: {
-          id: result.session.id,
-          status: result.session.status,
-          attemptCount: result.session.attemptCount,
-          won: result.session.won,
-          startedAt: result.session.startedAt,
-          completedAt: result.session.completedAt,
-          guesses: result.session.guesses.map(guess => ({
-            id: guess.id,
-            guessNumber: guess.guessNumber,
-            isSkipped: guess.guessedAlbumId === null,
-            isCorrect: guess.isCorrect,
-            guessedAt: guess.guessedAt,
-            guessedAlbum: guess.guessedAlbum
-              ? {
-                  id: guess.guessedAlbum.id,
-                  title: guess.guessedAlbum.title,
-                  cloudflareImageId: guess.guessedAlbum.cloudflareImageId,
-                  artistName:
-                    guess.guessedAlbum.artists?.[0]?.artist.name ??
-                    'Unknown Artist',
-                }
-              : null,
-          })),
-        },
-        challengeId: result.challenge.id,
-        imageUrl: result.challenge.album.cloudflareImageId
-          ? `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}/${result.challenge.album.cloudflareImageId}/public`
-          : '/album-placeholder.png',
-        cloudflareImageId: result.challenge.album.cloudflareImageId,
-      };
-    } catch (error) {
-      graphqlLogger.error('Failed to start uncover session:', { error });
-      if (error instanceof GraphQLError) throw error;
-
-      // Friendly user-facing message for no curated albums, but log the real error above
-      if (error instanceof Error && error.name === 'NoCuratedAlbumsError') {
-        throw new GraphQLError(
-          "Today's challenge isn't ready yet. Check back soon!",
-          {
-            extensions: {
-              code: 'NO_CHALLENGE_AVAILABLE',
-              reason: error.message,
-            },
-          }
-        );
-      }
-
-      throw new GraphQLError(`Failed to start session: ${error}`);
-    }
-  },
-
-  /**
-   * Submit a guess for the current session.
-   */
-  submitGuess: async (
-    _,
-    {
-      sessionId,
-      guessText,
-      albumId,
-      mode,
-    }: {
-      sessionId: string;
-      guessText: string;
-      albumId?: string | null;
-      mode?: string;
-    },
-    { prisma, user }
-  ) => {
-    try {
-      // AUTH-01: Authentication required
-      if (!user?.id) {
-        throw new GraphQLError('Authentication required to submit guess');
-      }
-
-      // Dynamic import to avoid circular dependencies
-      const { submitGuess } = await import('@/lib/uncover/game-service');
-
-      const result = await submitGuess(
-        sessionId,
-        guessText,
-        albumId ?? null,
-        user.id,
-        prisma,
-        mode || 'daily'
-      );
-
-      graphqlLogger.info('Submitted guess:', {
-        sessionId,
-        guessText,
-        albumId,
-        isCorrect: result.guess.isCorrect,
-        gameOver: result.gameOver,
-      });
-
-      return formatGuessResult(result);
-    } catch (error) {
-      graphqlLogger.error('Failed to submit guess:', {
-        error,
-        sessionId,
-        guessText,
-      });
-      throw error instanceof GraphQLError
-        ? error
-        : new GraphQLError(`Failed to submit guess: ${error}`);
-    }
-  },
-
-  /**
-   * Skip current guess (counts as wrong).
-   */
-  skipGuess: async (
-    _,
-    { sessionId, mode }: { sessionId: string; mode?: string },
-    { prisma, user }
-  ) => {
-    try {
-      // AUTH-01: Authentication required
-      if (!user?.id) {
-        throw new GraphQLError('Authentication required to skip guess');
-      }
-
-      // Dynamic import to avoid circular dependencies
-      const { skipGuess } = await import('@/lib/uncover/game-service');
-
-      const result = await skipGuess(
-        sessionId,
-        user.id,
-        prisma,
-        mode || 'daily'
-      );
-
-      graphqlLogger.info('Skipped guess:', {
-        sessionId,
-        gameOver: result.gameOver,
-      });
-
-      return formatGuessResult(result);
-    } catch (error) {
-      graphqlLogger.error('Failed to skip guess:', { error, sessionId });
-      throw error instanceof GraphQLError
-        ? error
-        : new GraphQLError(`Failed to skip guess: ${error}`);
-    }
-  },
-
-  /**
-   * Start an archive session for a specific date (not today).
-   */
-  startArchiveSession: async (
-    _,
-    { date }: { date: Date | string },
-    { prisma, user }
-  ) => {
-    try {
-      // AUTH-01: Authentication required
-      if (!user?.id) {
-        throw new GraphQLError('Authentication required to play archive');
-      }
-
-      // Dynamic imports
-      const { startArchiveSession } = await import(
-        '@/lib/uncover/game-service'
-      );
-      const { toUTCMidnight, GAME_EPOCH } = await import(
-        '@/lib/daily-challenge/date-utils'
-      );
-
-      // Parse and normalize date
-      const targetDate = toUTCMidnight(new Date(date));
-      const today = toUTCMidnight(new Date());
-
-      // Validate date range: must be >= GAME_EPOCH and < today
-      if (targetDate < GAME_EPOCH) {
-        throw new GraphQLError('Archive date must be on or after game epoch');
-      }
-      if (targetDate >= today) {
-        throw new GraphQLError(
-          'Archive date must be in the past (not today or future)'
-        );
-      }
-
-      const result = await startArchiveSession(user.id, targetDate, prisma);
-
-      graphqlLogger.info('Started/retrieved archive session:', {
-        sessionId: result.session.id,
-        challengeId: result.challenge.id,
-        challengeDate: targetDate.toISOString(),
-        isNew: result.isNew,
-      });
-
-      return {
-        session: {
-          id: result.session.id,
-          status: result.session.status,
-          attemptCount: result.session.attemptCount,
-          won: result.session.won,
-          startedAt: result.session.startedAt,
-          completedAt: result.session.completedAt,
-          guesses: result.session.guesses.map(guess => ({
-            id: guess.id,
-            guessNumber: guess.guessNumber,
-            isSkipped: guess.guessedAlbumId === null,
-            isCorrect: guess.isCorrect,
-            guessedAt: guess.guessedAt,
-            guessedAlbum: guess.guessedAlbum
-              ? {
-                  id: guess.guessedAlbum.id,
-                  title: guess.guessedAlbum.title,
-                  cloudflareImageId: guess.guessedAlbum.cloudflareImageId,
-                  artistName:
-                    guess.guessedAlbum.artists?.[0]?.artist.name ??
-                    'Unknown Artist',
-                }
-              : null,
-          })),
-        },
-        challengeId: result.challenge.id,
-        imageUrl: result.challenge.album.cloudflareImageId
-          ? process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH
-            ? 'https://imagedelivery.net/' +
-              process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH +
-              '/' +
-              result.challenge.album.cloudflareImageId +
-              '/public'
-            : '/album-placeholder.png'
-          : '/album-placeholder.png',
-        cloudflareImageId: result.challenge.album.cloudflareImageId,
-      };
-    } catch (error) {
-      graphqlLogger.error('Failed to start archive session:', {
-        error,
-        date,
-      });
-      throw error instanceof GraphQLError
-        ? error
-        : new GraphQLError('Failed to start archive session: ' + String(error));
-    }
-  },
-
-  /**
    * Reset today's daily session (admin only).
    * Deletes session + cascaded guesses so admin can replay.
    */
@@ -4409,6 +4066,299 @@ export const mutationResolvers: MutationResolvers = {
         error: `Failed to add album to queue: ${error}`,
         album: null,
         curatedChallenge: null,
+      };
+    }
+  },
+
+  // ---------------------------------------------------------------
+  // Client-side game model mutation (Wordle-style)
+  // ---------------------------------------------------------------
+
+  submitGameResult: async (_, { input }, { prisma, user }) => {
+    if (!user?.id) {
+      return {
+        success: false,
+        stats: null,
+        archiveStats: null,
+        error: 'Authentication required',
+      };
+    }
+
+    const { challengeId, guesses, won, attemptCount, mode } = input;
+
+    try {
+      // 1. Fetch the challenge to validate against
+      const challenge = await prisma.uncoverChallenge.findUnique({
+        where: { id: challengeId },
+      });
+
+      if (!challenge) {
+        return {
+          success: false,
+          stats: null,
+          archiveStats: null,
+          error: 'Challenge not found',
+        };
+      }
+
+      // 2. Validate input integrity
+      if (guesses.length !== attemptCount) {
+        return {
+          success: false,
+          stats: null,
+          archiveStats: null,
+          error: `Guess count (${guesses.length}) does not match attemptCount (${attemptCount})`,
+        };
+      }
+
+      if (attemptCount > challenge.maxAttempts) {
+        return {
+          success: false,
+          stats: null,
+          archiveStats: null,
+          error: `attemptCount (${attemptCount}) exceeds maxAttempts (${challenge.maxAttempts})`,
+        };
+      }
+
+      // Validate win/loss consistency
+      const hasCorrectGuess = guesses.some(
+        g => g.albumId && g.albumId === challenge.albumId
+      );
+
+      if (won && !hasCorrectGuess) {
+        return {
+          success: false,
+          stats: null,
+          archiveStats: null,
+          error: 'Claimed win but no guess matches the correct album',
+        };
+      }
+
+      if (!won && hasCorrectGuess) {
+        return {
+          success: false,
+          stats: null,
+          archiveStats: null,
+          error: 'Claimed loss but a guess matches the correct album',
+        };
+      }
+
+      // 3. Check idempotency — already completed session
+      const existingSession = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId,
+            userId: user.id,
+          },
+        },
+      });
+
+      if (existingSession && existingSession.status !== 'IN_PROGRESS') {
+        // Already completed — return existing stats without error
+        const { updatePlayerStats } = await import(
+          '@/lib/uncover/stats-service'
+        );
+        const { updateArchiveStats } = await import(
+          '@/lib/uncover/archive-stats-service'
+        );
+
+        const playerStats = await prisma.uncoverPlayerStats.findUnique({
+          where: { userId: user.id },
+        });
+        const archiveStatsRecord = await prisma.uncoverArchiveStats.findUnique({
+          where: { userId: user.id },
+        });
+
+        return {
+          success: true,
+          stats: playerStats
+            ? {
+                id: playerStats.id,
+                gamesPlayed: playerStats.gamesPlayed,
+                gamesWon: playerStats.gamesWon,
+                totalAttempts: playerStats.totalAttempts,
+                currentStreak: playerStats.currentStreak,
+                maxStreak: playerStats.maxStreak,
+                lastPlayedDate: playerStats.lastPlayedDate,
+                winDistribution: playerStats.winDistribution,
+                winRate:
+                  playerStats.gamesPlayed > 0
+                    ? (playerStats.gamesWon / playerStats.gamesPlayed) * 100
+                    : 0,
+              }
+            : null,
+          archiveStats:
+            mode === 'ARCHIVE' && archiveStatsRecord
+              ? {
+                  id: archiveStatsRecord.id,
+                  gamesPlayed: archiveStatsRecord.gamesPlayed,
+                  gamesWon: archiveStatsRecord.gamesWon,
+                  totalAttempts: archiveStatsRecord.totalAttempts,
+                  winDistribution: archiveStatsRecord.winDistribution,
+                  winRate:
+                    archiveStatsRecord.gamesPlayed > 0
+                      ? (archiveStatsRecord.gamesWon /
+                          archiveStatsRecord.gamesPlayed) *
+                        100
+                      : 0,
+                }
+              : null,
+          error: null,
+        };
+      }
+
+      // 4. Persist result in a transaction
+      const sessionStatus = won ? 'WON' : 'LOST';
+      const now = new Date();
+
+      await prisma.$transaction(async tx => {
+        // Upsert the session
+        const session = await tx.uncoverSession.upsert({
+          where: {
+            challengeId_userId: {
+              challengeId,
+              userId: user.id,
+            },
+          },
+          create: {
+            challengeId,
+            userId: user.id,
+            status: sessionStatus,
+            attemptCount,
+            won,
+            startedAt: now,
+            completedAt: now,
+          },
+          update: {
+            status: sessionStatus,
+            attemptCount,
+            won,
+            completedAt: now,
+          },
+        });
+
+        // Create guess records
+        for (const guess of guesses) {
+          await tx.uncoverGuess.create({
+            data: {
+              sessionId: session.id,
+              guessNumber: guess.guessNumber,
+              guessedText: guess.albumTitle,
+              guessedAlbumId: guess.albumId || null,
+              isCorrect: guess.isCorrect,
+              isSkipped: guess.isSkipped,
+              guessedAt: now,
+            },
+          });
+        }
+
+        // Update challenge aggregate stats
+        await tx.uncoverChallenge.update({
+          where: { id: challengeId },
+          data: {
+            totalPlays: { increment: 1 },
+          },
+        });
+
+        if (won) {
+          const currentChallenge = await tx.uncoverChallenge.findUnique({
+            where: { id: challengeId },
+          });
+
+          if (currentChallenge) {
+            const currentAvg = currentChallenge.avgAttempts || 0;
+            const currentWins = currentChallenge.totalWins;
+            const newTotalWins = currentWins + 1;
+            const newAvgAttempts =
+              currentWins === 0
+                ? attemptCount
+                : (currentAvg * currentWins + attemptCount) / newTotalWins;
+
+            await tx.uncoverChallenge.update({
+              where: { id: challengeId },
+              data: {
+                totalWins: newTotalWins,
+                avgAttempts: newAvgAttempts,
+              },
+            });
+          }
+        }
+      });
+
+      // 5. Update player/archive stats (outside transaction — idempotent)
+      const { updatePlayerStats } = await import('@/lib/uncover/stats-service');
+      const { updateArchiveStats } = await import(
+        '@/lib/uncover/archive-stats-service'
+      );
+
+      if (mode === 'DAILY') {
+        await updatePlayerStats(
+          { userId: user.id, won, attemptCount, challengeDate: challenge.date },
+          prisma
+        );
+      } else {
+        await updateArchiveStats(
+          { userId: user.id, won, attemptCount },
+          prisma
+        );
+      }
+
+      // 6. Fetch and return updated stats
+      const playerStats = await prisma.uncoverPlayerStats.findUnique({
+        where: { userId: user.id },
+      });
+      const archiveStatsRecord =
+        mode === 'ARCHIVE'
+          ? await prisma.uncoverArchiveStats.findUnique({
+              where: { userId: user.id },
+            })
+          : null;
+
+      return {
+        success: true,
+        stats: playerStats
+          ? {
+              id: playerStats.id,
+              gamesPlayed: playerStats.gamesPlayed,
+              gamesWon: playerStats.gamesWon,
+              totalAttempts: playerStats.totalAttempts,
+              currentStreak: playerStats.currentStreak,
+              maxStreak: playerStats.maxStreak,
+              lastPlayedDate: playerStats.lastPlayedDate,
+              winDistribution: playerStats.winDistribution,
+              winRate:
+                playerStats.gamesPlayed > 0
+                  ? (playerStats.gamesWon / playerStats.gamesPlayed) * 100
+                  : 0,
+            }
+          : null,
+        archiveStats: archiveStatsRecord
+          ? {
+              id: archiveStatsRecord.id,
+              gamesPlayed: archiveStatsRecord.gamesPlayed,
+              gamesWon: archiveStatsRecord.gamesWon,
+              totalAttempts: archiveStatsRecord.totalAttempts,
+              winDistribution: archiveStatsRecord.winDistribution,
+              winRate:
+                archiveStatsRecord.gamesPlayed > 0
+                  ? (archiveStatsRecord.gamesWon /
+                      archiveStatsRecord.gamesPlayed) *
+                    100
+                  : 0,
+            }
+          : null,
+        error: null,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to submit game result:', {
+        error,
+        challengeId,
+      });
+      return {
+        success: false,
+        stats: null,
+        archiveStats: null,
+        error: `Failed to submit game result: ${error}`,
       };
     }
   },

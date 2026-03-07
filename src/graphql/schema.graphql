@@ -2535,6 +2535,18 @@ type Query {
   """
   dailyChallenge(date: DateTime): DailyChallengeInfo!
 
+  """
+  Get today's puzzle with full answer data (Wordle-style, client-side validation).
+  Requires authentication. Returns null if no challenge exists.
+  """
+  dailyPuzzle: DailyPuzzle
+
+  """
+  Get an archive puzzle by date with full answer data (Wordle-style).
+  Requires authentication. Returns null if no challenge exists for that date.
+  """
+  archivePuzzle(date: DateTime!): ArchivePuzzle
+
   "Get current user's Uncover game stats (requires auth)"
   myUncoverStats: UncoverPlayerStats
 
@@ -2667,29 +2679,6 @@ type UncoverGuessInfo {
   isSkipped: Boolean!
   isCorrect: Boolean!
   guessedAt: DateTime!
-}
-
-"""
-Result of starting a new session
-"""
-type StartSessionResult {
-  session: UncoverSessionInfo!
-  challengeId: UUID!
-  imageUrl: String!
-  cloudflareImageId: String
-}
-
-"""
-Result of submitting a guess or skipping
-"""
-type GuessResult {
-  guess: UncoverGuessInfo!
-  session: UncoverSessionInfo!
-  gameOver: Boolean!
-  """
-  Only populated when gameOver is true - the correct answer
-  """
-  correctAlbum: UncoverGuessAlbumInfo
 }
 
 """
@@ -2856,48 +2845,120 @@ type AddAlbumToQueueResult {
 }
 
 # =============================================
-# DAILY CHALLENGE TYPES
+# CLIENT-SIDE GAME MODEL TYPES (Wordle-style)
 # =============================================
+# These types support the client-side game architecture where puzzle data
+# (including the correct answer) is loaded upfront for instant responsiveness.
+# Old types above are preserved for backward compatibility.
 
 """
-Daily challenge info - does NOT include the answer album
+Game mode enum for distinguishing daily vs archive play
 """
-type DailyChallengeInfo {
-  id: UUID!
+enum UncoverGameMode {
+  DAILY
+  ARCHIVE
+}
+
+"""
+Daily puzzle with full answer data loaded upfront (Wordle-style).
+The correct answer is exposed to the client for instant validation.
+"""
+type DailyPuzzle {
+  challengeId: UUID!
   date: DateTime!
   maxAttempts: Int!
-  totalPlays: Int!
-  totalWins: Int!
-  avgAttempts: Float
 
-  """
-  Challenge album cover image URL (safe to expose - doesn't reveal the answer)
-  """
+  "Challenge album cover image URL"
   imageUrl: String
   cloudflareImageId: String
 
-  """
-  User's session for this challenge (null if not started or not authenticated)
-  """
-  mySession: UncoverSessionInfo
+  "Correct answer - exposed to client for instant game responsiveness"
+  correctAlbumId: UUID!
+  correctAlbumTitle: String!
+  correctAlbumArtist: String!
+  correctAlbumCloudflareImageId: String
+
+  "User's existing result for this puzzle (null if not played)"
+  existingResult: GameResult
 }
 
 """
-User's session info for a daily challenge
+Archive puzzle - same structure as DailyPuzzle for past dates
 """
-type UncoverSessionInfo {
-  id: UUID!
-  status: UncoverSessionStatus!
-  attemptCount: Int!
+type ArchivePuzzle {
+  challengeId: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+
+  "Challenge album cover image URL"
+  imageUrl: String
+  cloudflareImageId: String
+
+  "Correct answer - exposed to client for instant game responsiveness"
+  correctAlbumId: UUID!
+  correctAlbumTitle: String!
+  correctAlbumArtist: String!
+  correctAlbumCloudflareImageId: String
+
+  "User's existing result for this puzzle (null if not played)"
+  existingResult: GameResult
+}
+
+"""
+Completed game result (from a previous play session)
+"""
+type GameResult {
   won: Boolean!
-  startedAt: DateTime!
-  completedAt: DateTime
+  attemptCount: Int!
+  guesses: [GameResultGuess!]!
+  completedAt: DateTime!
 }
 
-enum UncoverSessionStatus {
-  IN_PROGRESS
-  WON
-  LOST
+"""
+Individual guess within a completed game result
+"""
+type GameResultGuess {
+  guessNumber: Int!
+  albumId: UUID
+  albumTitle: String
+  artistName: String
+  isCorrect: Boolean!
+  isSkipped: Boolean!
+}
+
+"""
+Input for submitting a completed game result to the server
+"""
+input SubmitGameResultInput {
+  challengeId: UUID!
+  guesses: [GameResultGuessInput!]!
+  won: Boolean!
+  attemptCount: Int!
+  mode: UncoverGameMode!
+}
+
+"""
+Individual guess input for game result submission
+"""
+input GameResultGuessInput {
+  guessNumber: Int!
+  albumId: UUID
+  albumTitle: String
+  artistName: String
+  isCorrect: Boolean!
+  isSkipped: Boolean!
+}
+
+"""
+Response after submitting a game result
+"""
+type SubmitGameResultResponse {
+  success: Boolean!
+  "Updated daily stats (returned for both modes)"
+  stats: UncoverPlayerStats
+  "Updated archive stats (only returned for ARCHIVE mode)"
+  archiveStats: UncoverArchiveStats
+  error: String
 }
 
 
@@ -3117,33 +3178,19 @@ type Mutation {
   updateUncoverSettings(selectionMode: String, poolExhaustedMode: String): UncoverSettings!
 
   # Uncover Game mutations
-  """
-  Start a new session for today's challenge (requires auth).
-  Returns existing session if already started.
-  """
-  startUncoverSession: StartSessionResult!
-
-  """
-  Submit a guess for the current session (requires auth).
-  """
-  submitGuess(sessionId: UUID!, guessText: String!, albumId: UUID, mode: String): GuessResult!
-
-  """
-  Skip current guess - counts as wrong guess (requires auth).
-  """
-  skipGuess(sessionId: UUID!, mode: String): GuessResult!
-
-  """
-  Start an archive session for a specific date (not today).
-  Used for playing past puzzles.
-  """
-  startArchiveSession(date: DateTime!): StartSessionResult!
 
   """
   Reset today's daily session (admin only).
   Deletes the session and its guesses so the admin can replay.
   """
   resetDailySession: Boolean!
+
+  """
+  Submit a completed game result (client-side game model).
+  Validates the result server-side and persists session + guesses.
+  Idempotent - re-submitting returns existing stats without error.
+  """
+  submitGameResult(input: SubmitGameResultInput!): SubmitGameResultResponse!
 }
 
 type FollowUserPayload {

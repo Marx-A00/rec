@@ -54,7 +54,7 @@ export function MobileArchivePlayClient({
       setIsInitializing(true);
       try {
         const result = await startGameRef.current();
-        if (!cancelled) setChallengeImageUrl(result.imageUrl);
+        if (!cancelled && result) setChallengeImageUrl(result.imageUrl);
       } catch (error) {
         console.error('Failed to start archive game:', error);
       } finally {
@@ -224,7 +224,6 @@ export function MobileArchivePlayClient({
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
               stage={game.revealStage}
-              isSubmitting={game.isSubmitting}
               className='h-full w-full overflow-hidden rounded-lg'
             />
           </div>
@@ -242,7 +241,6 @@ export function MobileArchivePlayClient({
           onGuess={game.submitGuess}
           onSkip={game.skipGuess}
           disabled={game.isGameOver}
-          isSubmitting={game.isSubmitting}
         />
       </div>
 

@@ -555,7 +555,6 @@ export function UncoverGame() {
                 challengeId={game.challengeId}
                 stage={devStageOverride ?? game.revealStage}
                 revealMode='regions'
-                isSubmitting={game.isSubmitting}
                 className='h-full w-full'
               />
             </div>
@@ -579,7 +578,6 @@ export function UncoverGame() {
             onGuess={game.submitGuess}
             onSkip={game.skipGuess}
             disabled={game.isGameOver}
-            isSubmitting={game.isSubmitting}
           />
         </div>
 

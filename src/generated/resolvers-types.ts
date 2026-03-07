@@ -298,6 +298,24 @@ export enum ApplyErrorCode {
   ValidationError = 'VALIDATION_ERROR',
 }
 
+/** Archive puzzle - same structure as DailyPuzzle for past dates */
+export type ArchivePuzzle = {
+  __typename?: 'ArchivePuzzle';
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  correctAlbumArtist: Scalars['String']['output'];
+  correctAlbumCloudflareImageId?: Maybe<Scalars['String']['output']>;
+  /** Correct answer - exposed to client for instant game responsiveness */
+  correctAlbumId: Scalars['UUID']['output'];
+  correctAlbumTitle: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  /** User's existing result for this puzzle (null if not played) */
+  existingResult?: Maybe<GameResult>;
+  /** Challenge album cover image URL */
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  maxAttempts: Scalars['Int']['output'];
+};
+
 /** Diff for array fields (genres, secondaryTypes, etc.) */
 export type ArrayDiff = {
   __typename?: 'ArrayDiff';
@@ -947,6 +965,27 @@ export type DailyChallengeInfo = {
   totalWins: Scalars['Int']['output'];
 };
 
+/**
+ * Daily puzzle with full answer data loaded upfront (Wordle-style).
+ * The correct answer is exposed to the client for instant validation.
+ */
+export type DailyPuzzle = {
+  __typename?: 'DailyPuzzle';
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  correctAlbumArtist: Scalars['String']['output'];
+  correctAlbumCloudflareImageId?: Maybe<Scalars['String']['output']>;
+  /** Correct answer - exposed to client for instant game responsiveness */
+  correctAlbumId: Scalars['UUID']['output'];
+  correctAlbumTitle: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  /** User's existing result for this puzzle (null if not played) */
+  existingResult?: Maybe<GameResult>;
+  /** Challenge album cover image URL */
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  maxAttempts: Scalars['Int']['output'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -1166,6 +1205,36 @@ export type GamePoolStats = {
   totalWithCoverArt: Scalars['Int']['output'];
 };
 
+/** Completed game result (from a previous play session) */
+export type GameResult = {
+  __typename?: 'GameResult';
+  attemptCount: Scalars['Int']['output'];
+  completedAt: Scalars['DateTime']['output'];
+  guesses: Array<GameResultGuess>;
+  won: Scalars['Boolean']['output'];
+};
+
+/** Individual guess within a completed game result */
+export type GameResultGuess = {
+  __typename?: 'GameResultGuess';
+  albumId?: Maybe<Scalars['UUID']['output']>;
+  albumTitle?: Maybe<Scalars['String']['output']>;
+  artistName?: Maybe<Scalars['String']['output']>;
+  guessNumber: Scalars['Int']['output'];
+  isCorrect: Scalars['Boolean']['output'];
+  isSkipped: Scalars['Boolean']['output'];
+};
+
+/** Individual guess input for game result submission */
+export type GameResultGuessInput = {
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  albumTitle?: InputMaybe<Scalars['String']['input']>;
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  guessNumber: Scalars['Int']['input'];
+  isCorrect: Scalars['Boolean']['input'];
+  isSkipped: Scalars['Boolean']['input'];
+};
+
 /**
  * A group of related search results (same release group MBID).
  * Groups releases like "OK Computer" regular vs deluxe editions.
@@ -1182,16 +1251,6 @@ export type GroupedSearchResult = {
   releaseGroupMbid: Scalars['String']['output'];
   /** Total number of versions in this group */
   versionCount: Scalars['Int']['output'];
-};
-
-/** Result of submitting a guess or skipping */
-export type GuessResult = {
-  __typename?: 'GuessResult';
-  /** Only populated when gameOver is true - the correct answer */
-  correctAlbum?: Maybe<UncoverGuessAlbumInfo>;
-  gameOver: Scalars['Boolean']['output'];
-  guess: UncoverGuessInfo;
-  session: UncoverSessionInfo;
 };
 
 export type HealthComponents = {
@@ -1504,21 +1563,13 @@ export type Mutation = {
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
-  /** Skip current guess - counts as wrong guess (requires auth). */
-  skipGuess: GuessResult;
   softDeleteUser: DeleteUserPayload;
   /**
-   * Start an archive session for a specific date (not today).
-   * Used for playing past puzzles.
+   * Submit a completed game result (client-side game model).
+   * Validates the result server-side and persists session + guesses.
+   * Idempotent - re-submitting returns existing stats without error.
    */
-  startArchiveSession: StartSessionResult;
-  /**
-   * Start a new session for today's challenge (requires auth).
-   * Returns existing session if already started.
-   */
-  startUncoverSession: StartSessionResult;
-  /** Submit a guess for the current session (requires auth). */
-  submitGuess: GuessResult;
+  submitGameResult: SubmitGameResultResponse;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
@@ -1698,24 +1749,12 @@ export type MutationRollbackSyncJobArgs = {
   syncJobId: Scalars['UUID']['input'];
 };
 
-export type MutationSkipGuessArgs = {
-  mode?: InputMaybe<Scalars['String']['input']>;
-  sessionId: Scalars['UUID']['input'];
-};
-
 export type MutationSoftDeleteUserArgs = {
   userId: Scalars['String']['input'];
 };
 
-export type MutationStartArchiveSessionArgs = {
-  date: Scalars['DateTime']['input'];
-};
-
-export type MutationSubmitGuessArgs = {
-  albumId?: InputMaybe<Scalars['UUID']['input']>;
-  guessText: Scalars['String']['input'];
-  mode?: InputMaybe<Scalars['String']['input']>;
-  sessionId: Scalars['UUID']['input'];
+export type MutationSubmitGameResultArgs = {
+  input: SubmitGameResultInput;
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
@@ -1893,6 +1932,11 @@ export type Query = {
   albumTracks: Array<Track>;
   albumsByGameStatus: Array<Album>;
   albumsByJobId: Array<Album>;
+  /**
+   * Get an archive puzzle by date with full answer data (Wordle-style).
+   * Requires authentication. Returns null if no challenge exists for that date.
+   */
+  archivePuzzle?: Maybe<ArchivePuzzle>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   /** Generate a preview of changes between artist and selected MusicBrainz or Discogs artist */
@@ -1917,6 +1961,11 @@ export type Query = {
    * Does NOT expose the answer album - that would spoil the game!
    */
   dailyChallenge: DailyChallengeInfo;
+  /**
+   * Get today's puzzle with full answer data (Wordle-style, client-side validation).
+   * Requires authentication. Returns null if no challenge exists.
+   */
+  dailyPuzzle?: Maybe<DailyPuzzle>;
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
@@ -2016,6 +2065,10 @@ export type QueryAlbumsByGameStatusArgs = {
 
 export type QueryAlbumsByJobIdArgs = {
   jobId: Scalars['String']['input'];
+};
+
+export type QueryArchivePuzzleArgs = {
+  date: Scalars['DateTime']['input'];
 };
 
 export type QueryArtistArgs = {
@@ -2614,13 +2667,24 @@ export type SpotifyTrendingData = {
   topCharts: Array<SpotifyTopChart>;
 };
 
-/** Result of starting a new session */
-export type StartSessionResult = {
-  __typename?: 'StartSessionResult';
-  challengeId: Scalars['UUID']['output'];
-  cloudflareImageId?: Maybe<Scalars['String']['output']>;
-  imageUrl: Scalars['String']['output'];
-  session: UncoverSessionInfo;
+/** Input for submitting a completed game result to the server */
+export type SubmitGameResultInput = {
+  attemptCount: Scalars['Int']['input'];
+  challengeId: Scalars['UUID']['input'];
+  guesses: Array<GameResultGuessInput>;
+  mode: UncoverGameMode;
+  won: Scalars['Boolean']['input'];
+};
+
+/** Response after submitting a game result */
+export type SubmitGameResultResponse = {
+  __typename?: 'SubmitGameResultResponse';
+  /** Updated archive stats (only returned for ARCHIVE mode) */
+  archiveStats?: Maybe<UncoverArchiveStats>;
+  error?: Maybe<Scalars['String']['output']>;
+  /** Updated daily stats (returned for both modes) */
+  stats?: Maybe<UncoverPlayerStats>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type Subscription = {
@@ -2891,6 +2955,12 @@ export type UncoverArchiveStats = {
   /** Computed: gamesWon / gamesPlayed (0 if no games) */
   winRate: Scalars['Float']['output'];
 };
+
+/** Game mode enum for distinguishing daily vs archive play */
+export enum UncoverGameMode {
+  Archive = 'ARCHIVE',
+  Daily = 'DAILY',
+}
 
 /** Album info for guess display (minimal, safe to expose) */
 export type UncoverGuessAlbumInfo = {
@@ -3290,6 +3360,7 @@ export type ResolversTypes = ResolversObject<{
   AppliedChanges: ResolverTypeWrapper<AppliedChanges>;
   AppliedTrackChanges: ResolverTypeWrapper<AppliedTrackChanges>;
   ApplyErrorCode: ApplyErrorCode;
+  ArchivePuzzle: ResolverTypeWrapper<ArchivePuzzle>;
   ArrayDiff: ResolverTypeWrapper<ArrayDiff>;
   Artist: ResolverTypeWrapper<Artist>;
   ArtistAlbumInput: ArtistAlbumInput;
@@ -3343,6 +3414,7 @@ export type ResolversTypes = ResolversObject<{
   CreateRecommendationWithAlbumsInput: CreateRecommendationWithAlbumsInput;
   CuratedChallengeEntry: ResolverTypeWrapper<CuratedChallengeEntry>;
   DailyChallengeInfo: ResolverTypeWrapper<DailyChallengeInfo>;
+  DailyPuzzle: ResolverTypeWrapper<DailyPuzzle>;
   DataQuality: DataQuality;
   DataSource: DataSource;
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
@@ -3370,8 +3442,10 @@ export type ResolversTypes = ResolversObject<{
   FollowUserPayload: ResolverTypeWrapper<FollowUserPayload>;
   GameAlbumResult: ResolverTypeWrapper<GameAlbumResult>;
   GamePoolStats: ResolverTypeWrapper<GamePoolStats>;
+  GameResult: ResolverTypeWrapper<GameResult>;
+  GameResultGuess: ResolverTypeWrapper<GameResultGuess>;
+  GameResultGuessInput: GameResultGuessInput;
   GroupedSearchResult: ResolverTypeWrapper<GroupedSearchResult>;
-  GuessResult: ResolverTypeWrapper<GuessResult>;
   HealthComponents: ResolverTypeWrapper<HealthComponents>;
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
   HealthStatus: HealthStatus;
@@ -3435,8 +3509,9 @@ export type ResolversTypes = ResolversObject<{
   SpotifyTopChart: ResolverTypeWrapper<SpotifyTopChart>;
   SpotifyTrack: ResolverTypeWrapper<SpotifyTrack>;
   SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
-  StartSessionResult: ResolverTypeWrapper<StartSessionResult>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  SubmitGameResultInput: SubmitGameResultInput;
+  SubmitGameResultResponse: ResolverTypeWrapper<SubmitGameResultResponse>;
   Subscription: ResolverTypeWrapper<{}>;
   SyncJob: ResolverTypeWrapper<SyncJob>;
   SyncJobStatus: SyncJobStatus;
@@ -3459,6 +3534,7 @@ export type ResolversTypes = ResolversObject<{
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
   UncoverArchiveStats: ResolverTypeWrapper<UncoverArchiveStats>;
+  UncoverGameMode: UncoverGameMode;
   UncoverGuessAlbumInfo: ResolverTypeWrapper<UncoverGuessAlbumInfo>;
   UncoverGuessInfo: ResolverTypeWrapper<UncoverGuessInfo>;
   UncoverPlayerStats: ResolverTypeWrapper<UncoverPlayerStats>;
@@ -3505,6 +3581,7 @@ export type ResolversParentTypes = ResolversObject<{
   AppliedArtistChanges: AppliedArtistChanges;
   AppliedChanges: AppliedChanges;
   AppliedTrackChanges: AppliedTrackChanges;
+  ArchivePuzzle: ArchivePuzzle;
   ArrayDiff: ArrayDiff;
   Artist: Artist;
   ArtistAlbumInput: ArtistAlbumInput;
@@ -3552,6 +3629,7 @@ export type ResolversParentTypes = ResolversObject<{
   CreateRecommendationWithAlbumsInput: CreateRecommendationWithAlbumsInput;
   CuratedChallengeEntry: CuratedChallengeEntry;
   DailyChallengeInfo: DailyChallengeInfo;
+  DailyPuzzle: DailyPuzzle;
   DatabaseStats: DatabaseStats;
   DateComponentChanges: DateComponentChanges;
   DateComponents: DateComponents;
@@ -3573,8 +3651,10 @@ export type ResolversParentTypes = ResolversObject<{
   FollowUserPayload: FollowUserPayload;
   GameAlbumResult: GameAlbumResult;
   GamePoolStats: GamePoolStats;
+  GameResult: GameResult;
+  GameResultGuess: GameResultGuess;
+  GameResultGuessInput: GameResultGuessInput;
   GroupedSearchResult: GroupedSearchResult;
-  GuessResult: GuessResult;
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
   ID: Scalars['ID']['output'];
@@ -3626,8 +3706,9 @@ export type ResolversParentTypes = ResolversObject<{
   SpotifyTopChart: SpotifyTopChart;
   SpotifyTrack: SpotifyTrack;
   SpotifyTrendingData: SpotifyTrendingData;
-  StartSessionResult: StartSessionResult;
   String: Scalars['String']['output'];
+  SubmitGameResultInput: SubmitGameResultInput;
+  SubmitGameResultResponse: SubmitGameResultResponse;
   Subscription: {};
   SyncJob: SyncJob;
   SyncJobsConnection: SyncJobsConnection;
@@ -4033,6 +4114,44 @@ export type AppliedTrackChangesResolvers<
   added?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   modified?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   removed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArchivePuzzleResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArchivePuzzle'] = ResolversParentTypes['ArchivePuzzle'],
+> = ResolversObject<{
+  challengeId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  correctAlbumArtist?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
+  correctAlbumCloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  correctAlbumId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  correctAlbumTitle?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  existingResult?: Resolver<
+    Maybe<ResolversTypes['GameResult']>,
+    ParentType,
+    ContextType
+  >;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4828,6 +4947,44 @@ export type DailyChallengeInfoResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type DailyPuzzleResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DailyPuzzle'] = ResolversParentTypes['DailyPuzzle'],
+> = ResolversObject<{
+  challengeId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  correctAlbumArtist?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
+  correctAlbumCloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  correctAlbumId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  correctAlbumTitle?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  existingResult?: Resolver<
+    Maybe<ResolversTypes['GameResult']>,
+    ParentType,
+    ContextType
+  >;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type DatabaseStatsResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5112,6 +5269,44 @@ export type GamePoolStatsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type GameResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['GameResult'] = ResolversParentTypes['GameResult'],
+> = ResolversObject<{
+  attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  completedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  guesses?: Resolver<
+    Array<ResolversTypes['GameResultGuess']>,
+    ParentType,
+    ContextType
+  >;
+  won?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type GameResultGuessResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['GameResultGuess'] = ResolversParentTypes['GameResultGuess'],
+> = ResolversObject<{
+  albumId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  albumTitle?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  artistName?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  guessNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isCorrect?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isSkipped?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type GroupedSearchResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5134,26 +5329,6 @@ export type GroupedSearchResultResolvers<
     ContextType
   >;
   versionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type GuessResultResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['GuessResult'] = ResolversParentTypes['GuessResult'],
-> = ResolversObject<{
-  correctAlbum?: Resolver<
-    Maybe<ResolversTypes['UncoverGuessAlbumInfo']>,
-    ParentType,
-    ContextType
-  >;
-  gameOver?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  guess?: Resolver<ResolversTypes['UncoverGuessInfo'], ParentType, ContextType>;
-  session?: Resolver<
-    ResolversTypes['UncoverSessionInfo'],
-    ParentType,
-    ContextType
-  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5661,34 +5836,17 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationRollbackSyncJobArgs, 'dryRun' | 'syncJobId'>
   >;
-  skipGuess?: Resolver<
-    ResolversTypes['GuessResult'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationSkipGuessArgs, 'sessionId'>
-  >;
   softDeleteUser?: Resolver<
     ResolversTypes['DeleteUserPayload'],
     ParentType,
     ContextType,
     RequireFields<MutationSoftDeleteUserArgs, 'userId'>
   >;
-  startArchiveSession?: Resolver<
-    ResolversTypes['StartSessionResult'],
+  submitGameResult?: Resolver<
+    ResolversTypes['SubmitGameResultResponse'],
     ParentType,
     ContextType,
-    RequireFields<MutationStartArchiveSessionArgs, 'date'>
-  >;
-  startUncoverSession?: Resolver<
-    ResolversTypes['StartSessionResult'],
-    ParentType,
-    ContextType
-  >;
-  submitGuess?: Resolver<
-    ResolversTypes['GuessResult'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationSubmitGuessArgs, 'guessText' | 'sessionId'>
+    RequireFields<MutationSubmitGameResultArgs, 'input'>
   >;
   triggerAlbumEnrichment?: Resolver<
     ResolversTypes['EnrichmentResult'],
@@ -5970,6 +6128,12 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryAlbumsByJobIdArgs, 'jobId'>
   >;
+  archivePuzzle?: Resolver<
+    Maybe<ResolversTypes['ArchivePuzzle']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryArchivePuzzleArgs, 'date'>
+  >;
   artist?: Resolver<
     Maybe<ResolversTypes['Artist']>,
     ParentType,
@@ -6052,6 +6216,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     Partial<QueryDailyChallengeArgs>
+  >;
+  dailyPuzzle?: Resolver<
+    Maybe<ResolversTypes['DailyPuzzle']>,
+    ParentType,
+    ContextType
   >;
   databaseStats?: Resolver<
     ResolversTypes['DatabaseStats'],
@@ -6824,23 +6993,23 @@ export type SpotifyTrendingDataResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type StartSessionResultResolvers<
+export type SubmitGameResultResponseResolvers<
   ContextType = GraphQLContext,
   ParentType extends
-    ResolversParentTypes['StartSessionResult'] = ResolversParentTypes['StartSessionResult'],
+    ResolversParentTypes['SubmitGameResultResponse'] = ResolversParentTypes['SubmitGameResultResponse'],
 > = ResolversObject<{
-  challengeId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  cloudflareImageId?: Resolver<
-    Maybe<ResolversTypes['String']>,
+  archiveStats?: Resolver<
+    Maybe<ResolversTypes['UncoverArchiveStats']>,
     ParentType,
     ContextType
   >;
-  imageUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  session?: Resolver<
-    ResolversTypes['UncoverSessionInfo'],
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  stats?: Resolver<
+    Maybe<ResolversTypes['UncoverPlayerStats']>,
     ParentType,
     ContextType
   >;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -7688,6 +7857,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AppliedArtistChanges?: AppliedArtistChangesResolvers<ContextType>;
   AppliedChanges?: AppliedChangesResolvers<ContextType>;
   AppliedTrackChanges?: AppliedTrackChangesResolvers<ContextType>;
+  ArchivePuzzle?: ArchivePuzzleResolvers<ContextType>;
   ArrayDiff?: ArrayDiffResolvers<ContextType>;
   Artist?: ArtistResolvers<ContextType>;
   ArtistAppliedChanges?: ArtistAppliedChangesResolvers<ContextType>;
@@ -7722,6 +7892,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CreateRecommendationPayload?: CreateRecommendationPayloadResolvers<ContextType>;
   CuratedChallengeEntry?: CuratedChallengeEntryResolvers<ContextType>;
   DailyChallengeInfo?: DailyChallengeInfoResolvers<ContextType>;
+  DailyPuzzle?: DailyPuzzleResolvers<ContextType>;
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateComponentChanges?: DateComponentChangesResolvers<ContextType>;
   DateComponents?: DateComponentsResolvers<ContextType>;
@@ -7740,8 +7911,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
   GameAlbumResult?: GameAlbumResultResolvers<ContextType>;
   GamePoolStats?: GamePoolStatsResolvers<ContextType>;
+  GameResult?: GameResultResolvers<ContextType>;
+  GameResultGuess?: GameResultGuessResolvers<ContextType>;
   GroupedSearchResult?: GroupedSearchResultResolvers<ContextType>;
-  GuessResult?: GuessResultResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
   HealthMetrics?: HealthMetricsResolvers<ContextType>;
   JSON?: GraphQLScalarType;
@@ -7786,7 +7958,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SpotifyTopChart?: SpotifyTopChartResolvers<ContextType>;
   SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
   SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
-  StartSessionResult?: StartSessionResultResolvers<ContextType>;
+  SubmitGameResultResponse?: SubmitGameResultResponseResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   SyncJob?: SyncJobResolvers<ContextType>;
   SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;

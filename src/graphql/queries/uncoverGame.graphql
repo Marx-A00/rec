@@ -5,82 +5,84 @@
 # FRAGMENTS
 # ============================================
 
-fragment UncoverGuessAlbumFields on UncoverGuessAlbumInfo {
-  id
-  title
-  cloudflareImageId
-  artistName
-}
-
-fragment UncoverGuessFields on UncoverGuessInfo {
-  id
+fragment GameResultGuessFields on GameResultGuess {
   guessNumber
-  guessedText
-  guessedAlbum {
-    ...UncoverGuessAlbumFields
-  }
-  isSkipped
+  albumId
+  albumTitle
+  artistName
   isCorrect
-  guessedAt
+  isSkipped
 }
 
-fragment UncoverSessionFields on UncoverSessionInfo {
-  id
-  status
-  attemptCount
+fragment GameResultFields on GameResult {
   won
-  startedAt
-  completedAt
+  attemptCount
   guesses {
-    ...UncoverGuessFields
+    ...GameResultGuessFields
   }
+  completedAt
 }
 
-# ============================================
-# MUTATIONS
-# ============================================
-
-mutation StartUncoverSession {
-  startUncoverSession {
-    session {
-      ...UncoverSessionFields
-    }
+query DailyPuzzle {
+  dailyPuzzle {
     challengeId
+    date
+    maxAttempts
     imageUrl
     cloudflareImageId
-  }
-}
-
-mutation SubmitGuess($sessionId: UUID!, $guessText: String!, $albumId: UUID) {
-  submitGuess(sessionId: $sessionId, guessText: $guessText, albumId: $albumId) {
-    guess {
-      ...UncoverGuessFields
-    }
-    session {
-      ...UncoverSessionFields
-    }
-    gameOver
-    correctAlbum {
-      ...UncoverGuessAlbumFields
+    correctAlbumId
+    correctAlbumTitle
+    correctAlbumArtist
+    correctAlbumCloudflareImageId
+    existingResult {
+      ...GameResultFields
     }
   }
 }
 
-mutation SkipGuess($sessionId: UUID!) {
-  skipGuess(sessionId: $sessionId) {
-    guess {
-      ...UncoverGuessFields
-    }
-    session {
-      ...UncoverSessionFields
-    }
-    gameOver
-    correctAlbum {
-      ...UncoverGuessAlbumFields
+query ArchivePuzzle($date: DateTime!) {
+  archivePuzzle(date: $date) {
+    challengeId
+    date
+    maxAttempts
+    imageUrl
+    cloudflareImageId
+    correctAlbumId
+    correctAlbumTitle
+    correctAlbumArtist
+    correctAlbumCloudflareImageId
+    existingResult {
+      ...GameResultFields
     }
   }
 }
 
 mutation ResetDailySession {
   resetDailySession
+}
+
+mutation SubmitGameResult($input: SubmitGameResultInput!) {
+  submitGameResult(input: $input) {
+    success
+    stats {
+      id
+      gamesPlayed
+      gamesWon
+      totalAttempts
+      currentStreak
+      maxStreak
+      lastPlayedDate
+      winDistribution
+      winRate
+    }
+    archiveStats {
+      id
+      gamesPlayed
+      gamesWon
+      totalAttempts
+      winDistribution
+      winRate
+    }
+    error
+  }
 }

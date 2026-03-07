@@ -9,7 +9,10 @@ export interface Guess {
   guessNumber: number;
   guessedText: string | null; // null if skip
   isCorrect: boolean;
+  guessedAlbumId?: string; // album UUID for client-side validation
 }
+
+export type GameMode = 'daily' | 'archive';
 
 // ----- Session Slice -----
 
@@ -19,39 +22,64 @@ interface SessionSlice {
   status: SessionStatus;
   attemptCount: number;
   won: boolean;
+  mode: GameMode;
+  archiveDate: string | null;
+  resultSubmitted: boolean;
 
-  setSession: (session: { id: string; challengeId: string }) => void;
+  setSession: (session: {
+    id: string;
+    challengeId: string;
+    mode?: GameMode;
+    archiveDate?: string | null;
+  }) => void;
   updateAttemptCount: (count: number) => void;
   endSession: (won: boolean) => void;
+  markResultSubmitted: () => void;
   resetSession: () => void;
 }
 
-const createSessionSlice = (set: any): SessionSlice => ({
+const createSessionSlice = (set: unknown): SessionSlice => ({
   sessionId: null,
   challengeId: null,
   status: 'IN_PROGRESS',
   attemptCount: 0,
   won: false,
+  mode: 'daily',
+  archiveDate: null,
+  resultSubmitted: false,
 
   setSession: session =>
-    set({
+    (set as (partial: Partial<UncoverGameStore>) => void)({
       sessionId: session.id,
       challengeId: session.challengeId,
       status: 'IN_PROGRESS' as const,
+      mode: session.mode ?? 'daily',
+      archiveDate: session.archiveDate ?? null,
+      resultSubmitted: false,
     }),
-  updateAttemptCount: count => set({ attemptCount: count }),
+  updateAttemptCount: count =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({
+      attemptCount: count,
+    }),
   endSession: won =>
-    set({
+    (set as (partial: Partial<UncoverGameStore>) => void)({
       status: (won ? 'WON' : 'LOST') as SessionStatus,
       won,
     }),
+  markResultSubmitted: () =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({
+      resultSubmitted: true,
+    }),
   resetSession: () =>
-    set({
+    (set as (partial: Partial<UncoverGameStore>) => void)({
       sessionId: null,
       challengeId: null,
       status: 'IN_PROGRESS' as const,
       attemptCount: 0,
       won: false,
+      mode: 'daily',
+      archiveDate: null,
+      resultSubmitted: false,
     }),
 });
 
@@ -65,15 +93,21 @@ interface GuessesSlice {
   clearGuesses: () => void;
 }
 
-const createGuessesSlice = (set: any): GuessesSlice => ({
+const createGuessesSlice = (set: unknown): GuessesSlice => ({
   guesses: [],
 
   addGuess: guess =>
-    set((state: any) => ({
+    (
+      set as (
+        fn: (state: UncoverGameStore) => Partial<UncoverGameStore>
+      ) => void
+    )((state: UncoverGameStore) => ({
       guesses: [...state.guesses, guess],
     })),
-  setGuesses: guesses => set({ guesses }),
-  clearGuesses: () => set({ guesses: [] }),
+  setGuesses: guesses =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({ guesses }),
+  clearGuesses: () =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({ guesses: [] }),
 });
 
 // ----- UI Slice -----
@@ -87,13 +121,18 @@ interface UISlice {
   clearError: () => void;
 }
 
-const createUISlice = (set: any): UISlice => ({
+const createUISlice = (set: unknown): UISlice => ({
   isSubmitting: false,
   error: null,
 
-  setSubmitting: submitting => set({ isSubmitting: submitting }),
-  setError: error => set({ error }),
-  clearError: () => set({ error: null }),
+  setSubmitting: submitting =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({
+      isSubmitting: submitting,
+    }),
+  setError: error =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({ error }),
+  clearError: () =>
+    (set as (partial: Partial<UncoverGameStore>) => void)({ error: null }),
 });
 
 // ----- Combined Store -----
@@ -118,6 +157,9 @@ export const useUncoverGameStore = create<UncoverGameStore>()(
         attemptCount: state.attemptCount,
         won: state.won,
         guesses: state.guesses,
+        mode: state.mode,
+        archiveDate: state.archiveDate,
+        resultSubmitted: state.resultSubmitted,
       }),
     }
   )

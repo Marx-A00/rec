@@ -5,10 +5,23 @@
  * CSV of unique (release_name, artist_credit_name) pairs for the game_album_lookup table.
  *
  * Usage:
- *   npx tsx scripts/import-musicbrainz-lookup.ts <path-to-csv> [--import]
+ *   npx tsx scripts/import-musicbrainz-lookup.ts <path-to-csv>
  *
- * Without --import: outputs deduplicated CSV to game_album_lookup_data.csv
- * With --import: inserts directly into the database via DATABASE_URL
+ * Output: game_album_lookup_data.csv (~1-3M deduplicated rows)
+ *
+ * After generating the CSV, import it into the database using psql COPY:
+ *
+ *   # 1. Clear existing data
+ *   psql $DATABASE_URL -c "TRUNCATE game_album_lookup RESTART IDENTITY;"
+ *
+ *   # 2. Bulk load the CSV (fast, no bloat)
+ *   psql $DATABASE_URL -c "\COPY game_album_lookup(title, artist_name, score) FROM 'game_album_lookup_data.csv' WITH (FORMAT csv, HEADER true)"
+ *
+ *   # 3. Re-seed local albums so they appear in autocomplete
+ *   psql $DATABASE_URL -c "INSERT INTO game_album_lookup (title, artist_name, source) SELECT DISTINCT a.title, ar.name, 'local' FROM albums a JOIN album_artists aa ON aa.album_id = a.id JOIN artists ar ON ar.id = aa.artist_id ON CONFLICT (title, artist_name) DO UPDATE SET source = 'local';"
+ *
+ * DO NOT insert rows via application-level batch inserts — that generates
+ * millions of dead tuples and will tank your database IO budget.
  */
 
 import { createReadStream, createWriteStream } from 'fs';
@@ -155,111 +168,27 @@ async function writeCSV(
   console.log(`Done. Wrote ${written.toLocaleString()} rows to ${outputPath}`);
 }
 
-async function importToDatabase(
-  dedupeMap: Map<string, LookupEntry>
-): Promise<void> {
-  // Dynamic import to avoid requiring pg when just doing CSV processing
-  const { default: pg } = await import('pg');
-  const { Pool } = pg;
-
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error(
-      'ERROR: DATABASE_URL environment variable is required for --import'
-    );
-    process.exit(1);
-  }
-
-  const pool = new Pool({ connectionString: databaseUrl });
-  const client = await pool.connect();
-
-  try {
-    console.log(
-      `Importing ${dedupeMap.size.toLocaleString()} rows into game_album_lookup...`
-    );
-
-    const BATCH_SIZE = 1000;
-    const entries = Array.from(dedupeMap.values());
-    let imported = 0;
-
-    await client.query('BEGIN');
-
-    for (let i = 0; i < entries.length; i += BATCH_SIZE) {
-      const batch = entries.slice(i, i + BATCH_SIZE);
-
-      // Build a multi-row INSERT with ON CONFLICT
-      const values: string[] = [];
-      const params: (string | number)[] = [];
-      let paramIdx = 1;
-
-      for (const entry of batch) {
-        values.push(
-          `($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, 'musicbrainz')`
-        );
-        params.push(entry.title, entry.artistName, entry.score);
-        paramIdx += 3;
-      }
-
-      await client.query(
-        `INSERT INTO game_album_lookup (title, artist_name, score, source)
-         VALUES ${values.join(', ')}
-         ON CONFLICT (title, artist_name) DO UPDATE SET
-           score = GREATEST(game_album_lookup.score, EXCLUDED.score)`,
-        params
-      );
-
-      imported += batch.length;
-      if (imported % 100000 === 0 || imported === entries.length) {
-        console.log(
-          `  Imported ${imported.toLocaleString()} / ${entries.length.toLocaleString()} rows`
-        );
-      }
-    }
-
-    await client.query('COMMIT');
-    console.log(`Done. Imported ${imported.toLocaleString()} rows.`);
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-    await pool.end();
-  }
-}
-
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const inputPath = args.find(a => !a.startsWith('--'));
-  const shouldImport = args.includes('--import');
+  const inputPath = process.argv[2];
 
   if (!inputPath) {
     console.log(
-      'Usage: npx tsx scripts/import-musicbrainz-lookup.ts <path-to-csv> [--import]'
+      'Usage: npx tsx scripts/import-musicbrainz-lookup.ts <path-to-csv>'
     );
     console.log('');
     console.log('  <path-to-csv>  Path to canonical_musicbrainz_data.csv');
-    console.log(
-      '  --import       Insert directly into database (requires DATABASE_URL)'
-    );
     console.log('');
+    console.log('Outputs deduplicated CSV to game_album_lookup_data.csv.');
     console.log(
-      'Without --import, outputs deduplicated CSV to game_album_lookup_data.csv'
+      'Then use psql \\COPY to bulk load into the database (see script header for instructions).'
     );
     process.exit(1);
   }
 
-  console.log(`Processing: ${inputPath}`);
-  console.log(
-    `Mode: ${shouldImport ? 'Direct database import' : 'CSV output'}\n`
-  );
+  console.log(`Processing: ${inputPath}\n`);
 
   const dedupeMap = await processCSV(inputPath);
-
-  if (shouldImport) {
-    await importToDatabase(dedupeMap);
-  } else {
-    await writeCSV(dedupeMap, 'game_album_lookup_data.csv');
-  }
+  await writeCSV(dedupeMap, 'game_album_lookup_data.csv');
 }
 
 main().catch(err => {

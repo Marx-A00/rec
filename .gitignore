@@ -128,6 +128,13 @@ progress.json
 status.json
 tasks/
 
+# MusicBrainz import data files
+game_album_lookup_data.csv
+game_album_lookup_dev.csv
+tmp_chunks/
+_h.csv
+_with_header.csv
+
 # Temp docs/prompts
 @AGENT.md
 @fix_plan.md

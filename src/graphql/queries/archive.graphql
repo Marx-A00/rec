@@ -19,32 +19,4 @@ query MyUncoverSessions($fromDate: DateTime, $toDate: DateTime) {
   }
 }
 
-mutation StartArchiveSession($date: DateTime!) {
-  startArchiveSession(date: $date) {
-    session {
-      id
-      status
-      attemptCount
-      won
-      startedAt
-      completedAt
-      guesses {
-        id
-        guessNumber
-        guessedText
-        guessedAlbum {
-          id
-          title
-          cloudflareImageId
-          artistName
-        }
-        isSkipped
-        isCorrect
-        guessedAt
-      }
-    }
-    challengeId
-    imageUrl
-    cloudflareImageId
-  }
-}
+
