@@ -15,6 +15,7 @@ fragment UncoverGuessAlbumFields on UncoverGuessAlbumInfo {
 fragment UncoverGuessFields on UncoverGuessInfo {
   id
   guessNumber
+  guessedText
   guessedAlbum {
     ...UncoverGuessAlbumFields
   }
@@ -50,8 +51,8 @@ mutation StartUncoverSession {
   }
 }
 
-mutation SubmitGuess($sessionId: UUID!, $albumId: UUID!) {
-  submitGuess(sessionId: $sessionId, albumId: $albumId) {
+mutation SubmitGuess($sessionId: UUID!, $guessText: String!, $albumId: UUID) {
+  submitGuess(sessionId: $sessionId, guessText: $guessText, albumId: $albumId) {
     guess {
       ...UncoverGuessFields
     }

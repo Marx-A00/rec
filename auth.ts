@@ -150,23 +150,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-      }
-      // For new OAuth sign-ups, the user was just created by the adapter
-      // with no username. Flag the token so the redirect callback can
-      // send them to /complete-profile. We check the DB here because
-      // the signIn callback can't redirect new users (they don't exist
-      // in the DB yet when signIn runs).
-      if (user && account?.provider && account.provider !== 'credentials') {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { username: true },
-        });
-        if (!dbUser?.username) {
-          token.needsOnboarding = true;
-        }
       }
       return token;
     },

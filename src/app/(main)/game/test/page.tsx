@@ -34,9 +34,7 @@ function buildImageUrl(
 
 interface LocalGuess {
   guessNumber: number;
-  albumId: string | null;
-  albumTitle: string;
-  artistName: string;
+  guessedText: string | null;
   isCorrect: boolean;
 }
 
@@ -90,17 +88,18 @@ export default function GameTestPage() {
   };
 
   const handleGuess = useCallback(
-    (albumId: string, albumTitle: string, artistName: string) => {
-      if (isGameOver || !selectedAlbumId) return;
+    (guessText: string, _localAlbumId?: string) => {
+      if (isGameOver || !selectedAlbumTitle) return;
 
-      const isCorrect = albumId === selectedAlbumId;
+      // For the test page, compare text against selected album title
+      const isCorrect = guessText
+        .toLowerCase()
+        .startsWith(selectedAlbumTitle.toLowerCase());
       const newAttemptCount = attemptCount + 1;
 
       const guess: LocalGuess = {
         guessNumber: newAttemptCount,
-        albumId,
-        albumTitle,
-        artistName,
+        guessedText: guessText,
         isCorrect,
       };
 
@@ -114,7 +113,7 @@ export default function GameTestPage() {
         setIsGameOver(true);
       }
     },
-    [isGameOver, selectedAlbumId, attemptCount]
+    [isGameOver, selectedAlbumTitle, attemptCount]
   );
 
   const handleSkip = useCallback(() => {
@@ -124,9 +123,7 @@ export default function GameTestPage() {
 
     const guess: LocalGuess = {
       guessNumber: newAttemptCount,
-      albumId: null,
-      albumTitle: '(skipped)',
-      artistName: '',
+      guessedText: null,
       isCorrect: false,
     };
 

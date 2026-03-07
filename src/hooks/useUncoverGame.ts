@@ -69,9 +69,7 @@ export function useUncoverGame() {
       sessionData.guesses.forEach(guess => {
         gameStore.addGuess({
           guessNumber: guess.guessNumber,
-          albumId: guess.guessedAlbum?.id ?? null,
-          albumTitle: guess.guessedAlbum?.title ?? '(skipped)',
-          artistName: guess.guessedAlbum?.artistName ?? '',
+          guessedText: guess.guessedText ?? null,
           isCorrect: guess.isCorrect,
         });
       });
@@ -106,7 +104,7 @@ export function useUncoverGame() {
    * Updates store with guess result and checks for game over.
    */
   const submitGuess = useCallback(
-    async (albumId: string, albumTitle: string, artistName: string) => {
+    async (guessText: string, localAlbumId?: string) => {
       if (!gameStore.sessionId) {
         throw new Error('No active session');
       }
@@ -118,7 +116,8 @@ export function useUncoverGame() {
 
         const result = await submitMutation.mutateAsync({
           sessionId: gameStore.sessionId,
-          albumId,
+          guessText,
+          albumId: localAlbumId,
         });
 
         if (!result.submitGuess) {
@@ -130,9 +129,7 @@ export function useUncoverGame() {
         // Add guess to store
         gameStore.addGuess({
           guessNumber: guess.guessNumber,
-          albumId: guess.guessedAlbum?.id ?? null,
-          albumTitle: guess.guessedAlbum?.title ?? albumTitle,
-          artistName: guess.guessedAlbum?.artistName ?? artistName,
+          guessedText: guess.guessedText ?? guessText,
           isCorrect: guess.isCorrect,
         });
 
@@ -189,9 +186,7 @@ export function useUncoverGame() {
       // Add skip to store
       gameStore.addGuess({
         guessNumber: guess.guessNumber,
-        albumId: null,
-        albumTitle: '(skipped)',
-        artistName: '',
+        guessedText: null,
         isCorrect: false,
       });
 

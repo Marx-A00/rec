@@ -185,6 +185,7 @@ function formatGuessResult(result: GuessServiceResult) {
     guess: {
       id: result.guess.id,
       guessNumber: result.guess.guessNumber,
+      guessedText: result.guess.guessedText ?? null,
       isSkipped: result.guess.guessedAlbumId === null,
       isCorrect: result.guess.isCorrect,
       guessedAt: result.guess.guessedAt,
@@ -200,6 +201,7 @@ function formatGuessResult(result: GuessServiceResult) {
       guesses: result.session.guesses.map(guess => ({
         id: guess.id,
         guessNumber: guess.guessNumber,
+        guessedText: guess.guessedText ?? null,
         isSkipped: guess.guessedAlbumId === null,
         isCorrect: guess.isCorrect,
         guessedAt: guess.guessedAt,
@@ -3735,9 +3737,15 @@ export const mutationResolvers: MutationResolvers = {
     _,
     {
       sessionId,
+      guessText,
       albumId,
       mode,
-    }: { sessionId: string; albumId: string; mode?: string },
+    }: {
+      sessionId: string;
+      guessText: string;
+      albumId?: string | null;
+      mode?: string;
+    },
     { prisma, user }
   ) => {
     try {
@@ -3751,7 +3759,8 @@ export const mutationResolvers: MutationResolvers = {
 
       const result = await submitGuess(
         sessionId,
-        albumId,
+        guessText,
+        albumId ?? null,
         user.id,
         prisma,
         mode || 'daily'
@@ -3759,6 +3768,7 @@ export const mutationResolvers: MutationResolvers = {
 
       graphqlLogger.info('Submitted guess:', {
         sessionId,
+        guessText,
         albumId,
         isCorrect: result.guess.isCorrect,
         gameOver: result.gameOver,
@@ -3769,7 +3779,7 @@ export const mutationResolvers: MutationResolvers = {
       graphqlLogger.error('Failed to submit guess:', {
         error,
         sessionId,
-        albumId,
+        guessText,
       });
       throw error instanceof GraphQLError
         ? error

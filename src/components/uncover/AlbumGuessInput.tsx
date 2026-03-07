@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { useSearchAlbumsQuery } from '@/generated/graphql';
+import { useSearchGameAlbumsQuery } from '@/generated/graphql';
 import {
   Command,
   CommandEmpty,
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/command';
 
 interface AlbumGuessInputProps {
-  onGuess: (albumId: string, albumTitle: string, artistName: string) => void;
+  onGuess: (guessText: string, localAlbumId?: string) => void;
   onSkip: () => void;
   disabled?: boolean;
   isSubmitting?: boolean;
@@ -57,23 +57,23 @@ export function AlbumGuessInput({
   }, [inputValue]);
 
   // Search query (enabled when 2+ characters typed)
-  const { data, isLoading } = useSearchAlbumsQuery(
-    { query: debouncedValue, limit: 5 },
+  const { data, isLoading } = useSearchGameAlbumsQuery(
+    { query: debouncedValue, limit: 10 },
     { enabled: debouncedValue.length >= 2 }
   );
 
-  const results = data?.searchAlbums ?? [];
+  const results = data?.searchGameAlbums ?? [];
 
   // Handle album selection
-  const handleSelect = (albumId: string) => {
-    const album = results.find(a => a.id === albumId);
-    if (!album) return;
+  const handleSelect = (resultId: string) => {
+    const result = results.find(r => String(r.id) === resultId);
+    if (!result) return;
 
-    // Extract artist name (safely handle null)
-    const artistName = album.artists?.[0]?.artist?.name ?? 'Unknown Artist';
+    // Format guess text: "Album Title - Artist Name"
+    const guessText = `${result.title} - ${result.artistName}`;
 
-    // Submit guess
-    onGuess(albumId, album.title, artistName);
+    // Submit with text and optional local album ID
+    onGuess(guessText, result.localAlbumId ?? undefined);
 
     // Clear input and close dropdown
     setInputValue('');
@@ -136,25 +136,21 @@ export function AlbumGuessInput({
                 <CommandEmpty>No albums found</CommandEmpty>
               ) : (
                 <CommandGroup>
-                  {results.map(album => {
-                    const artistName =
-                      album.artists?.[0]?.artist?.name ?? 'Unknown Artist';
-                    return (
-                      <CommandItem
-                        key={album.id}
-                        value={album.id}
-                        onSelect={() => handleSelect(album.id)}
-                        className='min-h-[44px] cursor-pointer py-3 data-[selected=true]:bg-zinc-700'
-                      >
-                        <div>
-                          <div className='font-medium'>{album.title}</div>
-                          <div className='text-sm text-zinc-400'>
-                            {artistName}
-                          </div>
+                  {results.map(result => (
+                    <CommandItem
+                      key={result.id}
+                      value={String(result.id)}
+                      onSelect={() => handleSelect(String(result.id))}
+                      className='min-h-[44px] cursor-pointer py-3 data-[selected=true]:bg-zinc-700'
+                    >
+                      <div>
+                        <div className='font-medium'>{result.title}</div>
+                        <div className='text-sm text-zinc-400'>
+                          {result.artistName}
                         </div>
-                      </CommandItem>
-                    );
-                  })}
+                      </div>
+                    </CommandItem>
+                  ))}
                 </CommandGroup>
               )}
             </CommandList>

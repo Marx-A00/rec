@@ -3377,6 +3377,67 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  searchGameAlbums: async (_, { query, limit = 10 }, { prisma }) => {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      const searchQuery = query.trim();
+      const prefixPattern = `${searchQuery}%`;
+      const containsPattern = `%${searchQuery}%`;
+
+      const results = await prisma.$queryRaw<
+        Array<{
+          id: number;
+          title: string;
+          artist_name: string;
+          score: number;
+          local_album_id: string | null;
+        }>
+      >`
+        SELECT
+          gal.id,
+          gal.title,
+          gal.artist_name,
+          gal.score,
+          a.id as local_album_id
+        FROM game_album_lookup gal
+        LEFT JOIN albums a ON
+          LOWER(a.title) = LOWER(gal.title)
+          AND EXISTS (
+            SELECT 1 FROM album_artists aa
+            JOIN artists ar ON ar.id = aa.artist_id
+            WHERE aa.album_id = a.id
+            AND LOWER(ar.name) = LOWER(gal.artist_name)
+          )
+        WHERE
+          gal.title ILIKE ${containsPattern}
+          OR gal.artist_name ILIKE ${containsPattern}
+        ORDER BY
+          CASE
+            WHEN gal.title ILIKE ${prefixPattern} THEN 0
+            WHEN gal.artist_name ILIKE ${prefixPattern} THEN 1
+            ELSE 2
+          END,
+          gal.score DESC
+        LIMIT ${limit}
+      `;
+
+      return results.map(r => ({
+        id: r.id,
+        title: r.title,
+        artistName: r.artist_name,
+        score: r.score,
+        isLocalAlbum: !!r.local_album_id,
+        localAlbumId: r.local_album_id,
+      }));
+    } catch (error) {
+      graphqlLogger.error('Failed to search game albums:', { error, query });
+      throw new GraphQLError(`Failed to search game albums: ${error}`);
+    }
+  },
+
   gamePoolStats: async (_, __, { prisma }) => {
     try {
       const [eligible, excluded, neutral, totalWithCoverArt] =

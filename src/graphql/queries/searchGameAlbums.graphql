@@ -1,0 +1,10 @@
+query SearchGameAlbums($query: String!, $limit: Int) {
+  searchGameAlbums(query: $query, limit: $limit) {
+    id
+    title
+    artistName
+    score
+    isLocalAlbum
+    localAlbumId
+  }
+}

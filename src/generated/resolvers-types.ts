@@ -1147,6 +1147,17 @@ export type FollowUserPayload = {
   id: Scalars['String']['output'];
 };
 
+/** Result from searching the game album lookup table for Uncover guessing */
+export type GameAlbumResult = {
+  __typename?: 'GameAlbumResult';
+  artistName: Scalars['String']['output'];
+  id: Scalars['Int']['output'];
+  isLocalAlbum: Scalars['Boolean']['output'];
+  localAlbumId?: Maybe<Scalars['UUID']['output']>;
+  score: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+};
+
 export type GamePoolStats = {
   __typename?: 'GamePoolStats';
   eligibleCount: Scalars['Int']['output'];
@@ -1701,7 +1712,8 @@ export type MutationStartArchiveSessionArgs = {
 };
 
 export type MutationSubmitGuessArgs = {
-  albumId: Scalars['UUID']['input'];
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  guessText: Scalars['String']['input'];
   mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
 };
@@ -1947,6 +1959,11 @@ export type Query = {
   search: SearchResults;
   searchAlbums: Array<Album>;
   searchArtists: Array<Artist>;
+  /**
+   * Search game_album_lookup table for autocomplete in the Uncover guessing game.
+   * Uses trigram fuzzy matching for fast, forgiving search.
+   */
+  searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
@@ -2177,6 +2194,11 @@ export type QuerySearchArtistsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QuerySearchGameAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 export type QuerySearchTracksArgs = {
@@ -2885,6 +2907,7 @@ export type UncoverGuessInfo = {
   guessNumber: Scalars['Int']['output'];
   guessedAlbum?: Maybe<UncoverGuessAlbumInfo>;
   guessedAt: Scalars['DateTime']['output'];
+  guessedText?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   isCorrect: Scalars['Boolean']['output'];
   isSkipped: Scalars['Boolean']['output'];
@@ -3345,6 +3368,7 @@ export type ResolversTypes = ResolversObject<{
   FieldSelectionsInput: FieldSelectionsInput;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FollowUserPayload: ResolverTypeWrapper<FollowUserPayload>;
+  GameAlbumResult: ResolverTypeWrapper<GameAlbumResult>;
   GamePoolStats: ResolverTypeWrapper<GamePoolStats>;
   GroupedSearchResult: ResolverTypeWrapper<GroupedSearchResult>;
   GuessResult: ResolverTypeWrapper<GuessResult>;
@@ -3547,6 +3571,7 @@ export type ResolversParentTypes = ResolversObject<{
   FieldSelectionsInput: FieldSelectionsInput;
   Float: Scalars['Float']['output'];
   FollowUserPayload: FollowUserPayload;
+  GameAlbumResult: GameAlbumResult;
   GamePoolStats: GamePoolStats;
   GroupedSearchResult: GroupedSearchResult;
   GuessResult: GuessResult;
@@ -5057,6 +5082,24 @@ export type FollowUserPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type GameAlbumResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['GameAlbumResult'] = ResolversParentTypes['GameAlbumResult'],
+> = ResolversObject<{
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isLocalAlbum?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  localAlbumId?: Resolver<
+    Maybe<ResolversTypes['UUID']>,
+    ParentType,
+    ContextType
+  >;
+  score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type GamePoolStatsResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5645,7 +5688,7 @@ export type MutationResolvers<
     ResolversTypes['GuessResult'],
     ParentType,
     ContextType,
-    RequireFields<MutationSubmitGuessArgs, 'albumId' | 'sessionId'>
+    RequireFields<MutationSubmitGuessArgs, 'guessText' | 'sessionId'>
   >;
   triggerAlbumEnrichment?: Resolver<
     ResolversTypes['EnrichmentResult'],
@@ -6169,6 +6212,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     Partial<QuerySearchArtistsArgs>
+  >;
+  searchGameAlbums?: Resolver<
+    Array<ResolversTypes['GameAlbumResult']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySearchGameAlbumsArgs, 'limit' | 'query'>
   >;
   searchTracks?: Resolver<
     Array<ResolversTypes['Track']>,
@@ -7189,6 +7238,11 @@ export type UncoverGuessInfoResolvers<
     ContextType
   >;
   guessedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  guessedText?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   isCorrect?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isSkipped?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -7684,6 +7738,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
   ErrorMetric?: ErrorMetricResolvers<ContextType>;
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
+  GameAlbumResult?: GameAlbumResultResolvers<ContextType>;
   GamePoolStats?: GamePoolStatsResolvers<ContextType>;
   GroupedSearchResult?: GroupedSearchResultResolvers<ContextType>;
   GuessResult?: GuessResultResolvers<ContextType>;

@@ -367,12 +367,20 @@ export function UncoverGame() {
     };
   }, [game.isAuthenticated, game.isAuthLoading, hasStarted, challengeImageUrl]);
 
-  /** Auto-start if user already has an active session (e.g. refreshed mid-game). */
+  /** Clear stale completed sessions so the home screen shows cleanly for a new day. */
   useEffect(() => {
-    if (game.sessionId && !hasStarted) {
+    if (game.sessionId && game.isGameOver) {
+      game.resetGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Auto-resume only if user has an active IN_PROGRESS session (e.g. refreshed mid-game). */
+  useEffect(() => {
+    if (game.sessionId && !hasStarted && !game.isGameOver) {
       setHasStarted(true);
     }
-  }, [game.sessionId, hasStarted]);
+  }, [game.sessionId, hasStarted, game.isGameOver]);
 
   // ─── Auth loading ─────────────────────────────────────────────
   if (!game.isAuthenticated) {

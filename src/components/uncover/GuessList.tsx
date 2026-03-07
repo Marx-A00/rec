@@ -1,8 +1,6 @@
 interface Guess {
   guessNumber: number;
-  albumId: string | null;
-  albumTitle: string;
-  artistName: string;
+  guessedText: string | null;
   isCorrect: boolean;
 }
 
@@ -32,13 +30,8 @@ export function GuessList({ guesses }: GuessListProps) {
           >
             <div className='min-w-0 flex-1'>
               <div className='truncate text-sm font-medium text-zinc-200'>
-                {guess.albumId ? guess.albumTitle : '(skipped)'}
+                {guess.guessedText || '(skipped)'}
               </div>
-              {guess.artistName && (
-                <div className='truncate text-xs text-zinc-500'>
-                  {guess.artistName}
-                </div>
-              )}
             </div>
             <div className='ml-3 flex-shrink-0'>
               {guess.isCorrect ? (

@@ -94,9 +94,7 @@ export function useArchiveGame(challengeDate: Date) {
       sessionData.guesses.forEach(guess => {
         gameStore.addGuess({
           guessNumber: guess.guessNumber,
-          albumId: guess.guessedAlbum?.id ?? null,
-          albumTitle: guess.guessedAlbum?.title ?? '(skipped)',
-          artistName: guess.guessedAlbum?.artistName ?? '',
+          guessedText: guess.guessedText ?? null,
           isCorrect: guess.isCorrect,
         });
       });
@@ -132,7 +130,7 @@ export function useArchiveGame(challengeDate: Date) {
    * Invalidates calendar query on game completion.
    */
   const submitGuess = useCallback(
-    async (albumId: string, albumTitle: string, artistName: string) => {
+    async (guessText: string, localAlbumId?: string) => {
       if (!gameStore.sessionId) {
         throw new Error('No active session');
       }
@@ -144,7 +142,8 @@ export function useArchiveGame(challengeDate: Date) {
 
         const result = await submitMutation.mutateAsync({
           sessionId: gameStore.sessionId,
-          albumId,
+          guessText,
+          albumId: localAlbumId,
         });
 
         if (!result.submitGuess) {
@@ -156,9 +155,7 @@ export function useArchiveGame(challengeDate: Date) {
         // Add guess to store
         gameStore.addGuess({
           guessNumber: guess.guessNumber,
-          albumId: guess.guessedAlbum?.id ?? null,
-          albumTitle: guess.guessedAlbum?.title ?? albumTitle,
-          artistName: guess.guessedAlbum?.artistName ?? artistName,
+          guessedText: guess.guessedText ?? guessText,
           isCorrect: guess.isCorrect,
         });
 
@@ -221,9 +218,7 @@ export function useArchiveGame(challengeDate: Date) {
       // Add skip to store
       gameStore.addGuess({
         guessNumber: guess.guessNumber,
-        albumId: null,
-        albumTitle: '(skipped)',
-        artistName: '',
+        guessedText: null,
         isCorrect: false,
       });
 

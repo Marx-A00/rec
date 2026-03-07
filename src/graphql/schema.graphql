@@ -2574,9 +2574,31 @@ type Query {
   Admin: Get challenge history (past + today) in reverse chronological order
   """
   challengeHistory(limit: Int = 50, offset: Int = 0): [ChallengeHistoryEntry!]!
+
+  """
+  Search game_album_lookup table for autocomplete in the Uncover guessing game.
+  Uses trigram fuzzy matching for fast, forgiving search.
+  """
+  searchGameAlbums(query: String!, limit: Int = 10): [GameAlbumResult!]!
 }
 
 # =============================================
+
+# =============================================
+# GAME ALBUM LOOKUP TYPES
+# =============================================
+
+"""
+Result from searching the game album lookup table for Uncover guessing
+"""
+type GameAlbumResult {
+  id: Int!
+  title: String!
+  artistName: String!
+  score: Int!
+  isLocalAlbum: Boolean!
+  localAlbumId: UUID
+}
 
 # =============================================
 # DAILY CHALLENGE TYPES
@@ -2640,6 +2662,7 @@ Individual guess within a session
 type UncoverGuessInfo {
   id: UUID!
   guessNumber: Int!
+  guessedText: String
   guessedAlbum: UncoverGuessAlbumInfo
   isSkipped: Boolean!
   isCorrect: Boolean!
@@ -3103,7 +3126,7 @@ type Mutation {
   """
   Submit a guess for the current session (requires auth).
   """
-  submitGuess(sessionId: UUID!, albumId: UUID!, mode: String): GuessResult!
+  submitGuess(sessionId: UUID!, guessText: String!, albumId: UUID, mode: String): GuessResult!
 
   """
   Skip current guess - counts as wrong guess (requires auth).

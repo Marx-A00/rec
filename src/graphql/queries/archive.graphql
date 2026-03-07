@@ -31,6 +31,7 @@ mutation StartArchiveSession($date: DateTime!) {
       guesses {
         id
         guessNumber
+        guessedText
         guessedAlbum {
           id
           title

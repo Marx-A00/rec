@@ -4,6 +4,8 @@ import type {
   UncoverSessionStatus,
 } from '@prisma/client';
 
+import { normalizeText } from './game-service';
+
 // ----- Types -----
 
 interface User {
@@ -64,11 +66,11 @@ export function validateSessionStart(
  * DAILY-03: Session must be IN_PROGRESS
  * GAME-02: Must not exceed max attempts
  * GAME-06: Enforce attempt limit
- * GAME-10: No duplicate album guesses
+ * GAME-10: No duplicate guesses (text-based comparison)
  */
 export function validateGuess(
   session: SessionWithGuesses,
-  albumId: string,
+  guessText: string,
   maxAttempts: number
 ): ValidationResult {
   // DAILY-03: Validate session status is IN_PROGRESS
@@ -87,11 +89,14 @@ export function validateGuess(
     };
   }
 
-  // GAME-10: Check albumId not in previous guesses (no duplicate guesses)
-  const previousGuess = session.guesses.find(
-    guess => guess.guessedAlbumId === albumId
-  );
-  if (previousGuess) {
+  // GAME-10: Check guessText not in previous guesses (normalized text comparison)
+  const normalizedGuess = normalizeText(guessText);
+  const isDuplicate = session.guesses.some(guess => {
+    if (!guess.guessedText) return false;
+    return normalizeText(guess.guessedText) === normalizedGuess;
+  });
+
+  if (isDuplicate) {
     return {
       valid: false,
       error: 'You have already guessed this album',

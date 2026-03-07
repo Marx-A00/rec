@@ -1173,6 +1173,17 @@ export type FollowUserPayload = {
   id: Scalars['String']['output'];
 };
 
+/** Result from searching the game album lookup table for Uncover guessing */
+export type GameAlbumResult = {
+  __typename?: 'GameAlbumResult';
+  artistName: Scalars['String']['output'];
+  id: Scalars['Int']['output'];
+  isLocalAlbum: Scalars['Boolean']['output'];
+  localAlbumId?: Maybe<Scalars['UUID']['output']>;
+  score: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+};
+
 export type GamePoolStats = {
   __typename?: 'GamePoolStats';
   eligibleCount: Scalars['Int']['output'];
@@ -1727,7 +1738,8 @@ export type MutationStartArchiveSessionArgs = {
 };
 
 export type MutationSubmitGuessArgs = {
-  albumId: Scalars['UUID']['input'];
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  guessText: Scalars['String']['input'];
   mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
 };
@@ -1973,6 +1985,11 @@ export type Query = {
   search: SearchResults;
   searchAlbums: Array<Album>;
   searchArtists: Array<Artist>;
+  /**
+   * Search game_album_lookup table for autocomplete in the Uncover guessing game.
+   * Uses trigram fuzzy matching for fast, forgiving search.
+   */
+  searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
@@ -2203,6 +2220,11 @@ export type QuerySearchArtistsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QuerySearchGameAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 export type QuerySearchTracksArgs = {
@@ -2911,6 +2933,7 @@ export type UncoverGuessInfo = {
   guessNumber: Scalars['Int']['output'];
   guessedAlbum?: Maybe<UncoverGuessAlbumInfo>;
   guessedAt: Scalars['DateTime']['output'];
+  guessedText?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   isCorrect: Scalars['Boolean']['output'];
   isSkipped: Scalars['Boolean']['output'];
@@ -3730,6 +3753,7 @@ export type StartArchiveSessionMutation = {
         __typename?: 'UncoverGuessInfo';
         id: string;
         guessNumber: number;
+        guessedText?: string | null;
         isSkipped: boolean;
         isCorrect: boolean;
         guessedAt: Date;
@@ -5829,6 +5853,24 @@ export type GetDatabaseStatsQuery = {
   };
 };
 
+export type SearchGameAlbumsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchGameAlbumsQuery = {
+  __typename?: 'Query';
+  searchGameAlbums: Array<{
+    __typename?: 'GameAlbumResult';
+    id: number;
+    title: string;
+    artistName: string;
+    score: number;
+    isLocalAlbum: boolean;
+    localAlbumId?: string | null;
+  }>;
+};
+
 export type ActivityFieldsFragment = {
   __typename?: 'Activity';
   id: string;
@@ -6132,6 +6174,7 @@ export type UncoverGuessFieldsFragment = {
   __typename?: 'UncoverGuessInfo';
   id: string;
   guessNumber: number;
+  guessedText?: string | null;
   isSkipped: boolean;
   isCorrect: boolean;
   guessedAt: Date;
@@ -6156,6 +6199,7 @@ export type UncoverSessionFieldsFragment = {
     __typename?: 'UncoverGuessInfo';
     id: string;
     guessNumber: number;
+    guessedText?: string | null;
     isSkipped: boolean;
     isCorrect: boolean;
     guessedAt: Date;
@@ -6192,6 +6236,7 @@ export type StartUncoverSessionMutation = {
         __typename?: 'UncoverGuessInfo';
         id: string;
         guessNumber: number;
+        guessedText?: string | null;
         isSkipped: boolean;
         isCorrect: boolean;
         guessedAt: Date;
@@ -6209,7 +6254,8 @@ export type StartUncoverSessionMutation = {
 
 export type SubmitGuessMutationVariables = Exact<{
   sessionId: Scalars['UUID']['input'];
-  albumId: Scalars['UUID']['input'];
+  guessText: Scalars['String']['input'];
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
 }>;
 
 export type SubmitGuessMutation = {
@@ -6221,6 +6267,7 @@ export type SubmitGuessMutation = {
       __typename?: 'UncoverGuessInfo';
       id: string;
       guessNumber: number;
+      guessedText?: string | null;
       isSkipped: boolean;
       isCorrect: boolean;
       guessedAt: Date;
@@ -6244,6 +6291,7 @@ export type SubmitGuessMutation = {
         __typename?: 'UncoverGuessInfo';
         id: string;
         guessNumber: number;
+        guessedText?: string | null;
         isSkipped: boolean;
         isCorrect: boolean;
         guessedAt: Date;
@@ -6279,6 +6327,7 @@ export type SkipGuessMutation = {
       __typename?: 'UncoverGuessInfo';
       id: string;
       guessNumber: number;
+      guessedText?: string | null;
       isSkipped: boolean;
       isCorrect: boolean;
       guessedAt: Date;
@@ -6302,6 +6351,7 @@ export type SkipGuessMutation = {
         __typename?: 'UncoverGuessInfo';
         id: string;
         guessNumber: number;
+        guessedText?: string | null;
         isSkipped: boolean;
         isCorrect: boolean;
         guessedAt: Date;
@@ -6503,6 +6553,7 @@ export const UncoverGuessFieldsFragmentDoc = `
     fragment UncoverGuessFields on UncoverGuessInfo {
   id
   guessNumber
+  guessedText
   guessedAlbum {
     ...UncoverGuessAlbumFields
   }
@@ -7936,6 +7987,7 @@ export const StartArchiveSessionDocument = `
       guesses {
         id
         guessNumber
+        guessedText
         guessedAlbum {
           id
           title
@@ -13396,6 +13448,85 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
 
+export const SearchGameAlbumsDocument = `
+    query SearchGameAlbums($query: String!, $limit: Int) {
+  searchGameAlbums(query: $query, limit: $limit) {
+    id
+    title
+    artistName
+    score
+    isLocalAlbum
+    localAlbumId
+  }
+}
+    `;
+
+export const useSearchGameAlbumsQuery = <
+  TData = SearchGameAlbumsQuery,
+  TError = unknown,
+>(
+  variables: SearchGameAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchGameAlbumsQuery, TError, TData>({
+    queryKey: ['SearchGameAlbums', variables],
+    queryFn: fetcher<SearchGameAlbumsQuery, SearchGameAlbumsQueryVariables>(
+      SearchGameAlbumsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchGameAlbumsQuery.getKey = (
+  variables: SearchGameAlbumsQueryVariables
+) => ['SearchGameAlbums', variables];
+
+export const useInfiniteSearchGameAlbumsQuery = <
+  TData = InfiniteData<SearchGameAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: SearchGameAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchGameAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SearchGameAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchGameAlbumsQuery, SearchGameAlbumsQueryVariables>(
+            SearchGameAlbumsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchGameAlbumsQuery.getKey = (
+  variables: SearchGameAlbumsQueryVariables
+) => ['SearchGameAlbums.infinite', variables];
+
 export const GetSocialFeedDocument = `
     query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int = 20) {
   socialFeed(type: $type, cursor: $cursor, limit: $limit) {
@@ -14042,8 +14173,8 @@ export const useStartUncoverSessionMutation = <
 useStartUncoverSessionMutation.getKey = () => ['StartUncoverSession'];
 
 export const SubmitGuessDocument = `
-    mutation SubmitGuess($sessionId: UUID!, $albumId: UUID!) {
-  submitGuess(sessionId: $sessionId, albumId: $albumId) {
+    mutation SubmitGuess($sessionId: UUID!, $guessText: String!, $albumId: UUID) {
+  submitGuess(sessionId: $sessionId, guessText: $guessText, albumId: $albumId) {
     guess {
       ...UncoverGuessFields
     }

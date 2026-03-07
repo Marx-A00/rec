@@ -304,12 +304,26 @@ export async function startArchiveSession(
 }
 
 /**
+ * Normalize text for comparison: lowercase, trim, strip diacritics, collapse whitespace.
+ */
+export function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/**
  * Submit a guess for a session.
  * Validates ownership, game rules, and updates state.
+ * Uses text-based comparison instead of album ID matching.
  */
 export async function submitGuess(
   sessionId: string,
-  albumId: string,
+  guessText: string,
+  albumId: string | null,
   userId: string,
   prisma: PrismaClient,
   mode: 'daily' | 'archive' = 'daily'
@@ -354,10 +368,10 @@ export async function submitGuess(
     throw new GraphQLError('You do not own this session');
   }
 
-  // Validate guess using game-validation
+  // Validate guess using game-validation (text-based duplicate check)
   const validation = validateGuess(
     session,
-    albumId,
+    guessText,
     session.challenge.maxAttempts
   );
 
@@ -365,8 +379,13 @@ export async function submitGuess(
     throw new GraphQLError(validation.error || 'Invalid guess');
   }
 
-  // Check if guess is correct
-  const isCorrect = albumId === session.challenge.albumId;
+  // Build expected answer text: "Album Title - Artist Name"
+  const expectedArtistName =
+    session.challenge.album.artists[0]?.artist.name || '';
+  const expectedText = `${session.challenge.album.title} - ${expectedArtistName}`;
+
+  // Compare normalized texts
+  const isCorrect = normalizeText(guessText) === normalizeText(expectedText);
   const newAttemptCount = session.attemptCount + 1;
 
   // Calculate game result
@@ -377,34 +396,40 @@ export async function submitGuess(
     session.challenge.maxAttempts
   );
 
-  // Fetch guessed album info
-  const guessedAlbum = await prisma.album.findUnique({
-    where: { id: albumId },
-    select: {
-      id: true,
-      title: true,
-      cloudflareImageId: true,
-      artists: {
-        select: {
-          artist: {
-            select: {
-              name: true,
-            },
+  // If albumId provided, try to fetch album info for display
+  let guessedAlbumInfo: GuessedAlbumInfo | null = null;
+  if (albumId) {
+    const guessedAlbum = await prisma.album.findUnique({
+      where: { id: albumId },
+      select: {
+        id: true,
+        title: true,
+        cloudflareImageId: true,
+        artists: {
+          select: {
+            artist: { select: { name: true } },
           },
+          take: 1,
         },
       },
-    },
-  });
+    });
 
-  if (!guessedAlbum) {
-    throw new GraphQLError('Guessed album not found');
+    if (guessedAlbum) {
+      guessedAlbumInfo = {
+        id: guessedAlbum.id,
+        title: guessedAlbum.title,
+        cloudflareImageId: guessedAlbum.cloudflareImageId,
+        artistName: guessedAlbum.artists[0]?.artist.name || 'Unknown Artist',
+      };
+    }
   }
 
-  // Create guess record
+  // Create guess record with guessedText
   const guess = await prisma.uncoverGuess.create({
     data: {
       sessionId: session.id,
       guessedAlbumId: albumId,
+      guessedText: guessText,
       guessNumber: newAttemptCount,
       isCorrect,
     },
@@ -423,10 +448,8 @@ export async function submitGuess(
   });
 
   // Update player stats if game ended
-  // Route to daily or archive stats based on mode
   if (gameResult.gameOver) {
     if (mode === 'daily') {
-      // Daily mode: updates streaks (STATS-01 through STATS-05)
       await updatePlayerStats(
         {
           userId,
@@ -437,7 +460,6 @@ export async function submitGuess(
         prisma
       );
     } else {
-      // Archive mode: no streaks, separate stats (ARCHIVE-03, ARCHIVE-04)
       await updateArchiveStats(
         {
           userId,
@@ -460,7 +482,6 @@ export async function submitGuess(
       const currentAvg = currentChallenge.avgAttempts || 0;
       const currentWins = currentChallenge.totalWins;
 
-      // Calculate new average: (oldAvg * oldCount + newAttempts) / newCount
       const newAvgAttempts =
         currentWins === 0
           ? newAttemptCount
@@ -475,14 +496,6 @@ export async function submitGuess(
       });
     }
   }
-
-  // Format guessed album info
-  const guessedAlbumInfo: GuessedAlbumInfo = {
-    id: guessedAlbum.id,
-    title: guessedAlbum.title,
-    cloudflareImageId: guessedAlbum.cloudflareImageId,
-    artistName: guessedAlbum.artists[0]?.artist.name || 'Unknown Artist',
-  };
 
   // Get correct album info (only if game over)
   let correctAlbumInfo: GuessedAlbumInfo | null = null;

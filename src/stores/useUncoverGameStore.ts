@@ -7,9 +7,7 @@ export type SessionStatus = 'IN_PROGRESS' | 'WON' | 'LOST';
 
 export interface Guess {
   guessNumber: number;
-  albumId: string | null; // null if skip
-  albumTitle: string;
-  artistName: string;
+  guessedText: string | null; // null if skip
   isCorrect: boolean;
 }
 
