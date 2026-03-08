@@ -14,7 +14,6 @@ import {
   AlbumGameStatus,
 } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
-import { LightRays } from '@/components/ui/light-rays';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
@@ -202,14 +201,6 @@ function GameOver({
 
   return (
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
-      <LightRays
-        count={6}
-        color={won ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.25)'}
-        blur={40}
-        speed={20}
-        length='55vh'
-      />
-
       {/* Art Column — full reveal */}
       <div className='flex flex-col items-center gap-4'>
         {challengeImageUrl && game.challengeId && (
@@ -453,61 +444,58 @@ export function UncoverGame() {
   // ─── Pre-game home state ───────────────────────────────────────
   if (!hasStarted && !isInitializing) {
     return (
-      <div className='relative flex h-full flex-col items-center justify-center gap-8 px-4'>
-        <LightRays
-          count={8}
-          color='rgba(16, 185, 129, 0.35)'
-          blur={40}
-          speed={16}
-          length='65vh'
-        />
-
+      <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
         {/* Puzzle info */}
-        <div className='relative z-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-500'>
+        <div className='relative z-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-400'>
           <span>PUZZLE #47</span>
-          <span className='text-zinc-700'>·</span>
-          <span>5 DAY STREAK</span>
+          <span className='text-zinc-600'>·</span>
+          <span className='text-orange-400'>5 DAY STREAK</span>
         </div>
 
         {/* Album art teaser — center stage */}
-        <div className='relative z-10 w-[340px]'>
-          <div className='overflow-hidden rounded-2xl shadow-[0_0_120px_rgba(255,255,255,0.03)]'>
+        <div className='relative z-10 w-[300px]'>
+          <div className='overflow-hidden rounded-2xl border border-emerald-500/20 shadow-[0_0_80px_rgba(16,185,129,0.12)]'>
             <TeaserImage />
           </div>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
-              <Lock className='h-7 w-7 text-zinc-400' />
+            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-sm'>
+              <Lock className='h-6 w-6 text-zinc-300' />
             </div>
           </div>
         </div>
 
         {/* Hook line */}
-        <p className='relative z-10 text-xl font-medium text-white'>
-          Can you name this album?
-        </p>
+        <div className='relative z-10 text-center'>
+          <p className='text-3xl font-bold text-white drop-shadow-lg'>
+            Can you name this album?
+          </p>
+          <p className='mt-1.5 text-sm text-zinc-400'>
+            Guess the album from its cover art
+          </p>
+        </div>
 
         {/* Start button — pill shaped */}
         <button
           onClick={() => setHasStarted(true)}
-          className='relative z-10 flex items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
+          className='relative z-10 flex items-center gap-2.5 rounded-full bg-white px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:bg-zinc-100 hover:shadow-[0_0_50px_rgba(16,185,129,0.2)] focus:ring-2 focus:ring-white/50'
         >
           Start today&apos;s puzzle
           <span aria-hidden>→</span>
         </button>
 
         {/* Inline stats */}
-        <div className='relative z-10 flex items-center gap-10 pt-2'>
+        <div className='relative z-10 flex items-center gap-8 pt-2'>
           <div className='flex items-center gap-2'>
             <span className='text-sm font-semibold text-white'>23</span>
-            <span className='text-xs text-zinc-600'>played</span>
+            <span className='text-xs text-zinc-500'>played</span>
           </div>
           <div className='flex items-center gap-2'>
             <span className='text-sm font-semibold text-white'>78%</span>
-            <span className='text-xs text-zinc-600'>win rate</span>
+            <span className='text-xs text-zinc-500'>win rate</span>
           </div>
           <div className='flex items-center gap-2'>
-            <span className='text-sm font-semibold text-white'>5</span>
-            <span className='text-xs text-zinc-600'>streak</span>
+            <span className='text-sm font-semibold text-orange-400'>5</span>
+            <span className='text-xs text-zinc-500'>streak</span>
           </div>
         </div>
       </div>
@@ -561,14 +549,6 @@ export function UncoverGame() {
   // ─── V2 Two-Column Game Board ─────────────────────────────────
   return (
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
-      <LightRays
-        count={6}
-        color='rgba(16, 185, 129, 0.25)'
-        blur={40}
-        speed={18}
-        length='55vh'
-      />
-
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
         {/* Art Frame */}
