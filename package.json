@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "bash scripts/check-infra.sh && next dev --turbopack",
+    "infra:start": "bash scripts/dev-start.sh",
+    "infra:check": "bash scripts/check-infra.sh",
     "dev:pretty": "next dev --turbopack | pnpm exec pino-pretty",
     "dev:logs": "mkdir -p logs && next dev --turbopack > logs/app.log 2>&1",
     "build": "next build",
@@ -60,7 +62,7 @@
     "test:musicbrainz": "tsx src/scripts/test-musicbrainz.ts",
     "test:spotify-scheduler": "tsx src/scripts/test-spotify-scheduler.ts",
     "worker": "tsx src/workers/queue-worker.ts",
-    "queue:dev": "tsx src/workers/queue-worker.ts"
+    "queue:dev": "bash scripts/check-infra.sh && tsx src/workers/queue-worker.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
@@ -118,6 +120,7 @@
     "html2canvas": "^1.4.1",
     "ioredis": "^5.3.0",
     "lucide-react": "0.471.1",
+    "motion": "^12.35.1",
     "musicbrainz-api": "^0.25.1",
     "next": "15.1.11",
     "next-auth": "5.0.0-beta.29",
