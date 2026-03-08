@@ -14,6 +14,7 @@ import {
   AlbumGameStatus,
 } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
+import { LightRays } from '@/components/ui/light-rays';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
@@ -200,7 +201,15 @@ function GameOver({
   const won = game.won;
 
   return (
-    <div className='flex h-full items-start gap-12 px-[60px] pt-8'>
+    <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
+      <LightRays
+        count={6}
+        color={won ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.25)'}
+        blur={40}
+        speed={20}
+        length='55vh'
+      />
+
       {/* Art Column — full reveal */}
       <div className='flex flex-col items-center gap-4'>
         {challengeImageUrl && game.challengeId && (
@@ -444,16 +453,24 @@ export function UncoverGame() {
   // ─── Pre-game home state ───────────────────────────────────────
   if (!hasStarted && !isInitializing) {
     return (
-      <div className='flex h-full flex-col items-center justify-center gap-8 px-4'>
+      <div className='relative flex h-full flex-col items-center justify-center gap-8 px-4'>
+        <LightRays
+          count={8}
+          color='rgba(16, 185, 129, 0.35)'
+          blur={40}
+          speed={16}
+          length='65vh'
+        />
+
         {/* Puzzle info */}
-        <div className='flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-500'>
+        <div className='relative z-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-500'>
           <span>PUZZLE #47</span>
           <span className='text-zinc-700'>·</span>
           <span>5 DAY STREAK</span>
         </div>
 
         {/* Album art teaser — center stage */}
-        <div className='relative w-[340px]'>
+        <div className='relative z-10 w-[340px]'>
           <div className='overflow-hidden rounded-2xl shadow-[0_0_120px_rgba(255,255,255,0.03)]'>
             <TeaserImage />
           </div>
@@ -465,21 +482,21 @@ export function UncoverGame() {
         </div>
 
         {/* Hook line */}
-        <p className='text-xl font-medium text-white'>
+        <p className='relative z-10 text-xl font-medium text-white'>
           Can you name this album?
         </p>
 
         {/* Start button — pill shaped */}
         <button
           onClick={() => setHasStarted(true)}
-          className='flex items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
+          className='relative z-10 flex items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
         >
           Start today&apos;s puzzle
           <span aria-hidden>→</span>
         </button>
 
         {/* Inline stats */}
-        <div className='flex items-center gap-10 pt-2'>
+        <div className='relative z-10 flex items-center gap-10 pt-2'>
           <div className='flex items-center gap-2'>
             <span className='text-sm font-semibold text-white'>23</span>
             <span className='text-xs text-zinc-600'>played</span>
@@ -543,7 +560,15 @@ export function UncoverGame() {
 
   // ─── V2 Two-Column Game Board ─────────────────────────────────
   return (
-    <div className='flex h-full items-start gap-12 px-[60px] pt-8'>
+    <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
+      <LightRays
+        count={6}
+        color='rgba(16, 185, 129, 0.25)'
+        blur={40}
+        speed={18}
+        length='55vh'
+      />
+
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
         {/* Art Frame */}
