@@ -125,8 +125,8 @@ export type AddAlbumToCollectionWithCreateInput = {
   position?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type AddAlbumToQueueResult = {
-  __typename?: 'AddAlbumToQueueResult';
+export type AddAlbumToPoolResult = {
+  __typename?: 'AddAlbumToPoolResult';
   album?: Maybe<Album>;
   curatedChallenge?: Maybe<CuratedChallengeEntry>;
   error?: Maybe<Scalars['String']['output']>;
@@ -1526,10 +1526,10 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
-   * Admin: Add album to game queue in one shot.
+   * Admin: Add album to game pool in one shot.
    * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
    */
-  addAlbumToQueue: AddAlbumToQueueResult;
+  addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
@@ -1633,7 +1633,7 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
 };
 
-export type MutationAddAlbumToQueueArgs = {
+export type MutationAddAlbumToPoolArgs = {
   albumId: Scalars['UUID']['input'];
 };
 
@@ -2042,7 +2042,7 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
-  suggestedGameAlbums: Array<Album>;
+  suggestedGameAlbums: SuggestedGameAlbumsResult;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
@@ -2728,6 +2728,12 @@ export type SubscriptionJobStatusUpdatesArgs = {
 
 export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type SuggestedGameAlbumsResult = {
+  __typename?: 'SuggestedGameAlbumsResult';
+  albums: Array<Album>;
+  totalCount: Scalars['Int']['output'];
 };
 
 export type SyncJob = {
@@ -3552,14 +3558,14 @@ export type UpdateUserSettingsMutation = {
   };
 };
 
-export type AddAlbumToQueueMutationVariables = Exact<{
+export type AddAlbumToPoolMutationVariables = Exact<{
   albumId: Scalars['UUID']['input'];
 }>;
 
-export type AddAlbumToQueueMutation = {
+export type AddAlbumToPoolMutation = {
   __typename?: 'Mutation';
-  addAlbumToQueue: {
-    __typename?: 'AddAlbumToQueueResult';
+  addAlbumToPool: {
+    __typename?: 'AddAlbumToPoolResult';
     success: boolean;
     message?: string | null;
     error?: string | null;
@@ -4853,19 +4859,23 @@ export type SuggestedGameAlbumsQueryVariables = Exact<{
 
 export type SuggestedGameAlbumsQuery = {
   __typename?: 'Query';
-  suggestedGameAlbums: Array<{
-    __typename?: 'Album';
-    id: string;
-    title: string;
-    releaseDate?: Date | null;
-    coverArtUrl?: string | null;
-    cloudflareImageId?: string | null;
-    gameStatus: AlbumGameStatus;
-    artists: Array<{
-      __typename?: 'ArtistCredit';
-      artist: { __typename?: 'Artist'; id: string; name: string };
+  suggestedGameAlbums: {
+    __typename?: 'SuggestedGameAlbumsResult';
+    totalCount: number;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      gameStatus: AlbumGameStatus;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
     }>;
-  }>;
+  };
 };
 
 export type ChallengeHistoryQueryVariables = Exact<{
@@ -7237,9 +7247,9 @@ export const useUpdateUserSettingsMutation = <
 
 useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
 
-export const AddAlbumToQueueDocument = `
-    mutation AddAlbumToQueue($albumId: UUID!) {
-  addAlbumToQueue(albumId: $albumId) {
+export const AddAlbumToPoolDocument = `
+    mutation AddAlbumToPool($albumId: UUID!) {
+  addAlbumToPool(albumId: $albumId) {
     success
     message
     error
@@ -7255,34 +7265,31 @@ export const AddAlbumToQueueDocument = `
 }
     `;
 
-export const useAddAlbumToQueueMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
+export const useAddAlbumToPoolMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<
-    AddAlbumToQueueMutation,
+    AddAlbumToPoolMutation,
     TError,
-    AddAlbumToQueueMutationVariables,
+    AddAlbumToPoolMutationVariables,
     TContext
   >
 ) => {
   return useMutation<
-    AddAlbumToQueueMutation,
+    AddAlbumToPoolMutation,
     TError,
-    AddAlbumToQueueMutationVariables,
+    AddAlbumToPoolMutationVariables,
     TContext
   >({
-    mutationKey: ['AddAlbumToQueue'],
-    mutationFn: (variables?: AddAlbumToQueueMutationVariables) =>
-      fetcher<AddAlbumToQueueMutation, AddAlbumToQueueMutationVariables>(
-        AddAlbumToQueueDocument,
+    mutationKey: ['AddAlbumToPool'],
+    mutationFn: (variables?: AddAlbumToPoolMutationVariables) =>
+      fetcher<AddAlbumToPoolMutation, AddAlbumToPoolMutationVariables>(
+        AddAlbumToPoolDocument,
         variables
       )(),
     ...options,
   });
 };
 
-useAddAlbumToQueueMutation.getKey = () => ['AddAlbumToQueue'];
+useAddAlbumToPoolMutation.getKey = () => ['AddAlbumToPool'];
 
 export const DeleteAlbumDocument = `
     mutation DeleteAlbum($id: UUID!) {
@@ -10470,18 +10477,21 @@ export const SuggestedGameAlbumsDocument = `
     syncSource: $syncSource
     search: $search
   ) {
-    id
-    title
-    releaseDate
-    coverArtUrl
-    cloudflareImageId
-    gameStatus
-    artists {
-      artist {
-        id
-        name
+    albums {
+      id
+      title
+      releaseDate
+      coverArtUrl
+      cloudflareImageId
+      gameStatus
+      artists {
+        artist {
+          id
+          name
+        }
       }
     }
+    totalCount
   }
 }
     `;

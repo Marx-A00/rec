@@ -17,13 +17,11 @@ import {
 import { AlbumImage } from '@/components/ui/AlbumImage';
 import { GamePoolStats } from '@/components/admin/game-pool/GamePoolStats';
 import { PoolTable } from '@/components/admin/game-pool/PoolTable';
-import { EligibleAlbumsTable } from '@/components/admin/game-pool/EligibleAlbumsTable';
 import { SuggestedAlbumsTable } from '@/components/admin/game-pool/SuggestedAlbumsTable';
-import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
+
 import { ChallengeHistoryTable } from '@/components/admin/game-pool/ChallengeHistoryTable';
 import {
   useChallengeHistoryQuery,
-  useUncoverPoolStatusQuery,
   useUncoverSettingsQuery,
   useUpdateUncoverSettingsMutation,
 } from '@/generated/graphql';
@@ -75,9 +73,6 @@ export default function UncoverPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const { data: poolData } = useUncoverPoolStatusQuery();
-  const pool = poolData?.uncoverPoolStatus;
-
   const { data: settingsData } = useUncoverSettingsQuery();
   const settings = settingsData?.uncoverSettings;
 
@@ -107,8 +102,6 @@ export default function UncoverPage() {
       toast.error('Failed to update pool exhausted mode');
     }
   };
-
-  const remaining = pool?.remaining ?? 0;
 
   return (
     <div className='p-8'>
@@ -186,46 +179,35 @@ export default function UncoverPage() {
         </div>
       )}
 
-      {/* Uncover Top-Level Tabs */}
-      <Tabs defaultValue='album-cover-pool' className='space-y-6'>
+      {/* Album Management Tabs */}
+      <Tabs defaultValue='pool' className='space-y-6'>
         <TabsList className='bg-transparent border-b border-zinc-800 rounded-none p-0 h-auto'>
           <TabsTrigger
-            value='album-cover-pool'
+            value='pool'
             className='rounded-none border-b-2 border-transparent px-4 pb-3 pt-2.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-300 data-[state=active]:border-zinc-50 data-[state=active]:text-zinc-50 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
           >
-            Album Cover Pool
+            Pool
+          </TabsTrigger>
+          <TabsTrigger
+            value='add-albums'
+            className='rounded-none border-b-2 border-transparent px-4 pb-3 pt-2.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-300 data-[state=active]:border-zinc-50 data-[state=active]:text-zinc-50 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            Add Albums
+          </TabsTrigger>
+          <TabsTrigger
+            value='history'
+            className='rounded-none border-b-2 border-transparent px-4 pb-3 pt-2.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-300 data-[state=active]:border-zinc-50 data-[state=active]:text-zinc-50 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            History
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value='album-cover-pool' className='space-y-8'>
-          {/* Album Cover Pool Header + Import */}
-          <div className='flex items-center justify-between'>
-            <div>
-              <h2 className='text-xl font-semibold text-white'>
-                Album Cover Pool
-              </h2>
-              <p className='text-sm text-zinc-400 mt-1'>
-                Manage album covers eligible for the daily Uncover game
-              </p>
-              <p className='text-sm mt-1'>
-                <span
-                  className={
-                    remaining > 30
-                      ? 'text-green-400'
-                      : remaining > 7
-                        ? 'text-amber-400'
-                        : 'text-red-400'
-                  }
-                >
-                  {remaining} remaining
-                </span>
-                <span className='text-zinc-500'>
-                  {' '}
-                  / {pool?.totalCurated ?? 0} total in pool
-                </span>
-              </p>
-            </div>
-            <PlaylistImportDialog />
+        <TabsContent value='pool' className='space-y-4'>
+          <div className='mb-4'>
+            <h3 className='text-lg font-semibold text-white'>Pool</h3>
+            <p className='text-sm text-zinc-400 mt-1'>
+              All curated albums and their usage status
+            </p>
           </div>
 
           {/* Settings */}
@@ -266,69 +248,32 @@ export default function UncoverPage() {
             </div>
           </div>
 
-          {/* Stats Overview */}
+          <PoolTable />
+        </TabsContent>
+
+        <TabsContent value='add-albums' className='space-y-4'>
+          <div className='flex items-center justify-between mb-4'>
+            <div>
+              <h3 className='text-lg font-semibold text-white'>Add Albums</h3>
+              <p className='text-sm text-zinc-400 mt-1'>
+                Browse and add albums to the pool
+              </p>
+            </div>
+          </div>
           <GamePoolStats />
+          <SuggestedAlbumsTable />
+        </TabsContent>
 
-          {/* Album Management Sub-Tabs */}
-          <Tabs defaultValue='pool' className='space-y-6'>
-            <TabsList className='bg-zinc-800/50 border border-zinc-700/50'>
-              <TabsTrigger value='pool'>Pool</TabsTrigger>
-              <TabsTrigger value='add-albums'>Add Albums</TabsTrigger>
-              <TabsTrigger value='suggested'>Suggested Albums</TabsTrigger>
-              <TabsTrigger value='history'>History</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value='pool' className='space-y-4'>
-              <div className='mb-4'>
-                <h3 className='text-lg font-semibold text-white'>Pool</h3>
-                <p className='text-sm text-zinc-400 mt-1'>
-                  All curated albums and their usage status
-                </p>
-              </div>
-              <PoolTable />
-            </TabsContent>
-
-            <TabsContent value='add-albums' className='space-y-4'>
-              <div className='flex items-center justify-between mb-4'>
-                <div>
-                  <h3 className='text-lg font-semibold text-white'>
-                    Add Albums
-                  </h3>
-                  <p className='text-sm text-zinc-400 mt-1'>
-                    Browse eligible albums and add them to the pool
-                  </p>
-                </div>
-              </div>
-              <EligibleAlbumsTable />
-            </TabsContent>
-
-            <TabsContent value='suggested' className='space-y-4'>
-              <div className='flex items-center justify-between mb-4'>
-                <div>
-                  <h3 className='text-lg font-semibold text-white'>
-                    Suggested Albums
-                  </h3>
-                  <p className='text-sm text-zinc-400 mt-1'>
-                    Albums with cover art awaiting review
-                  </p>
-                </div>
-              </div>
-              <SuggestedAlbumsTable />
-            </TabsContent>
-
-            <TabsContent value='history' className='space-y-4'>
-              <div className='mb-4'>
-                <h3 className='text-lg font-semibold text-white'>
-                  Challenge History
-                </h3>
-                <p className='text-sm text-zinc-400 mt-1'>
-                  Past and current daily album covers in reverse chronological
-                  order
-                </p>
-              </div>
-              <ChallengeHistoryTable />
-            </TabsContent>
-          </Tabs>
+        <TabsContent value='history' className='space-y-4'>
+          <div className='mb-4'>
+            <h3 className='text-lg font-semibold text-white'>
+              Challenge History
+            </h3>
+            <p className='text-sm text-zinc-400 mt-1'>
+              Past and current daily album covers in reverse chronological order
+            </p>
+          </div>
+          <ChallengeHistoryTable />
         </TabsContent>
       </Tabs>
     </div>

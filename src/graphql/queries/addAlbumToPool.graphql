@@ -1,5 +1,5 @@
-mutation AddAlbumToQueue($albumId: UUID!) {
-  addAlbumToQueue(albumId: $albumId) {
+mutation AddAlbumToPool($albumId: UUID!) {
+  addAlbumToPool(albumId: $albumId) {
     success
     message
     error

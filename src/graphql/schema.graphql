@@ -2519,7 +2519,7 @@ type Query {
     offset: Int = 0
     syncSource: String
     search: String
-  ): [Album!]!
+  ): SuggestedGameAlbumsResult!
 
   # Deezer Playlist Import queries
   """
@@ -2786,6 +2786,11 @@ type GamePoolStats {
   totalWithCoverArt: Int!
 }
 
+type SuggestedGameAlbumsResult {
+  albums: [Album!]!
+  totalCount: Int!
+}
+
 input UpdateAlbumGameStatusInput {
   albumId: UUID!
   gameStatus: AlbumGameStatus!
@@ -2836,7 +2841,7 @@ type DeezerPlaylistImportResult {
   playlistName: String
 }
 
-type AddAlbumToQueueResult {
+type AddAlbumToPoolResult {
   success: Boolean!
   message: String
   error: String
@@ -3143,10 +3148,10 @@ type Mutation {
   importDeezerPlaylist(playlistId: String!, selectedDeezerIds: [String!]): DeezerPlaylistImportResult!
 
   """
-  Admin: Add album to game queue in one shot.
+  Admin: Add album to game pool in one shot.
   Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
   """
-  addAlbumToQueue(albumId: UUID!): AddAlbumToQueueResult!
+  addAlbumToPool(albumId: UUID!): AddAlbumToPoolResult!
 
   # Daily Challenge mutations (Admin)
   """

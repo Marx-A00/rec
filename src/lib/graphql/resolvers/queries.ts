@@ -3520,23 +3520,29 @@ export const queryResolvers: QueryResolvers = {
         ];
       }
 
-      const albums = await prisma.album.findMany({
-        where,
-        include: {
-          artists: {
-            include: {
-              artist: true,
+      const [albums, totalCount] = await Promise.all([
+        prisma.album.findMany({
+          where,
+          include: {
+            artists: {
+              include: {
+                artist: true,
+              },
             },
           },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: limit,
-        skip: offset,
-      });
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.album.count({ where }),
+      ]);
 
-      return albums as ResolversTypes['Album'][];
+      return {
+        albums: albums as ResolversTypes['Album'][],
+        totalCount,
+      };
     } catch (error) {
       graphqlLogger.error('Failed to fetch suggested game albums:', { error });
       throw new GraphQLError(`Failed to fetch suggested game albums: ${error}`);

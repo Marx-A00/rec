@@ -5,13 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
-  CheckCircle,
   XCircle,
-  Zap,
+  Plus,
   Search,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  ListMusic,
 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -34,9 +34,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
   useSuggestedGameAlbumsQuery,
   useUpdateAlbumGameStatusMutation,
-  useAddAlbumToQueueMutation,
+  useAddAlbumToPoolMutation,
   AlbumGameStatus,
 } from '@/generated/graphql';
 
@@ -52,6 +59,33 @@ const SYNC_SOURCE_OPTIONS = [
 
 const PAGE_SIZE = 50;
 
+/** Build the page number array: 1 2 ... 5 [6] 7 ... 10 */
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | '...')[] = [1];
+
+  if (current > 3) {
+    pages.push('...');
+  }
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (current < total - 2) {
+    pages.push('...');
+  }
+
+  pages.push(total);
+  return pages;
+}
+
 export function SuggestedAlbumsTable() {
   const queryClient = useQueryClient();
   const [offset, setOffset] = useState(0);
@@ -60,6 +94,7 @@ export function SuggestedAlbumsTable() {
   const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<string | null>(null);
+  const [addExternalOpen, setAddExternalOpen] = useState(false);
 
   const { data, isLoading } = useSuggestedGameAlbumsQuery({
     limit: PAGE_SIZE,
@@ -70,8 +105,8 @@ export function SuggestedAlbumsTable() {
 
   const { mutateAsync: updateStatus } = useUpdateAlbumGameStatusMutation();
 
-  const { mutateAsync: addToQueue, isPending: isAddingToQueue } =
-    useAddAlbumToQueueMutation();
+  const { mutateAsync: addToPool, isPending: isAddingToPool } =
+    useAddAlbumToPoolMutation();
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['SuggestedGameAlbums'] });
@@ -81,9 +116,12 @@ export function SuggestedAlbumsTable() {
   }, [queryClient]);
 
   const albums = useMemo(
-    () => data?.suggestedGameAlbums || [],
-    [data?.suggestedGameAlbums]
+    () => data?.suggestedGameAlbums?.albums || [],
+    [data?.suggestedGameAlbums?.albums]
   );
+  const totalCount = data?.suggestedGameAlbums?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const hasFilters = syncSource !== 'all' || searchQuery;
 
   // Selection helpers
@@ -114,35 +152,18 @@ export function SuggestedAlbumsTable() {
   const resetSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   // Single-album actions
-  const handleApprove = async (albumId: string) => {
+  const handleAddToPool = async (albumId: string, albumTitle: string) => {
     try {
-      const result = await updateStatus({
-        input: { albumId, gameStatus: AlbumGameStatus.Eligible },
-      });
-      if (result.updateAlbumGameStatus.success) {
-        toast.success('Album approved for game pool');
+      const result = await addToPool({ albumId });
+      if (result.addAlbumToPool.success) {
+        toast.success(`"${albumTitle}" added to pool`);
       } else {
-        toast.error(result.updateAlbumGameStatus.error || 'Approval failed');
+        toast.error(result.addAlbumToPool.error || 'Failed to add to pool');
       }
       invalidateAll();
     } catch (error) {
-      toast.error('Failed to approve album');
-      console.error('Approval error:', error);
-    }
-  };
-
-  const handleAddToQueue = async (albumId: string, albumTitle: string) => {
-    try {
-      const result = await addToQueue({ albumId });
-      if (result.addAlbumToQueue.success) {
-        toast.success(`"${albumTitle}" added to game queue`);
-      } else {
-        toast.error(result.addAlbumToQueue.error || 'Failed to add to queue');
-      }
-      invalidateAll();
-    } catch (error) {
-      toast.error('Failed to add to queue');
-      console.error('Add to queue error:', error);
+      toast.error('Failed to add to pool');
+      console.error('Add to pool error:', error);
     }
   };
 
@@ -164,19 +185,17 @@ export function SuggestedAlbumsTable() {
   };
 
   // Bulk actions
-  const handleBulkApprove = async () => {
+  const handleBulkAddToPool = async () => {
     const ids = Array.from(selectedIds);
-    setBulkAction('approve');
-    const toastId = toast.loading(`Approving ${ids.length} albums...`);
+    setBulkAction('pool');
+    const toastId = toast.loading(`Adding ${ids.length} albums to pool...`);
     let success = 0;
     let failed = 0;
 
     for (const albumId of ids) {
       try {
-        const result = await updateStatus({
-          input: { albumId, gameStatus: AlbumGameStatus.Eligible },
-        });
-        if (result.updateAlbumGameStatus.success) success++;
+        const result = await addToPool({ albumId });
+        if (result.addAlbumToPool.success) success++;
         else failed++;
       } catch {
         failed++;
@@ -185,37 +204,9 @@ export function SuggestedAlbumsTable() {
 
     toast.dismiss(toastId);
     if (failed === 0) {
-      toast.success(`${success} albums approved`);
+      toast.success(`${success} albums added to pool`);
     } else {
-      toast.warning(`${success} approved, ${failed} failed`);
-    }
-    resetSelection();
-    invalidateAll();
-    setBulkAction(null);
-  };
-
-  const handleBulkQueue = async () => {
-    const ids = Array.from(selectedIds);
-    setBulkAction('queue');
-    const toastId = toast.loading(`Queuing ${ids.length} albums...`);
-    let success = 0;
-    let failed = 0;
-
-    for (const albumId of ids) {
-      try {
-        const result = await addToQueue({ albumId });
-        if (result.addAlbumToQueue.success) success++;
-        else failed++;
-      } catch {
-        failed++;
-      }
-    }
-
-    toast.dismiss(toastId);
-    if (failed === 0) {
-      toast.success(`${success} albums added to queue`);
-    } else {
-      toast.warning(`${success} queued, ${failed} failed`);
+      toast.warning(`${success} added to pool, ${failed} failed`);
     }
     resetSelection();
     invalidateAll();
@@ -276,20 +267,25 @@ export function SuggestedAlbumsTable() {
     resetSelection();
   };
 
-  const handlePrevPage = () => {
-    setOffset(Math.max(0, offset - PAGE_SIZE));
-    resetSelection();
-  };
-
-  const handleNextPage = () => {
-    setOffset(offset + PAGE_SIZE);
+  const goToPage = (page: number) => {
+    setOffset((page - 1) * PAGE_SIZE);
     resetSelection();
   };
 
   return (
     <div className='space-y-4'>
-      {/* Filter Controls */}
+      {/* Top Bar: Add External + Filters */}
       <div className='flex flex-wrap items-center gap-3'>
+        <Button
+          variant='outline'
+          size='sm'
+          className='h-9'
+          onClick={() => setAddExternalOpen(true)}
+        >
+          <Plus className='h-4 w-4 mr-1' />
+          Add External
+        </Button>
+
         <div className='flex items-center gap-2 flex-1 min-w-[200px] max-w-sm'>
           <Input
             placeholder='Search albums or artists...'
@@ -345,28 +341,14 @@ export function SuggestedAlbumsTable() {
               variant='outline'
               className='text-green-500 border-green-500/20 hover:bg-green-500/10'
               disabled={isBulkRunning}
-              onClick={handleBulkApprove}
+              onClick={handleBulkAddToPool}
             >
-              {bulkAction === 'approve' ? (
+              {bulkAction === 'pool' ? (
                 <Loader2 className='h-4 w-4 mr-1 animate-spin' />
               ) : (
-                <CheckCircle className='h-4 w-4 mr-1' />
+                <Plus className='h-4 w-4 mr-1' />
               )}
-              Approve All
-            </Button>
-            <Button
-              size='sm'
-              variant='outline'
-              className='text-amber-500 border-amber-500/20 hover:bg-amber-500/10'
-              disabled={isBulkRunning}
-              onClick={handleBulkQueue}
-            >
-              {bulkAction === 'queue' ? (
-                <Loader2 className='h-4 w-4 mr-1 animate-spin' />
-              ) : (
-                <Zap className='h-4 w-4 mr-1' />
-              )}
-              Queue All
+              Add All to Pool
             </Button>
             <Button
               size='sm'
@@ -400,7 +382,7 @@ export function SuggestedAlbumsTable() {
         <div className='text-center py-8 text-muted-foreground'>
           {hasFilters
             ? 'No albums match the current filters'
-            : 'No suggested albums found'}
+            : 'No albums found'}
         </div>
       ) : (
         <div className='rounded-md border border-zinc-800'>
@@ -424,7 +406,7 @@ export function SuggestedAlbumsTable() {
                 <TableHead>Album</TableHead>
                 <TableHead>Artist</TableHead>
                 <TableHead className='w-24'>Year</TableHead>
-                <TableHead className='w-64'>Actions</TableHead>
+                <TableHead className='w-52'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -472,23 +454,11 @@ export function SuggestedAlbumsTable() {
                           size='sm'
                           variant='outline'
                           className='text-green-500 border-green-500/20 hover:bg-green-500/10'
-                          disabled={isBulkRunning}
-                          onClick={() => handleApprove(album.id)}
+                          disabled={isAddingToPool || isBulkRunning}
+                          onClick={() => handleAddToPool(album.id, album.title)}
                         >
-                          <CheckCircle className='h-4 w-4 mr-1' />
-                          Approve
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='text-amber-500 border-amber-500/20 hover:bg-amber-500/10'
-                          disabled={isAddingToQueue || isBulkRunning}
-                          onClick={() =>
-                            handleAddToQueue(album.id, album.title)
-                          }
-                        >
-                          <Zap className='h-4 w-4 mr-1' />
-                          Queue
+                          <Plus className='h-4 w-4 mr-1' />
+                          Add to Pool
                         </Button>
                         <Button
                           size='sm'
@@ -511,33 +481,92 @@ export function SuggestedAlbumsTable() {
       )}
 
       {/* Pagination */}
-      {albums.length > 0 && (
+      {totalCount > 0 && (
         <div className='flex items-center justify-between'>
           <p className='text-sm text-zinc-500'>
-            Showing {offset + 1}–{offset + albums.length}
+            Showing {offset + 1}–{offset + albums.length} of{' '}
+            {totalCount.toLocaleString()}
           </p>
-          <div className='flex gap-2'>
+          <div className='flex items-center gap-1'>
             <Button
-              variant='outline'
+              variant='ghost'
               size='sm'
-              disabled={offset === 0}
-              onClick={handlePrevPage}
+              className='h-8 w-8 p-0'
+              disabled={currentPage === 1}
+              onClick={() => goToPage(currentPage - 1)}
             >
-              <ChevronLeft className='h-4 w-4 mr-1' />
-              Previous
+              <ChevronLeft className='h-4 w-4' />
             </Button>
+            {getPageNumbers(currentPage, totalPages).map((page, i) =>
+              page === '...' ? (
+                <span
+                  key={`ellipsis-${i}`}
+                  className='px-1 text-sm text-zinc-600'
+                >
+                  ...
+                </span>
+              ) : (
+                <Button
+                  key={page}
+                  variant='ghost'
+                  size='sm'
+                  className={`h-8 w-8 p-0 text-sm ${
+                    page === currentPage
+                      ? 'bg-zinc-700 text-white font-semibold'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                  onClick={() => goToPage(page as number)}
+                >
+                  {page}
+                </Button>
+              )
+            )}
             <Button
-              variant='outline'
+              variant='ghost'
               size='sm'
-              disabled={albums.length < PAGE_SIZE}
-              onClick={handleNextPage}
+              className='h-8 w-8 p-0'
+              disabled={currentPage === totalPages}
+              onClick={() => goToPage(currentPage + 1)}
             >
-              Next
-              <ChevronRight className='h-4 w-4 ml-1' />
+              <ChevronRight className='h-4 w-4' />
             </Button>
           </div>
         </div>
       )}
+
+      {/* Add External Dialog */}
+      <Dialog open={addExternalOpen} onOpenChange={setAddExternalOpen}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Add External Album</DialogTitle>
+            <DialogDescription>
+              Add an album to the pool from an external source
+            </DialogDescription>
+          </DialogHeader>
+          <div className='grid grid-cols-2 gap-3 pt-2'>
+            <Button
+              variant='outline'
+              className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
+              onClick={() => {
+                setAddExternalOpen(false);
+              }}
+            >
+              <Search className='h-5 w-5' />
+              <span className='text-sm'>Search</span>
+            </Button>
+            <Button
+              variant='outline'
+              className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
+              onClick={() => {
+                setAddExternalOpen(false);
+              }}
+            >
+              <ListMusic className='h-5 w-5' />
+              <span className='text-sm'>Import Playlist</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

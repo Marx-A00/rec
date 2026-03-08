@@ -99,8 +99,8 @@ export type AddAlbumToCollectionWithCreateInput = {
   position?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type AddAlbumToQueueResult = {
-  __typename?: 'AddAlbumToQueueResult';
+export type AddAlbumToPoolResult = {
+  __typename?: 'AddAlbumToPoolResult';
   album?: Maybe<Album>;
   curatedChallenge?: Maybe<CuratedChallengeEntry>;
   error?: Maybe<Scalars['String']['output']>;
@@ -1500,10 +1500,10 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
-   * Admin: Add album to game queue in one shot.
+   * Admin: Add album to game pool in one shot.
    * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
    */
-  addAlbumToQueue: AddAlbumToQueueResult;
+  addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
@@ -1607,7 +1607,7 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
 };
 
-export type MutationAddAlbumToQueueArgs = {
+export type MutationAddAlbumToPoolArgs = {
   albumId: Scalars['UUID']['input'];
 };
 
@@ -2016,7 +2016,7 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
-  suggestedGameAlbums: Array<Album>;
+  suggestedGameAlbums: SuggestedGameAlbumsResult;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
@@ -2704,6 +2704,12 @@ export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type SuggestedGameAlbumsResult = {
+  __typename?: 'SuggestedGameAlbumsResult';
+  albums: Array<Album>;
+  totalCount: Scalars['Int']['output'];
+};
+
 export type SyncJob = {
   __typename?: 'SyncJob';
   albums: Array<Album>;
@@ -3343,7 +3349,7 @@ export type ResolversTypes = ResolversObject<{
   ActivityType: ActivityType;
   AddAlbumToCollectionPayload: ResolverTypeWrapper<AddAlbumToCollectionPayload>;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
-  AddAlbumToQueueResult: ResolverTypeWrapper<AddAlbumToQueueResult>;
+  AddAlbumToPoolResult: ResolverTypeWrapper<AddAlbumToPoolResult>;
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumGameStatus: AlbumGameStatus;
@@ -3513,6 +3519,7 @@ export type ResolversTypes = ResolversObject<{
   SubmitGameResultInput: SubmitGameResultInput;
   SubmitGameResultResponse: ResolverTypeWrapper<SubmitGameResultResponse>;
   Subscription: ResolverTypeWrapper<{}>;
+  SuggestedGameAlbumsResult: ResolverTypeWrapper<SuggestedGameAlbumsResult>;
   SyncJob: ResolverTypeWrapper<SyncJob>;
   SyncJobStatus: SyncJobStatus;
   SyncJobType: SyncJobType;
@@ -3569,7 +3576,7 @@ export type ResolversParentTypes = ResolversObject<{
   ActivityMetadata: ActivityMetadata;
   AddAlbumToCollectionPayload: AddAlbumToCollectionPayload;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
-  AddAlbumToQueueResult: AddAlbumToQueueResult;
+  AddAlbumToPoolResult: AddAlbumToPoolResult;
   AdminUpdateUserSettingsPayload: AdminUpdateUserSettingsPayload;
   Album: Album;
   AlbumInput: AlbumInput;
@@ -3710,6 +3717,7 @@ export type ResolversParentTypes = ResolversObject<{
   SubmitGameResultInput: SubmitGameResultInput;
   SubmitGameResultResponse: SubmitGameResultResponse;
   Subscription: {};
+  SuggestedGameAlbumsResult: SuggestedGameAlbumsResult;
   SyncJob: SyncJob;
   SyncJobsConnection: SyncJobsConnection;
   SyncJobsInput: SyncJobsInput;
@@ -3830,10 +3838,10 @@ export type AddAlbumToCollectionPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type AddAlbumToQueueResultResolvers<
+export type AddAlbumToPoolResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
-    ResolversParentTypes['AddAlbumToQueueResult'] = ResolversParentTypes['AddAlbumToQueueResult'],
+    ResolversParentTypes['AddAlbumToPoolResult'] = ResolversParentTypes['AddAlbumToPoolResult'],
 > = ResolversObject<{
   album?: Resolver<Maybe<ResolversTypes['Album']>, ParentType, ContextType>;
   curatedChallenge?: Resolver<
@@ -5617,11 +5625,11 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddAlbumToCollectionWithCreateArgs, 'input'>
   >;
-  addAlbumToQueue?: Resolver<
-    ResolversTypes['AddAlbumToQueueResult'],
+  addAlbumToPool?: Resolver<
+    ResolversTypes['AddAlbumToPoolResult'],
     ParentType,
     ContextType,
-    RequireFields<MutationAddAlbumToQueueArgs, 'albumId'>
+    RequireFields<MutationAddAlbumToPoolArgs, 'albumId'>
   >;
   addArtist?: Resolver<
     ResolversTypes['Artist'],
@@ -6406,7 +6414,7 @@ export type QueryResolvers<
     ContextType
   >;
   suggestedGameAlbums?: Resolver<
-    Array<ResolversTypes['Album']>,
+    ResolversTypes['SuggestedGameAlbumsResult'],
     ParentType,
     ContextType,
     RequireFields<QuerySuggestedGameAlbumsArgs, 'limit' | 'offset'>
@@ -7050,6 +7058,16 @@ export type SubscriptionResolvers<
     ParentType,
     ContextType
   >;
+}>;
+
+export type SuggestedGameAlbumsResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SuggestedGameAlbumsResult'] = ResolversParentTypes['SuggestedGameAlbumsResult'],
+> = ResolversObject<{
+  albums?: Resolver<Array<ResolversTypes['Album']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SyncJobResolvers<
@@ -7847,7 +7865,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ActivityFeed?: ActivityFeedResolvers<ContextType>;
   ActivityMetadata?: ActivityMetadataResolvers<ContextType>;
   AddAlbumToCollectionPayload?: AddAlbumToCollectionPayloadResolvers<ContextType>;
-  AddAlbumToQueueResult?: AddAlbumToQueueResultResolvers<ContextType>;
+  AddAlbumToPoolResult?: AddAlbumToPoolResultResolvers<ContextType>;
   AdminUpdateUserSettingsPayload?: AdminUpdateUserSettingsPayloadResolvers<ContextType>;
   Album?: AlbumResolvers<ContextType>;
   AlbumRecommendation?: AlbumRecommendationResolvers<ContextType>;
@@ -7960,6 +7978,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
   SubmitGameResultResponse?: SubmitGameResultResponseResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
+  SuggestedGameAlbumsResult?: SuggestedGameAlbumsResultResolvers<ContextType>;
   SyncJob?: SyncJobResolvers<ContextType>;
   SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;

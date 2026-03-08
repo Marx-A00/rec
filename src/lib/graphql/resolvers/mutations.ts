@@ -3930,7 +3930,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  addAlbumToQueue: async (
+  addAlbumToPool: async (
     _: unknown,
     { albumId }: { albumId: string },
     { prisma, user }
@@ -3989,7 +3989,7 @@ export const mutationResolvers: MutationResolvers = {
         return {
           success: false,
           message: null,
-          error: 'Album is already in the curated challenge queue',
+          error: 'Album is already in the pool',
           album: null,
           curatedChallenge: null,
         };
@@ -4033,29 +4033,29 @@ export const mutationResolvers: MutationResolvers = {
         entityType: 'ALBUM',
         entityId: albumId,
         albumId,
-        operation: 'game-pool:add-to-queue',
+        operation: 'game-pool:add-to-pool',
         category: 'USER_ACTION',
         sources: ['ADMIN'],
         status: 'SUCCESS',
-        reason: 'Added to game queue (ELIGIBLE + curated) via addAlbumToQueue',
+        reason: 'Added to game pool (ELIGIBLE + curated) via addAlbumToPool',
         fieldsEnriched: ['gameStatus'],
         userId: user?.id,
       });
 
-      graphqlLogger.info('Added album to game queue:', {
+      graphqlLogger.info('Added album to game pool:', {
         albumId,
         gameStatus: 'ELIGIBLE',
       });
 
       return {
         success: true,
-        message: 'Album set to ELIGIBLE and added to curated queue',
+        message: 'Album set to ELIGIBLE and added to pool',
         error: null,
         album: result.updatedAlbum,
         curatedChallenge: result.curatedEntry,
       };
     } catch (error) {
-      graphqlLogger.error('Failed to add album to queue:', {
+      graphqlLogger.error('Failed to add album to pool:', {
         error,
         albumId,
       });
@@ -4063,7 +4063,7 @@ export const mutationResolvers: MutationResolvers = {
       return {
         success: false,
         message: null,
-        error: `Failed to add album to queue: ${error}`,
+        error: `Failed to add album to pool: ${error}`,
         album: null,
         curatedChallenge: null,
       };
