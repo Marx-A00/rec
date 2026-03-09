@@ -2,51 +2,85 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useUncoverGameStore } from '@/stores/useUncoverGameStore';
 import type { Guess } from '@/stores/useUncoverGameStore';
 import {
   useDailyPuzzleQuery,
+  useArchivePuzzleQuery,
   useSubmitGameResultMutation,
+  useMyUncoverSessionsQuery,
   UncoverGameMode,
 } from '@/generated/graphql';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import {
   isCorrectGuess,
-  isGameOver as checkGameOver,
   getGameResult,
   isDuplicateGuess,
   MAX_ATTEMPTS,
   type ClientGuess,
 } from '@/lib/uncover/client-game-logic';
 
+export interface UseUncoverGameOptions {
+  mode: 'daily' | 'archive';
+  challengeDate?: Date; // required when mode === 'archive'
+}
+
 /**
- * Coordination hook for Uncover game (client-side, Wordle-style).
+ * Unified coordination hook for Uncover game (daily + archive).
  *
- * Key differences from the old mutation-based hook:
  * - Puzzle data (including correct answer) loads upfront via query
  * - Guesses are validated instantly on the client
  * - Server is notified once at game end (fire-and-forget)
  * - Failed submissions are retried on next mount
+ *
+ * Call with no args for daily mode: `useUncoverGame()`
+ * Call with options for archive:    `useUncoverGame({ mode: 'archive', challengeDate })`
  */
-export function useUncoverGame() {
+export function useUncoverGame(options?: UseUncoverGameOptions) {
+  const mode = options?.mode ?? 'daily';
+  const challengeDate = options?.challengeDate;
+  const isArchive = mode === 'archive';
+
   const { data: session, status: authStatus } = useSession();
   const gameStore = useUncoverGameStore();
+  const queryClient = useQueryClient();
 
   const [localError, setLocalError] = useState<string | null>(null);
+  const hasReset = useRef(false);
   const retryAttempted = useRef(false);
 
-  // Fetch puzzle data (includes correct answer)
-  const puzzleQuery = useDailyPuzzleQuery(
+  // ISO date string for archive store persistence
+  const dateString = challengeDate?.toISOString() ?? null;
+
+  // Fetch puzzle data — daily or archive based on mode
+  const dailyQuery = useDailyPuzzleQuery(
     {},
-    { enabled: authStatus === 'authenticated' }
+    { enabled: !isArchive && authStatus === 'authenticated' }
+  );
+  const archiveQuery = useArchivePuzzleQuery(
+    { date: challengeDate! },
+    { enabled: isArchive && authStatus === 'authenticated' && !!challengeDate }
   );
 
-  const submitResultMutation = useSubmitGameResultMutation();
+  const puzzleQuery = isArchive ? archiveQuery : dailyQuery;
+  const puzzle = isArchive
+    ? archiveQuery.data?.archivePuzzle
+    : dailyQuery.data?.dailyPuzzle;
 
-  // Extract puzzle data
-  const puzzle = puzzleQuery.data?.dailyPuzzle;
+  const submitResultMutation = useSubmitGameResultMutation();
   const correctAlbumId = puzzle?.correctAlbumId ?? null;
+
+  // Archive: reset shared store on mount so stale daily-game state doesn't interfere
+  useEffect(() => {
+    if (isArchive && !hasReset.current) {
+      gameStore.resetSession();
+      gameStore.clearGuesses();
+      gameStore.clearError();
+      hasReset.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ----- Submit result to server (fire-and-forget) -----
 
@@ -75,14 +109,21 @@ export function useUncoverGame() {
             guesses: guessInputs,
             won,
             attemptCount,
-            mode: UncoverGameMode.Daily,
+            mode: isArchive ? UncoverGameMode.Archive : UncoverGameMode.Daily,
           },
         });
 
         gameStore.markResultSubmitted();
+
+        // Archive: invalidate calendar query so it shows the new completion
+        if (isArchive) {
+          queryClient.invalidateQueries({
+            queryKey: useMyUncoverSessionsQuery.getKey(),
+          });
+        }
       } catch (error) {
         console.error(
-          '[useUncoverGame] Failed to submit result to server:',
+          `[useUncoverGame:${mode}] Failed to submit result to server:`,
           error
         );
         // Don't mark as submitted — will retry on next mount
@@ -90,7 +131,7 @@ export function useUncoverGame() {
         gameStore.setSubmitting(false);
       }
     },
-    [gameStore, submitResultMutation]
+    [gameStore, submitResultMutation, isArchive, mode, queryClient]
   );
 
   // ----- Retry failed submissions on mount -----
@@ -98,13 +139,22 @@ export function useUncoverGame() {
   useEffect(() => {
     if (retryAttempted.current) return;
 
-    const { challengeId, status, resultSubmitted, guesses, won, attemptCount } =
-      gameStore;
+    const {
+      challengeId,
+      status,
+      resultSubmitted,
+      guesses,
+      won,
+      attemptCount,
+      mode: storeMode,
+    } = gameStore;
 
     if (
       challengeId &&
       (status === 'WON' || status === 'LOST') &&
-      !resultSubmitted
+      !resultSubmitted &&
+      // Archive: only retry if store mode matches
+      (!isArchive || storeMode === 'archive')
     ) {
       retryAttempted.current = true;
       submitResultToServer(challengeId, guesses, won, attemptCount);
@@ -123,12 +173,21 @@ export function useUncoverGame() {
       // Wait for puzzle data if not yet loaded
       let puzzleData = puzzle;
       if (!puzzleData) {
-        const result = await puzzleQuery.refetch();
-        puzzleData = result.data?.dailyPuzzle;
+        if (isArchive) {
+          const result = await archiveQuery.refetch();
+          puzzleData = result.data?.archivePuzzle;
+        } else {
+          const result = await dailyQuery.refetch();
+          puzzleData = result.data?.dailyPuzzle;
+        }
       }
 
       if (!puzzleData) {
-        throw new Error('No puzzle available');
+        throw new Error(
+          isArchive
+            ? 'No puzzle available for this date'
+            : 'No puzzle available'
+        );
       }
 
       // Check if server has an existing completed result
@@ -138,7 +197,8 @@ export function useUncoverGame() {
         gameStore.setSession({
           id: crypto.randomUUID(),
           challengeId: puzzleData.challengeId,
-          mode: 'daily',
+          mode,
+          ...(isArchive && dateString ? { archiveDate: dateString } : {}),
         });
 
         // Restore guesses from server
@@ -162,8 +222,9 @@ export function useUncoverGame() {
         };
       }
 
-      // Check if localStorage has an in-progress session for this challenge
+      // Daily: check if localStorage has an in-progress session for this challenge
       if (
+        !isArchive &&
         gameStore.challengeId === puzzleData.challengeId &&
         gameStore.status === 'IN_PROGRESS' &&
         gameStore.sessionId
@@ -179,7 +240,8 @@ export function useUncoverGame() {
       gameStore.setSession({
         id: crypto.randomUUID(),
         challengeId: puzzleData.challengeId,
-        mode: 'daily',
+        mode,
+        ...(isArchive && dateString ? { archiveDate: dateString } : {}),
       });
       gameStore.clearGuesses();
       gameStore.updateAttemptCount(0);
@@ -193,9 +255,11 @@ export function useUncoverGame() {
         error instanceof Error ? error.message : 'Failed to start game';
       gameStore.setError(errorMessage);
       setLocalError(errorMessage);
+      // Daily: re-throw so component can catch; Archive: return null
+      if (isArchive) return null;
       throw error;
     }
-  }, [gameStore, puzzle, puzzleQuery]);
+  }, [gameStore, puzzle, puzzleQuery, mode, isArchive, dateString]);
 
   // ----- Submit guess (instant) -----
 

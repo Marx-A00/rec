@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wrench, X, RotateCcw, Archive, Zap, Share2, Lock } from 'lucide-react';
+import {
+  Wrench,
+  X,
+  RotateCcw,
+  Archive,
+  Calendar,
+  Zap,
+  Share2,
+  Lock,
+} from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
@@ -18,6 +28,18 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
+import { LumaSpinner } from '@/components/ui/LumaSpinner';
+
+// ─── Props ──────────────────────────────────────────────────────
+
+export interface UncoverGameProps {
+  /** Game mode. Default: 'daily' */
+  mode?: 'daily' | 'archive';
+  /** Date of the archive challenge. Required when mode='archive'. */
+  challengeDate?: Date;
+}
+
+// ─── Sub-components (daily-only) ────────────────────────────────
 
 /**
  * Teaser image component for unauthenticated users.
@@ -52,7 +74,7 @@ const CLOUDFLARE_BASE = `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLO
 
 /**
  * Admin/dev test panel for swapping album images and reveal stages.
- * Only visible to ADMIN/OWNER users.
+ * Only visible to ADMIN/OWNER users in daily mode.
  */
 function DevTestPanel({
   onSelectImage,
@@ -181,22 +203,26 @@ function DevTestPanel({
   );
 }
 
-/**
- * V2 Two-Column Game Over state.
- * Shows full album reveal on the left, result message + actions on the right.
- */
+// ─── Game Over ──────────────────────────────────────────────────
+
 function GameOver({
   game,
   challengeImageUrl,
   onResetGame,
+  mode,
+  formattedDate,
+  archiveUrl,
 }: {
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
   onResetGame: () => void;
+  mode: 'daily' | 'archive';
+  formattedDate: string | null;
+  archiveUrl: string;
 }) {
   const [showDevPanel, setShowDevPanel] = useState(false);
   const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
-
+  const isDaily = mode === 'daily';
   const won = game.won;
 
   return (
@@ -226,9 +252,18 @@ function GameOver({
 
       {/* Controls Column — result + actions */}
       <div className='flex min-h-0 flex-1 flex-col'>
+        {/* Archive: date label */}
+        {!isDaily && formattedDate && (
+          <p className='pb-1 text-xs text-zinc-500'>{formattedDate}</p>
+        )}
+
         {/* Result header */}
         <h2 className='pb-1 text-2xl font-bold text-white'>
-          {won ? 'You got it!' : 'Better luck tomorrow'}
+          {won
+            ? 'You got it!'
+            : isDaily
+              ? 'Better luck tomorrow'
+              : 'Better luck next time'}
         </h2>
         <div className='flex items-center gap-2 pb-5'>
           {won ? (
@@ -262,23 +297,34 @@ function GameOver({
             Share Result
           </button>
           <Link
-            href='/game/archive'
+            href={archiveUrl}
             className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
           >
-            <Archive className='h-3.5 w-3.5' />
-            Play Archive
+            {isDaily ? (
+              <>
+                <Archive className='h-3.5 w-3.5' />
+                Play Archive
+              </>
+            ) : (
+              <>
+                <Calendar className='h-3.5 w-3.5' />
+                Back to Archive
+              </>
+            )}
           </Link>
         </div>
 
         {/* Divider */}
         <div className='h-px w-full bg-zinc-800' />
 
-        {/* Next game countdown */}
-        <p className='pt-3 text-xs text-zinc-500'>
-          Next puzzle drops at midnight
-        </p>
+        {/* Daily: next puzzle message */}
+        {isDaily && (
+          <p className='pt-3 text-xs text-zinc-500'>
+            Next puzzle drops at midnight
+          </p>
+        )}
 
-        {/* Today's guesses */}
+        {/* Guesses list */}
         {game.guesses.length > 0 && (
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
             <GuessList guesses={game.guesses} />
@@ -286,8 +332,8 @@ function GameOver({
         )}
       </div>
 
-      {/* Admin dev panel toggle */}
-      {isAdmin && (
+      {/* Admin dev panel toggle (daily only) */}
+      {isDaily && isAdmin && (
         <button
           onClick={() => setShowDevPanel(prev => !prev)}
           className='fixed right-4 top-20 z-[60] rounded-full bg-zinc-800 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors'
@@ -296,7 +342,7 @@ function GameOver({
           <Wrench className='h-5 w-5' />
         </button>
       )}
-      {isAdmin && showDevPanel && (
+      {isDaily && isAdmin && showDevPanel && (
         <DevTestPanel
           onSelectImage={() => {}}
           stageOverride={null}
@@ -310,37 +356,58 @@ function GameOver({
   );
 }
 
+// ─── Main Component ─────────────────────────────────────────────
+
 /**
- * Main game container component for Uncover daily challenge.
- * V2: Two-column layout — large album art left, controls right.
+ * Unified Uncover game component for both daily and archive modes.
  *
- * Handles:
- * - Auth gate: Show login prompt for unauthenticated users
- * - Auto-start session on mount for authenticated users
- * - Loading state during session start
- * - Game board for IN_PROGRESS sessions (two-column)
- * - Results screen for completed sessions (two-column)
+ * Daily mode (default): Pre-game home screen, auth gate with providers,
+ * dev panel for admins, streak/stats display.
+ *
+ * Archive mode: Auto-starts on mount, shows date label, "Back to Archive"
+ * navigation, no pre-game screen.
  */
-export function UncoverGame() {
-  const game = useUncoverGame();
+export function UncoverGame({
+  mode = 'daily',
+  challengeDate,
+}: UncoverGameProps) {
+  const router = useRouter();
+  const isDaily = mode === 'daily';
+  const isArchive = mode === 'archive';
+
+  const game = useUncoverGame(
+    isArchive && challengeDate ? { mode: 'archive', challengeDate } : undefined
+  );
 
   const [challengeImageUrl, setChallengeImageUrl] = useState<string | null>(
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(isArchive); // archive auto-starts
 
-  // Dev test panel state (admin only)
+  // Dev test panel state (daily + admin only)
   const [showDevPanel, setShowDevPanel] = useState(false);
   const [devImageOverride, setDevImageOverride] = useState<string | null>(null);
   const [devStageOverride, setDevStageOverride] = useState<number | null>(null);
 
   const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
 
+  // Format archive date in UTC
+  const formattedDate = challengeDate
+    ? new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(challengeDate)
+    : null;
+
+  const archiveUrl = '/game/archive';
+
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
 
-  /** Start session when user clicks play (or if they already have an active session). */
+  /** Start session when user clicks play (daily) or on mount (archive). */
   useEffect(() => {
     if (!game.isAuthenticated || game.isAuthLoading) return;
     if (!hasStarted) return;
@@ -351,7 +418,7 @@ export function UncoverGame() {
       setIsInitializing(true);
       try {
         const result = await startGameRef.current();
-        if (!cancelled) {
+        if (!cancelled && result) {
           setChallengeImageUrl(result.imageUrl);
         }
       } catch (error) {
@@ -367,20 +434,20 @@ export function UncoverGame() {
     };
   }, [game.isAuthenticated, game.isAuthLoading, hasStarted, challengeImageUrl]);
 
-  /** Clear stale completed sessions so the home screen shows cleanly for a new day. */
+  /** Daily: clear stale completed sessions so the home screen shows cleanly for a new day. */
   useEffect(() => {
-    if (game.sessionId && game.isGameOver) {
+    if (isDaily && game.sessionId && game.isGameOver) {
       game.resetGame();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Auto-resume only if user has an active IN_PROGRESS session (e.g. refreshed mid-game). */
+  /** Daily: auto-resume if user has an active IN_PROGRESS session (e.g. refreshed mid-game). */
   useEffect(() => {
-    if (game.sessionId && !hasStarted && !game.isGameOver) {
+    if (isDaily && game.sessionId && !hasStarted && !game.isGameOver) {
       setHasStarted(true);
     }
-  }, [game.sessionId, hasStarted, game.isGameOver]);
+  }, [isDaily, game.sessionId, hasStarted, game.isGameOver]);
 
   // ─── Auth loading ─────────────────────────────────────────────
   if (!game.isAuthenticated) {
@@ -392,7 +459,32 @@ export function UncoverGame() {
       );
     }
 
-    // ─── Unauthenticated state ────────────────────────────────────
+    // Archive: simple sign-in prompt
+    if (isArchive) {
+      const dateStr = challengeDate?.toISOString().split('T')[0] ?? '';
+      return (
+        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
+          <div className='text-center'>
+            <h2 className='mb-2 text-2xl font-bold'>
+              Archive Game - {formattedDate}
+            </h2>
+            <p className='text-zinc-400 mb-4'>
+              Sign in to play past challenges
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              signIn(undefined, { callbackUrl: `/game/archive/${dateStr}` })
+            }
+            className='rounded-xl bg-white px-6 py-3 font-medium text-zinc-900 hover:bg-zinc-100 transition-colors'
+          >
+            Sign In to Play
+          </button>
+        </div>
+      );
+    }
+
+    // Daily: full auth gate with provider buttons + teaser image
     return (
       <div className='flex h-full items-center justify-center gap-12 px-10'>
         {/* Art column — teaser */}
@@ -441,8 +533,8 @@ export function UncoverGame() {
     );
   }
 
-  // ─── Pre-game home state ───────────────────────────────────────
-  if (!hasStarted && !isInitializing) {
+  // ─── Daily: Pre-game home state ───────────────────────────────
+  if (isDaily && !hasStarted && !isInitializing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
         {/* Puzzle info */}
@@ -506,13 +598,40 @@ export function UncoverGame() {
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
       <div className='flex h-full items-center justify-center'>
-        <div className='text-zinc-400'>Starting game...</div>
+        <LumaSpinner />
       </div>
     );
   }
 
   // ─── Error state ──────────────────────────────────────────────
   if (game.error && !game.sessionId) {
+    // Archive: "No challenge available" style error
+    if (isArchive) {
+      return (
+        <div className='flex h-full flex-col items-center justify-center gap-5 p-8'>
+          <div className='text-center'>
+            {formattedDate && (
+              <p className='mb-1 text-sm text-zinc-500'>{formattedDate}</p>
+            )}
+            <h2 className='mb-2 text-xl font-bold text-white'>
+              No challenge available
+            </h2>
+            <p className='text-sm text-zinc-500'>
+              There&apos;s no puzzle for this date yet.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push(archiveUrl)}
+            className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-5 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
+          >
+            <Calendar className='h-4 w-4' />
+            Back to Archive
+          </button>
+        </div>
+      );
+    }
+
+    // Daily: generic error
     return (
       <div className='flex h-full flex-col items-center justify-center gap-4 p-8'>
         <div className='text-center'>
@@ -542,16 +661,18 @@ export function UncoverGame() {
           game.resetGame();
           setChallengeImageUrl(null);
         }}
+        mode={mode}
+        formattedDate={formattedDate}
+        archiveUrl={archiveUrl}
       />
     );
   }
 
-  // ─── V2 Two-Column Game Board ─────────────────────────────────
+  // ─── Two-Column Game Board ────────────────────────────────────
   return (
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
-        {/* Art Frame */}
         {challengeImageUrl && game.challengeId && (
           <div className='overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
             <div className='h-[500px] w-[500px]'>
@@ -577,6 +698,11 @@ export function UncoverGame() {
 
       {/* Controls Column */}
       <div className='flex min-h-0 flex-1 flex-col'>
+        {/* Archive: date label */}
+        {isArchive && formattedDate && (
+          <p className='pb-3 text-sm text-zinc-500'>{formattedDate}</p>
+        )}
+
         {/* Search input */}
         <div className='pb-3'>
           <AlbumGuessInput
@@ -604,8 +730,8 @@ export function UncoverGame() {
         )}
       </div>
 
-      {/* Admin dev panel toggle */}
-      {isAdmin && (
+      {/* Admin dev panel toggle (daily only) */}
+      {isDaily && isAdmin && (
         <button
           onClick={() => setShowDevPanel(prev => !prev)}
           className='fixed right-4 top-20 z-[60] rounded-full bg-zinc-800 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors'
@@ -614,7 +740,7 @@ export function UncoverGame() {
           <Wrench className='h-5 w-5' />
         </button>
       )}
-      {isAdmin && showDevPanel && (
+      {isDaily && isAdmin && showDevPanel && (
         <DevTestPanel
           onSelectImage={setDevImageOverride}
           stageOverride={devStageOverride}

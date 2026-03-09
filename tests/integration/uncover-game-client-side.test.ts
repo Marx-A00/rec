@@ -15,7 +15,7 @@ import {
  *
  * These tests simulate complete game lifecycles by composing the
  * pure functions from client-game-logic.ts the same way the hooks
- * (useUncoverGame / useArchiveGame) do at runtime.
+ * (useUncoverGame) does at runtime.
  */
 
 // ----- Helpers -----

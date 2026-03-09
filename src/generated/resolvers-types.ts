@@ -2037,6 +2037,12 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  /**
+   * Get dates that have an Uncover challenge available.
+   * Returns plain date strings (YYYY-MM-DD) for efficient calendar rendering.
+   * Optional date filters for month-by-month loading.
+   */
+  uncoverChallengeDates: Array<Scalars['DateTime']['output']>;
   /** Admin: Get pool status (total, used, remaining) */
   uncoverPoolStatus: UncoverPoolStatus;
   /** Admin: Get uncover game settings */
@@ -2318,6 +2324,11 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUncoverChallengeDatesArgs = {
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryUserArgs = {
@@ -6494,6 +6505,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryTrendingArtistsArgs, 'limit'>
+  >;
+  uncoverChallengeDates?: Resolver<
+    Array<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType,
+    Partial<QueryUncoverChallengeDatesArgs>
   >;
   uncoverPoolStatus?: Resolver<
     ResolversTypes['UncoverPoolStatus'],

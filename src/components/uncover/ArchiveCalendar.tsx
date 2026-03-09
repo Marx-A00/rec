@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar } from '@/components/ui/calendar';
-import { useMyUncoverSessionsQuery } from '@/generated/graphql';
+import {
+  useMyUncoverSessionsQuery,
+  useUncoverChallengeDatesQuery,
+} from '@/generated/graphql';
 import { GAME_EPOCH } from '@/lib/daily-challenge/date-utils';
 import {
   format,
@@ -13,6 +16,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from 'date-fns';
+import { LumaSpinner } from '@/components/ui/LumaSpinner';
 
 interface ArchiveCalendarProps {
   mobile?: boolean;
@@ -39,6 +43,20 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       enabled: true,
     }
   );
+
+  // Query which dates have challenges (public, no auth needed)
+  const { data: challengeDatesData } = useUncoverChallengeDatesQuery({
+    fromDate: monthStart as unknown as Date,
+    toDate: monthEnd as unknown as Date,
+  });
+
+  // Build set of dates that have a challenge
+  const challengeDateSet = new Set<string>();
+  if (challengeDatesData?.uncoverChallengeDates) {
+    for (const d of challengeDatesData.uncoverChallengeDates) {
+      challengeDateSet.add(format(new Date(d), 'yyyy-MM-dd'));
+    }
+  }
 
   // Build session map: date string -> 'won' | 'lost'
   const sessionMap = new Map<string, 'won' | 'lost'>();
@@ -108,9 +126,17 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
     }
   };
 
-  // Disable dates before GAME_EPOCH and after today
+  // Disable dates before GAME_EPOCH, after today, or without a challenge
   const disabledDates = (date: Date) => {
-    return isBefore(date, epochLocal) || isAfter(date, today);
+    if (isBefore(date, epochLocal) || isAfter(date, today)) return true;
+    // Today is always clickable (redirects to daily game)
+    if (isSameDay(date, today)) return false;
+    // If challenge dates have loaded, only enable dates with a challenge
+    if (challengeDatesData) {
+      const dateKey = format(date, 'yyyy-MM-dd');
+      return !challengeDateSet.has(dateKey);
+    }
+    return false;
   };
 
   return (
@@ -118,7 +144,7 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       {/* Calendar */}
       {isLoading ? (
         <div className='flex h-64 items-center justify-center'>
-          <p className='text-zinc-400'>Loading calendar...</p>
+          <LumaSpinner />
         </div>
       ) : (
         <Calendar

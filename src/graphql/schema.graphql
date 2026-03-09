@@ -2563,6 +2563,13 @@ type Query {
   myUncoverSessions(fromDate: DateTime, toDate: DateTime): [UncoverSessionHistory!]!
 
   """
+  Get dates that have an Uncover challenge available.
+  Returns plain date strings (YYYY-MM-DD) for efficient calendar rendering.
+  Optional date filters for month-by-month loading.
+  """
+  uncoverChallengeDates(fromDate: DateTime, toDate: DateTime): [DateTime!]!
+
+  """
   Admin: Get curated challenge list
   """
   curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!

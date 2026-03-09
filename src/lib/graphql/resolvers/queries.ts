@@ -3992,6 +3992,38 @@ export const queryResolvers: QueryResolvers = {
       throw new GraphQLError(`Failed to fetch session history: ${error}`);
     }
   },
+  uncoverChallengeDates: async (
+    _parent,
+    { fromDate, toDate }: { fromDate?: Date; toDate?: Date },
+    { prisma }
+  ) => {
+    try {
+      const where: Record<string, unknown> = {};
+      if (fromDate || toDate) {
+        where.date = {
+          ...(fromDate && { gte: new Date(fromDate) }),
+          ...(toDate && { lte: new Date(toDate) }),
+        };
+      }
+
+      // Only return challenges up to today (don't expose future challenges)
+      const now = new Date();
+      now.setUTCHours(23, 59, 59, 999);
+      where.date = { ...(where.date as object), lte: now };
+
+      const challenges = await prisma.uncoverChallenge.findMany({
+        where,
+        select: { date: true },
+        orderBy: { date: 'asc' },
+      });
+
+      return challenges.map(c => c.date);
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch challenge dates:', { error });
+      throw new GraphQLError(`Failed to fetch challenge dates: ${error}`);
+    }
+  },
+
   // ---------------------------------------------------------------
   // Client-side game model queries (Wordle-style)
   // ---------------------------------------------------------------
@@ -4050,12 +4082,12 @@ export const queryResolvers: QueryResolvers = {
           guesses: session.guesses.map(g => ({
             guessNumber: g.guessNumber,
             albumId: g.guessedAlbumId,
-            albumTitle: g.guessedAlbum?.title ?? null,
+            albumTitle: g.guessedAlbum?.title ?? g.guessedText ?? null,
             artistName:
               g.guessedAlbum?.artists.map(a => a.artist.name).join(', ') ??
               null,
             isCorrect: g.isCorrect,
-            isSkipped: g.guessedAlbumId === null,
+            isSkipped: !g.guessedText && g.guessedAlbumId === null,
           })),
         };
       }
@@ -4137,12 +4169,12 @@ export const queryResolvers: QueryResolvers = {
           guesses: session.guesses.map(g => ({
             guessNumber: g.guessNumber,
             albumId: g.guessedAlbumId,
-            albumTitle: g.guessedAlbum?.title ?? null,
+            albumTitle: g.guessedAlbum?.title ?? g.guessedText ?? null,
             artistName:
               g.guessedAlbum?.artists.map(a => a.artist.name).join(', ') ??
               null,
             isCorrect: g.isCorrect,
-            isSkipped: g.guessedAlbumId === null,
+            isSkipped: !g.guessedText && g.guessedAlbumId === null,
           })),
         };
       }

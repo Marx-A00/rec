@@ -2063,6 +2063,12 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  /**
+   * Get dates that have an Uncover challenge available.
+   * Returns plain date strings (YYYY-MM-DD) for efficient calendar rendering.
+   * Optional date filters for month-by-month loading.
+   */
+  uncoverChallengeDates: Array<Scalars['DateTime']['output']>;
   /** Admin: Get pool status (total, used, remaining) */
   uncoverPoolStatus: UncoverPoolStatus;
   /** Admin: Get uncover game settings */
@@ -2344,6 +2350,11 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUncoverChallengeDatesArgs = {
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryUserArgs = {
@@ -3841,6 +3852,16 @@ export type MyUncoverSessionsQuery = {
     attemptCount: number;
     completedAt?: Date | null;
   }>;
+};
+
+export type UncoverChallengeDatesQueryVariables = Exact<{
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type UncoverChallengeDatesQuery = {
+  __typename?: 'Query';
+  uncoverChallengeDates: Array<Date>;
 };
 
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
@@ -7998,6 +8019,93 @@ useInfiniteMyUncoverSessionsQuery.getKey = (
   variables === undefined
     ? ['MyUncoverSessions.infinite']
     : ['MyUncoverSessions.infinite', variables];
+
+export const UncoverChallengeDatesDocument = `
+    query UncoverChallengeDates($fromDate: DateTime, $toDate: DateTime) {
+  uncoverChallengeDates(fromDate: $fromDate, toDate: $toDate)
+}
+    `;
+
+export const useUncoverChallengeDatesQuery = <
+  TData = UncoverChallengeDatesQuery,
+  TError = unknown,
+>(
+  variables?: UncoverChallengeDatesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<UncoverChallengeDatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      UncoverChallengeDatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<UncoverChallengeDatesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['UncoverChallengeDates']
+        : ['UncoverChallengeDates', variables],
+    queryFn: fetcher<
+      UncoverChallengeDatesQuery,
+      UncoverChallengeDatesQueryVariables
+    >(UncoverChallengeDatesDocument, variables),
+    ...options,
+  });
+};
+
+useUncoverChallengeDatesQuery.getKey = (
+  variables?: UncoverChallengeDatesQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverChallengeDates']
+    : ['UncoverChallengeDates', variables];
+
+export const useInfiniteUncoverChallengeDatesQuery = <
+  TData = InfiniteData<UncoverChallengeDatesQuery>,
+  TError = unknown,
+>(
+  variables: UncoverChallengeDatesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<UncoverChallengeDatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      UncoverChallengeDatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<UncoverChallengeDatesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['UncoverChallengeDates.infinite']
+            : ['UncoverChallengeDates.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            UncoverChallengeDatesQuery,
+            UncoverChallengeDatesQueryVariables
+          >(UncoverChallengeDatesDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteUncoverChallengeDatesQuery.getKey = (
+  variables?: UncoverChallengeDatesQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverChallengeDates.infinite']
+    : ['UncoverChallengeDates.infinite', variables];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {

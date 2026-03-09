@@ -62,6 +62,17 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
+        'luma-spin': {
+          '0%': { inset: '0 35px 35px 0' },
+          '12.5%': { inset: '0 35px 0 0' },
+          '25%': { inset: '35px 35px 0 0' },
+          '37.5%': { inset: '35px 0 0 0' },
+          '50%': { inset: '35px 0 0 35px' },
+          '62.5%': { inset: '0 0 0 35px' },
+          '75%': { inset: '0 0 35px 35px' },
+          '87.5%': { inset: '0 0 35px 0' },
+          '100%': { inset: '0 35px 35px 0' },
+        },
         ripple: {
           '0%, 100%': {
             transform: 'translate(-50%, -50%) scale(1)',
@@ -106,6 +117,7 @@ export default {
         },
       },
       animation: {
+        'luma-spin': 'luma-spin 2.5s infinite',
         ripple: 'ripple 3.4s ease-in-out infinite',
         marquee: 'marquee var(--duration) linear infinite',
         'marquee-vertical': 'marquee-vertical var(--duration) linear infinite',
