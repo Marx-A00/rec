@@ -1,13 +1,14 @@
 // src/app/(auth)/complete-profile/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import { uploadAvatar } from '@/lib/upload-avatar';
 import { validateUsernameForRegistration } from '@/lib/validations';
 
 export default function CompleteProfilePage() {
@@ -15,16 +16,31 @@ export default function CompleteProfilePage() {
   const router = useRouter();
 
   const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationError, setValidationError] = useState('');
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
-  // If user already has a username, redirect to browse
+  // Deferred avatar state
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const [avatarCleared, setAvatarCleared] = useState(false);
+
+  const handleImageSelect = useCallback((blob: Blob) => {
+    setAvatarBlob(blob);
+    setAvatarCleared(false);
+  }, []);
+
+  const handleImageClear = useCallback(() => {
+    setAvatarBlob(null);
+    setAvatarCleared(true);
+  }, []);
+
+  // If user already completed onboarding, redirect to home
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.username) {
-      router.replace('/browse');
+    if (status === 'authenticated' && session?.user?.profileUpdatedAt) {
+      router.replace('/home-mosaic');
     }
   }, [status, session, router]);
 
@@ -81,10 +97,26 @@ export default function CompleteProfilePage() {
     }
 
     try {
+      // Upload avatar if user selected one
+      let imageUrl: string | undefined;
+      if (avatarBlob) {
+        imageUrl = await uploadAvatar(avatarBlob);
+      } else if (avatarCleared) {
+        imageUrl = '';
+      }
+
+      const body: Record<string, string | null | undefined> = {
+        username: username.trim(),
+        bio: bio.trim() || undefined,
+      };
+      if (imageUrl !== undefined) {
+        body.image = imageUrl || null;
+      }
+
       const response = await fetch(`/api/users/${session?.user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim() }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -118,33 +150,31 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-black px-4'>
-      <div className='w-full max-w-md'>
-        {/* Header */}
-        <div className='text-center mb-8'>
-          <div className='flex justify-center mb-4'>
+    <div className='bg-black/80 backdrop-blur-sm rounded-2xl p-8 border border-zinc-800/50'>
+      <div className='w-full'>
+        {/* Header — avatar + text side by side */}
+        <div className='flex items-center gap-5 mb-6'>
+          <div className='shrink-0'>
             <AvatarUpload
               currentImage={session?.user?.image}
-              onUploadSuccess={() => {
-                // Session is updated inside AvatarUpload
-              }}
+              onImageSelect={handleImageSelect}
+              onImageClear={handleImageClear}
+              size='default'
             />
           </div>
-          <p className='text-xs text-zinc-500 mb-4'>
-            Tap to change your profile picture
-          </p>
-          <h1 className='text-2xl font-bold text-white mb-2'>
-            Set up your profile
-          </h1>
-          <p className='text-zinc-400'>
-            Pick a unique username to complete your profile. This is how others
-            will find and recognize you.
-          </p>
+          <div>
+            <h1 className='text-2xl font-bold text-white mb-1'>
+              Set up your profile
+            </h1>
+            <p className='text-base text-zinc-400'>
+              Choose a username and tell us about yourself.
+            </p>
+          </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          <div className='space-y-2'>
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='space-y-1.5'>
             <label
               htmlFor='username'
               className='text-sm font-medium text-zinc-200'
@@ -163,7 +193,7 @@ export default function CompleteProfilePage() {
                 autoCorrect='off'
                 spellCheck='false'
                 autoFocus
-                className='w-full px-4 min-h-12 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-12'
+                className='w-full px-4 h-12 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-12'
               />
               {/* Status indicator */}
               <div className='absolute right-3 top-1/2 -translate-y-1/2'>
@@ -180,30 +210,43 @@ export default function CompleteProfilePage() {
             </div>
 
             {/* Validation/availability feedback */}
-            {validationError && (
-              <p className='text-sm text-red-400'>{validationError}</p>
-            )}
-            {!validationError && isAvailable === false && (
-              <p className='text-sm text-red-400'>
+            {validationError ? (
+              <p className='text-xs text-red-400'>{validationError}</p>
+            ) : isAvailable === false ? (
+              <p className='text-xs text-red-400'>
                 This username is already taken
               </p>
+            ) : isAvailable === true ? (
+              <p className='text-xs text-green-400'>Username is available!</p>
+            ) : (
+              <p className='text-xs text-zinc-500'>
+                2-30 characters. Letters, numbers, hyphens, underscores, and
+                periods only.
+              </p>
             )}
-            {!validationError && isAvailable === true && (
-              <p className='text-sm text-green-400'>Username is available!</p>
-            )}
+          </div>
 
-            <p className='text-xs text-zinc-500'>
-              2-30 characters. Letters, numbers, hyphens, underscores, and
-              periods only.
-            </p>
+          <div className='space-y-1.5'>
+            <label htmlFor='bio' className='text-sm font-medium text-zinc-200'>
+              Bio <span className='text-zinc-500 font-normal'>(optional)</span>
+            </label>
+            <textarea
+              id='bio'
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              placeholder='Tell us a little about yourself...'
+              maxLength={160}
+              rows={3}
+              className='w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent resize-none'
+            />
+            <p className='text-xs text-zinc-500 text-right'>{bio.length}/160</p>
           </div>
 
           {error && (
-            <div className='p-3 rounded-lg bg-red-500/10 border border-red-500/20'>
+            <div className='p-2.5 rounded-lg bg-red-500/10 border border-red-500/20'>
               <p className='text-sm text-red-400'>{error}</p>
             </div>
           )}
-
           <Button
             type='submit'
             disabled={isLoading || !isAvailable || !!validationError}
@@ -212,7 +255,7 @@ export default function CompleteProfilePage() {
             {isLoading ? (
               <Loader2 className='w-5 h-5 animate-spin' />
             ) : (
-              'Continue'
+              'Save & Continue'
             )}
           </Button>
         </form>

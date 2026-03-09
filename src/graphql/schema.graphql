@@ -747,7 +747,7 @@ enum LlamaLogCategory {
 }
 
 enum AlbumGameStatus {
-  ELIGIBLE
+  APPROVED
   EXCLUDED
   NONE
 }
@@ -3065,7 +3065,7 @@ type Mutation {
   dismissUserSuggestion(userId: String!): Boolean!
 
   # Profile management
-  updateProfile(username: String, bio: String): UpdateProfilePayload!
+  updateProfile(username: String, bio: String, image: String): UpdateProfilePayload!
   updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
   resetOnboardingStatus: OnboardingStatus!
   updateDashboardLayout(layout: JSON!): UserSettings!
@@ -3149,9 +3149,15 @@ type Mutation {
 
   """
   Admin: Add album to game pool in one shot.
-  Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+  Sets gameStatus to APPROVED and adds to curated rotation atomically.
   """
   addAlbumToPool(albumId: UUID!): AddAlbumToPoolResult!
+
+  """
+  Admin: Find or create an album from external search results, then add it to the game pool.
+  Accepts AlbumInput for albums that may not exist in the database yet.
+  """
+  addExternalAlbumToPool(albumData: AlbumInput!): AddAlbumToPoolResult!
 
   # Daily Challenge mutations (Admin)
   """
@@ -3209,6 +3215,7 @@ type UpdateProfilePayload {
   id: String!
   username: String
   bio: String
+  image: String
 }
 
 type UpdateUserRolePayload {

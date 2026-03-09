@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useUpdateProfileMutation } from '@/generated/graphql';
+import { uploadAvatar } from '@/lib/upload-avatar';
 import { validateNameForProfile } from '@/lib/validations';
 
 import AvatarUpload from './AvatarUpload';
@@ -25,6 +26,24 @@ export default function ProfileEditForm({
   const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [nameError, setNameError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Deferred avatar state
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const [avatarCleared, setAvatarCleared] = useState(false);
+
+  const handleImageSelect = useCallback((blob: Blob) => {
+    setAvatarBlob(blob);
+    setAvatarCleared(false);
+    setUploadError(null);
+  }, []);
+
+  const handleImageClear = useCallback(() => {
+    setAvatarBlob(null);
+    setAvatarCleared(true);
+    setUploadError(null);
+  }, []);
 
   const queryClient = useQueryClient();
 
@@ -48,8 +67,9 @@ export default function ProfileEditForm({
     setNameError(validation.isValid ? null : validation.message || null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadError(null);
 
     // Validate before submitting
     const usernameValidation = validateNameForProfile(username);
@@ -58,11 +78,40 @@ export default function ProfileEditForm({
       return;
     }
 
-    updateProfile({
-      username: username.trim(),
-      bio: bio.trim(),
-    });
+    try {
+      // Upload avatar if user selected one
+      let imageUrl: string | undefined;
+      if (avatarBlob) {
+        setIsUploading(true);
+        imageUrl = await uploadAvatar(avatarBlob);
+        setIsUploading(false);
+      } else if (avatarCleared) {
+        imageUrl = '';
+      }
+
+      const variables: {
+        username: string;
+        bio: string;
+        image?: string | null;
+      } = {
+        username: username.trim(),
+        bio: bio.trim(),
+      };
+
+      if (imageUrl !== undefined) {
+        variables.image = imageUrl || null;
+      }
+
+      updateProfile(variables);
+    } catch (err) {
+      setIsUploading(false);
+      setUploadError(
+        err instanceof Error ? err.message : 'Failed to upload avatar'
+      );
+    }
   };
+
+  const isBusy = isPending || isUploading;
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'>
@@ -71,11 +120,12 @@ export default function ProfileEditForm({
           Edit Profile
         </h2>
 
-        {error != null && (
+        {(error != null || uploadError) && (
           <div className='mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm'>
-            {error instanceof Error
-              ? error.message
-              : 'Failed to update profile'}
+            {uploadError ||
+              (error instanceof Error
+                ? error.message
+                : 'Failed to update profile')}
           </div>
         )}
 
@@ -84,11 +134,8 @@ export default function ProfileEditForm({
           <div className='flex justify-center mb-6'>
             <AvatarUpload
               currentImage={user.image}
-              onUploadSuccess={() => {
-                queryClient.invalidateQueries({
-                  queryKey: ['GetUserProfile'],
-                });
-              }}
+              onImageSelect={handleImageSelect}
+              onImageClear={handleImageClear}
             />
           </div>
 
@@ -150,17 +197,19 @@ export default function ProfileEditForm({
           <div className='flex gap-3 pt-4'>
             <button
               type='submit'
-              disabled={
-                isPending || !!nameError || username.trim().length === 0
-              }
+              disabled={isBusy || !!nameError || username.trim().length === 0}
               className='flex-1 bg-emeraled-green text-black py-2 px-4 rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              {isPending ? 'Saving...' : 'Save Changes'}
+              {isUploading
+                ? 'Uploading...'
+                : isPending
+                  ? 'Saving...'
+                  : 'Save Changes'}
             </button>
             <button
               type='button'
               onClick={onClose}
-              disabled={isPending}
+              disabled={isBusy}
               className='flex-1 bg-zinc-700 text-white py-2 px-4 rounded-lg font-medium hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
               Cancel

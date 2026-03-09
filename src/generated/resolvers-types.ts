@@ -158,7 +158,7 @@ export type AlbumLlamaLogsArgs = {
 };
 
 export enum AlbumGameStatus {
-  Eligible = 'ELIGIBLE',
+  Approved = 'APPROVED',
   Excluded = 'EXCLUDED',
   None = 'NONE',
 }
@@ -1501,12 +1501,17 @@ export type Mutation = {
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
    * Admin: Add album to game pool in one shot.
-   * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+   * Sets gameStatus to APPROVED and adds to curated rotation atomically.
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
+  /**
+   * Admin: Find or create an album from external search results, then add it to the game pool.
+   * Accepts AlbumInput for albums that may not exist in the database yet.
+   */
+  addExternalAlbumToPool: AddAlbumToPoolResult;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1618,6 +1623,10 @@ export type MutationAddArtistArgs = {
 export type MutationAddCuratedChallengeArgs = {
   albumId: Scalars['UUID']['input'];
   pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type MutationAddExternalAlbumToPoolArgs = {
+  albumData: AlbumInput;
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1826,6 +1835,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
   username?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -3098,6 +3108,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
   username?: Maybe<Scalars['String']['output']>;
 };
 
@@ -5643,6 +5654,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddCuratedChallengeArgs, 'albumId'>
   >;
+  addExternalAlbumToPool?: Resolver<
+    ResolversTypes['AddAlbumToPoolResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddExternalAlbumToPoolArgs, 'albumData'>
+  >;
   adminUpdateUserShowTour?: Resolver<
     ResolversTypes['AdminUpdateUserSettingsPayload'],
     ParentType,
@@ -7611,6 +7628,7 @@ export type UpdateProfilePayloadResolvers<
 > = ResolversObject<{
   bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

@@ -184,7 +184,7 @@ export type AlbumLlamaLogsArgs = {
 };
 
 export enum AlbumGameStatus {
-  Eligible = 'ELIGIBLE',
+  Approved = 'APPROVED',
   Excluded = 'EXCLUDED',
   None = 'NONE',
 }
@@ -1527,12 +1527,17 @@ export type Mutation = {
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
    * Admin: Add album to game pool in one shot.
-   * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+   * Sets gameStatus to APPROVED and adds to curated rotation atomically.
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
+  /**
+   * Admin: Find or create an album from external search results, then add it to the game pool.
+   * Accepts AlbumInput for albums that may not exist in the database yet.
+   */
+  addExternalAlbumToPool: AddAlbumToPoolResult;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1644,6 +1649,10 @@ export type MutationAddArtistArgs = {
 export type MutationAddCuratedChallengeArgs = {
   albumId: Scalars['UUID']['input'];
   pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type MutationAddExternalAlbumToPoolArgs = {
+  albumData: AlbumInput;
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1852,6 +1861,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
   username?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -3124,6 +3134,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
   username?: Maybe<Scalars['String']['output']>;
 };
 
@@ -3511,6 +3522,7 @@ export type UpdateCollectionMutation = {
 export type UpdateProfileMutationVariables = Exact<{
   username?: InputMaybe<Scalars['String']['input']>;
   bio?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 export type UpdateProfileMutation = {
@@ -3520,6 +3532,7 @@ export type UpdateProfileMutation = {
     id: string;
     username?: string | null;
     bio?: string | null;
+    image?: string | null;
   };
 };
 
@@ -3565,6 +3578,30 @@ export type AddAlbumToPoolMutationVariables = Exact<{
 export type AddAlbumToPoolMutation = {
   __typename?: 'Mutation';
   addAlbumToPool: {
+    __typename?: 'AddAlbumToPoolResult';
+    success: boolean;
+    message?: string | null;
+    error?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      gameStatus: AlbumGameStatus;
+    } | null;
+    curatedChallenge?: {
+      __typename?: 'CuratedChallengeEntry';
+      id: string;
+    } | null;
+  };
+};
+
+export type AddExternalAlbumToPoolMutationVariables = Exact<{
+  albumData: AlbumInput;
+}>;
+
+export type AddExternalAlbumToPoolMutation = {
+  __typename?: 'Mutation';
+  addExternalAlbumToPool: {
     __typename?: 'AddAlbumToPoolResult';
     success: boolean;
     message?: string | null;
@@ -7150,11 +7187,12 @@ export const useUpdateCollectionMutation = <
 useUpdateCollectionMutation.getKey = () => ['UpdateCollection'];
 
 export const UpdateProfileDocument = `
-    mutation UpdateProfile($username: String, $bio: String) {
-  updateProfile(username: $username, bio: $bio) {
+    mutation UpdateProfile($username: String, $bio: String, $image: String) {
+  updateProfile(username: $username, bio: $bio, image: $image) {
     id
     username
     bio
+    image
   }
 }
     `;
@@ -7290,6 +7328,53 @@ export const useAddAlbumToPoolMutation = <TError = unknown, TContext = unknown>(
 };
 
 useAddAlbumToPoolMutation.getKey = () => ['AddAlbumToPool'];
+
+export const AddExternalAlbumToPoolDocument = `
+    mutation AddExternalAlbumToPool($albumData: AlbumInput!) {
+  addExternalAlbumToPool(albumData: $albumData) {
+    success
+    message
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+    curatedChallenge {
+      id
+    }
+  }
+}
+    `;
+
+export const useAddExternalAlbumToPoolMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddExternalAlbumToPoolMutation,
+    TError,
+    AddExternalAlbumToPoolMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddExternalAlbumToPoolMutation,
+    TError,
+    AddExternalAlbumToPoolMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddExternalAlbumToPool'],
+    mutationFn: (variables?: AddExternalAlbumToPoolMutationVariables) =>
+      fetcher<
+        AddExternalAlbumToPoolMutation,
+        AddExternalAlbumToPoolMutationVariables
+      >(AddExternalAlbumToPoolDocument, variables)(),
+    ...options,
+  });
+};
+
+useAddExternalAlbumToPoolMutation.getKey = () => ['AddExternalAlbumToPool'];
 
 export const DeleteAlbumDocument = `
     mutation DeleteAlbum($id: UUID!) {

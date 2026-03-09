@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
@@ -10,6 +10,7 @@ import { MobileButton } from '@/components/mobile/MobileButton';
 import { MobileInput } from '@/components/mobile/MobileInput';
 import Toast, { useToast } from '@/components/ui/toast';
 import { useUpdateProfileMutation } from '@/generated/graphql';
+import { uploadAvatar } from '@/lib/upload-avatar';
 import { validateNameForProfile } from '@/lib/validations';
 
 interface MobileEditProfileClientProps {
@@ -31,7 +32,21 @@ export default function MobileEditProfileClient({
   const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [nameError, setNameError] = useState<string | null>(null);
-  const [imageChanged, setImageChanged] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Deferred avatar state
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const [avatarCleared, setAvatarCleared] = useState(false);
+
+  const handleImageSelect = useCallback((blob: Blob) => {
+    setAvatarBlob(blob);
+    setAvatarCleared(false);
+  }, []);
+
+  const handleImageClear = useCallback(() => {
+    setAvatarBlob(null);
+    setAvatarCleared(true);
+  }, []);
 
   const textDirty = useMemo(() => {
     return (
@@ -40,7 +55,8 @@ export default function MobileEditProfileClient({
     );
   }, [username, bio, user.username, user.bio]);
 
-  const isDirty = textDirty || imageChanged;
+  const avatarDirty = avatarBlob !== null || avatarCleared;
+  const isDirty = textDirty || avatarDirty;
 
   const { mutate: updateProfile, isPending } = useUpdateProfileMutation({
     onSuccess: () => {
@@ -61,7 +77,7 @@ export default function MobileEditProfileClient({
     setNameError(validation.isValid ? null : validation.message || null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const validation = validateNameForProfile(username);
@@ -70,22 +86,43 @@ export default function MobileEditProfileClient({
       return;
     }
 
-    // If only the image changed (already saved via upload), just navigate back
-    if (!textDirty && imageChanged) {
-      queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
-      showToast('Profile updated', 'success');
-      router.push(`/m/profile/${user.id}`);
-      return;
-    }
+    try {
+      // Upload avatar if user selected one
+      let imageUrl: string | undefined;
+      if (avatarBlob) {
+        setIsUploading(true);
+        imageUrl = await uploadAvatar(avatarBlob);
+        setIsUploading(false);
+      } else if (avatarCleared) {
+        imageUrl = '';
+      }
 
-    updateProfile({
-      username: username.trim(),
-      bio: bio.trim(),
-    });
+      const variables: {
+        username: string;
+        bio: string;
+        image?: string | null;
+      } = {
+        username: username.trim(),
+        bio: bio.trim(),
+      };
+
+      if (imageUrl !== undefined) {
+        variables.image = imageUrl || null;
+      }
+
+      updateProfile(variables);
+    } catch (err) {
+      setIsUploading(false);
+      showToast(
+        err instanceof Error ? err.message : 'Failed to upload avatar',
+        'error'
+      );
+    }
   };
 
+  const isBusy = isPending || isUploading;
   const canSave =
-    isDirty && !nameError && username.trim().length > 0 && !isPending;
+    isDirty && !nameError && username.trim().length > 0 && !isBusy;
 
   return (
     <div className='min-h-screen bg-black'>
@@ -110,13 +147,8 @@ export default function MobileEditProfileClient({
         <div className='flex flex-col items-center gap-2'>
           <AvatarUpload
             currentImage={user.image}
-            onUploadSuccess={() => {
-              setImageChanged(true);
-              queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
-            }}
-            onClear={() => {
-              setImageChanged(true);
-            }}
+            onImageSelect={handleImageSelect}
+            onImageClear={handleImageClear}
           />
           <p className='text-sm text-zinc-400'>Tap to change photo</p>
         </div>
@@ -164,10 +196,10 @@ export default function MobileEditProfileClient({
           variant='primary'
           size='lg'
           fullWidth
-          loading={isPending}
+          loading={isBusy}
           disabled={!canSave}
         >
-          Save Changes
+          {isUploading ? 'Uploading...' : 'Save Changes'}
         </MobileButton>
       </form>
 
