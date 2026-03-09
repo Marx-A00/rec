@@ -516,6 +516,8 @@ export interface UniversalSearchBarProps {
   showGroupHeaders?: boolean;
   layout?: 'compact' | 'comfortable' | 'spacious';
   displayMode?: 'modal' | 'global' | 'sidebar' | 'inline' | 'compact';
+  initialSearchMode?: SearchMode;
+  searchOnEnterOnly?: boolean;
 }
 
 // ========================================
@@ -777,6 +779,7 @@ const ContextAwareResult = ({
 
 export default function UniversalSearchBar({
   entityTypes = defaultEntityTypes,
+  searchType = 'all',
   filters = [],
   placeholder = 'Search...',
   showResults = true,
@@ -795,13 +798,18 @@ export default function UniversalSearchBar({
   preset = 'global',
   presetOverrides,
   displayMode,
+  initialSearchMode = 'LOCAL_ONLY',
+  searchOnEnterOnly = false,
 }: UniversalSearchBarProps) {
   // State management
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [committedQuery, setCommittedQuery] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
-  const [searchMode, setSearchMode] = useState<SearchMode>('LOCAL_ONLY');
-  const [showExternalHint, setShowExternalHint] = useState(false);
+  const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
+  const [showExternalHint, setShowExternalHint] = useState(
+    initialSearchMode === 'LOCAL_ONLY'
+  );
 
   // Merge preset configuration with props
   const presetConfig = mergePresetConfig(preset, presetOverrides);
@@ -827,18 +835,20 @@ export default function UniversalSearchBar({
     displayModeConfigs[finalDisplayMode] || displayModeConfigs.global;
 
   // Search hook with enhanced parameters
+  // When searchOnEnterOnly is true, only send the committed query to the hook
+  const activeQuery = searchOnEnterOnly ? committedQuery.trim() : query.trim();
   const {
     results = [],
     isLoading,
     error: apiError,
-  } = useUniversalSearch(query.trim(), {
+  } = useUniversalSearch(activeQuery, {
     entityTypes: finalEntityTypes,
-    searchType: 'all',
+    searchType,
     filters: finalFilters,
-    debounceMs: finalDebounceMs,
+    debounceMs: searchOnEnterOnly ? 0 : finalDebounceMs,
     minQueryLength: finalMinQueryLength,
     maxResults: finalMaxResults,
-    enabled: query.length >= finalMinQueryLength && open,
+    enabled: activeQuery.length >= finalMinQueryLength && open,
     searchMode,
   });
 
@@ -855,49 +865,71 @@ export default function UniversalSearchBar({
   const handleValueChange = useCallback(
     (value: string) => {
       setQuery(value);
-      setOpen(value.length >= finalMinQueryLength);
 
-      // Reset to local search when typing
-      if (searchMode !== 'LOCAL_ONLY') {
-        setSearchMode('LOCAL_ONLY');
-      }
+      if (searchOnEnterOnly) {
+        // In enter-only mode, keep dropdown open only if we have committed results
+        if (value.length === 0) {
+          setOpen(false);
+          setCommittedQuery('');
+          setLocalError(null);
+        }
+      } else {
+        setOpen(value.length >= finalMinQueryLength);
 
-      // Show hint about external search after typing
-      if (value.length >= finalMinQueryLength) {
-        setShowExternalHint(true);
-      }
+        // Reset to local search when typing (only if not configured to always search externally)
+        if (initialSearchMode === 'LOCAL_ONLY' && searchMode !== 'LOCAL_ONLY') {
+          setSearchMode('LOCAL_ONLY');
+        }
 
-      if (value.length === 0) {
-        setLocalError(null);
-        setOpen(false);
-        setShowExternalHint(false);
+        // Show hint about external search after typing
+        if (value.length >= finalMinQueryLength) {
+          setShowExternalHint(true);
+        }
+
+        if (value.length === 0) {
+          setLocalError(null);
+          setOpen(false);
+          setShowExternalHint(false);
+        }
       }
 
       // Call external onSearch callback
       onSearch?.(value, finalFilters);
     },
-    [finalMinQueryLength, finalFilters, onSearch, searchMode]
+    [
+      finalMinQueryLength,
+      finalFilters,
+      onSearch,
+      searchMode,
+      searchOnEnterOnly,
+      initialSearchMode,
+    ]
   );
 
   // Handle clear button click
   const handleClear = useCallback(() => {
     setQuery('');
+    setCommittedQuery('');
     setOpen(false);
     setLocalError(null);
-    setShowExternalHint(false);
+    setShowExternalHint(initialSearchMode === 'LOCAL_ONLY');
     onSearch?.('', finalFilters);
-  }, [onSearch, finalFilters]);
+  }, [onSearch, finalFilters, initialSearchMode]);
 
   // Handle Enter key for external search
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && query.length >= finalMinQueryLength) {
         event.preventDefault();
+        if (searchOnEnterOnly) {
+          setCommittedQuery(query);
+          setOpen(true);
+        }
         setSearchMode('LOCAL_AND_EXTERNAL');
         setShowExternalHint(false);
       }
     },
-    [query, finalMinQueryLength]
+    [query, finalMinQueryLength, searchOnEnterOnly]
   );
 
   // Handle result selection
@@ -993,15 +1025,17 @@ export default function UniversalSearchBar({
         </div>
         {open && showResults && (
           <CommandList className='absolute top-full left-0 right-0 max-h-80 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-b-lg shadow-xl z-50'>
-            {showExternalHint && searchMode === 'LOCAL_ONLY' && (
-              <div className='p-2 text-center text-zinc-400 text-sm border-b border-zinc-800'>
-                Press{' '}
-                <kbd className='px-1.5 py-0.5 mx-1 bg-zinc-800 rounded text-xs'>
-                  Enter
-                </kbd>{' '}
-                to search external sources
-              </div>
-            )}
+            {!searchOnEnterOnly &&
+              showExternalHint &&
+              searchMode === 'LOCAL_ONLY' && (
+                <div className='p-2 text-center text-zinc-400 text-sm border-b border-zinc-800'>
+                  Press{' '}
+                  <kbd className='px-1.5 py-0.5 mx-1 bg-zinc-800 rounded text-xs'>
+                    Enter
+                  </kbd>{' '}
+                  to search external sources
+                </div>
+              )}
             {isLoading && (
               <div className='flex justify-center items-center p-4'>
                 <AnimatedLoader className='scale-50' />

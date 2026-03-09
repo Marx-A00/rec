@@ -6,26 +6,14 @@ import { useState } from 'react';
 
 import BackButton from '@/components/ui/BackButton';
 import RegisterForm from '@/components/auth/RegisterForm';
-import AccountCreatedSuccess from '@/components/auth/AccountCreatedSuccess';
 
 export default function Register() {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [userName, setUserName] = useState<string>();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     await signIn('google', { callbackUrl: '/home-mosaic' });
   };
-
-  const handleRegistrationSuccess = (name?: string) => {
-    setUserName(name);
-    setShowSuccess(true);
-  };
-
-  if (showSuccess) {
-    return <AccountCreatedSuccess userName={userName} />;
-  }
 
   return (
     <div className='space-y-4'>
@@ -126,7 +114,7 @@ export default function Register() {
           </div>
         </div>
 
-        <RegisterForm onSuccess={handleRegistrationSuccess} />
+        <RegisterForm />
       </div>
     </div>
   );

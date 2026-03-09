@@ -1,0 +1,15 @@
+mutation AddExternalAlbumToPool($albumData: AlbumInput!) {
+  addExternalAlbumToPool(albumData: $albumData) {
+    success
+    message
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+    curatedChallenge {
+      id
+    }
+  }
+}

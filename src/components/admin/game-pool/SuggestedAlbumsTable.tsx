@@ -12,9 +12,13 @@ import {
   ChevronRight,
   Loader2,
   ListMusic,
+  ArrowLeft,
 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
+import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
+import type { UnifiedSearchResult } from '@/types/search';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -44,6 +48,7 @@ import {
   useSuggestedGameAlbumsQuery,
   useUpdateAlbumGameStatusMutation,
   useAddAlbumToPoolMutation,
+  useAddExternalAlbumToPoolMutation,
   AlbumGameStatus,
 } from '@/generated/graphql';
 
@@ -95,6 +100,12 @@ export function SuggestedAlbumsTable() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<string | null>(null);
   const [addExternalOpen, setAddExternalOpen] = useState(false);
+  const [playlistImportOpen, setPlaylistImportOpen] = useState(false);
+  const [externalMode, setExternalMode] = useState<
+    'menu' | 'search' | 'preview'
+  >('menu');
+  const [selectedResult, setSelectedResult] =
+    useState<UnifiedSearchResult | null>(null);
 
   const { data, isLoading } = useSuggestedGameAlbumsQuery({
     limit: PAGE_SIZE,
@@ -108,12 +119,70 @@ export function SuggestedAlbumsTable() {
   const { mutateAsync: addToPool, isPending: isAddingToPool } =
     useAddAlbumToPoolMutation();
 
+  const { mutateAsync: addExternalToPool, isPending: isAddingExternal } =
+    useAddExternalAlbumToPoolMutation();
+
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['SuggestedGameAlbums'] });
     queryClient.invalidateQueries({ queryKey: ['AlbumsByGameStatus'] });
     queryClient.invalidateQueries({ queryKey: ['GamePoolStats'] });
     queryClient.invalidateQueries({ queryKey: ['CuratedChallenges'] });
+    queryClient.invalidateQueries({ queryKey: ['UncoverPoolStatus'] });
   }, [queryClient]);
+
+  const handleExternalSearchSelect = useCallback(
+    (result: UnifiedSearchResult) => {
+      if (result.type !== 'album') return;
+      setSelectedResult(result);
+      setExternalMode('preview');
+    },
+    []
+  );
+
+  const handleConfirmAddToPool = useCallback(async () => {
+    if (!selectedResult) return;
+
+    try {
+      const res = await addExternalToPool({
+        albumData: {
+          title: selectedResult.title,
+          musicbrainzId:
+            selectedResult.source === 'musicbrainz'
+              ? selectedResult.id
+              : undefined,
+          releaseDate: selectedResult.releaseDate || undefined,
+          coverImageUrl:
+            selectedResult.image?.url ||
+            selectedResult.cover_image ||
+            undefined,
+          artists: [
+            {
+              artistName: selectedResult.artist || 'Unknown Artist',
+              role: 'PRIMARY',
+            },
+          ],
+        },
+      });
+
+      if (res.addExternalAlbumToPool.success) {
+        toast.success(
+          res.addExternalAlbumToPool.message ||
+            `"${selectedResult.title}" added to pool`
+        );
+        setAddExternalOpen(false);
+        setExternalMode('menu');
+        setSelectedResult(null);
+        invalidateAll();
+      } else {
+        toast.error(
+          res.addExternalAlbumToPool.error || 'Failed to add to pool'
+        );
+      }
+    } catch (error) {
+      toast.error('Failed to add album to pool');
+      console.error('Add external to pool error:', error);
+    }
+  }, [selectedResult, addExternalToPool, invalidateAll]);
 
   const albums = useMemo(
     () => data?.suggestedGameAlbums?.albums || [],
@@ -535,38 +604,188 @@ export function SuggestedAlbumsTable() {
       )}
 
       {/* Add External Dialog */}
-      <Dialog open={addExternalOpen} onOpenChange={setAddExternalOpen}>
-        <DialogContent className='max-w-sm'>
-          <DialogHeader>
-            <DialogTitle>Add External Album</DialogTitle>
-            <DialogDescription>
-              Add an album to the pool from an external source
-            </DialogDescription>
-          </DialogHeader>
-          <div className='grid grid-cols-2 gap-3 pt-2'>
-            <Button
-              variant='outline'
-              className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
-              onClick={() => {
-                setAddExternalOpen(false);
-              }}
-            >
-              <Search className='h-5 w-5' />
-              <span className='text-sm'>Search</span>
-            </Button>
-            <Button
-              variant='outline'
-              className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
-              onClick={() => {
-                setAddExternalOpen(false);
-              }}
-            >
-              <ListMusic className='h-5 w-5' />
-              <span className='text-sm'>Import Playlist</span>
-            </Button>
-          </div>
+      <Dialog
+        open={addExternalOpen}
+        onOpenChange={open => {
+          setAddExternalOpen(open);
+          if (!open) setExternalMode('menu');
+        }}
+      >
+        <DialogContent
+          className={
+            externalMode === 'search'
+              ? 'max-w-lg'
+              : externalMode === 'preview'
+                ? 'max-w-sm'
+                : 'max-w-sm'
+          }
+        >
+          {externalMode === 'menu' ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Add External Album</DialogTitle>
+                <DialogDescription>
+                  Add an album to the pool from an external source
+                </DialogDescription>
+              </DialogHeader>
+              <div className='grid grid-cols-2 gap-3 pt-2'>
+                <Button
+                  variant='outline'
+                  className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
+                  onClick={() => setExternalMode('search')}
+                >
+                  <Search className='h-5 w-5' />
+                  <span className='text-sm'>Search</span>
+                </Button>
+                <Button
+                  variant='outline'
+                  className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
+                  onClick={() => {
+                    setAddExternalOpen(false);
+                    setExternalMode('menu');
+                    setPlaylistImportOpen(true);
+                  }}
+                >
+                  <ListMusic className='h-5 w-5' />
+                  <span className='text-sm'>Import Playlist</span>
+                </Button>
+              </div>
+            </>
+          ) : externalMode === 'search' ? (
+            <>
+              <DialogHeader>
+                <div className='flex items-center gap-2'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='h-8 w-8 p-0'
+                    onClick={() => setExternalMode('menu')}
+                  >
+                    <ArrowLeft className='h-4 w-4' />
+                  </Button>
+                  <div>
+                    <DialogTitle>Search Albums</DialogTitle>
+                    <DialogDescription>
+                      Search and add directly to the pool
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+              <div className='pt-2'>
+                <UniversalSearchBar
+                  preset='modal'
+                  searchType='albums'
+                  placeholder='Search for an album and press Enter...'
+                  maxResults={6}
+                  initialSearchMode='LOCAL_AND_EXTERNAL'
+                  searchOnEnterOnly
+                  onResultSelect={handleExternalSearchSelect}
+                  customNavigationHandler={async result => {
+                    await handleExternalSearchSelect(result);
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <div className='flex items-center gap-2'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='h-8 w-8 p-0'
+                    onClick={() => {
+                      setSelectedResult(null);
+                      setExternalMode('search');
+                    }}
+                  >
+                    <ArrowLeft className='h-4 w-4' />
+                  </Button>
+                  <div>
+                    <DialogTitle>Confirm Album</DialogTitle>
+                    <DialogDescription>
+                      Review before adding to pool
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+              {selectedResult && (
+                <div className='flex flex-col items-center gap-4 pt-2'>
+                  {/* Album Cover */}
+                  <div className='relative w-48 h-48 rounded-lg overflow-hidden bg-zinc-800 shrink-0'>
+                    {selectedResult.image?.url || selectedResult.cover_image ? (
+                      <AlbumImage
+                        src={
+                          selectedResult.image?.url ||
+                          selectedResult.cover_image ||
+                          ''
+                        }
+                        alt={selectedResult.title}
+                        width={192}
+                        height={192}
+                        className='w-full h-full object-cover'
+                      />
+                    ) : (
+                      <div className='w-full h-full flex items-center justify-center text-zinc-600'>
+                        <ListMusic className='h-12 w-12' />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Album Details */}
+                  <div className='text-center space-y-1 w-full'>
+                    <p className='font-semibold text-white text-lg leading-tight'>
+                      {selectedResult.title}
+                    </p>
+                    <p className='text-zinc-400 text-sm'>
+                      {selectedResult.artist || 'Unknown Artist'}
+                    </p>
+                    {selectedResult.releaseDate && (
+                      <p className='text-zinc-500 text-xs'>
+                        {new Date(selectedResult.releaseDate).getFullYear()}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Source Badge */}
+                  <span className='inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700'>
+                    {selectedResult.source === 'musicbrainz'
+                      ? 'MusicBrainz'
+                      : selectedResult.source === 'local'
+                        ? 'Local DB'
+                        : selectedResult.source}
+                  </span>
+
+                  {/* Action Button */}
+                  <Button
+                    className='w-full mt-2'
+                    disabled={isAddingExternal}
+                    onClick={handleConfirmAddToPool}
+                  >
+                    {isAddingExternal ? (
+                      <>
+                        <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className='h-4 w-4 mr-2' />
+                        Add to Pool
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </DialogContent>
       </Dialog>
+
+      {/* Playlist Import Dialog (controlled from "Add External" menu) */}
+      <PlaylistImportDialog
+        open={playlistImportOpen}
+        onOpenChange={setPlaylistImportOpen}
+      />
     </div>
   );
 }

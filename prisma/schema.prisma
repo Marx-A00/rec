@@ -506,7 +506,7 @@ enum EnrichmentEntityType {
 }
 
 enum AlbumGameStatus {
-  ELIGIBLE   // Approved for game pool
+  APPROVED   // Approved for game pool
   EXCLUDED   // Explicitly blocked from pool
   NONE       // Neutral, not yet reviewed (default)
 }

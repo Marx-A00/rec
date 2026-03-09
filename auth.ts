@@ -18,6 +18,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/signin',
+    newUser: '/complete-profile',
   },
   events: {
     // Initialize new OAuth users with default collections and settings
@@ -82,10 +83,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               );
             }
 
-            // Existing user — check if they need to set a username
-            if (!existingUser.username) {
+            // Existing user — check if they completed onboarding
+            if (!existingUser.profileUpdatedAt) {
               console.log(
-                `[auth] OAuth user ${existingUser.id} has no username, redirecting to complete-profile`
+                `[auth] User ${existingUser.id} has not completed onboarding, redirecting to complete-profile`
               );
               return '/complete-profile';
             }
@@ -144,6 +145,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.email = dbUser.email ?? '';
         session.user.image = dbUser.image ?? '';
         session.user.role = dbUser.role;
+        session.user.profileUpdatedAt = dbUser.profileUpdatedAt;
         // Pass the ORIGINAL lastActive value (before we updated it above)
         // This allows TourContext to check if user was new (lastActive was null)
         session.user.lastActive = lastActive;

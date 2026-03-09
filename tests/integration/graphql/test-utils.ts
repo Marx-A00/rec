@@ -208,7 +208,12 @@ export async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   // Delete in order respecting foreign keys
   // First get test user IDs
   const testUsers = await prisma.user.findMany({
-    where: { email: { startsWith: 'test-' } },
+    where: {
+      OR: [
+        { email: { startsWith: 'test-' } },
+        { email: { endsWith: '@test.com' } },
+      ],
+    },
     select: { id: true },
   });
   const testUserIds = testUsers.map(u => u.id);
@@ -266,6 +271,11 @@ export async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   });
 
   await prisma.user.deleteMany({
-    where: { email: { startsWith: 'test-' } },
+    where: {
+      OR: [
+        { email: { startsWith: 'test-' } },
+        { email: { endsWith: '@test.com' } },
+      ],
+    },
   });
 }

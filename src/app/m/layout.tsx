@@ -19,8 +19,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// Routes that should not enforce username completion (to avoid redirect loops)
-const USERNAME_EXEMPT_ROUTES = ['/m/auth', '/m/complete-profile'];
+// Routes that should not enforce onboarding completion (to avoid redirect loops)
+const ONBOARDING_EXEMPT_ROUTES = ['/m/auth', '/m/complete-profile'];
 
 export default async function MobileLayout({
   children,
@@ -30,16 +30,15 @@ export default async function MobileLayout({
   // Check if authenticated user needs to complete their profile
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
-  const isExempt = USERNAME_EXEMPT_ROUTES.some(route =>
+  const isExempt = ONBOARDING_EXEMPT_ROUTES.some(route =>
     pathname.startsWith(route)
   );
 
   if (!isExempt) {
     const session = await auth();
     if (session?.user) {
-      const hasUsername =
-        session.user.username && session.user.username.trim() !== '';
-      if (!hasUsername) {
+      const hasCompletedOnboarding = session.user.profileUpdatedAt !== null;
+      if (!hasCompletedOnboarding) {
         redirect('/m/complete-profile');
       }
     }

@@ -1,39 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  User,
-  Check,
-  X,
-  Loader2,
-} from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
 import {
   validateEmail,
-  validateUsernameForRegistration,
   validatePassword,
   getPasswordStrength,
 } from '@/lib/validations';
 
 interface FieldErrors {
-  username?: string;
   email?: string;
   password?: string;
-}
-
-interface UsernameCheckState {
-  checking: boolean;
-  available: boolean | null;
-  checkedUsername: string;
 }
 
 export default function MobileRegisterPage() {
@@ -42,72 +24,11 @@ export default function MobileRegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    username: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [usernameCheck, setUsernameCheck] = useState<UsernameCheckState>({
-    checking: false,
-    available: null,
-    checkedUsername: '',
-  });
-
-  // Debounced username availability check
-  const checkUsernameAvailability = useCallback(async (username: string) => {
-    if (!username || username.length < 2) {
-      setUsernameCheck({
-        checking: false,
-        available: null,
-        checkedUsername: '',
-      });
-      return;
-    }
-
-    // Validate username format first
-    const validation = validateUsernameForRegistration(username);
-    if (!validation.isValid) {
-      setUsernameCheck({
-        checking: false,
-        available: null,
-        checkedUsername: '',
-      });
-      return;
-    }
-
-    setUsernameCheck(prev => ({ ...prev, checking: true }));
-
-    try {
-      const response = await fetch(
-        `/api/auth/check-username?username=${encodeURIComponent(username)}`
-      );
-      const data = await response.json();
-
-      setUsernameCheck({
-        checking: false,
-        available: data.available,
-        checkedUsername: username,
-      });
-    } catch {
-      setUsernameCheck({
-        checking: false,
-        available: null,
-        checkedUsername: '',
-      });
-    }
-  }, []);
-
-  // Debounce username check
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (formData.username && formData.username.length >= 2) {
-        checkUsernameAvailability(formData.username);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [formData.username, checkUsernameAvailability]);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -131,32 +52,11 @@ export default function MobileRegisterPage() {
     if (fieldErrors[name as keyof FieldErrors]) {
       setFieldErrors(prev => ({ ...prev, [name]: undefined }));
     }
-
-    // Reset username check when username changes
-    if (name === 'username') {
-      setUsernameCheck({
-        checking: false,
-        available: null,
-        checkedUsername: '',
-      });
-    }
   };
 
   const validateForm = (): boolean => {
     const errors: FieldErrors = {};
     let isValid = true;
-
-    // Validate username
-    const usernameValidation = validateUsernameForRegistration(
-      formData.username
-    );
-    if (!usernameValidation.isValid) {
-      errors.username = usernameValidation.message;
-      isValid = false;
-    } else if (usernameCheck.available === false) {
-      errors.username = 'Username is already taken';
-      isValid = false;
-    }
 
     // Validate email
     const emailValidation = validateEmail(formData.email);
@@ -184,11 +84,6 @@ export default function MobileRegisterPage() {
       return;
     }
 
-    // Wait for username check if still in progress
-    if (usernameCheck.checking) {
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -197,7 +92,6 @@ export default function MobileRegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
-          username: formData.username,
           password: formData.password,
         }),
       });
@@ -219,7 +113,7 @@ export default function MobileRegisterPage() {
       });
 
       if (signInResult?.ok) {
-        router.push('/m');
+        router.push('/m/complete-profile');
         router.refresh();
       } else {
         // Registration succeeded but sign-in failed, redirect to signin
@@ -244,26 +138,6 @@ export default function MobileRegisterPage() {
     },
     []
   );
-
-  // Get username field status
-  const getUsernameStatus = () => {
-    if (!formData.username) return null;
-    if (fieldErrors.username) return 'error';
-    if (usernameCheck.checking) return 'checking';
-    if (
-      usernameCheck.available === true &&
-      usernameCheck.checkedUsername === formData.username
-    )
-      return 'available';
-    if (
-      usernameCheck.available === false &&
-      usernameCheck.checkedUsername === formData.username
-    )
-      return 'taken';
-    return null;
-  };
-
-  const usernameStatus = getUsernameStatus();
 
   return (
     <div className='min-h-screen bg-black flex flex-col'>
@@ -338,77 +212,6 @@ export default function MobileRegisterPage() {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Username */}
-          <div>
-            <label
-              htmlFor='username'
-              className='block text-sm font-medium text-zinc-400 mb-2'
-            >
-              Username
-            </label>
-            <div className='relative'>
-              <User className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500' />
-              <input
-                id='username'
-                name='username'
-                type='text'
-                autoComplete='username'
-                autoCapitalize='none'
-                autoCorrect='off'
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                disabled={isLoading}
-                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
-                  fieldErrors.username || usernameStatus === 'taken'
-                    ? 'border-red-500'
-                    : usernameStatus === 'available'
-                      ? 'border-green-500'
-                      : 'border-zinc-800'
-                }`}
-                placeholder='Choose a username'
-                aria-invalid={
-                  !!fieldErrors.username || usernameStatus === 'taken'
-                }
-                aria-describedby={
-                  fieldErrors.username ? 'username-error' : undefined
-                }
-              />
-              {/* Status indicator */}
-              <div className='absolute right-4 top-1/2 -translate-y-1/2'>
-                {usernameStatus === 'checking' && (
-                  <Loader2 className='h-5 w-5 text-zinc-500 animate-spin' />
-                )}
-                {usernameStatus === 'available' && (
-                  <Check className='h-5 w-5 text-green-500' />
-                )}
-                {usernameStatus === 'taken' && (
-                  <X className='h-5 w-5 text-red-500' />
-                )}
-              </div>
-            </div>
-            {fieldErrors.username && (
-              <p
-                id='username-error'
-                className='mt-2 text-sm text-red-400'
-                role='alert'
-              >
-                {fieldErrors.username}
-              </p>
-            )}
-            {usernameStatus === 'available' && (
-              <p className='mt-2 text-sm text-green-400'>
-                Username is available
-              </p>
-            )}
-            {usernameStatus === 'taken' && !fieldErrors.username && (
-              <p className='mt-2 text-sm text-red-400' role='alert'>
-                Username is already taken
-              </p>
-            )}
-          </div>
-
           {/* Email */}
           <div>
             <label
@@ -537,7 +340,7 @@ export default function MobileRegisterPage() {
 
           <MobileButton
             type='submit'
-            disabled={isLoading || usernameCheck.checking}
+            disabled={isLoading}
             className='w-full mt-6'
             size='lg'
           >

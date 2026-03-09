@@ -49,9 +49,24 @@ const PRESET_PLAYLISTS = [
 // Component
 // ============================================================================
 
-export function PlaylistImportDialog() {
+interface PlaylistImportDialogProps {
+  /** When provided, the dialog becomes controlled (no built-in trigger). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function PlaylistImportDialog({
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: PlaylistImportDialogProps = {}) {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled
+    ? (v: boolean) => controlledOnOpenChange?.(v)
+    : setInternalOpen;
   const [playlistInput, setPlaylistInput] = useState('');
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -85,6 +100,16 @@ export function PlaylistImportDialog() {
       );
     }
   }, [albums]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setPlaylistInput('');
+      setPreviewId(null);
+      setSelectedIds(new Set());
+      resetStream();
+    }
+  }, [open, resetStream]);
 
   const toggleAlbum = useCallback((deezerId: string) => {
     setSelectedIds(prev => {
@@ -159,12 +184,14 @@ export function PlaylistImportDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant='outline' className='gap-2'>
-          <Music className='h-4 w-4' />
-          Import Playlist
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant='outline' className='gap-2'>
+            <Music className='h-4 w-4' />
+            Import Playlist
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className='max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col'>
         {/* Fixed Header */}
         <div className='p-6 pb-4 shrink-0'>

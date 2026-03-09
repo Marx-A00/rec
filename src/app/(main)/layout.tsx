@@ -19,9 +19,9 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Redirect authenticated users without a username to complete their profile
+  // Redirect authenticated users who haven't completed onboarding
   const session = await auth();
-  if (session?.user && !session.user.username) {
+  if (session?.user && !session.user.profileUpdatedAt) {
     redirect('/complete-profile');
   }
   return (

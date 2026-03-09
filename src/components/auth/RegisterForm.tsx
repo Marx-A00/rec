@@ -3,21 +3,12 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 
-import {
-  validateEmail,
-  validateUsernameForRegistration,
-  validatePassword,
-} from '@/lib/validations';
+import { validateEmail, validatePassword } from '@/lib/validations';
 
 import PasswordStrength from './PasswordStrength';
 
-interface RegisterFormProps {
-  onSuccess?: (userName?: string) => void;
-}
-
-export default function RegisterForm({ onSuccess }: RegisterFormProps) {
+export default function RegisterForm() {
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
   });
@@ -32,8 +23,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         return validateEmail(value);
       case 'password':
         return validatePassword(value);
-      case 'username':
-        return validateUsernameForRegistration(value);
       default:
         return { isValid: true };
     }
@@ -63,10 +52,8 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   const isFormValid =
-    formData.username.length > 0 &&
     formData.email.length > 0 &&
     formData.password.length > 0 &&
-    !errors.username &&
     !errors.email &&
     !errors.password;
 
@@ -77,7 +64,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
     // Validate all fields
     const validations = {
-      username: validateField('username', formData.username),
       email: validateField('email', formData.email),
       password: validateField('password', formData.password),
     };
@@ -101,7 +87,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.username || undefined,
           email: formData.email,
           password: formData.password,
         }),
@@ -130,12 +115,8 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         return;
       }
 
-      // Success - redirect will be handled by NextAuth
-      if (onSuccess) {
-        onSuccess(formData.username);
-      } else {
-        window.location.href = '/home-mosaic';
-      }
+      // Success - redirect to complete-profile for onboarding
+      window.location.href = '/complete-profile';
     } catch {
       setServerError('Something went wrong. Please try again.');
       setIsLoading(false);
@@ -155,40 +136,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       )}
 
       <div className='space-y-3'>
-        <div>
-          <label
-            htmlFor='username'
-            className='block text-sm font-medium text-zinc-300 mb-2'
-          >
-            Username
-          </label>
-          <input
-            id='username'
-            name='username'
-            type='text'
-            autoCapitalize='none'
-            autoCorrect='off'
-            spellCheck='false'
-            required
-            value={formData.username}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
-            placeholder='Choose a username'
-            aria-describedby={errors.username ? 'username-error' : undefined}
-            aria-invalid={errors.username ? 'true' : 'false'}
-          />
-          {errors.username && (
-            <p
-              id='username-error'
-              className='mt-1 text-sm text-red-400 font-medium'
-              role='alert'
-            >
-              {errors.username}
-            </p>
-          )}
-        </div>
-
         <div>
           <label
             htmlFor='email'

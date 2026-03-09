@@ -70,7 +70,7 @@ function DevTestPanel({
   onReplayGame?: () => void;
 }) {
   const { data } = useAlbumsByGameStatusQuery({
-    status: AlbumGameStatus.Eligible,
+    status: AlbumGameStatus.Approved,
     limit: 50,
     offset: 0,
   });

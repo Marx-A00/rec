@@ -59,7 +59,7 @@ export default function GameTestPage() {
   const [isGameOver, setIsGameOver] = useState(false);
 
   const { data, isLoading } = useAlbumsByGameStatusQuery({
-    status: AlbumGameStatus.Eligible,
+    status: AlbumGameStatus.Approved,
     limit: 100,
     offset: 0,
   });

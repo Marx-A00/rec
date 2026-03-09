@@ -10,7 +10,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const getStatusColor = (status: AlbumGameStatus) => {
     switch (status) {
-      case AlbumGameStatus.Eligible:
+      case AlbumGameStatus.Approved:
         return 'bg-green-500/10 text-green-500 border-green-500/20';
       case AlbumGameStatus.Excluded:
         return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -23,8 +23,8 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   const getStatusLabel = (status: AlbumGameStatus) => {
     switch (status) {
-      case AlbumGameStatus.Eligible:
-        return 'Eligible';
+      case AlbumGameStatus.Approved:
+        return 'Approved';
       case AlbumGameStatus.Excluded:
         return 'Excluded';
       case AlbumGameStatus.None:

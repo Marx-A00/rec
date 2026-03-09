@@ -9,7 +9,7 @@ export interface EligibilityResult {
 }
 
 /**
- * Validate whether an album can be marked as ELIGIBLE for the game pool.
+ * Validate whether an album can be marked as APPROVED for the game pool.
  *
  * Requirements for eligibility:
  * - Must have cover art (cloudflareImageId)
@@ -62,6 +62,6 @@ export function isValidStatusTransition(
   _to: AlbumGameStatus
 ): boolean {
   // All transitions currently allowed
-  // Future: Could add rules like "EXCLUDED -> ELIGIBLE requires admin approval"
+  // Future: Could add rules like "EXCLUDED -> APPROVED requires admin approval"
   return true;
 }

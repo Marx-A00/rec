@@ -3443,7 +3443,7 @@ export const queryResolvers: QueryResolvers = {
       const [eligible, excluded, neutral, totalWithCoverArt] =
         await Promise.all([
           prisma.album.count({
-            where: { gameStatus: 'ELIGIBLE' },
+            where: { gameStatus: 'APPROVED' },
           }),
           prisma.album.count({
             where: { gameStatus: 'EXCLUDED' },
