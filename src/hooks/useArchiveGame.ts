@@ -284,7 +284,17 @@ export function useArchiveGame(challengeDate: Date) {
       if (result.gameOver) {
         gameStore.endSession(result.won);
 
-        const allGuesses = [...gameStore.guesses];
+        // Build complete guess list — Zustand snapshot may be stale
+        const allGuesses: Guess[] = [
+          ...gameStore.guesses.filter(g => g.guessNumber !== newGuessNumber),
+          {
+            guessNumber: newGuessNumber,
+            guessedText: guessText,
+            isCorrect: correct,
+            guessedAlbumId: localAlbumId,
+          },
+        ];
+
         submitResultToServer(
           gameStore.challengeId,
           allGuesses,
@@ -347,7 +357,16 @@ export function useArchiveGame(challengeDate: Date) {
     if (result.gameOver) {
       gameStore.endSession(result.won);
 
-      const allGuesses = [...gameStore.guesses];
+      // Build complete guess list — Zustand snapshot may be stale
+      const allGuesses: Guess[] = [
+        ...gameStore.guesses.filter(g => g.guessNumber !== newGuessNumber),
+        {
+          guessNumber: newGuessNumber,
+          guessedText: null,
+          isCorrect: false,
+        },
+      ];
+
       submitResultToServer(
         gameStore.challengeId,
         allGuesses,

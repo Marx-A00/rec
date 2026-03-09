@@ -273,9 +273,19 @@ export function useUncoverGame() {
       if (result.gameOver) {
         gameStore.endSession(result.won);
 
-        // Fire-and-forget server submission
-        // Use the store's guesses which now include the new one
-        const allGuesses = [...gameStore.guesses];
+        // Build the complete guess list including the one we just added.
+        // We can't rely on gameStore.guesses here because the Zustand
+        // snapshot in this closure may be stale (missing the latest guess).
+        const allGuesses: Guess[] = [
+          ...gameStore.guesses.filter(g => g.guessNumber !== newGuessNumber),
+          {
+            guessNumber: newGuessNumber,
+            guessedText: guessText,
+            isCorrect: correct,
+            guessedAlbumId: localAlbumId,
+          },
+        ];
+
         submitResultToServer(
           gameStore.challengeId,
           allGuesses,
@@ -340,7 +350,16 @@ export function useUncoverGame() {
     if (result.gameOver) {
       gameStore.endSession(result.won);
 
-      const allGuesses = [...gameStore.guesses];
+      // Build complete guess list — same stale-closure fix as submitGuess
+      const allGuesses: Guess[] = [
+        ...gameStore.guesses.filter(g => g.guessNumber !== newGuessNumber),
+        {
+          guessNumber: newGuessNumber,
+          guessedText: null,
+          isCorrect: false,
+        },
+      ];
+
       submitResultToServer(
         gameStore.challengeId,
         allGuesses,

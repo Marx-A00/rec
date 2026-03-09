@@ -1918,7 +1918,7 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Profile management mutations (placeholders)
-  updateProfile: async (_, { username, bio }, { user, prisma }) => {
+  updateProfile: async (_, { username, bio, image }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
@@ -1929,6 +1929,7 @@ export const mutationResolvers: MutationResolvers = {
         data: {
           username,
           bio,
+          ...(image !== undefined && { image }),
           profileUpdatedAt: new Date(),
         },
       });
@@ -3242,8 +3243,8 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
 
-      // Validate eligibility if status is ELIGIBLE
-      if (input.gameStatus === 'ELIGIBLE') {
+      // Validate eligibility if status is APPROVED
+      if (input.gameStatus === 'APPROVED') {
         const { validateEligibility } = await import(
           '@/lib/game-pool/eligibility'
         );
@@ -3327,9 +3328,9 @@ export const mutationResolvers: MutationResolvers = {
         throw new GraphQLError('Album not found');
       }
 
-      if (album.gameStatus !== 'ELIGIBLE') {
+      if (album.gameStatus !== 'APPROVED') {
         throw new GraphQLError(
-          'Album must be marked as ELIGIBLE for game pool before adding to curated list'
+          'Album must be marked as APPROVED for game pool before adding to curated list'
         );
       }
 
@@ -3995,16 +3996,16 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
 
-      // Atomic transaction: set ELIGIBLE + add to curated
+      // Atomic transaction: set APPROVED + add to curated
       const { toUTCMidnight } = await import(
         '@/lib/daily-challenge/date-utils'
       );
 
       const result = await prisma.$transaction(async (tx: typeof prisma) => {
-        // 1. Set game status to ELIGIBLE
+        // 1. Set game status to APPROVED
         const updatedAlbum = await tx.album.update({
           where: { id: albumId },
-          data: { gameStatus: 'ELIGIBLE' },
+          data: { gameStatus: 'APPROVED' },
         });
 
         // 2. Create curated challenge entry
@@ -4037,19 +4038,19 @@ export const mutationResolvers: MutationResolvers = {
         category: 'USER_ACTION',
         sources: ['ADMIN'],
         status: 'SUCCESS',
-        reason: 'Added to game pool (ELIGIBLE + curated) via addAlbumToPool',
+        reason: 'Added to game pool (APPROVED + curated) via addAlbumToPool',
         fieldsEnriched: ['gameStatus'],
         userId: user?.id,
       });
 
       graphqlLogger.info('Added album to game pool:', {
         albumId,
-        gameStatus: 'ELIGIBLE',
+        gameStatus: 'APPROVED',
       });
 
       return {
         success: true,
-        message: 'Album set to ELIGIBLE and added to pool',
+        message: 'Album set to APPROVED and added to pool',
         error: null,
         album: result.updatedAlbum,
         curatedChallenge: result.curatedEntry,
@@ -4071,11 +4072,174 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // ---------------------------------------------------------------
+  // Add external album to pool (find-or-create + add to pool)
+  // ---------------------------------------------------------------
+
+  addExternalAlbumToPool: async (_, { albumData }, { prisma, user }) => {
+    if (!user?.id) {
+      return {
+        success: false,
+        message: null,
+        error: 'Authentication required',
+        album: null,
+        curatedChallenge: null,
+      };
+    }
+
+    // Admin check
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return {
+        success: false,
+        message: null,
+        error: 'Admin access required',
+        album: null,
+        curatedChallenge: null,
+      };
+    }
+
+    try {
+      const { findOrCreateAlbum } = await import('@/lib/albums');
+
+      const primaryArtist = albumData.artists?.[0];
+      const releaseDate = albumData.releaseDate
+        ? new Date(albumData.releaseDate)
+        : null;
+
+      // 1. Find or create the album in local DB
+      const { album, created } = await findOrCreateAlbum({
+        db: prisma,
+        identity: {
+          title: albumData.title,
+          musicbrainzId: albumData.musicbrainzId ?? undefined,
+          spotifyId: albumData.spotifyId ?? undefined,
+          primaryArtistName: primaryArtist?.artistName ?? undefined,
+          releaseYear: releaseDate?.getFullYear() ?? undefined,
+        },
+        fields: {
+          releaseDate,
+          releaseType: albumData.albumType || 'ALBUM',
+          trackCount: albumData.totalTracks ?? undefined,
+          coverArtUrl: albumData.coverImageUrl ?? undefined,
+        },
+        artists: (albumData.artists || [])
+          .filter((a: { artistName?: string | null }) => a.artistName)
+          .map(
+            (
+              a: {
+                artistName?: string | null;
+                artistId?: string | null;
+                role?: string | null;
+              },
+              i: number
+            ) => ({
+              name: a.artistName!,
+              role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+              position: i,
+            })
+          ),
+        enrichment: 'queue-check',
+        caller: 'addExternalAlbumToPool',
+      });
+
+      // 2. Check if already in curated list
+      const existingCurated = await prisma.curatedChallenge.findFirst({
+        where: { albumId: album.id },
+      });
+
+      if (existingCurated) {
+        return {
+          success: false,
+          message: null,
+          error: `"${albumData.title}" is already in the pool`,
+          album: null,
+          curatedChallenge: null,
+        };
+      }
+
+      // 3. Atomic: set APPROVED + add to curated
+      const result = await prisma.$transaction(async (tx: typeof prisma) => {
+        const updatedAlbum = await tx.album.update({
+          where: { id: album.id },
+          data: { gameStatus: 'APPROVED' },
+        });
+
+        const curatedEntry = await tx.curatedChallenge.create({
+          data: {
+            albumId: album.id,
+            pinnedDate: null,
+          },
+          include: {
+            album: {
+              include: {
+                artists: { include: { artist: true } },
+              },
+            },
+          },
+        });
+
+        return { updatedAlbum, curatedEntry };
+      });
+
+      // 4. Log activity
+      const llamaLogger = createLlamaLogger(prisma);
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: album.id,
+        albumId: album.id,
+        operation: 'game-pool:add-external-to-pool',
+        category: 'USER_ACTION',
+        sources: ['ADMIN'],
+        status: 'SUCCESS',
+        reason: `External album ${created ? 'created and ' : ''}added to pool via addExternalAlbumToPool`,
+        fieldsEnriched: ['gameStatus'],
+        userId: user.id,
+      });
+
+      graphqlLogger.info('Added external album to game pool:', {
+        albumId: album.id,
+        albumTitle: albumData.title,
+        created,
+        gameStatus: 'APPROVED',
+      });
+
+      return {
+        success: true,
+        message: `"${albumData.title}" ${created ? 'created and ' : ''}added to pool`,
+        error: null,
+        album: result.updatedAlbum,
+        curatedChallenge: result.curatedEntry,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to add external album to pool:', { error });
+      if (error instanceof GraphQLError) throw error;
+      return {
+        success: false,
+        message: null,
+        error: `Failed to add external album to pool: ${error}`,
+        album: null,
+        curatedChallenge: null,
+      };
+    }
+  },
+
+  // ---------------------------------------------------------------
   // Client-side game model mutation (Wordle-style)
   // ---------------------------------------------------------------
 
   submitGameResult: async (_, { input }, { prisma, user }) => {
+    graphqlLogger.info('[submitGameResult] Called', {
+      userId: user?.id ?? 'NO_USER',
+      input: {
+        challengeId: input.challengeId,
+        won: input.won,
+        attemptCount: input.attemptCount,
+        mode: input.mode,
+        guessCount: input.guesses?.length,
+      },
+    });
+
     if (!user?.id) {
+      graphqlLogger.warn('[submitGameResult] No authenticated user');
       return {
         success: false,
         stats: null,
@@ -4093,6 +4257,9 @@ export const mutationResolvers: MutationResolvers = {
       });
 
       if (!challenge) {
+        graphqlLogger.warn('[submitGameResult] Challenge not found', {
+          challengeId,
+        });
         return {
           success: false,
           stats: null,
@@ -4101,8 +4268,19 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
 
+      graphqlLogger.info('[submitGameResult] Challenge found', {
+        challengeId,
+        challengeAlbumId: challenge.albumId,
+        challengeDate: challenge.date,
+        maxAttempts: challenge.maxAttempts,
+      });
+
       // 2. Validate input integrity
       if (guesses.length !== attemptCount) {
+        graphqlLogger.warn('[submitGameResult] Guess count mismatch', {
+          guessCount: guesses.length,
+          attemptCount,
+        });
         return {
           success: false,
           stats: null,
@@ -4112,6 +4290,10 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       if (attemptCount > challenge.maxAttempts) {
+        graphqlLogger.warn('[submitGameResult] Exceeds max attempts', {
+          attemptCount,
+          maxAttempts: challenge.maxAttempts,
+        });
         return {
           success: false,
           stats: null,
@@ -4125,7 +4307,17 @@ export const mutationResolvers: MutationResolvers = {
         g => g.albumId && g.albumId === challenge.albumId
       );
 
+      graphqlLogger.info('[submitGameResult] Validation', {
+        won,
+        hasCorrectGuess,
+        guessAlbumIds: guesses.map(g => g.albumId),
+        correctAlbumId: challenge.albumId,
+      });
+
       if (won && !hasCorrectGuess) {
+        graphqlLogger.warn(
+          '[submitGameResult] Win claim invalid — no matching guess'
+        );
         return {
           success: false,
           stats: null,
@@ -4135,6 +4327,9 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       if (!won && hasCorrectGuess) {
+        graphqlLogger.warn(
+          '[submitGameResult] Loss claim invalid — has correct guess'
+        );
         return {
           success: false,
           stats: null,
@@ -4153,7 +4348,15 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
+      graphqlLogger.info('[submitGameResult] Existing session check', {
+        exists: !!existingSession,
+        status: existingSession?.status ?? 'NONE',
+      });
+
       if (existingSession && existingSession.status !== 'IN_PROGRESS') {
+        graphqlLogger.info(
+          '[submitGameResult] Already completed — returning existing stats'
+        );
         // Already completed — return existing stats without error
         const { updatePlayerStats } = await import(
           '@/lib/uncover/stats-service'
@@ -4246,7 +4449,6 @@ export const mutationResolvers: MutationResolvers = {
               guessedText: guess.albumTitle,
               guessedAlbumId: guess.albumId || null,
               isCorrect: guess.isCorrect,
-              isSkipped: guess.isSkipped,
               guessedAt: now,
             },
           });
@@ -4284,6 +4486,17 @@ export const mutationResolvers: MutationResolvers = {
           }
         }
       });
+
+      graphqlLogger.info(
+        '[submitGameResult] Transaction committed successfully',
+        {
+          challengeId,
+          userId: user.id,
+          status: sessionStatus,
+          attemptCount,
+          guessCount: guesses.length,
+        }
+      );
 
       // 5. Update player/archive stats (outside transaction — idempotent)
       const { updatePlayerStats } = await import('@/lib/uncover/stats-service');
@@ -4350,9 +4563,11 @@ export const mutationResolvers: MutationResolvers = {
         error: null,
       };
     } catch (error) {
-      graphqlLogger.error('Failed to submit game result:', {
-        error,
+      graphqlLogger.error('[submitGameResult] Failed', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
         challengeId,
+        userId: user.id,
       });
       return {
         success: false,
