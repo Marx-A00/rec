@@ -3,27 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Wrench,
-  X,
-  RotateCcw,
-  Archive,
-  Calendar,
-  Zap,
-  Share2,
-  Lock,
-} from 'lucide-react';
+import { X, Archive, Calendar, Zap, Share2, Lock } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
-import {
-  useDailyChallengeQuery,
-  useAlbumsByGameStatusQuery,
-  useResetDailySessionMutation,
-  AlbumGameStatus,
-} from '@/generated/graphql';
-import AlbumImage from '@/components/ui/AlbumImage';
+import { useDailyChallengeQuery } from '@/generated/graphql';
 import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
@@ -71,158 +56,21 @@ function TeaserImage() {
   );
 }
 
-const CLOUDFLARE_BASE = `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL?.split('/').pop() ?? ''}`;
-
-/**
- * Admin/dev test panel for swapping album images and reveal stages.
- * Only visible to ADMIN/OWNER users in daily mode.
- */
-function DevTestPanel({
-  onSelectImage,
-  stageOverride,
-  onStageChange,
-  onReset,
-  onClose,
-  onReplayGame,
-}: {
-  onSelectImage: (url: string) => void;
-  stageOverride: number | null;
-  onStageChange: (stage: number | null) => void;
-  onReset: () => void;
-  onClose: () => void;
-  onReplayGame?: () => void;
-}) {
-  const { data } = useAlbumsByGameStatusQuery({
-    status: AlbumGameStatus.Approved,
-    limit: 50,
-    offset: 0,
-  });
-
-  const resetMutation = useResetDailySessionMutation();
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleResetDaily = async () => {
-    if (!confirm("Reset today's session? This deletes your guesses.")) return;
-    setIsResetting(true);
-    try {
-      await resetMutation.mutateAsync({});
-      onReplayGame?.();
-      window.location.reload();
-    } catch (err) {
-      console.error('Failed to reset daily session:', err);
-      alert('Failed to reset session');
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
-  const albums = data?.albumsByGameStatus || [];
-
-  return (
-    <div
-      className='fixed right-0 top-[65px] z-50 flex w-72 flex-col border-l border-zinc-700 bg-zinc-900/95 shadow-2xl backdrop-blur'
-      style={{ height: 'calc(100dvh - 65px)' }}
-    >
-      <div className='flex items-center justify-between border-b border-zinc-700 px-4 py-3'>
-        <span className='text-sm font-semibold text-zinc-200'>Test Panel</span>
-        <button onClick={onClose} className='text-zinc-400 hover:text-white'>
-          <X className='h-4 w-4' />
-        </button>
-      </div>
-
-      <div className='border-b border-zinc-800 px-4 py-3'>
-        <label className='mb-2 block text-xs font-medium text-zinc-400'>
-          Reveal Stage: {stageOverride ?? 'auto'}
-        </label>
-        <input
-          type='range'
-          min={1}
-          max={4}
-          value={stageOverride ?? 1}
-          onChange={e => onStageChange(Number(e.target.value))}
-          className='w-full accent-emerald-500'
-        />
-        <div className='mt-1 flex justify-between text-[10px] text-zinc-500'>
-          <span>1 (heavy)</span>
-          <span>4 (clear)</span>
-        </div>
-      </div>
-
-      <div className='space-y-1.5 border-b border-zinc-800 px-4 py-2'>
-        <button
-          onClick={onReset}
-          className='flex w-full items-center justify-center gap-1.5 rounded bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700'
-        >
-          <RotateCcw className='h-3 w-3' />
-          Reset overrides
-        </button>
-        <button
-          onClick={handleResetDaily}
-          disabled={isResetting}
-          className='flex w-full items-center justify-center gap-1.5 rounded bg-red-900 px-3 py-1.5 text-xs text-red-200 hover:bg-red-800 disabled:opacity-50'
-        >
-          <RotateCcw
-            className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`}
-          />
-          {isResetting ? 'Resetting...' : 'Reset Daily Session'}
-        </button>
-      </div>
-
-      <div className='flex-1 overflow-y-auto px-3 py-3'>
-        <span className='mb-2 block text-xs font-medium text-zinc-400'>
-          Pick an album ({albums.length})
-        </span>
-        <div className='grid grid-cols-3 gap-2'>
-          {albums.map(album => {
-            const cfUrl = album.cloudflareImageId
-              ? `${CLOUDFLARE_BASE}/${album.cloudflareImageId}/public`
-              : album.coverArtUrl;
-            return (
-              <button
-                key={album.id}
-                onClick={() => cfUrl && onSelectImage(cfUrl)}
-                className='group flex flex-col items-center gap-1 rounded p-1 hover:bg-zinc-800'
-                title={album.title}
-              >
-                <AlbumImage
-                  src={album.coverArtUrl}
-                  cloudflareImageId={album.cloudflareImageId}
-                  alt={album.title}
-                  width={56}
-                  height={56}
-                  className='rounded'
-                />
-                <span className='w-full truncate text-center text-[9px] text-zinc-500 group-hover:text-zinc-300'>
-                  {album.title}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Game Over ──────────────────────────────────────────────────
 
 function GameOver({
   game,
   challengeImageUrl,
-  onResetGame,
   mode,
   formattedDate,
   archiveUrl,
 }: {
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
-  onResetGame: () => void;
   mode: 'daily' | 'archive';
   formattedDate: string | null;
   archiveUrl: string;
 }) {
-  const [showDevPanel, setShowDevPanel] = useState(false);
-  const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
   const isDaily = mode === 'daily';
   const won = game.won;
 
@@ -332,27 +180,6 @@ function GameOver({
           </div>
         )}
       </div>
-
-      {/* Admin dev panel toggle (daily only) */}
-      {isDaily && isAdmin && (
-        <button
-          onClick={() => setShowDevPanel(prev => !prev)}
-          className='fixed right-4 top-20 z-[60] rounded-full bg-zinc-800 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors'
-          title='Toggle test panel'
-        >
-          <Wrench className='h-5 w-5' />
-        </button>
-      )}
-      {isDaily && isAdmin && showDevPanel && (
-        <DevTestPanel
-          onSelectImage={() => {}}
-          stageOverride={null}
-          onStageChange={() => {}}
-          onReset={() => {}}
-          onClose={() => setShowDevPanel(false)}
-          onReplayGame={onResetGame}
-        />
-      )}
     </div>
   );
 }
@@ -363,7 +190,7 @@ function GameOver({
  * Unified Uncover game component for both daily and archive modes.
  *
  * Daily mode (default): Pre-game home screen, auth gate with providers,
- * dev panel for admins, streak/stats display.
+ * streak/stats display.
  *
  * Archive mode: Auto-starts on mount, shows date label, "Back to Archive"
  * navigation, no pre-game screen.
@@ -385,13 +212,6 @@ export function UncoverGame({
   );
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasStarted, setHasStarted] = useState(isArchive); // archive auto-starts
-
-  // Dev test panel state (daily + admin only)
-  const [showDevPanel, setShowDevPanel] = useState(false);
-  const [devImageOverride, setDevImageOverride] = useState<string | null>(null);
-  const [devStageOverride, setDevStageOverride] = useState<number | null>(null);
-
-  const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
 
   // Format archive date in UTC
   const formattedDate = challengeDate
@@ -658,10 +478,6 @@ export function UncoverGame({
       <GameOver
         game={game}
         challengeImageUrl={challengeImageUrl}
-        onResetGame={() => {
-          game.resetGame();
-          setChallengeImageUrl(null);
-        }}
         mode={mode}
         formattedDate={formattedDate}
         archiveUrl={archiveUrl}
@@ -682,9 +498,9 @@ export function UncoverGame({
           >
             <div className='h-[500px] w-[500px]'>
               <RevealImage
-                imageUrl={devImageOverride || challengeImageUrl}
+                imageUrl={challengeImageUrl}
                 challengeId={game.challengeId}
-                stage={devStageOverride ?? game.revealStage}
+                stage={game.revealStage}
                 revealMode='regions'
                 textRegions={game.textRegions}
                 className='h-full w-full'
@@ -735,29 +551,6 @@ export function UncoverGame({
           </div>
         )}
       </div>
-
-      {/* Admin dev panel toggle (daily only) */}
-      {isDaily && isAdmin && (
-        <button
-          onClick={() => setShowDevPanel(prev => !prev)}
-          className='fixed right-4 top-20 z-[60] rounded-full bg-zinc-800 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 hover:bg-zinc-700 hover:text-white transition-colors'
-          title='Toggle test panel'
-        >
-          <Wrench className='h-5 w-5' />
-        </button>
-      )}
-      {isDaily && isAdmin && showDevPanel && (
-        <DevTestPanel
-          onSelectImage={setDevImageOverride}
-          stageOverride={devStageOverride}
-          onStageChange={setDevStageOverride}
-          onReset={() => {
-            setDevImageOverride(null);
-            setDevStageOverride(null);
-          }}
-          onClose={() => setShowDevPanel(false)}
-        />
-      )}
     </div>
   );
 }

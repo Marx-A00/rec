@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { auth } from '@/../auth';
+import { isAdmin } from '@/lib/permissions';
 import {
   detectAllText,
   filterAnswerRevealingRegions,
 } from '@/lib/vision/text-detection';
 
 /**
- * Dev-only API endpoint for on-demand text detection on album covers.
+ * Admin-only API endpoint for on-demand text detection on album covers.
  * POST /api/dev/detect-text
  * Body: { imageUrl: string, albumTitle: string, artistName: string, threshold?: number }
  */
 export async function POST(request: NextRequest) {
-  // Guard: only allow in development
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { error: 'This endpoint is only available in development' },
-      { status: 403 }
-    );
+  const session = await auth();
+  if (!session?.user || !isAdmin(session.user.role)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {

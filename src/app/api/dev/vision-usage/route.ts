@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 
+import { auth } from '@/../auth';
+import { isAdmin } from '@/lib/permissions';
 import { getVisionUsage } from '@/lib/vision/text-detection';
 
-/** GET /api/dev/vision-usage — returns current month's API call count */
+/** GET /api/dev/vision-usage — returns current month's API call count (admin only) */
 export async function GET() {
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { error: 'This endpoint is only available in development' },
-      { status: 403 }
-    );
+  const session = await auth();
+  if (!session?.user || !isAdmin(session.user.role)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   return NextResponse.json(getVisionUsage());
