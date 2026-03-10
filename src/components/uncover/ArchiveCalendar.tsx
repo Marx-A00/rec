@@ -141,51 +141,67 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
 
   return (
     <div className='flex flex-col items-center space-y-6'>
-      {/* Calendar */}
-      {isLoading ? (
-        <div className='flex h-64 items-center justify-center'>
-          <LumaSpinner />
+      {/* Glassmorphism calendar container */}
+      <div className='relative inline-block'>
+        {/* Ambient glow behind the glass */}
+        <div className='pointer-events-none absolute -inset-6 rounded-3xl bg-emerald-500/[0.06] blur-3xl' />
+
+        {/* Glass card */}
+        <div className='relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl'>
+          {/* Top edge highlight */}
+          <div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent' />
+          {/* Subtle inner gradient */}
+          <div className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.03] via-transparent to-white/[0.01]' />
+
+          {/* Always render calendar so the card never shifts size;
+              overlay spinner when loading */}
+          <div className='relative'>
+            {isLoading && (
+              <div className='absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/40 backdrop-blur-sm'>
+                <LumaSpinner />
+              </div>
+            )}
+            <Calendar
+              mode='single'
+              month={currentMonth}
+              onMonthChange={setCurrentMonth}
+              onSelect={isLoading ? undefined : handleDateSelect}
+              disabled={disabledDates}
+              modifiers={{
+                won: wonDates,
+                lost: lostDates,
+                missed: missedDates,
+                today: today,
+              }}
+              modifiersClassNames={{
+                won: 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-semibold',
+                lost: 'bg-red-500/20 text-red-400 hover:bg-red-500/30 font-semibold',
+                missed: 'bg-zinc-700/50 text-zinc-500 hover:bg-zinc-700/70',
+                today:
+                  'border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/25 font-semibold',
+              }}
+              className='bg-transparent p-0 [--cell-size:2.5rem]'
+            />
+          </div>
         </div>
-      ) : (
-        <Calendar
-          mode='single'
-          month={currentMonth}
-          onMonthChange={setCurrentMonth}
-          onSelect={handleDateSelect}
-          disabled={disabledDates}
-          modifiers={{
-            won: wonDates,
-            lost: lostDates,
-            missed: missedDates,
-            today: today,
-          }}
-          modifiersClassNames={{
-            won: 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-semibold',
-            lost: 'bg-red-500/20 text-red-400 hover:bg-red-500/30 font-semibold',
-            missed: 'bg-zinc-700/50 text-zinc-500 hover:bg-zinc-700/70',
-            today:
-              'border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/25 font-semibold',
-          }}
-          className='rounded-lg border border-zinc-700 bg-zinc-900 p-4'
-        />
-      )}
+      </div>
 
       {/* Legend */}
-      <div className='flex flex-wrap justify-center gap-4 text-sm'>
-        <div className='flex items-center gap-2'>
-          <div className='h-4 w-4 rounded bg-emerald-500/20 border border-emerald-500/40' />
+      <div className='flex flex-wrap justify-center gap-3 text-sm'>
+        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+          <div className='h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' />
           <span className='text-zinc-300'>Won</span>
         </div>
-        <div className='flex items-center gap-2'>
-          <div className='h-4 w-4 rounded bg-red-500/20 border border-red-500/40' />
+        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+          <div className='h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]' />
           <span className='text-zinc-300'>Lost</span>
         </div>
-        <div className='flex items-center gap-2'>
-          <div className='h-4 w-4 rounded bg-zinc-700/50 border border-zinc-600' />
+        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+          <div className='h-2.5 w-2.5 rounded-full bg-zinc-500' />
           <span className='text-zinc-300'>Missed</span>
         </div>
-        <div className='flex items-center gap-2'>
-          <div className='h-4 w-4 rounded border-2 border-emerald-400 bg-emerald-500/10' />
+        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+          <div className='h-2.5 w-2.5 rounded-full border-2 border-emerald-400 bg-emerald-500/20 shadow-[0_0_6px_rgba(52,211,153,0.4)]' />
           <span className='text-zinc-300'>Today</span>
         </div>
       </div>
