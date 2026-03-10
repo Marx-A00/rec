@@ -2,22 +2,30 @@
 
 import { SmokeBackground } from '@/components/ui/smoke-background';
 import { UncoverPageHeader } from '@/components/uncover/UncoverPageHeader';
+import { useUncoverGameStore } from '@/stores/useUncoverGameStore';
 
 /**
  * Shared layout for all /game/* routes.
  * Fixed positioning below TopBar (65px) with sidebar offset (md:ml-16).
  * Renders page header with tabs, then child content fills remaining space.
  * Smoke background covers the entire game section (header + content).
+ *
+ * Smoke color reacts to game status:
+ *  - LOST → red (#ef4444)
+ *  - default → emerald (#10b981)
  */
 export default function GameLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const status = useUncoverGameStore(s => s.status);
+  const smokeColor = status === 'LOST' ? '#ef4444' : '#10b981';
+
   return (
     <div className='fixed inset-x-0 bottom-0 top-[65px] flex flex-col overflow-hidden md:left-16'>
       <SmokeBackground
-        smokeColor='#10b981'
+        smokeColor={smokeColor}
         speed={0.015}
         density={3.0}
         className='opacity-70'

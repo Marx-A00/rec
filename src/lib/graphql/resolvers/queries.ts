@@ -3651,6 +3651,12 @@ export const queryResolvers: QueryResolvers = {
         }
       }
 
+      // Parse textRegions from JSON (Prisma returns Json type)
+      const rawRegions = challenge.textRegions;
+      const textRegions = Array.isArray(rawRegions)
+        ? (rawRegions as Array<{ x: number; y: number; w: number; h: number }>)
+        : null;
+
       // Return challenge info WITHOUT the album (that's the answer!)
       return {
         id: challenge.id,
@@ -3659,6 +3665,7 @@ export const queryResolvers: QueryResolvers = {
         totalPlays: challenge.totalPlays,
         totalWins: challenge.totalWins,
         avgAttempts: challenge.avgAttempts,
+        textRegions,
         mySession,
         imageUrl: challenge.album.cloudflareImageId
           ? (() => {
@@ -3845,6 +3852,9 @@ export const queryResolvers: QueryResolvers = {
         totalPlays: c.totalPlays,
         totalWins: c.totalWins,
         avgAttempts: c.avgAttempts,
+        textRegionCount: Array.isArray(c.textRegions)
+          ? c.textRegions.length
+          : null,
       }));
     } catch (error) {
       graphqlLogger.error('Failed to fetch challenge history:', { error });
@@ -4100,6 +4110,9 @@ export const queryResolvers: QueryResolvers = {
           ? getImageUrl(challenge.album.cloudflareImageId)
           : null,
         cloudflareImageId: challenge.album.cloudflareImageId,
+        textRegions: Array.isArray(challenge.textRegions)
+          ? challenge.textRegions
+          : null,
         correctAlbumId: challenge.album.id,
         correctAlbumTitle: challenge.album.title,
         correctAlbumArtist: artistName,
@@ -4187,6 +4200,9 @@ export const queryResolvers: QueryResolvers = {
           ? getImageUrl(challenge.album.cloudflareImageId)
           : null,
         cloudflareImageId: challenge.album.cloudflareImageId,
+        textRegions: Array.isArray(challenge.textRegions)
+          ? challenge.textRegions
+          : null,
         correctAlbumId: challenge.album.id,
         correctAlbumTitle: challenge.album.title,
         correctAlbumArtist: artistName,

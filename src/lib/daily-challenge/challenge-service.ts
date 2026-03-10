@@ -14,6 +14,7 @@
 import { UncoverChallenge, Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
+import { detectAnswerRegions } from '@/lib/vision/text-detection';
 
 import { toUTCMidnight, formatDateUTC } from './date-utils';
 import {
@@ -150,6 +151,60 @@ export async function getOrCreateDailyChallenge(
   // Select album from the pool
   const albumId = await selectAlbumForDate(normalizedDate);
 
+  // Run text detection on the album cover
+  let textRegions: Array<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }> | null = null;
+  try {
+    const albumDetails = await prisma.album.findUnique({
+      where: { id: albumId },
+      select: {
+        title: true,
+        coverArtUrl: true,
+        cloudflareImageId: true,
+        artists: {
+          select: { artist: { select: { name: true } } },
+        },
+      },
+    });
+
+    if (albumDetails) {
+      const deliveryUrl =
+        process.env.CLOUDFLARE_IMAGES_DELIVERY_URL ||
+        `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}`;
+      const imageUrl = albumDetails.cloudflareImageId
+        ? `${deliveryUrl}/${albumDetails.cloudflareImageId}/public`
+        : albumDetails.coverArtUrl;
+
+      const artistName = albumDetails.artists[0]?.artist.name ?? '';
+
+      if (imageUrl) {
+        textRegions = await detectAnswerRegions(
+          imageUrl,
+          albumDetails.title,
+          artistName
+        );
+        const regionCount = textRegions?.length ?? 0;
+        console.log(
+          `[DailyChallenge] Text detection: ${regionCount} answer-revealing region(s) found`
+        );
+      } else {
+        console.log(
+          '[DailyChallenge] No image URL available, skipping text detection'
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      '[DailyChallenge] Text detection failed, using fallback:',
+      error
+    );
+    // textRegions stays null — fallback heuristic will apply during gameplay
+  }
+
   // Try to create new challenge
   try {
     const created = await prisma.uncoverChallenge.create({
@@ -157,6 +212,7 @@ export async function getOrCreateDailyChallenge(
         date: normalizedDate,
         albumId,
         maxAttempts: 4,
+        textRegions: textRegions ?? Prisma.JsonNull,
       },
       include: ALBUM_INCLUDE,
     });

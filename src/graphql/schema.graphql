@@ -2641,9 +2641,26 @@ type DailyChallengeInfo {
   cloudflareImageId: String
 
   """
+  Normalized text bounding boxes [{x,y,w,h}] from Cloud Vision.
+  Used by the reveal pattern to avoid showing answer-revealing text early.
+  Null means Cloud Vision data unavailable (fallback heuristic applies).
+  """
+  textRegions: [TextRegionBox!]
+
+  """
   User's session for this challenge (null if not started or not authenticated)
   """
   mySession: UncoverSessionInfo
+}
+
+"""
+Normalized bounding box for detected text on album cover (0.0-1.0 coordinates)
+"""
+type TextRegionBox {
+  x: Float!
+  y: Float!
+  w: Float!
+  h: Float!
 }
 
 """
@@ -2780,6 +2797,8 @@ type ChallengeHistoryEntry {
   totalPlays: Int!
   totalWins: Int!
   avgAttempts: Float
+  """Number of detected text regions, null if not analyzed"""
+  textRegionCount: Int
 }
 
 # =============================================
@@ -2884,6 +2903,9 @@ type DailyPuzzle {
   imageUrl: String
   cloudflareImageId: String
 
+  "Detected text regions for reveal pattern text avoidance"
+  textRegions: [TextRegionBox!]
+
   "Correct answer - exposed to client for instant game responsiveness"
   correctAlbumId: UUID!
   correctAlbumTitle: String!
@@ -2905,6 +2927,9 @@ type ArchivePuzzle {
   "Challenge album cover image URL"
   imageUrl: String
   cloudflareImageId: String
+
+  "Detected text regions for reveal pattern text avoidance"
+  textRegions: [TextRegionBox!]
 
   "Correct answer - exposed to client for instant game responsiveness"
   correctAlbumId: UUID!

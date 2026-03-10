@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 import { useRevealImage, type RevealMode } from '@/hooks/useRevealImage';
+import type { TextRegion } from '@/lib/vision/text-detection';
 
 interface RevealCanvasProps {
   /** Album art image URL */
@@ -13,6 +14,8 @@ interface RevealCanvasProps {
   stage: number;
   /** Reveal pattern mode (default: 'scattered') */
   revealMode?: RevealMode;
+  /** Normalized text bounding boxes for text avoidance */
+  textRegions?: TextRegion[] | null;
   /** Optional CSS class for sizing */
   className?: string;
   /** Called when the image finishes loading */
@@ -31,6 +34,7 @@ export default function RevealCanvas({
   challengeId,
   stage,
   revealMode,
+  textRegions,
   className,
   onLoad,
   onError,
@@ -44,6 +48,7 @@ export default function RevealCanvas({
     challengeId,
     stage,
     mode: revealMode,
+    textRegions,
   });
 
   // Load the image via native Image constructor (not Next.js Image)

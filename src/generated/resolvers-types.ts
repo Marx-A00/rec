@@ -314,6 +314,8 @@ export type ArchivePuzzle = {
   /** Challenge album cover image URL */
   imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
+  /** Detected text regions for reveal pattern text avoidance */
+  textRegions?: Maybe<Array<TextRegionBox>>;
 };
 
 /** Diff for array fields (genres, secondaryTypes, etc.) */
@@ -651,6 +653,8 @@ export type ChallengeHistoryEntry = {
   coverUrl?: Maybe<Scalars['String']['output']>;
   date: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
+  /** Number of detected text regions, null if not analyzed */
+  textRegionCount?: Maybe<Scalars['Int']['output']>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -961,6 +965,12 @@ export type DailyChallengeInfo = {
   maxAttempts: Scalars['Int']['output'];
   /** User's session for this challenge (null if not started or not authenticated) */
   mySession?: Maybe<UncoverSessionInfo>;
+  /**
+   * Normalized text bounding boxes [{x,y,w,h}] from Cloud Vision.
+   * Used by the reveal pattern to avoid showing answer-revealing text early.
+   * Null means Cloud Vision data unavailable (fallback heuristic applies).
+   */
+  textRegions?: Maybe<Array<TextRegionBox>>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -984,6 +994,8 @@ export type DailyPuzzle = {
   /** Challenge album cover image URL */
   imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
+  /** Detected text regions for reveal pattern text avoidance */
+  textRegions?: Maybe<Array<TextRegionBox>>;
 };
 
 export enum DataQuality {
@@ -2830,6 +2842,15 @@ export type TextDiffPart = {
   value: Scalars['String']['output'];
 };
 
+/** Normalized bounding box for detected text on album cover (0.0-1.0 coordinates) */
+export type TextRegionBox = {
+  __typename?: 'TextRegionBox';
+  h: Scalars['Float']['output'];
+  w: Scalars['Float']['output'];
+  x: Scalars['Float']['output'];
+  y: Scalars['Float']['output'];
+};
+
 export type ThroughputMetrics = {
   __typename?: 'ThroughputMetrics';
   jobsPerHour: Scalars['Float']['output'];
@@ -3550,6 +3571,7 @@ export type ResolversTypes = ResolversObject<{
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
   TextDiff: ResolverTypeWrapper<TextDiff>;
   TextDiffPart: ResolverTypeWrapper<TextDiffPart>;
+  TextRegionBox: ResolverTypeWrapper<TextRegionBox>;
   ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
   TimeRange: TimeRange;
   TimeRangeInput: TimeRangeInput;
@@ -3746,6 +3768,7 @@ export type ResolversParentTypes = ResolversObject<{
   SystemHealth: SystemHealth;
   TextDiff: TextDiff;
   TextDiffPart: TextDiffPart;
+  TextRegionBox: TextRegionBox;
   ThroughputMetrics: ThroughputMetrics;
   TimeRangeInput: TimeRangeInput;
   TopRecommendedAlbum: TopRecommendedAlbum;
@@ -4182,6 +4205,11 @@ export type ArchivePuzzleResolvers<
   >;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  textRegions?: Resolver<
+    Maybe<Array<ResolversTypes['TextRegionBox']>>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4658,6 +4686,11 @@ export type ChallengeHistoryEntryResolvers<
   coverUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  textRegionCount?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
   totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -4972,6 +5005,11 @@ export type DailyChallengeInfoResolvers<
     ParentType,
     ContextType
   >;
+  textRegions?: Resolver<
+    Maybe<Array<ResolversTypes['TextRegionBox']>>,
+    ParentType,
+    ContextType
+  >;
   totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -5012,6 +5050,11 @@ export type DailyPuzzleResolvers<
   >;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  textRegions?: Resolver<
+    Maybe<Array<ResolversTypes['TextRegionBox']>>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -7217,6 +7260,18 @@ export type TextDiffPartResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TextRegionBoxResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TextRegionBox'] = ResolversParentTypes['TextRegionBox'],
+> = ResolversObject<{
+  h?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  w?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  x?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  y?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type ThroughputMetricsResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -8019,6 +8074,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SystemHealth?: SystemHealthResolvers<ContextType>;
   TextDiff?: TextDiffResolvers<ContextType>;
   TextDiffPart?: TextDiffPartResolvers<ContextType>;
+  TextRegionBox?: TextRegionBoxResolvers<ContextType>;
   ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;
   TopRecommendedAlbum?: TopRecommendedAlbumResolvers<ContextType>;
   TopRecommendedArtist?: TopRecommendedArtistResolvers<ContextType>;

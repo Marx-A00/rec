@@ -340,6 +340,8 @@ export type ArchivePuzzle = {
   /** Challenge album cover image URL */
   imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
+  /** Detected text regions for reveal pattern text avoidance */
+  textRegions?: Maybe<Array<TextRegionBox>>;
 };
 
 /** Diff for array fields (genres, secondaryTypes, etc.) */
@@ -677,6 +679,8 @@ export type ChallengeHistoryEntry = {
   coverUrl?: Maybe<Scalars['String']['output']>;
   date: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
+  /** Number of detected text regions, null if not analyzed */
+  textRegionCount?: Maybe<Scalars['Int']['output']>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -987,6 +991,12 @@ export type DailyChallengeInfo = {
   maxAttempts: Scalars['Int']['output'];
   /** User's session for this challenge (null if not started or not authenticated) */
   mySession?: Maybe<UncoverSessionInfo>;
+  /**
+   * Normalized text bounding boxes [{x,y,w,h}] from Cloud Vision.
+   * Used by the reveal pattern to avoid showing answer-revealing text early.
+   * Null means Cloud Vision data unavailable (fallback heuristic applies).
+   */
+  textRegions?: Maybe<Array<TextRegionBox>>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -1010,6 +1020,8 @@ export type DailyPuzzle = {
   /** Challenge album cover image URL */
   imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
+  /** Detected text regions for reveal pattern text avoidance */
+  textRegions?: Maybe<Array<TextRegionBox>>;
 };
 
 export enum DataQuality {
@@ -2854,6 +2866,15 @@ export type TextDiffPart = {
   removed?: Maybe<Scalars['Boolean']['output']>;
   /** The text content of this part */
   value: Scalars['String']['output'];
+};
+
+/** Normalized bounding box for detected text on album cover (0.0-1.0 coordinates) */
+export type TextRegionBox = {
+  __typename?: 'TextRegionBox';
+  h: Scalars['Float']['output'];
+  w: Scalars['Float']['output'];
+  x: Scalars['Float']['output'];
+  y: Scalars['Float']['output'];
 };
 
 export type ThroughputMetrics = {
@@ -4954,6 +4975,7 @@ export type ChallengeHistoryQuery = {
     totalPlays: number;
     totalWins: number;
     avgAttempts?: number | null;
+    textRegionCount?: number | null;
   }>;
 };
 
@@ -6302,6 +6324,13 @@ export type DailyPuzzleQuery = {
     correctAlbumTitle: string;
     correctAlbumArtist: string;
     correctAlbumCloudflareImageId?: string | null;
+    textRegions?: Array<{
+      __typename?: 'TextRegionBox';
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }> | null;
     existingResult?: {
       __typename?: 'GameResult';
       won: boolean;
@@ -6337,6 +6366,13 @@ export type ArchivePuzzleQuery = {
     correctAlbumTitle: string;
     correctAlbumArtist: string;
     correctAlbumCloudflareImageId?: string | null;
+    textRegions?: Array<{
+      __typename?: 'TextRegionBox';
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }> | null;
     existingResult?: {
       __typename?: 'GameResult';
       won: boolean;
@@ -10779,6 +10815,7 @@ export const ChallengeHistoryDocument = `
     totalPlays
     totalWins
     avgAttempts
+    textRegionCount
   }
 }
     `;
@@ -14211,6 +14248,12 @@ export const DailyPuzzleDocument = `
     maxAttempts
     imageUrl
     cloudflareImageId
+    textRegions {
+      x
+      y
+      w
+      h
+    }
     correctAlbumId
     correctAlbumTitle
     correctAlbumArtist
@@ -14294,6 +14337,12 @@ export const ArchivePuzzleDocument = `
     maxAttempts
     imageUrl
     cloudflareImageId
+    textRegions {
+      x
+      y
+      w
+      h
+    }
     correctAlbumId
     correctAlbumTitle
     correctAlbumArtist

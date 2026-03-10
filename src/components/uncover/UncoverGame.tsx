@@ -24,6 +24,7 @@ import {
   AlbumGameStatus,
 } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
+import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
@@ -674,17 +675,22 @@ export function UncoverGame({
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
         {challengeImageUrl && game.challengeId && (
-          <div className='overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
+          <Lens
+            zoomFactor={2}
+            lensSize={170}
+            className='rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'
+          >
             <div className='h-[500px] w-[500px]'>
               <RevealImage
                 imageUrl={devImageOverride || challengeImageUrl}
                 challengeId={game.challengeId}
                 stage={devStageOverride ?? game.revealStage}
                 revealMode='regions'
+                textRegions={game.textRegions}
                 className='h-full w-full'
               />
             </div>
-          </div>
+          </Lens>
         )}
 
         {/* Dots + Attempt label */}

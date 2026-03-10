@@ -30,6 +30,12 @@ query DailyPuzzle {
     maxAttempts
     imageUrl
     cloudflareImageId
+    textRegions {
+      x
+      y
+      w
+      h
+    }
     correctAlbumId
     correctAlbumTitle
     correctAlbumArtist
@@ -47,6 +53,12 @@ query ArchivePuzzle($date: DateTime!) {
     maxAttempts
     imageUrl
     cloudflareImageId
+    textRegions {
+      x
+      y
+      w
+      h
+    }
     correctAlbumId
     correctAlbumTitle
     correctAlbumArtist

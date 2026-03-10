@@ -1,5 +1,6 @@
 import { createSeededRng, fisherYatesShuffle } from './seeded-random';
 import { TOTAL_STAGES, STAGE_REVEAL_TARGETS } from './reveal-constants';
+import type { TextRegion } from '@/lib/vision/text-detection';
 
 /** A rectangular region in the reveal grid */
 export interface RevealRegion {
@@ -141,24 +142,102 @@ export function getStripsForStage(strips: Strip[], stage: number): Strip[] {
   return strips.slice(0, count);
 }
 
+/** Penalty applied per text-overlapping tile when scoring candidate positions */
+const TEXT_PENALTY = 80;
+
+/** Fallback heuristic regions when Cloud Vision data is unavailable (top/bottom 20%) */
+const FALLBACK_TEXT_REGIONS: TextRegion[] = [
+  { x: 0, y: 0, w: 1.0, h: 0.2 },
+  { x: 0, y: 0.8, w: 1.0, h: 0.2 },
+];
+
+/**
+ * Check if a tile (in grid coords) overlaps with a text region (in normalized 0-1 coords).
+ * Uses AABB intersection test.
+ */
+function tileOverlapsTextRegion(
+  tileX: number,
+  tileY: number,
+  gridSize: number,
+  region: TextRegion
+): boolean {
+  const tileSize = 1 / gridSize;
+  const tileLeft = tileX * tileSize;
+  const tileTop = tileY * tileSize;
+  const tileRight = tileLeft + tileSize;
+  const tileBottom = tileTop + tileSize;
+
+  const regionRight = region.x + region.w;
+  const regionBottom = region.y + region.h;
+
+  return (
+    tileLeft < regionRight &&
+    tileRight > region.x &&
+    tileTop < regionBottom &&
+    tileBottom > region.y
+  );
+}
+
+/**
+ * Count how many tiles in a candidate rectangle overlap with any text region.
+ */
+function countTextOverlap(
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  gridSize: number,
+  regions: TextRegion[]
+): number {
+  let count = 0;
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) {
+      const tx = cx + dx;
+      const ty = cy + dy;
+      for (const region of regions) {
+        if (tileOverlapsTextRegion(tx, ty, gridSize, region)) {
+          count++;
+          break; // Only count each tile once
+        }
+      }
+    }
+  }
+  return count;
+}
+
 /**
  * Generates contiguous rectangular reveal regions using seeded randomness.
  * Each stage reveals one new rectangular block of tiles sized to hit a
  * cumulative percentage target defined in STAGE_REVEAL_TARGETS.
+ *
+ * When textRegions are provided, stages 1-3 penalize positions that overlap
+ * with detected text (album title, artist name) to avoid revealing the answer
+ * too early. Stages 4+ ignore text penalties (the player needs more info by then).
+ *
+ * When textRegions is null (Cloud Vision unavailable), a fallback heuristic
+ * deprioritizes the top and bottom 20% of the image where text commonly appears.
  *
  * The last stage always reveals the entire grid (full reveal for game-over).
  *
  * @param seed - Seed string for deterministic placement
  * @param gridSize - Grid dimension (default 16)
  * @param totalStages - Number of stages (default TOTAL_STAGES)
+ * @param textRegions - Normalized text bounding boxes from Cloud Vision, or null for fallback
  * @returns Array of RevealRegion[], one per stage (index 0 = stage 1)
  */
 export function generateRegionReveal(
   seed: string,
   gridSize = 16,
-  totalStages = TOTAL_STAGES
+  totalStages = TOTAL_STAGES,
+  textRegions?: TextRegion[] | null
 ): RevealRegion[][] {
   const rng = createSeededRng(seed);
+
+  // Resolve text regions: use provided, fallback heuristic if null, empty if []
+  const effectiveTextRegions: TextRegion[] =
+    textRegions === null || textRegions === undefined
+      ? FALLBACK_TEXT_REGIONS
+      : textRegions;
 
   const stageRegions: RevealRegion[][] = [];
   const totalTiles = gridSize * gridSize;
@@ -184,29 +263,49 @@ export function generateRegionReveal(
     w = Math.min(w, gridSize);
     h = Math.min(h, gridSize);
 
-    // Try several random positions, pick the one with least overlap
+    // Apply text penalty for all in-game stages (0-3), not the final full-reveal.
+    // Stages 1-3 get full penalty, stage 4 gets half penalty (softer avoidance
+    // since the player needs more visible area on their last guess).
+    const applyTextPenalty = s < 4 && effectiveTextRegions.length > 0;
+    const textPenaltyWeight = s < 3 ? TEXT_PENALTY : TEXT_PENALTY * 0.5;
+
+    // Try several random positions, pick the one with least overlap + text penalty
     let bestX = 0;
     let bestY = 0;
-    let bestOverlap = Infinity;
+    let bestScore = Infinity;
     const attempts = 30;
 
     for (let a = 0; a < attempts; a++) {
       const cx = Math.floor(rng() * (gridSize - w + 1));
       const cy = Math.floor(rng() * (gridSize - h + 1));
 
-      let overlap = 0;
+      // Score = overlap with already-revealed tiles
+      let score = 0;
       for (let dy = 0; dy < h; dy++) {
         for (let dx = 0; dx < w; dx++) {
           const idx = (cy + dy) * gridSize + (cx + dx);
-          if (revealed.has(idx)) overlap++;
+          if (revealed.has(idx)) score++;
         }
       }
 
-      if (overlap < bestOverlap) {
-        bestOverlap = overlap;
+      // Add text overlap penalty for early stages
+      if (applyTextPenalty) {
+        const textOverlap = countTextOverlap(
+          cx,
+          cy,
+          w,
+          h,
+          gridSize,
+          effectiveTextRegions
+        );
+        score += textOverlap * textPenaltyWeight;
+      }
+
+      if (score < bestScore) {
+        bestScore = score;
         bestX = cx;
         bestY = cy;
-        if (overlap === 0) break;
+        if (score === 0) break;
       }
     }
 

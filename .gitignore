@@ -1,5 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Google Cloud service account key
+rec-oauth-baea9878d047.json
+
+# Vision API usage tracker
+.vision-usage.json
+
 # Test outputs
 test-output/
 

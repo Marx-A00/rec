@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Drama, Eye, EyeOff } from 'lucide-react';
+import {
+  ExternalLink,
+  Drama,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -173,6 +181,27 @@ export default function UncoverPage() {
                 <p className='text-sm text-zinc-400 truncate'>
                   {todaysChallenge.artistName}
                 </p>
+                <div className='mt-1.5'>
+                  {todaysChallenge.textRegionCount != null &&
+                  todaysChallenge.textRegionCount > 0 ? (
+                    <span className='inline-flex items-center gap-1.5 text-xs text-green-400'>
+                      <CheckCircle2 className='h-3.5 w-3.5' />
+                      {todaysChallenge.textRegionCount} text region
+                      {todaysChallenge.textRegionCount !== 1 ? 's' : ''}{' '}
+                      detected
+                    </span>
+                  ) : todaysChallenge.textRegionCount === 0 ? (
+                    <span className='inline-flex items-center gap-1.5 text-xs text-amber-400'>
+                      <AlertTriangle className='h-3.5 w-3.5' />
+                      No text detected
+                    </span>
+                  ) : (
+                    <span className='inline-flex items-center gap-1.5 text-xs text-blue-400'>
+                      <Info className='h-3.5 w-3.5' />
+                      Using fallback heuristic
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}

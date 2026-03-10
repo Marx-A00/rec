@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { format, isToday } from 'date-fns';
+import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
@@ -61,6 +62,7 @@ export function ChallengeHistoryTable() {
               <TableHead className='text-zinc-400 text-right'>
                 Avg Attempts
               </TableHead>
+              <TableHead className='text-zinc-400'>Text Detection</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -132,6 +134,26 @@ export function ChallengeHistoryTable() {
                     {challenge.avgAttempts
                       ? challenge.avgAttempts.toFixed(1)
                       : '—'}
+                  </TableCell>
+                  <TableCell>
+                    {challenge.textRegionCount != null &&
+                    challenge.textRegionCount > 0 ? (
+                      <span className='inline-flex items-center gap-1.5 text-xs text-green-400'>
+                        <CheckCircle2 className='h-3.5 w-3.5' />
+                        {challenge.textRegionCount} region
+                        {challenge.textRegionCount !== 1 ? 's' : ''}
+                      </span>
+                    ) : challenge.textRegionCount === 0 ? (
+                      <span className='inline-flex items-center gap-1.5 text-xs text-amber-400'>
+                        <AlertTriangle className='h-3.5 w-3.5' />
+                        No text
+                      </span>
+                    ) : (
+                      <span className='inline-flex items-center gap-1.5 text-xs text-blue-400'>
+                        <Info className='h-3.5 w-3.5' />
+                        Fallback
+                      </span>
+                    )}
                   </TableCell>
                 </TableRow>
               );

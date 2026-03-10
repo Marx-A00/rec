@@ -6,6 +6,7 @@ import { Grid3X3, Droplets, Loader2 } from 'lucide-react';
 import { useRevealStore, type RevealStyle } from '@/stores/useRevealStore';
 
 import type { RevealMode } from '@/hooks/useRevealImage';
+import type { TextRegion } from '@/lib/vision/text-detection';
 
 import RevealCanvas from './RevealCanvas';
 import RevealBlur from './RevealBlur';
@@ -19,6 +20,8 @@ interface RevealImageProps {
   stage: number;
   /** Reveal pattern mode (default: 'scattered') */
   revealMode?: RevealMode;
+  /** Normalized text bounding boxes for text avoidance */
+  textRegions?: TextRegion[] | null;
   /** Optional CSS class for container sizing */
   className?: string;
   /** Whether to show the style toggle button (default: true) */
@@ -51,6 +54,7 @@ export function RevealImage({
   challengeId,
   stage,
   revealMode,
+  textRegions,
   className,
   showToggle = true,
   isSubmitting = false,
@@ -92,7 +96,11 @@ export function RevealImage({
   return (
     <div className={'relative ' + (className ?? '')}>
       {preferredStyle === 'pixelation' ? (
-        <RevealCanvas {...sharedProps} revealMode={revealMode} />
+        <RevealCanvas
+          {...sharedProps}
+          revealMode={revealMode}
+          textRegions={textRegions}
+        />
       ) : (
         <RevealBlur {...sharedProps} />
       )}

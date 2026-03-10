@@ -460,6 +460,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
     correctAlbumId,
     correctAlbumTitle: puzzle?.correctAlbumTitle ?? null,
     correctAlbumArtist: puzzle?.correctAlbumArtist ?? null,
+    textRegions: puzzle?.textRegions ?? null,
 
     // UI state
     isSubmitting: gameStore.isSubmitting,

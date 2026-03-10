@@ -9,6 +9,7 @@ import {
   getRegionTilesForStage,
   type Tile,
 } from '@/lib/uncover/reveal-pattern';
+import type { TextRegion } from '@/lib/vision/text-detection';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 
 /** Reveal pattern mode */
@@ -32,6 +33,8 @@ interface UseRevealImageOptions {
   totalStages?: number;
   /** Reveal pattern mode (default: 'scattered') */
   mode?: RevealMode;
+  /** Normalized text bounding boxes from Cloud Vision, null for fallback heuristic */
+  textRegions?: TextRegion[] | null;
 }
 
 interface UseRevealImageResult {
@@ -96,6 +99,7 @@ export function useRevealImage({
   stage,
   totalStages = TOTAL_STAGES,
   mode = 'scattered',
+  textRegions,
 }: UseRevealImageOptions): UseRevealImageResult {
   const seed = `uncover-${challengeId}`;
 
@@ -110,8 +114,8 @@ export function useRevealImage({
   // Region mode: compute regions on coarse 8x8 grid
   const regions = useMemo(() => {
     if (mode !== 'regions') return null;
-    return generateRegionReveal(seed, REGION_GRID, totalStages);
-  }, [seed, mode, totalStages]);
+    return generateRegionReveal(seed, REGION_GRID, totalStages, textRegions);
+  }, [seed, mode, totalStages, textRegions]);
 
   const revealedTiles = useMemo(() => {
     if (mode === 'regions' && regions) {
