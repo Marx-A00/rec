@@ -1,38 +1,63 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AnimatePresence, motion, useMotionTemplate } from 'motion/react';
 
 interface Position {
-  /** The x coordinate of the lens */
   x: number;
-  /** The y coordinate of the lens */
   y: number;
 }
 
 interface LensProps {
-  /** The children of the lens */
   children: React.ReactNode;
-  /** The zoom factor of the lens */
   zoomFactor?: number;
-  /** The size of the lens */
   lensSize?: number;
-  /** The position of the lens */
   position?: Position;
-  /** The default position of the lens */
   defaultPosition?: Position;
-  /** Whether the lens is static */
   isStatic?: boolean;
-  /** The duration of the animation */
   duration?: number;
-  /** The color of the lens */
   lensColor?: string;
-  /** The aria label of the lens */
   ariaLabel?: string;
-  /** Optional className for the container */
   className?: string;
 }
 
+/**
+ * Grab a snapshot URL from the first <canvas> or <img> found inside `el`.
+ * Returns a data-URL (canvas) or the image src, or null if nothing found.
+ */
+function getContentSnapshot(el: HTMLElement): string | null {
+  // Prefer canvas (RevealCanvas renders here)
+  const canvas = el.querySelector('canvas');
+  if (canvas) {
+    try {
+      return canvas.toDataURL();
+    } catch {
+      // tainted canvas — fall through
+    }
+  }
+  // Fall back to img
+  const img = el.querySelector('img');
+  if (img?.complete && img.naturalWidth > 0) {
+    return img.src;
+  }
+  return null;
+}
+
+/**
+ * Magnifying lens component.
+ *
+ * Renders children once as the base layer. The magnified overlay uses a
+ * snapshot of the actual rendered content (canvas.toDataURL or img.src)
+ * as a background-image, avoiding the dual-render problem where a second
+ * {children} tree would load different images or re-measure incorrectly
+ * inside a scaled parent.
+ */
 export function Lens({
   children,
   zoomFactor = 1.3,
@@ -55,12 +80,38 @@ export function Lens({
   const [isHovering, setIsHovering] = useState(false);
   const [mousePosition, setMousePosition] = useState<Position>(position);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
+  const rafRef = useRef<number>(0);
 
   const currentPosition = useMemo(() => {
     if (isStatic) return position;
     if (defaultPosition && !isHovering) return defaultPosition;
     return mousePosition;
   }, [isStatic, position, defaultPosition, isHovering, mousePosition]);
+
+  // Continuously snapshot while hovering so the magnified view stays in
+  // sync with content changes (e.g. reveal stage updates, animations).
+  useEffect(() => {
+    if (!isHovering) {
+      setSnapshotUrl(null);
+      return;
+    }
+
+    let active = true;
+    const refresh = () => {
+      if (!active || !contentRef.current) return;
+      const url = getContentSnapshot(contentRef.current);
+      if (url) setSnapshotUrl(url);
+      rafRef.current = requestAnimationFrame(refresh);
+    };
+    rafRef.current = requestAnimationFrame(refresh);
+
+    return () => {
+      active = false;
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [isHovering]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -81,6 +132,7 @@ export function Lens({
   }px, ${lensColor} 100%, transparent 100%)`;
 
   const LensContent = useMemo(() => {
+    if (!snapshotUrl) return null;
     const { x, y } = currentPosition;
 
     return (
@@ -100,15 +152,15 @@ export function Lens({
         <div
           className='absolute inset-0'
           style={{
+            backgroundImage: `url(${snapshotUrl})`,
+            backgroundSize: '100% 100%',
             transform: `scale(${zoomFactor})`,
             transformOrigin: `${x}px ${y}px`,
           }}
-        >
-          {children}
-        </div>
+        />
       </motion.div>
     );
-  }, [currentPosition, maskImage, zoomFactor, children, duration]);
+  }, [currentPosition, maskImage, zoomFactor, duration, snapshotUrl]);
 
   return (
     <div
@@ -122,7 +174,7 @@ export function Lens({
       aria-label={ariaLabel}
       tabIndex={0}
     >
-      {children}
+      <div ref={contentRef}>{children}</div>
       {isStatic || defaultPosition ? (
         LensContent
       ) : (
