@@ -141,6 +141,11 @@ progress.json
 status.json
 tasks/
 
+# Cloudflare D1 local data
+data/musicbrainz/
+game_albums.db
+game_albums.sql
+
 # MusicBrainz import data files
 game_album_lookup_data.csv
 game_album_lookup_dev.csv

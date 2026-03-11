@@ -1,0 +1,8 @@
+name = "game-album-lookup"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "game-albums"
+database_id = "6ef43066-6ad9-4da3-aec7-a37a4d17e212"
