@@ -7,6 +7,7 @@
  *
  * Usage:
  *   pnpm import:d1-lookup
+ *   pnpm import:d1-lookup -- --test   (10k subset)
  *
  * Prerequisites:
  *   - JSONL dump at data/musicbrainz/mbdump/release-group
@@ -21,6 +22,7 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import Database from 'better-sqlite3';
+import chalk from 'chalk';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -105,10 +107,8 @@ function buildArtistName(credits: ArtistCredit[]): string {
 
 function getDateScore(dateStr: string | null): number {
   if (!dateStr) return 0;
-  // Extract year from formats like "2024-01-15", "2024-01", "2024"
   const year = parseInt(dateStr.substring(0, 4), 10);
   if (isNaN(year) || year < 1900) return 0;
-  // Scale: 1900 = 0, 2025 = 99
   return Math.min(99, Math.max(0, Math.floor(((year - 1900) / 125) * 99)));
 }
 
@@ -132,11 +132,23 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
+function progressBar(current: number, total: number, width = 30): string {
+  const pct = current / total;
+  const filled = Math.round(width * pct);
+  const empty = width - filled;
+  const bar = chalk.green('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
+  return `${bar} ${chalk.yellow((pct * 100).toFixed(1) + '%')}`;
+}
+
 // ─── Step 1: Stream and filter JSONL ─────────────────────────────────
 
 async function streamAndFilter(): Promise<FilteredAlbum[]> {
-  console.log('\n═══ Step 1: Streaming and filtering JSONL ═══\n');
-  console.log(`  Source: ${JSONL_PATH}`);
+  console.log(
+    '\n' +
+      chalk.cyan.bold('━━━ Step 1: Streaming and filtering JSONL ━━━') +
+      '\n'
+  );
+  console.log(chalk.dim('  Source: ') + chalk.white(JSONL_PATH));
 
   const fileStream = fs.createReadStream(JSONL_PATH, { encoding: 'utf-8' });
   const rl = readline.createInterface({
@@ -164,8 +176,8 @@ async function streamAndFilter(): Promise<FilteredAlbum[]> {
 
     if (Date.now() - lastLog > 5000) {
       const elapsed = formatDuration(Date.now() - startTime);
-      console.log(
-        `  Processed ${total.toLocaleString()} | Kept ${filtered.length.toLocaleString()} [${elapsed}]`
+      process.stdout.write(
+        `\r  ${chalk.blue('⟳')} Processed ${chalk.bold.white(total.toLocaleString())} | Kept ${chalk.bold.green(filtered.length.toLocaleString())} ${chalk.dim(`[${elapsed}]`)}    `
       );
       lastLog = Date.now();
     }
@@ -234,17 +246,36 @@ async function streamAndFilter(): Promise<FilteredAlbum[]> {
   }
 
   const elapsed = formatDuration(Date.now() - startTime);
-  console.log('\n  ── Filter Results ──');
-  console.log(`  Total entries:       ${total.toLocaleString()}`);
-  console.log(`  Kept:                ${filtered.length.toLocaleString()}`);
-  console.log(`    Albums:            ${albumCount.toLocaleString()}`);
-  console.log(`    EPs:               ${epCount.toLocaleString()}`);
-  console.log(`  Skipped (type):      ${skippedType.toLocaleString()}`);
-  console.log(`  Skipped (secondary): ${skippedSecondary.toLocaleString()}`);
-  console.log(`  Skipped (artist):    ${skippedArtist.toLocaleString()}`);
-  console.log(`  Skipped (dupe):      ${skippedDupe.toLocaleString()}`);
-  console.log(`  Skipped (no title):  ${skippedNoTitle.toLocaleString()}`);
-  console.log(`  Time:                ${elapsed}`);
+  console.log('\n');
+  console.log(chalk.cyan('  ── Filter Results ──'));
+  console.log(
+    `  Total entries:       ${chalk.white.bold(total.toLocaleString())}`
+  );
+  console.log(
+    `  Kept:                ${chalk.green.bold(filtered.length.toLocaleString())}`
+  );
+  console.log(
+    `    Albums:            ${chalk.magenta(albumCount.toLocaleString())}`
+  );
+  console.log(
+    `    EPs:               ${chalk.magenta(epCount.toLocaleString())}`
+  );
+  console.log(
+    `  Skipped ${chalk.dim('(type)')}:      ${chalk.red(skippedType.toLocaleString())}`
+  );
+  console.log(
+    `  Skipped ${chalk.dim('(secondary)')}: ${chalk.red(skippedSecondary.toLocaleString())}`
+  );
+  console.log(
+    `  Skipped ${chalk.dim('(artist)')}:    ${chalk.red(skippedArtist.toLocaleString())}`
+  );
+  console.log(
+    `  Skipped ${chalk.dim('(dupe)')}:      ${chalk.red(skippedDupe.toLocaleString())}`
+  );
+  console.log(
+    `  Skipped ${chalk.dim('(no title)')}:  ${chalk.red(skippedNoTitle.toLocaleString())}`
+  );
+  console.log(`  Time:                ${chalk.yellow(elapsed)}`);
 
   return filtered;
 }
@@ -254,7 +285,13 @@ async function streamAndFilter(): Promise<FilteredAlbum[]> {
 async function enrichWithListenBrainz(
   albums: FilteredAlbum[]
 ): Promise<Map<string, { listenCount: number; userCount: number }>> {
-  console.log('\n═══ Step 2: Enriching with ListenBrainz popularity ═══\n');
+  console.log(
+    '\n' +
+      chalk.cyan.bold(
+        '━━━ Step 2: Enriching with ListenBrainz popularity ━━━'
+      ) +
+      '\n'
+  );
 
   const mbids = albums.map(a => a.releaseGroupMbid);
   const chunks = chunkArray(mbids, LISTENBRAINZ_CHUNK_SIZE);
@@ -264,10 +301,10 @@ async function enrichWithListenBrainz(
   >();
 
   console.log(
-    `  Total MBIDs: ${mbids.length.toLocaleString()} → ${chunks.length.toLocaleString()} API requests`
+    `  Total MBIDs: ${chalk.white.bold(mbids.length.toLocaleString())} → ${chalk.yellow.bold(chunks.length.toLocaleString())} API requests`
   );
   console.log(
-    `  Estimated time: ${formatDuration(chunks.length * LISTENBRAINZ_RATE_LIMIT_MS)}\n`
+    `  Estimated time: ${chalk.yellow(formatDuration(chunks.length * LISTENBRAINZ_RATE_LIMIT_MS))}\n`
   );
 
   const startTime = Date.now();
@@ -278,11 +315,13 @@ async function enrichWithListenBrainz(
   for (const chunk of chunks) {
     completed++;
 
-    if (completed % 100 === 0 || completed === chunks.length) {
+    if (completed % 25 === 0 || completed === chunks.length) {
       const elapsed = formatDuration(Date.now() - startTime);
-      const pct = ((completed / chunks.length) * 100).toFixed(1);
-      console.log(
-        `  Request ${completed.toLocaleString()}/${chunks.length.toLocaleString()} (${pct}%) | With data: ${withData.toLocaleString()} | Errors: ${errors} [${elapsed}]`
+      const remaining = formatDuration(
+        ((Date.now() - startTime) / completed) * (chunks.length - completed)
+      );
+      process.stdout.write(
+        `\r  ${progressBar(completed, chunks.length)} | ${chalk.green(`${withData.toLocaleString()} enriched`)} | ${chalk.red(`${errors} err`)} | ${chalk.dim(`${elapsed} elapsed, ~${remaining} left`)}    `
       );
     }
 
@@ -296,8 +335,9 @@ async function enrichWithListenBrainz(
       if (!response.ok) {
         errors++;
         if (response.status === 429) {
-          // Rate limited — back off extra
-          console.log('  ⚠ Rate limited, backing off 5s...');
+          console.log(
+            '\n  ' + chalk.yellow.bold('⚠ Rate limited, backing off 5s...')
+          );
           await new Promise(resolve => setTimeout(resolve, 5000));
         }
         continue;
@@ -317,7 +357,9 @@ async function enrichWithListenBrainz(
     } catch (err) {
       errors++;
       if (errors % 50 === 0) {
-        console.log(`  ⚠ ${errors} errors so far, latest: ${err}`);
+        console.log(
+          '\n  ' + chalk.red(`⚠ ${errors} errors so far, latest: ${err}`)
+        );
       }
     }
 
@@ -327,11 +369,14 @@ async function enrichWithListenBrainz(
   }
 
   const elapsed = formatDuration(Date.now() - startTime);
-  console.log('\n  ── ListenBrainz Results ──');
-  console.log(`  Requests:    ${completed.toLocaleString()}`);
-  console.log(`  With data:   ${withData.toLocaleString()}`);
-  console.log(`  Errors:      ${errors}`);
-  console.log(`  Time:        ${elapsed}`);
+  console.log('\n');
+  console.log(chalk.cyan('  ── ListenBrainz Results ──'));
+  console.log(`  Requests:    ${chalk.white.bold(completed.toLocaleString())}`);
+  console.log(`  With data:   ${chalk.green.bold(withData.toLocaleString())}`);
+  console.log(
+    `  Errors:      ${errors === 0 ? chalk.green('0') : chalk.red.bold(String(errors))}`
+  );
+  console.log(`  Time:        ${chalk.yellow(elapsed)}`);
 
   return popularityMap;
 }
@@ -342,12 +387,14 @@ function writeToSQLite(
   albums: FilteredAlbum[],
   popularityMap: Map<string, { listenCount: number; userCount: number }>
 ): void {
-  console.log('\n═══ Step 3: Writing to local SQLite ═══\n');
+  console.log(
+    '\n' + chalk.cyan.bold('━━━ Step 3: Writing to local SQLite ━━━') + '\n'
+  );
 
   // Delete existing DB if present
   if (fs.existsSync(DB_PATH)) {
     fs.unlinkSync(DB_PATH);
-    console.log(`  Deleted existing ${DB_PATH}`);
+    console.log(chalk.dim(`  Deleted existing ${DB_PATH}`));
   }
 
   const db = new Database(DB_PATH);
@@ -358,7 +405,7 @@ function writeToSQLite(
   // Create schema
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
-  console.log('  Schema created');
+  console.log(`  ${chalk.green('✓')} Schema created`);
 
   // Prepare insert statement
   const insert = db.prepare(`
@@ -415,9 +462,9 @@ function writeToSQLite(
 
     insertBatch(batch);
 
-    if ((i + BATCH_SIZE) % 200_000 === 0 || i + BATCH_SIZE >= albums.length) {
-      console.log(`  Inserted ${inserted.toLocaleString()} rows...`);
-    }
+    process.stdout.write(
+      `\r  ${progressBar(inserted, albums.length)} | ${chalk.white.bold(inserted.toLocaleString())} rows    `
+    );
   }
 
   db.close();
@@ -425,28 +472,61 @@ function writeToSQLite(
   const elapsed = formatDuration(Date.now() - startTime);
   const dbSize = (fs.statSync(DB_PATH).size / (1024 * 1024)).toFixed(1);
 
-  console.log('\n  ── SQLite Results ──');
-  console.log(`  Rows inserted:       ${inserted.toLocaleString()}`);
-  console.log(`  With popularity:     ${withPopularity.toLocaleString()}`);
-  console.log(`  Database size:       ${dbSize} MB`);
-  console.log(`  Time:                ${elapsed}`);
+  console.log('\n');
+  console.log(chalk.cyan('  ── SQLite Results ──'));
+  console.log(
+    `  Rows inserted:       ${chalk.green.bold(inserted.toLocaleString())}`
+  );
+  console.log(
+    `  With popularity:     ${chalk.magenta.bold(withPopularity.toLocaleString())}`
+  );
+  console.log(`  Database size:       ${chalk.yellow.bold(dbSize + ' MB')}`);
+  console.log(`  Time:                ${chalk.yellow(elapsed)}`);
 }
 
 // ─── Main ────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║  MusicBrainz → D1 Import Script                 ║');
-  console.log('╚══════════════════════════════════════════════════╝');
+  const isTest = process.argv[2] === '--test';
+
+  console.log('');
+  console.log(
+    chalk.bgCyan.black.bold(
+      '                                                    '
+    )
+  );
+  console.log(
+    chalk.bgCyan.black.bold(
+      '   🎵  MusicBrainz → D1 Import Script               '
+    )
+  );
+  console.log(
+    chalk.bgCyan.black.bold(
+      '                                                    '
+    )
+  );
+  if (isTest) {
+    console.log(
+      chalk.bgYellow.black.bold(
+        '   ⚡  TEST MODE (10k subset)                       '
+      )
+    );
+  }
 
   if (!fs.existsSync(JSONL_PATH)) {
-    console.error(`\n  ERROR: JSONL file not found at ${JSONL_PATH}`);
-    console.error('  Run: bash scripts/download-release-group-dump.sh first\n');
+    console.error(
+      chalk.red.bold(`\n  ✗ JSONL file not found at ${JSONL_PATH}`)
+    );
+    console.error(
+      chalk.dim('  Run: bash scripts/download-release-group-dump.sh first\n')
+    );
     process.exit(1);
   }
 
   if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`\n  ERROR: Schema file not found at ${SCHEMA_PATH}`);
+    console.error(
+      chalk.red.bold(`\n  ✗ Schema file not found at ${SCHEMA_PATH}`)
+    );
     process.exit(1);
   }
 
@@ -463,19 +543,36 @@ async function main(): Promise<void> {
 
   // Final summary
   const totalElapsed = formatDuration(Date.now() - totalStart);
-  console.log('\n╔══════════════════════════════════════════════════╗');
-  console.log('║  Import Complete!                                ║');
-  console.log('╚══════════════════════════════════════════════════╝');
-  console.log(`  Total time: ${totalElapsed}`);
-  console.log(`  Output:     ${DB_PATH}`);
-  console.log('\n  Next steps:');
-  console.log('    sqlite3 game_albums.db .dump > game_albums.sql');
+  console.log('');
   console.log(
-    '    npx wrangler d1 execute game-albums --file=game_albums.sql --config cloudflare/wrangler.toml --remote'
+    chalk.bgGreen.black.bold(
+      '                                                    '
+    )
   );
+  console.log(
+    chalk.bgGreen.black.bold(
+      '   ✓  Import Complete!                              '
+    )
+  );
+  console.log(
+    chalk.bgGreen.black.bold(
+      '                                                    '
+    )
+  );
+  console.log(`  Total time: ${chalk.yellow.bold(totalElapsed)}`);
+  console.log(`  Output:     ${chalk.white.bold(DB_PATH)}`);
+  console.log('');
+  console.log(chalk.dim('  Next steps:'));
+  console.log(chalk.dim('    sqlite3 game_albums.db .dump > game_albums.sql'));
+  console.log(
+    chalk.dim(
+      '    npx wrangler d1 execute game-albums --file=game_albums.sql --config cloudflare/wrangler.toml --remote'
+    )
+  );
+  console.log('');
 }
 
 main().catch(err => {
-  console.error('\nFatal error:', err);
+  console.error(chalk.red.bold('\n  ✗ Fatal error:'), err);
   process.exit(1);
 });
