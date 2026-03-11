@@ -144,6 +144,8 @@ tasks/
 # Cloudflare D1 local data
 data/musicbrainz/
 game_albums.db
+game_albums.db-shm
+game_albums.db-wal
 game_albums.sql
 
 # MusicBrainz import data files
