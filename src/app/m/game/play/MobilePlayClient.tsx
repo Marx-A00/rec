@@ -286,6 +286,8 @@ export function MobilePlayClient({
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
               stage={game.revealStage}
+              revealMode='regions'
+              textRegions={game.textRegions}
               className='h-full w-full overflow-hidden rounded-lg'
             />
           </div>
