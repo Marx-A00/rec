@@ -3377,61 +3377,55 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  searchGameAlbums: async (_, { query, limit = 10 }, { prisma }) => {
+  searchGameAlbums: async (_, { query, limit = 10 }) => {
     try {
       if (!query || query.trim().length < 2) {
         return [];
       }
 
-      const searchQuery = query.trim();
-      const prefixPattern = `${searchQuery}%`;
-      const containsPattern = `%${searchQuery}%`;
+      const workerUrl = process.env.GAME_LOOKUP_WORKER_URL;
+      if (!workerUrl) {
+        throw new GraphQLError('GAME_LOOKUP_WORKER_URL is not configured');
+      }
 
-      const results = await prisma.$queryRaw<
-        Array<{
-          id: number;
-          title: string;
-          artist_name: string;
-          score: number;
-          local_album_id: string | null;
-        }>
-      >`
-        SELECT
-          gal.id,
-          gal.title,
-          gal.artist_name,
-          gal.score,
-          a.id as local_album_id
-        FROM game_album_lookup gal
-        LEFT JOIN albums a ON
-          LOWER(a.title) = LOWER(gal.title)
-          AND EXISTS (
-            SELECT 1 FROM album_artists aa
-            JOIN artists ar ON ar.id = aa.artist_id
-            WHERE aa.album_id = a.id
-            AND LOWER(ar.name) = LOWER(gal.artist_name)
-          )
-        WHERE
-          gal.title ILIKE ${containsPattern}
-          OR gal.artist_name ILIKE ${containsPattern}
-        ORDER BY
-          CASE
-            WHEN gal.title ILIKE ${prefixPattern} THEN 0
-            WHEN gal.artist_name ILIKE ${prefixPattern} THEN 1
-            ELSE 2
-          END,
-          gal.score DESC
-        LIMIT ${limit}
-      `;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
 
-      return results.map(r => ({
-        id: r.id,
-        title: r.title,
-        artistName: r.artist_name,
-        score: r.score,
-        isLocalAlbum: !!r.local_album_id,
-        localAlbumId: r.local_album_id,
-      }));
+      try {
+        const url = `${workerUrl}/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`;
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          throw new Error(`Worker returned ${response.status}`);
+        }
+
+        const data = (await response.json()) as {
+          results: Array<{
+            id: number;
+            title: string;
+            artist_name: string;
+            release_group_mbid?: string;
+            listen_count?: number;
+            release_type?: string;
+          }>;
+        };
+
+        return data.results.map(r => ({
+          id: r.id,
+          title: r.title,
+          artistName: r.artist_name,
+          score: r.listen_count || 0,
+          isLocalAlbum: false,
+          localAlbumId: null,
+        }));
+      } catch (err) {
+        clearTimeout(timeout);
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw new GraphQLError('Search timed out');
+        }
+        throw err;
+      }
     } catch (error) {
       graphqlLogger.error('Failed to search game albums:', { error, query });
       throw new GraphQLError(`Failed to search game albums: ${error}`);

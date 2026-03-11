@@ -57,9 +57,14 @@ export function AlbumGuessInput({
   }, [inputValue]);
 
   // Search query (enabled when 2+ characters typed)
-  const { data, isLoading } = useSearchGameAlbumsQuery(
+  const { data, isLoading, isError } = useSearchGameAlbumsQuery(
     { query: debouncedValue, limit: 10 },
-    { enabled: debouncedValue.length >= 2 }
+    {
+      enabled: debouncedValue.length >= 2,
+      retry: 1,
+      staleTime: 0,
+      gcTime: 30_000,
+    }
   );
 
   const results = data?.searchGameAlbums ?? [];
@@ -130,7 +135,11 @@ export function AlbumGuessInput({
           />
           {isOpen && inputValue.length >= 2 && (
             <CommandList className='custom-scrollbar absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 shadow-lg'>
-              {isLoading ? (
+              {isError ? (
+                <CommandEmpty>
+                  Search unavailable. Keep typing to retry.
+                </CommandEmpty>
+              ) : isLoading ? (
                 <CommandEmpty>Searching...</CommandEmpty>
               ) : results.length === 0 ? (
                 <CommandEmpty>No albums found</CommandEmpty>
