@@ -741,13 +741,4 @@ model CuratedChallenge {
   @@map("curated_challenges")
 }
 
-model GameAlbumLookup {
-  id         Int    @id @default(autoincrement())
-  title      String
-  artistName String @map("artist_name")
-  score      Int    @default(0)
-  source     String @default("musicbrainz")
 
-  @@unique([title, artistName])
-  @@map("game_album_lookup")
-}

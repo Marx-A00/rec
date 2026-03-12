@@ -3389,7 +3389,7 @@ export const queryResolvers: QueryResolvers = {
       }
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
+      const timeout = setTimeout(() => controller.abort(), 8000);
 
       try {
         const url = `${workerUrl}/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`;
@@ -3397,7 +3397,15 @@ export const queryResolvers: QueryResolvers = {
         clearTimeout(timeout);
 
         if (!response.ok) {
-          throw new Error(`Worker returned ${response.status}`);
+          const body = await response.text().catch(() => '(no body)');
+          graphqlLogger.error('Worker error response:', {
+            status: response.status,
+            body: body.slice(0, 500),
+            query: query.trim(),
+          });
+          throw new Error(
+            `Worker returned ${response.status}: ${body.slice(0, 200)}`
+          );
         }
 
         const data = (await response.json()) as {
@@ -3848,6 +3856,15 @@ export const queryResolvers: QueryResolvers = {
         avgAttempts: c.avgAttempts,
         textRegionCount: Array.isArray(c.textRegions)
           ? c.textRegions.length
+          : null,
+        textRegions: Array.isArray(c.textRegions)
+          ? (c.textRegions as Array<{
+              x: number;
+              y: number;
+              w: number;
+              h: number;
+              text?: string;
+            }>)
           : null,
       }));
     } catch (error) {

@@ -987,8 +987,9 @@ class MusicBrainzWorkerService {
     });
 
     process.on('unhandledRejection', (reason, promise) => {
-      console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-      shutdown('unhandledRejection');
+      console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+      // Log but don't shutdown — unhandled rejections from third-party libs
+      // (e.g. google-auth-library) should not take down the worker
     });
   }
 

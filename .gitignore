@@ -147,6 +147,9 @@ game_albums.db
 game_albums.db-shm
 game_albums.db-wal
 game_albums.sql
+game_albums_data.sql
+d1-chunks/
+.wrangler/
 
 # MusicBrainz import data files
 game_album_lookup_data.csv
