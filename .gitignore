@@ -27,6 +27,7 @@ test-output/
 !/public/*.svg
 !/public/*.ico
 !/public/*.png
+!/public/sounds/
 
 
 # next.js
