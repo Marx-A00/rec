@@ -10,6 +10,7 @@ import AlbumModal from '@/components/ui/AlbumModal';
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
+import ProfileImageLightbox from '@/components/ui/ProfileImageLightbox';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
 import PluhButton from '@/components/ui/PluhButton';
@@ -72,6 +73,9 @@ export default function ProfileClient({
 
   // Add state for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Add state for profile image lightbox
+  const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
 
   // State for optimistic follow count updates — reset when server data refreshes
   const [followersCountDelta, setFollowersCountDelta] = useState(0);
@@ -298,12 +302,18 @@ export default function ProfileClient({
         {/* Profile Header */}
         <div className='max-w-4xl mx-auto'>
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
-            <Avatar className='w-32 h-32 border-2 border-zinc-800'>
-              <AvatarImage src={displayImage} alt={displayUsername} />
-              <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
-                {displayUsername.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              onClick={() => setIsImageLightboxOpen(true)}
+              className='cursor-pointer rounded-full focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black transition-transform hover:scale-105'
+              aria-label='View profile picture'
+            >
+              <Avatar className='w-32 h-32 border-2 border-zinc-800'>
+                <AvatarImage src={displayImage} alt={displayUsername} />
+                <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
+                  {displayUsername.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </button>
             <div className='text-center md:text-left flex-1'>
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
                 <div>
@@ -686,6 +696,14 @@ export default function ProfileClient({
           onClose={() => setIsEditingProfile(false)}
         />
       )}
+
+      {/* Profile Image Lightbox */}
+      <ProfileImageLightbox
+        isOpen={isImageLightboxOpen}
+        onClose={() => setIsImageLightboxOpen(false)}
+        imageUrl={displayImage}
+        username={displayUsername}
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfileImageLightbox from '@/components/ui/ProfileImageLightbox';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import FollowButton from '@/components/profile/FollowButton';
 import { cn } from '@/lib/utils';
@@ -88,6 +89,7 @@ export default function MobileProfileClient({
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('recs');
   const [followerCountDelta, setFollowerCountDelta] = useState(0);
+  const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
 
   const displayedFollowersCount = user.followersCount + followerCountDelta;
 
@@ -153,15 +155,21 @@ export default function MobileProfileClient({
 
       {/* Profile Hero */}
       <section className='px-4 py-6 flex flex-col items-center'>
-        <Avatar className='w-20 h-20 mb-4 border-2 border-zinc-700'>
-          <AvatarImage
-            src={user.image || undefined}
-            alt={user.username || 'User'}
-          />
-          <AvatarFallback className='bg-zinc-800 text-2xl'>
-            {(user.username || 'U')[0].toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <button
+          onClick={() => setIsImageLightboxOpen(true)}
+          className='rounded-full focus:outline-none active:scale-95 transition-transform mb-4'
+          aria-label='View profile picture'
+        >
+          <Avatar className='w-20 h-20 border-2 border-zinc-700'>
+            <AvatarImage
+              src={user.image || undefined}
+              alt={user.username || 'User'}
+            />
+            <AvatarFallback className='bg-zinc-800 text-2xl'>
+              {(user.username || 'U')[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </button>
 
         <h2 className='text-xl font-bold text-white mb-1'>
           {user.username || 'Anonymous User'}
@@ -399,6 +407,14 @@ export default function MobileProfileClient({
           </section>
         )}
       </div>
+
+      {/* Profile Image Lightbox */}
+      <ProfileImageLightbox
+        isOpen={isImageLightboxOpen}
+        onClose={() => setIsImageLightboxOpen(false)}
+        imageUrl={user.image}
+        username={user.username || 'User'}
+      />
     </div>
   );
 }
