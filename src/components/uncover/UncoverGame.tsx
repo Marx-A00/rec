@@ -64,12 +64,14 @@ function GameOver({
   mode,
   formattedDate,
   archiveUrl,
+  onDevReset,
 }: {
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
   mode: 'daily' | 'archive';
   formattedDate: string | null;
   archiveUrl: string;
+  onDevReset?: () => void;
 }) {
   const isDaily = mode === 'daily';
   const won = game.won;
@@ -178,6 +180,16 @@ function GameOver({
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
             <GuessList guesses={game.guesses} />
           </div>
+        )}
+
+        {/* Dev-only reset button */}
+        {process.env.NODE_ENV === 'development' && onDevReset && (
+          <button
+            onClick={onDevReset}
+            className='mt-4 rounded-md border border-yellow-600/50 bg-yellow-950/20 px-3 py-1.5 text-xs font-mono text-yellow-400 transition-colors hover:bg-yellow-900/30'
+          >
+            [DEV] Reset Session
+          </button>
         )}
       </div>
     </div>
@@ -481,6 +493,10 @@ export function UncoverGame({
         mode={mode}
         formattedDate={formattedDate}
         archiveUrl={archiveUrl}
+        onDevReset={() => {
+          game.resetGame();
+          setChallengeImageUrl(null);
+        }}
       />
     );
   }
@@ -549,6 +565,19 @@ export function UncoverGame({
           <div className='mt-3 rounded-lg border border-red-500/50 bg-red-950/20 p-3 text-center text-sm text-red-400'>
             {game.error}
           </div>
+        )}
+
+        {/* Dev-only reset button */}
+        {process.env.NODE_ENV === 'development' && (
+          <button
+            onClick={() => {
+              game.resetGame();
+              setChallengeImageUrl(null);
+            }}
+            className='mt-4 rounded-md border border-yellow-600/50 bg-yellow-950/20 px-3 py-1.5 text-xs font-mono text-yellow-400 transition-colors hover:bg-yellow-900/30'
+          >
+            [DEV] Reset Session
+          </button>
         )}
       </div>
     </div>

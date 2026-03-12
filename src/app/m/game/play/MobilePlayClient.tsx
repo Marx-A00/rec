@@ -321,6 +321,19 @@ export function MobilePlayClient({
           {game.error}
         </div>
       )}
+
+      {/* Dev-only reset button */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => {
+            game.resetGame();
+            setChallengeImageUrl(null);
+          }}
+          className='mt-2 shrink-0 rounded-md border border-yellow-600/50 bg-yellow-950/20 px-3 py-1.5 text-xs font-mono text-yellow-400 transition-colors hover:bg-yellow-900/30'
+        >
+          [DEV] Reset Session
+        </button>
+      )}
     </div>
   );
 }
