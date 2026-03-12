@@ -44,6 +44,10 @@ export function AlbumGuessInput({
   const [inputValue, setInputValue] = useState('');
   const [debouncedValue, setDebouncedValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  // Track cmdk's internal highlighted/selected value so we can reset it
+  // after each guess. Without this, cmdk holds onto the previous selection
+  // and keyboard navigation (Enter/arrows) breaks on subsequent guesses.
+  const [selectedValue, setSelectedValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -80,8 +84,9 @@ export function AlbumGuessInput({
     // Submit with text and optional local album ID
     onGuess(guessText, result.localAlbumId ?? undefined);
 
-    // Clear input and close dropdown
+    // Clear input, reset cmdk selection, and close dropdown
     setInputValue('');
+    setSelectedValue('');
     setIsOpen(false);
 
     // Refocus input for next guess
@@ -120,6 +125,8 @@ export function AlbumGuessInput({
       <div className='relative w-full'>
         <Command
           shouldFilter={false}
+          value={selectedValue}
+          onValueChange={setSelectedValue}
           onKeyDown={handleKeyDown}
           className='rounded-md border border-zinc-700 focus-within:ring-2 focus-within:ring-emerald-500'
         >
@@ -127,7 +134,13 @@ export function AlbumGuessInput({
             ref={inputRef}
             placeholder='Search for an album...'
             value={inputValue}
-            onValueChange={setInputValue}
+            onValueChange={val => {
+              setInputValue(val);
+              // Re-open dropdown on typing. Needed because after a keyboard
+              // submission (Enter), isOpen is false but the input never
+              // blurred, so onFocus won't fire again to reopen it.
+              if (val.length >= 2) setIsOpen(true);
+            }}
             onFocus={() => setIsOpen(true)}
             disabled={disabled || isSubmitting}
             className='h-12 min-h-[44px]'
