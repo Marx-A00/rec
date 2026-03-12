@@ -74,6 +74,8 @@ export interface TextRegion {
   y: number;
   w: number;
   h: number;
+  /** The detected text content (optional for backwards compatibility) */
+  text?: string;
 }
 
 /** Raw detected text with bounding box from Cloud Vision */
@@ -293,7 +295,7 @@ export function filterAnswerRevealingRegions(
     });
 
     if (kept) {
-      regions.push(detected.boundingBox);
+      regions.push({ ...detected.boundingBox, text });
     }
   }
 

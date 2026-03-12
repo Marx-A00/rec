@@ -2595,8 +2595,8 @@ type Query {
   challengeHistory(limit: Int = 50, offset: Int = 0): [ChallengeHistoryEntry!]!
 
   """
-  Search game_album_lookup table for autocomplete in the Uncover guessing game.
-  Uses trigram fuzzy matching for fast, forgiving search.
+  Search for albums via Cloudflare D1 Worker for autocomplete in the Uncover guessing game.
+  Uses FTS5 prefix matching for fast search.
   """
   searchGameAlbums(query: String!, limit: Int = 10): [GameAlbumResult!]!
 }
@@ -2661,6 +2661,8 @@ type TextRegionBox {
   y: Float!
   w: Float!
   h: Float!
+  """The detected text content (null for regions stored before this field was added)"""
+  text: String
 }
 
 """
@@ -2799,6 +2801,8 @@ type ChallengeHistoryEntry {
   avgAttempts: Float
   """Number of detected text regions, null if not analyzed"""
   textRegionCount: Int
+  """Full text region data with coordinates and detected text"""
+  textRegions: [TextRegionBox!]
 }
 
 # =============================================

@@ -71,6 +71,8 @@ export default function UncoverPage() {
 
   // Spoiler protection — default hidden
   const [revealed, setRevealed] = useState(false);
+  // Which text region index is being hovered (for highlight sync)
+  const [hoveredRegion, setHoveredRegion] = useState<number | null>(null);
 
   // Live countdown to next 7 AM Central
   const [countdown, setCountdown] = useState(getTimeUntilNext7amCentral());
@@ -163,25 +165,47 @@ export default function UncoverPage() {
             Next in {countdown}
           </p>
           {revealed && (
-            <div className='flex items-center gap-4'>
-              <div className='h-14 w-14 flex-shrink-0 overflow-hidden rounded-md'>
+            <div className='flex gap-5'>
+              {/* Album cover with text region overlay */}
+              <div className='relative h-[280px] w-[280px] flex-shrink-0 overflow-hidden rounded-lg'>
                 <AlbumImage
                   src={todaysChallenge.coverUrl}
                   cloudflareImageId={todaysChallenge.cloudflareImageId}
                   alt={todaysChallenge.albumTitle}
-                  width={56}
-                  height={56}
+                  width={280}
+                  height={280}
                   className='h-full w-full object-cover'
                 />
+                {/* Red border overlay for detected text regions */}
+                {todaysChallenge.textRegions?.map((region, i) => (
+                  <div
+                    key={i}
+                    className={`absolute border-2 pointer-events-none transition-all duration-150 ${
+                      hoveredRegion === i
+                        ? 'border-red-400 bg-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                        : 'border-red-500 bg-red-500/10'
+                    }`}
+                    style={{
+                      left: `${region.x * 100}%`,
+                      top: `${region.y * 100}%`,
+                      width: `${region.w * 100}%`,
+                      height: `${region.h * 100}%`,
+                    }}
+                  />
+                ))}
               </div>
-              <div className='min-w-0'>
-                <p className='text-sm font-medium text-white truncate'>
+
+              {/* Info panel */}
+              <div className='min-w-0 flex flex-col justify-center'>
+                <p className='text-base font-semibold text-white'>
                   {todaysChallenge.albumTitle}
                 </p>
-                <p className='text-sm text-zinc-400 truncate'>
+                <p className='text-sm text-zinc-400 mt-0.5'>
                   {todaysChallenge.artistName}
                 </p>
-                <div className='mt-1.5'>
+
+                {/* Text region status */}
+                <div className='mt-3'>
                   {todaysChallenge.textRegionCount != null &&
                   todaysChallenge.textRegionCount > 0 ? (
                     <span className='inline-flex items-center gap-1.5 text-xs text-green-400'>
@@ -202,6 +226,32 @@ export default function UncoverPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Detected text list */}
+                {todaysChallenge.textRegions &&
+                  todaysChallenge.textRegions.length > 0 && (
+                    <div className='mt-3'>
+                      <p className='text-xs text-zinc-500 mb-1.5'>
+                        Detected text:
+                      </p>
+                      <div className='flex flex-wrap gap-1.5'>
+                        {todaysChallenge.textRegions.map((region, i) => (
+                          <span
+                            key={i}
+                            onMouseEnter={() => setHoveredRegion(i)}
+                            onMouseLeave={() => setHoveredRegion(null)}
+                            className={`inline-flex items-center rounded border px-2 py-0.5 text-xs cursor-default transition-all duration-150 ${
+                              hoveredRegion === i
+                                ? 'border-red-400 bg-red-500/25 text-red-200'
+                                : 'border-red-500/30 bg-red-500/10 text-red-300'
+                            }`}
+                          >
+                            {region.text ?? `Region ${i + 1}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           )}

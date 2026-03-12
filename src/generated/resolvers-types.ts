@@ -655,6 +655,8 @@ export type ChallengeHistoryEntry = {
   id: Scalars['UUID']['output'];
   /** Number of detected text regions, null if not analyzed */
   textRegionCount?: Maybe<Scalars['Int']['output']>;
+  /** Full text region data with coordinates and detected text */
+  textRegions?: Maybe<Array<TextRegionBox>>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -2031,8 +2033,8 @@ export type Query = {
   searchAlbums: Array<Album>;
   searchArtists: Array<Artist>;
   /**
-   * Search game_album_lookup table for autocomplete in the Uncover guessing game.
-   * Uses trigram fuzzy matching for fast, forgiving search.
+   * Search for albums via Cloudflare D1 Worker for autocomplete in the Uncover guessing game.
+   * Uses FTS5 prefix matching for fast search.
    */
   searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
@@ -2846,6 +2848,8 @@ export type TextDiffPart = {
 export type TextRegionBox = {
   __typename?: 'TextRegionBox';
   h: Scalars['Float']['output'];
+  /** The detected text content (null for regions stored before this field was added) */
+  text?: Maybe<Scalars['String']['output']>;
   w: Scalars['Float']['output'];
   x: Scalars['Float']['output'];
   y: Scalars['Float']['output'];
@@ -4688,6 +4692,11 @@ export type ChallengeHistoryEntryResolvers<
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   textRegionCount?: Resolver<
     Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  textRegions?: Resolver<
+    Maybe<Array<ResolversTypes['TextRegionBox']>>,
     ParentType,
     ContextType
   >;
@@ -7266,6 +7275,7 @@ export type TextRegionBoxResolvers<
     ResolversParentTypes['TextRegionBox'] = ResolversParentTypes['TextRegionBox'],
 > = ResolversObject<{
   h?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  text?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   w?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   x?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   y?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;

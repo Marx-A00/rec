@@ -58,6 +58,13 @@ query ChallengeHistory($limit: Int, $offset: Int) {
     totalWins
     avgAttempts
     textRegionCount
+    textRegions {
+      x
+      y
+      w
+      h
+      text
+    }
   }
 }
 

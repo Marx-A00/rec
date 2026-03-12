@@ -681,6 +681,8 @@ export type ChallengeHistoryEntry = {
   id: Scalars['UUID']['output'];
   /** Number of detected text regions, null if not analyzed */
   textRegionCount?: Maybe<Scalars['Int']['output']>;
+  /** Full text region data with coordinates and detected text */
+  textRegions?: Maybe<Array<TextRegionBox>>;
   totalPlays: Scalars['Int']['output'];
   totalWins: Scalars['Int']['output'];
 };
@@ -2057,8 +2059,8 @@ export type Query = {
   searchAlbums: Array<Album>;
   searchArtists: Array<Artist>;
   /**
-   * Search game_album_lookup table for autocomplete in the Uncover guessing game.
-   * Uses trigram fuzzy matching for fast, forgiving search.
+   * Search for albums via Cloudflare D1 Worker for autocomplete in the Uncover guessing game.
+   * Uses FTS5 prefix matching for fast search.
    */
   searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
@@ -2872,6 +2874,8 @@ export type TextDiffPart = {
 export type TextRegionBox = {
   __typename?: 'TextRegionBox';
   h: Scalars['Float']['output'];
+  /** The detected text content (null for regions stored before this field was added) */
+  text?: Maybe<Scalars['String']['output']>;
   w: Scalars['Float']['output'];
   x: Scalars['Float']['output'];
   y: Scalars['Float']['output'];
@@ -4976,6 +4980,14 @@ export type ChallengeHistoryQuery = {
     totalWins: number;
     avgAttempts?: number | null;
     textRegionCount?: number | null;
+    textRegions?: Array<{
+      __typename?: 'TextRegionBox';
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      text?: string | null;
+    }> | null;
   }>;
 };
 
@@ -10816,6 +10828,13 @@ export const ChallengeHistoryDocument = `
     totalWins
     avgAttempts
     textRegionCount
+    textRegions {
+      x
+      y
+      w
+      h
+      text
+    }
   }
 }
     `;
