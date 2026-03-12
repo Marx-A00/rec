@@ -24,7 +24,7 @@ interface RevealImageProps {
   textRegions?: TextRegion[] | null;
   /** Optional CSS class for container sizing */
   className?: string;
-  /** Whether to show the style toggle button (default: true) */
+  /** Whether to show the style toggle button (default: false) */
   showToggle?: boolean;
   /** Show loading overlay (for submission state) */
   isSubmitting?: boolean;
@@ -56,7 +56,7 @@ export function RevealImage({
   revealMode,
   textRegions,
   className,
-  showToggle = true,
+  showToggle = false,
   isSubmitting = false,
   onLoad,
   onError,
