@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
 import { getAuthErrorMessage } from '@/types/auth';
-import { useDevLogin } from '@/hooks/useDevLogin';
+import { useDevLoginMobile } from '@/hooks/useDevLoginMobile';
 
 interface FieldErrors {
   identifier?: string;
@@ -17,9 +17,10 @@ interface FieldErrors {
 
 export default function MobileSignInPage() {
   const router = useRouter();
+  const logoRef = useRef<HTMLDivElement>(null);
 
-  // Dev only: Ctrl+C Ctrl+C to auto-login
-  useDevLogin('/m');
+  // Dev only: tap the R logo 5 times to auto-login
+  useDevLoginMobile(logoRef, '/m');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -122,7 +123,10 @@ export default function MobileSignInPage() {
       <div className='flex-1 px-6 py-4'>
         {/* Logo/Title */}
         <div className='text-center mb-8'>
-          <div className='w-16 h-16 rounded-full bg-cosmic-latte/20 flex items-center justify-center mx-auto mb-4'>
+          <div
+            ref={logoRef}
+            className='w-16 h-16 rounded-full bg-cosmic-latte/20 flex items-center justify-center mx-auto mb-4 select-none'
+          >
             <span className='text-3xl font-bold text-cosmic-latte'>R</span>
           </div>
           <h1 className='text-2xl font-bold text-white mb-2'>Welcome back</h1>
