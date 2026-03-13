@@ -39,6 +39,7 @@ export const JOB_TYPES = {
   CACHE_ARTIST_IMAGE: 'cache:artist-image',
   // Uncover Daily Challenge
   UNCOVER_CREATE_DAILY_CHALLENGE: 'uncover:create-daily-challenge',
+  UNCOVER_RESET_CHALLENGES: 'uncover:reset-challenges',
   // Discogs Jobs
   DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
@@ -311,6 +312,11 @@ export interface UncoverCreateDailyChallengeJobData {
   source?: 'scheduled' | 'manual';
 }
 
+export interface UncoverResetChallengesJobData {
+  requestId?: string;
+  source?: 'admin';
+}
+
 // ============================================================================
 // Discogs Job Data Interfaces
 // ============================================================================
@@ -378,6 +384,7 @@ export type MusicBrainzJobData =
   | CacheAlbumCoverArtJobData
   | CacheArtistImageJobData
   | UncoverCreateDailyChallengeJobData
+  | UncoverResetChallengesJobData
   | DiscogsSearchArtistJobData
   | DiscogsGetArtistJobData
   | DiscogsSearchAlbumJobData

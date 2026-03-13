@@ -22,6 +22,7 @@ import type {
   SpotifySyncNewReleasesJobData,
   SpotifySyncFeaturedPlaylistsJobData,
   DeezerImportPlaylistJobData,
+  UncoverResetChallengesJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 import {
@@ -4575,6 +4576,49 @@ export const mutationResolvers: MutationResolvers = {
         archiveStats: null,
         error: `Failed to submit game result: ${error}`,
       };
+    }
+  },
+
+  // ========================================================================
+  // Uncover Reset (Owner Only)
+  // ========================================================================
+
+  resetUncoverChallenges: async (
+    _: unknown,
+    __: unknown,
+    { user }: { user: { id: string; role: string } }
+  ) => {
+    if (!user?.role || user.role !== 'OWNER') {
+      throw new GraphQLError('Unauthorized: Owner access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const queue = getMusicBrainzQueue();
+      const jobData: UncoverResetChallengesJobData = {
+        source: 'admin',
+        requestId: `uncover-reset-${Date.now()}`,
+      };
+
+      const job = await queue.addJob(
+        JOB_TYPES.UNCOVER_RESET_CHALLENGES,
+        jobData,
+        {
+          priority: PRIORITY_TIERS.ADMIN,
+          attempts: 1,
+          removeOnComplete: 50,
+          removeOnFail: 50,
+        }
+      );
+
+      return {
+        success: true,
+        jobId: job.id ?? null,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to queue uncover reset job:', { error });
+      throw new GraphQLError(`Failed to queue reset: ${error}`);
     }
   },
 };

@@ -1577,6 +1577,12 @@ export type Mutation = {
    */
   resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
+  /**
+   * Owner only: Wipe all Uncover challenge data and seed a fresh challenge.
+   * Deletes all challenges, sessions, guesses, and player stats.
+   * The actual work runs as a BullMQ job (visible in /admin/job-history).
+   */
+  resetUncoverChallenges: ResetUncoverResult;
   restoreUser: RestoreUserPayload;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -2472,6 +2478,12 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type ResetUncoverResult = {
+  __typename?: 'ResetUncoverResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type RestoreUserPayload = {
@@ -3537,6 +3549,7 @@ export type ResolversTypes = ResolversObject<{
   RecommendationInput: RecommendationInput;
   RecommendationSort: RecommendationSort;
   ReorderCollectionAlbumsPayload: ResolverTypeWrapper<ReorderCollectionAlbumsPayload>;
+  ResetUncoverResult: ResolverTypeWrapper<ResetUncoverResult>;
   RestoreUserPayload: ResolverTypeWrapper<RestoreUserPayload>;
   RollbackSyncJobResult: ResolverTypeWrapper<RollbackSyncJobResult>;
   ScoreBreakdown: ResolverTypeWrapper<ScoreBreakdown>;
@@ -3743,6 +3756,7 @@ export type ResolversParentTypes = ResolversObject<{
   RecommendationFeed: RecommendationFeed;
   RecommendationInput: RecommendationInput;
   ReorderCollectionAlbumsPayload: ReorderCollectionAlbumsPayload;
+  ResetUncoverResult: ResetUncoverResult;
   RestoreUserPayload: RestoreUserPayload;
   RollbackSyncJobResult: RollbackSyncJobResult;
   ScoreBreakdown: ScoreBreakdown;
@@ -5904,6 +5918,11 @@ export type MutationResolvers<
     ParentType,
     ContextType
   >;
+  resetUncoverChallenges?: Resolver<
+    ResolversTypes['ResetUncoverResult'],
+    ParentType,
+    ContextType
+  >;
   restoreUser?: Resolver<
     ResolversTypes['RestoreUserPayload'],
     ParentType,
@@ -6752,6 +6771,16 @@ export type ReorderCollectionAlbumsPayloadResolvers<
     ResolversParentTypes['ReorderCollectionAlbumsPayload'] = ResolversParentTypes['ReorderCollectionAlbumsPayload'],
 > = ResolversObject<{
   ids?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ResetUncoverResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ResetUncoverResult'] = ResolversParentTypes['ResetUncoverResult'],
+> = ResolversObject<{
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -8060,6 +8089,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Recommendation?: RecommendationResolvers<ContextType>;
   RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
   ReorderCollectionAlbumsPayload?: ReorderCollectionAlbumsPayloadResolvers<ContextType>;
+  ResetUncoverResult?: ResetUncoverResultResolvers<ContextType>;
   RestoreUserPayload?: RestoreUserPayloadResolvers<ContextType>;
   RollbackSyncJobResult?: RollbackSyncJobResultResolvers<ContextType>;
   ScoreBreakdown?: ScoreBreakdownResolvers<ContextType>;

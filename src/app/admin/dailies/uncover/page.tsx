@@ -10,8 +10,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Trash2,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,12 +28,12 @@ import { AlbumImage } from '@/components/ui/AlbumImage';
 import { GamePoolStats } from '@/components/admin/game-pool/GamePoolStats';
 import { PoolTable } from '@/components/admin/game-pool/PoolTable';
 import { SuggestedAlbumsTable } from '@/components/admin/game-pool/SuggestedAlbumsTable';
-
 import { ChallengeHistoryTable } from '@/components/admin/game-pool/ChallengeHistoryTable';
 import {
   useChallengeHistoryQuery,
   useUncoverSettingsQuery,
   useUpdateUncoverSettingsMutation,
+  useResetUncoverChallengesMutation,
 } from '@/generated/graphql';
 
 /** Compute a human-readable countdown to the next 7 AM Central. */
@@ -64,6 +66,43 @@ function getTimeUntilNext7amCentral(): string {
 
 export default function UncoverPage() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const isOwner = session?.user?.role === 'OWNER';
+
+  // Reset confirmation state
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const { mutateAsync: resetChallenges, isPending: isResetting } =
+    useResetUncoverChallengesMutation({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['ChallengeHistory'] });
+        queryClient.invalidateQueries({ queryKey: ['DailyChallenge'] });
+        queryClient.invalidateQueries({ queryKey: ['UncoverPoolStatus'] });
+        queryClient.invalidateQueries({ queryKey: ['CuratedChallenges'] });
+      },
+    });
+
+  const handleReset = async () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+
+    try {
+      const result = await resetChallenges({});
+      if (result.resetUncoverChallenges.success) {
+        toast.success('Reset job queued — check Job History for results');
+      } else {
+        toast.error('Failed to queue reset job');
+      }
+    } catch (error) {
+      toast.error(
+        `Reset failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      setConfirmReset(false);
+    }
+  };
 
   // Today's cover data
   const { data: historyData } = useChallengeHistoryQuery({ limit: 1 });
@@ -167,14 +206,14 @@ export default function UncoverPage() {
           {revealed && (
             <div className='flex gap-5'>
               {/* Album cover with text region overlay */}
-              <div className='relative h-[280px] w-[280px] flex-shrink-0 overflow-hidden rounded-lg'>
+              <div className='relative w-[280px] flex-shrink-0 overflow-hidden rounded-lg'>
                 <AlbumImage
                   src={todaysChallenge.coverUrl}
                   cloudflareImageId={todaysChallenge.cloudflareImageId}
                   alt={todaysChallenge.albumTitle}
                   width={280}
                   height={280}
-                  className='h-full w-full object-cover'
+                  className='w-full h-auto'
                 />
                 {/* Red border overlay for detected text regions */}
                 {todaysChallenge.textRegions?.map((region, i) => (
@@ -353,6 +392,45 @@ export default function UncoverPage() {
             </p>
           </div>
           <ChallengeHistoryTable />
+
+          {/* Danger Zone — Owner only */}
+          {isOwner && (
+            <div className='mt-8 rounded-lg border border-red-900/50 bg-red-950/20 p-5'>
+              <h4 className='text-sm font-semibold text-red-400 mb-1'>
+                Danger Zone
+              </h4>
+              <p className='text-xs text-zinc-500 mb-3'>
+                Wipe all challenge data (challenges, sessions, guesses, stats)
+                and seed a fresh challenge for today. This cannot be undone.
+              </p>
+              <div className='flex items-center gap-3'>
+                <button
+                  onClick={handleReset}
+                  disabled={isResetting}
+                  className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    confirmReset
+                      ? 'bg-red-600 hover:bg-red-500 text-white'
+                      : 'bg-red-900/50 hover:bg-red-900 text-red-300 border border-red-800'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <Trash2 className='h-3.5 w-3.5' />
+                  {isResetting
+                    ? 'Queuing...'
+                    : confirmReset
+                      ? 'Confirm Reset'
+                      : 'Reset All Challenge Data'}
+                </button>
+                {confirmReset && (
+                  <button
+                    onClick={() => setConfirmReset(false)}
+                    className='text-xs text-zinc-500 hover:text-zinc-300'
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -109,3 +109,10 @@ mutation UpdateUncoverSettings($selectionMode: String, $poolExhaustedMode: Strin
     poolExhaustedMode
   }
 }
+
+mutation ResetUncoverChallenges {
+  resetUncoverChallenges {
+    success
+    jobId
+  }
+}

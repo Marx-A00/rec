@@ -3002,6 +3002,10 @@ type SubmitGameResultResponse {
   error: String
 }
 
+type ResetUncoverResult {
+  success: Boolean!
+  jobId: String
+}
 
 # MUTATIONS (Placeholder for future implementation)
 # =============================================
@@ -3238,6 +3242,13 @@ type Mutation {
   Idempotent - re-submitting returns existing stats without error.
   """
   submitGameResult(input: SubmitGameResultInput!): SubmitGameResultResponse!
+
+  """
+  Owner only: Wipe all Uncover challenge data and seed a fresh challenge.
+  Deletes all challenges, sessions, guesses, and player stats.
+  The actual work runs as a BullMQ job (visible in /admin/job-history).
+  """
+  resetUncoverChallenges: ResetUncoverResult!
 }
 
 type FollowUserPayload {

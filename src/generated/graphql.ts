@@ -1603,6 +1603,12 @@ export type Mutation = {
    */
   resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
+  /**
+   * Owner only: Wipe all Uncover challenge data and seed a fresh challenge.
+   * Deletes all challenges, sessions, guesses, and player stats.
+   * The actual work runs as a BullMQ job (visible in /admin/job-history).
+   */
+  resetUncoverChallenges: ResetUncoverResult;
   restoreUser: RestoreUserPayload;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -2498,6 +2504,12 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type ResetUncoverResult = {
+  __typename?: 'ResetUncoverResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type RestoreUserPayload = {
@@ -4681,6 +4693,19 @@ export type UpdateUncoverSettingsMutation = {
     __typename?: 'UncoverSettings';
     selectionMode: string;
     poolExhaustedMode: string;
+  };
+};
+
+export type ResetUncoverChallengesMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type ResetUncoverChallengesMutation = {
+  __typename?: 'Mutation';
+  resetUncoverChallenges: {
+    __typename?: 'ResetUncoverResult';
+    success: boolean;
+    jobId?: string | null;
   };
 };
 
@@ -9996,6 +10021,44 @@ export const useUpdateUncoverSettingsMutation = <
 };
 
 useUpdateUncoverSettingsMutation.getKey = () => ['UpdateUncoverSettings'];
+
+export const ResetUncoverChallengesDocument = `
+    mutation ResetUncoverChallenges {
+  resetUncoverChallenges {
+    success
+    jobId
+  }
+}
+    `;
+
+export const useResetUncoverChallengesMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetUncoverChallengesMutation,
+    TError,
+    ResetUncoverChallengesMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetUncoverChallengesMutation,
+    TError,
+    ResetUncoverChallengesMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetUncoverChallenges'],
+    mutationFn: (variables?: ResetUncoverChallengesMutationVariables) =>
+      fetcher<
+        ResetUncoverChallengesMutation,
+        ResetUncoverChallengesMutationVariables
+      >(ResetUncoverChallengesDocument, variables)(),
+    ...options,
+  });
+};
+
+useResetUncoverChallengesMutation.getKey = () => ['ResetUncoverChallenges'];
 
 export const GetLlamaLogsDocument = `
     query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {

@@ -32,6 +32,7 @@ import {
   type DiscogsSearchAlbumJobData,
   type DiscogsGetMasterJobData,
   type UncoverCreateDailyChallengeJobData,
+  type UncoverResetChallengesJobData,
 } from '../jobs';
 
 import { toStructuredJobError } from './utils';
@@ -69,7 +70,10 @@ import {
   handleDiscogsGetMaster,
 } from './discogs-processor';
 import { handleDeezerImportPlaylist } from './deezer-processor';
-import { handleCreateDailyChallenge } from './uncover-processor';
+import {
+  handleCreateDailyChallenge,
+  handleResetChallenges,
+} from './uncover-processor';
 
 // Re-export JOB_TYPES for convenience
 export { JOB_TYPES } from '../jobs';
@@ -277,6 +281,12 @@ export async function processMusicBrainzJob(
       case JOB_TYPES.UNCOVER_CREATE_DAILY_CHALLENGE:
         result = await handleCreateDailyChallenge(
           job.data as UncoverCreateDailyChallengeJobData
+        );
+        break;
+
+      case JOB_TYPES.UNCOVER_RESET_CHALLENGES:
+        result = await handleResetChallenges(
+          job.data as UncoverResetChallengesJobData
         );
         break;
 
