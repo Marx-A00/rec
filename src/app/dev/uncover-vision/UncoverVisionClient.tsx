@@ -14,10 +14,7 @@ import {
 import AlbumImage from '@/components/ui/AlbumImage';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
-import {
-  useAlbumsByGameStatusQuery,
-  AlbumGameStatus,
-} from '@/generated/graphql';
+import { useSuggestedGameAlbumsQuery } from '@/generated/graphql';
 
 import type {
   TextRegion,
@@ -96,23 +93,14 @@ export default function UncoverVisionClient() {
     fetchUsage();
   }, [fetchUsage]);
 
-  // Fetch approved albums for picker
-  const { data: albumsData } = useAlbumsByGameStatusQuery({
-    status: AlbumGameStatus.Approved,
-    limit: 100,
+  // Fetch albums from DB for picker
+  const { data: albumsData } = useSuggestedGameAlbumsQuery({
+    limit: 200,
     offset: 0,
+    search: searchQuery || undefined,
   });
 
-  const albums = albumsData?.albumsByGameStatus ?? [];
-  const filteredAlbums = searchQuery
-    ? albums.filter(
-        a =>
-          a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.artists?.some(ar =>
-            ar.artist.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-      )
-    : albums;
+  const albums = albumsData?.suggestedGameAlbums?.albums ?? [];
 
   // ─── Detection ──────────────────────────────────────────────
 
@@ -370,9 +358,9 @@ export default function UncoverVisionClient() {
         </div>
 
         {/* Album grid */}
-        <div className='max-h-[160px] overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/50 p-2'>
+        <div className='max-h-[360px] overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/50 p-2'>
           <div className='grid grid-cols-8 gap-1.5'>
-            {filteredAlbums.slice(0, 80).map(album => {
+            {albums.slice(0, 200).map(album => {
               const isSelected = selectedAlbum?.id === album.id;
               return (
                 <button
