@@ -530,7 +530,7 @@ export default function AdminUsersPage() {
                   <SelectItem value='USER'>User</SelectItem>
                   <SelectItem value='MODERATOR'>Moderator</SelectItem>
                   <SelectItem value='ADMIN'>Admin</SelectItem>
-                  <SelectItem value='OWNER'>Owner</SelectItem>
+                  {isOwnerRole && <SelectItem value='OWNER'>Owner</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -547,10 +547,12 @@ export default function AdminUsersPage() {
                 <li>
                   <strong>Admin:</strong> Full administrative access
                 </li>
-                <li>
-                  <strong>Owner:</strong> Highest level of access (can manage
-                  admins)
-                </li>
+                {isOwnerRole && (
+                  <li>
+                    <strong>Owner:</strong> Highest level of access (can manage
+                    admins)
+                  </li>
+                )}
               </ul>
             </div>
           </div>
