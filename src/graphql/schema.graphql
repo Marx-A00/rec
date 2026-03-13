@@ -2605,6 +2605,11 @@ type Query {
   Uses FTS5 prefix matching for fast search.
   """
   searchGameAlbums(query: String!, limit: Int = 10): [GameAlbumResult!]!
+
+  """
+  Admin: Get aggregated game stats for the Uncover game (players, plays, win rates, etc.)
+  """
+  uncoverGameStats: UncoverGameStats!
 }
 
 # =============================================
@@ -2809,6 +2814,88 @@ type ChallengeHistoryEntry {
   textRegionCount: Int
   """Full text region data with coordinates and detected text"""
   textRegions: [TextRegionBox!]
+}
+
+# =============================================
+# UNCOVER GAME STATS (Admin)
+# =============================================
+
+"""
+Aggregated game-wide stats for the Uncover admin dashboard
+"""
+type UncoverGameStats {
+  """Total number of challenges that have been played"""
+  totalChallenges: Int!
+  """Total number of unique players (users who have started at least one session)"""
+  totalUniquePlayers: Int!
+  """Total number of completed sessions (won + lost)"""
+  totalPlays: Int!
+  """Total number of wins across all sessions"""
+  totalWins: Int!
+  """Overall win rate as a decimal (0-1)"""
+  overallWinRate: Float!
+  """Overall average attempts across all completed sessions"""
+  overallAvgAttempts: Float
+  """Average number of plays per challenge"""
+  avgPlaysPerChallenge: Float
+  """Win distribution across attempt counts [attempt1, attempt2, ..., attempt6]"""
+  globalWinDistribution: [Int!]!
+  """Top players by games won"""
+  topPlayers: [UncoverPlayerLeaderboardEntry!]!
+  """Recent sessions with player info"""
+  recentSessions: [UncoverRecentSession!]!
+  """Challenge with the most plays"""
+  mostPlayedChallenge: UncoverChallengeStatEntry
+  """Challenge with the highest win rate (min 3 plays)"""
+  hardestChallenge: UncoverChallengeStatEntry
+  """Challenge with the lowest win rate (min 3 plays)"""
+  easiestChallenge: UncoverChallengeStatEntry
+}
+
+"""
+Leaderboard entry for a player in the Uncover game
+"""
+type UncoverPlayerLeaderboardEntry {
+  userId: String!
+  username: String
+  image: String
+  gamesPlayed: Int!
+  gamesWon: Int!
+  winRate: Float!
+  currentStreak: Int!
+  maxStreak: Int!
+}
+
+"""
+Recent session entry showing who played and their result
+"""
+type UncoverRecentSession {
+  sessionId: UUID!
+  userId: String!
+  username: String
+  image: String
+  challengeDate: DateTime!
+  albumTitle: String!
+  artistName: String!
+  won: Boolean!
+  attemptCount: Int!
+  completedAt: DateTime
+}
+
+"""
+Stats for a specific challenge (used for most-played, hardest, easiest)
+"""
+type UncoverChallengeStatEntry {
+  challengeId: UUID!
+  date: DateTime!
+  albumTitle: String!
+  artistName: String!
+  coverUrl: String
+  cloudflareImageId: String
+  totalPlays: Int!
+  totalWins: Int!
+  winRate: Float!
+  avgAttempts: Float
 }
 
 # =============================================

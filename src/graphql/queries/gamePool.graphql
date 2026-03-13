@@ -68,6 +68,77 @@ query ChallengeHistory($limit: Int, $offset: Int) {
   }
 }
 
+query UncoverGameStats {
+  uncoverGameStats {
+    totalChallenges
+    totalUniquePlayers
+    totalPlays
+    totalWins
+    overallWinRate
+    overallAvgAttempts
+    avgPlaysPerChallenge
+    globalWinDistribution
+    topPlayers {
+      userId
+      username
+      image
+      gamesPlayed
+      gamesWon
+      winRate
+      currentStreak
+      maxStreak
+    }
+    recentSessions {
+      sessionId
+      userId
+      username
+      image
+      challengeDate
+      albumTitle
+      artistName
+      won
+      attemptCount
+      completedAt
+    }
+    mostPlayedChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+    hardestChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+    easiestChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+  }
+}
+
 mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {
   updateAlbumGameStatus(input: $input) {
     success

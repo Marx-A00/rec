@@ -2068,6 +2068,8 @@ export type Query = {
    * Optional date filters for month-by-month loading.
    */
   uncoverChallengeDates: Array<Scalars['DateTime']['output']>;
+  /** Admin: Get aggregated game stats for the Uncover game (players, plays, win rates, etc.) */
+  uncoverGameStats: UncoverGameStats;
   /** Admin: Get pool status (total, used, remaining) */
   uncoverPoolStatus: UncoverPoolStatus;
   /** Admin: Get uncover game settings */
@@ -3025,11 +3027,57 @@ export type UncoverArchiveStats = {
   winRate: Scalars['Float']['output'];
 };
 
+/** Stats for a specific challenge (used for most-played, hardest, easiest) */
+export type UncoverChallengeStatEntry = {
+  __typename?: 'UncoverChallengeStatEntry';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+  winRate: Scalars['Float']['output'];
+};
+
 /** Game mode enum for distinguishing daily vs archive play */
 export enum UncoverGameMode {
   Archive = 'ARCHIVE',
   Daily = 'DAILY',
 }
+
+/** Aggregated game-wide stats for the Uncover admin dashboard */
+export type UncoverGameStats = {
+  __typename?: 'UncoverGameStats';
+  /** Average number of plays per challenge */
+  avgPlaysPerChallenge?: Maybe<Scalars['Float']['output']>;
+  /** Challenge with the lowest win rate (min 3 plays) */
+  easiestChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Win distribution across attempt counts [attempt1, attempt2, ..., attempt6] */
+  globalWinDistribution: Array<Scalars['Int']['output']>;
+  /** Challenge with the highest win rate (min 3 plays) */
+  hardestChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Challenge with the most plays */
+  mostPlayedChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Overall average attempts across all completed sessions */
+  overallAvgAttempts?: Maybe<Scalars['Float']['output']>;
+  /** Overall win rate as a decimal (0-1) */
+  overallWinRate: Scalars['Float']['output'];
+  /** Recent sessions with player info */
+  recentSessions: Array<UncoverRecentSession>;
+  /** Top players by games won */
+  topPlayers: Array<UncoverPlayerLeaderboardEntry>;
+  /** Total number of challenges that have been played */
+  totalChallenges: Scalars['Int']['output'];
+  /** Total number of completed sessions (won + lost) */
+  totalPlays: Scalars['Int']['output'];
+  /** Total number of unique players (users who have started at least one session) */
+  totalUniquePlayers: Scalars['Int']['output'];
+  /** Total number of wins across all sessions */
+  totalWins: Scalars['Int']['output'];
+};
 
 /** Album info for guess display (minimal, safe to expose) */
 export type UncoverGuessAlbumInfo = {
@@ -3050,6 +3098,19 @@ export type UncoverGuessInfo = {
   id: Scalars['UUID']['output'];
   isCorrect: Scalars['Boolean']['output'];
   isSkipped: Scalars['Boolean']['output'];
+};
+
+/** Leaderboard entry for a player in the Uncover game */
+export type UncoverPlayerLeaderboardEntry = {
+  __typename?: 'UncoverPlayerLeaderboardEntry';
+  currentStreak: Scalars['Int']['output'];
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  maxStreak: Scalars['Int']['output'];
+  userId: Scalars['String']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+  winRate: Scalars['Float']['output'];
 };
 
 /**
@@ -3079,6 +3140,21 @@ export type UncoverPoolStatus = {
   selectionMode: Scalars['String']['output'];
   totalCurated: Scalars['Int']['output'];
   totalUsed: Scalars['Int']['output'];
+};
+
+/** Recent session entry showing who played and their result */
+export type UncoverRecentSession = {
+  __typename?: 'UncoverRecentSession';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  attemptCount: Scalars['Int']['output'];
+  challengeDate: Scalars['DateTime']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  image?: Maybe<Scalars['String']['output']>;
+  sessionId: Scalars['UUID']['output'];
+  userId: Scalars['String']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+  won: Scalars['Boolean']['output'];
 };
 
 /**
@@ -3607,11 +3683,15 @@ export type ResolversTypes = ResolversObject<{
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
   UncoverArchiveStats: ResolverTypeWrapper<UncoverArchiveStats>;
+  UncoverChallengeStatEntry: ResolverTypeWrapper<UncoverChallengeStatEntry>;
   UncoverGameMode: UncoverGameMode;
+  UncoverGameStats: ResolverTypeWrapper<UncoverGameStats>;
   UncoverGuessAlbumInfo: ResolverTypeWrapper<UncoverGuessAlbumInfo>;
   UncoverGuessInfo: ResolverTypeWrapper<UncoverGuessInfo>;
+  UncoverPlayerLeaderboardEntry: ResolverTypeWrapper<UncoverPlayerLeaderboardEntry>;
   UncoverPlayerStats: ResolverTypeWrapper<UncoverPlayerStats>;
   UncoverPoolStatus: ResolverTypeWrapper<UncoverPoolStatus>;
+  UncoverRecentSession: ResolverTypeWrapper<UncoverRecentSession>;
   UncoverSessionHistory: ResolverTypeWrapper<UncoverSessionHistory>;
   UncoverSessionInfo: ResolverTypeWrapper<UncoverSessionInfo>;
   UncoverSessionStatus: UncoverSessionStatus;
@@ -3804,10 +3884,14 @@ export type ResolversParentTypes = ResolversObject<{
   TrackSourceData: TrackSourceData;
   UUID: Scalars['UUID']['output'];
   UncoverArchiveStats: UncoverArchiveStats;
+  UncoverChallengeStatEntry: UncoverChallengeStatEntry;
+  UncoverGameStats: UncoverGameStats;
   UncoverGuessAlbumInfo: UncoverGuessAlbumInfo;
   UncoverGuessInfo: UncoverGuessInfo;
+  UncoverPlayerLeaderboardEntry: UncoverPlayerLeaderboardEntry;
   UncoverPlayerStats: UncoverPlayerStats;
   UncoverPoolStatus: UncoverPoolStatus;
+  UncoverRecentSession: UncoverRecentSession;
   UncoverSessionHistory: UncoverSessionHistory;
   UncoverSessionInfo: UncoverSessionInfo;
   UncoverSettings: UncoverSettings;
@@ -6593,6 +6677,11 @@ export type QueryResolvers<
     ContextType,
     Partial<QueryUncoverChallengeDatesArgs>
   >;
+  uncoverGameStats?: Resolver<
+    ResolversTypes['UncoverGameStats'],
+    ParentType,
+    ContextType
+  >;
   uncoverPoolStatus?: Resolver<
     ResolversTypes['UncoverPoolStatus'],
     ParentType,
@@ -7535,6 +7624,85 @@ export type UncoverArchiveStatsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type UncoverChallengeStatEntryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverChallengeStatEntry'] = ResolversParentTypes['UncoverChallengeStatEntry'],
+> = ResolversObject<{
+  albumTitle?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  avgAttempts?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  challengeId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  coverUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  winRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UncoverGameStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverGameStats'] = ResolversParentTypes['UncoverGameStats'],
+> = ResolversObject<{
+  avgPlaysPerChallenge?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  easiestChallenge?: Resolver<
+    Maybe<ResolversTypes['UncoverChallengeStatEntry']>,
+    ParentType,
+    ContextType
+  >;
+  globalWinDistribution?: Resolver<
+    Array<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  hardestChallenge?: Resolver<
+    Maybe<ResolversTypes['UncoverChallengeStatEntry']>,
+    ParentType,
+    ContextType
+  >;
+  mostPlayedChallenge?: Resolver<
+    Maybe<ResolversTypes['UncoverChallengeStatEntry']>,
+    ParentType,
+    ContextType
+  >;
+  overallAvgAttempts?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  overallWinRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  recentSessions?: Resolver<
+    Array<ResolversTypes['UncoverRecentSession']>,
+    ParentType,
+    ContextType
+  >;
+  topPlayers?: Resolver<
+    Array<ResolversTypes['UncoverPlayerLeaderboardEntry']>,
+    ParentType,
+    ContextType
+  >;
+  totalChallenges?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalUniquePlayers?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UncoverGuessAlbumInfoResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -7571,6 +7739,22 @@ export type UncoverGuessInfoResolvers<
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   isCorrect?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isSkipped?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UncoverPlayerLeaderboardEntryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverPlayerLeaderboardEntry'] = ResolversParentTypes['UncoverPlayerLeaderboardEntry'],
+> = ResolversObject<{
+  currentStreak?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  gamesPlayed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  gamesWon?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  maxStreak?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  winRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -7613,6 +7797,28 @@ export type UncoverPoolStatusResolvers<
   selectionMode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   totalCurated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalUsed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UncoverRecentSessionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverRecentSession'] = ResolversParentTypes['UncoverRecentSession'],
+> = ResolversObject<{
+  albumTitle?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  challengeDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  completedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sessionId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  won?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -8135,10 +8341,14 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
   UUID?: GraphQLScalarType;
   UncoverArchiveStats?: UncoverArchiveStatsResolvers<ContextType>;
+  UncoverChallengeStatEntry?: UncoverChallengeStatEntryResolvers<ContextType>;
+  UncoverGameStats?: UncoverGameStatsResolvers<ContextType>;
   UncoverGuessAlbumInfo?: UncoverGuessAlbumInfoResolvers<ContextType>;
   UncoverGuessInfo?: UncoverGuessInfoResolvers<ContextType>;
+  UncoverPlayerLeaderboardEntry?: UncoverPlayerLeaderboardEntryResolvers<ContextType>;
   UncoverPlayerStats?: UncoverPlayerStatsResolvers<ContextType>;
   UncoverPoolStatus?: UncoverPoolStatusResolvers<ContextType>;
+  UncoverRecentSession?: UncoverRecentSessionResolvers<ContextType>;
   UncoverSessionHistory?: UncoverSessionHistoryResolvers<ContextType>;
   UncoverSessionInfo?: UncoverSessionInfoResolvers<ContextType>;
   UncoverSettings?: UncoverSettingsResolvers<ContextType>;

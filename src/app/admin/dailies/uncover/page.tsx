@@ -29,6 +29,7 @@ import { GamePoolStats } from '@/components/admin/game-pool/GamePoolStats';
 import { PoolTable } from '@/components/admin/game-pool/PoolTable';
 import { SuggestedAlbumsTable } from '@/components/admin/game-pool/SuggestedAlbumsTable';
 import { ChallengeHistoryTable } from '@/components/admin/game-pool/ChallengeHistoryTable';
+import { UncoverStatsTab } from '@/components/admin/game-pool/UncoverStatsTab';
 import {
   useChallengeHistoryQuery,
   useUncoverSettingsQuery,
@@ -318,6 +319,12 @@ export default function UncoverPage() {
           >
             History
           </TabsTrigger>
+          <TabsTrigger
+            value='stats'
+            className='rounded-none border-b-2 border-transparent px-4 pb-3 pt-2.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-300 data-[state=active]:border-zinc-50 data-[state=active]:text-zinc-50 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            Stats
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='pool' className='space-y-4'>
@@ -431,6 +438,16 @@ export default function UncoverPage() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value='stats' className='space-y-4'>
+          <div className='mb-4'>
+            <h3 className='text-lg font-semibold text-white'>Game Stats</h3>
+            <p className='text-sm text-zinc-400 mt-1'>
+              Overall game performance, player activity, and engagement metrics
+            </p>
+          </div>
+          <UncoverStatsTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -2094,6 +2094,8 @@ export type Query = {
    * Optional date filters for month-by-month loading.
    */
   uncoverChallengeDates: Array<Scalars['DateTime']['output']>;
+  /** Admin: Get aggregated game stats for the Uncover game (players, plays, win rates, etc.) */
+  uncoverGameStats: UncoverGameStats;
   /** Admin: Get pool status (total, used, remaining) */
   uncoverPoolStatus: UncoverPoolStatus;
   /** Admin: Get uncover game settings */
@@ -3051,11 +3053,57 @@ export type UncoverArchiveStats = {
   winRate: Scalars['Float']['output'];
 };
 
+/** Stats for a specific challenge (used for most-played, hardest, easiest) */
+export type UncoverChallengeStatEntry = {
+  __typename?: 'UncoverChallengeStatEntry';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+  winRate: Scalars['Float']['output'];
+};
+
 /** Game mode enum for distinguishing daily vs archive play */
 export enum UncoverGameMode {
   Archive = 'ARCHIVE',
   Daily = 'DAILY',
 }
+
+/** Aggregated game-wide stats for the Uncover admin dashboard */
+export type UncoverGameStats = {
+  __typename?: 'UncoverGameStats';
+  /** Average number of plays per challenge */
+  avgPlaysPerChallenge?: Maybe<Scalars['Float']['output']>;
+  /** Challenge with the lowest win rate (min 3 plays) */
+  easiestChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Win distribution across attempt counts [attempt1, attempt2, ..., attempt6] */
+  globalWinDistribution: Array<Scalars['Int']['output']>;
+  /** Challenge with the highest win rate (min 3 plays) */
+  hardestChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Challenge with the most plays */
+  mostPlayedChallenge?: Maybe<UncoverChallengeStatEntry>;
+  /** Overall average attempts across all completed sessions */
+  overallAvgAttempts?: Maybe<Scalars['Float']['output']>;
+  /** Overall win rate as a decimal (0-1) */
+  overallWinRate: Scalars['Float']['output'];
+  /** Recent sessions with player info */
+  recentSessions: Array<UncoverRecentSession>;
+  /** Top players by games won */
+  topPlayers: Array<UncoverPlayerLeaderboardEntry>;
+  /** Total number of challenges that have been played */
+  totalChallenges: Scalars['Int']['output'];
+  /** Total number of completed sessions (won + lost) */
+  totalPlays: Scalars['Int']['output'];
+  /** Total number of unique players (users who have started at least one session) */
+  totalUniquePlayers: Scalars['Int']['output'];
+  /** Total number of wins across all sessions */
+  totalWins: Scalars['Int']['output'];
+};
 
 /** Album info for guess display (minimal, safe to expose) */
 export type UncoverGuessAlbumInfo = {
@@ -3076,6 +3124,19 @@ export type UncoverGuessInfo = {
   id: Scalars['UUID']['output'];
   isCorrect: Scalars['Boolean']['output'];
   isSkipped: Scalars['Boolean']['output'];
+};
+
+/** Leaderboard entry for a player in the Uncover game */
+export type UncoverPlayerLeaderboardEntry = {
+  __typename?: 'UncoverPlayerLeaderboardEntry';
+  currentStreak: Scalars['Int']['output'];
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  maxStreak: Scalars['Int']['output'];
+  userId: Scalars['String']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+  winRate: Scalars['Float']['output'];
 };
 
 /**
@@ -3105,6 +3166,21 @@ export type UncoverPoolStatus = {
   selectionMode: Scalars['String']['output'];
   totalCurated: Scalars['Int']['output'];
   totalUsed: Scalars['Int']['output'];
+};
+
+/** Recent session entry showing who played and their result */
+export type UncoverRecentSession = {
+  __typename?: 'UncoverRecentSession';
+  albumTitle: Scalars['String']['output'];
+  artistName: Scalars['String']['output'];
+  attemptCount: Scalars['Int']['output'];
+  challengeDate: Scalars['DateTime']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  image?: Maybe<Scalars['String']['output']>;
+  sessionId: Scalars['UUID']['output'];
+  userId: Scalars['String']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+  won: Scalars['Boolean']['output'];
 };
 
 /**
@@ -5028,6 +5104,86 @@ export type ChallengeHistoryQuery = {
       text?: string | null;
     }> | null;
   }>;
+};
+
+export type UncoverGameStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type UncoverGameStatsQuery = {
+  __typename?: 'Query';
+  uncoverGameStats: {
+    __typename?: 'UncoverGameStats';
+    totalChallenges: number;
+    totalUniquePlayers: number;
+    totalPlays: number;
+    totalWins: number;
+    overallWinRate: number;
+    overallAvgAttempts?: number | null;
+    avgPlaysPerChallenge?: number | null;
+    globalWinDistribution: Array<number>;
+    topPlayers: Array<{
+      __typename?: 'UncoverPlayerLeaderboardEntry';
+      userId: string;
+      username?: string | null;
+      image?: string | null;
+      gamesPlayed: number;
+      gamesWon: number;
+      winRate: number;
+      currentStreak: number;
+      maxStreak: number;
+    }>;
+    recentSessions: Array<{
+      __typename?: 'UncoverRecentSession';
+      sessionId: string;
+      userId: string;
+      username?: string | null;
+      image?: string | null;
+      challengeDate: Date;
+      albumTitle: string;
+      artistName: string;
+      won: boolean;
+      attemptCount: number;
+      completedAt?: Date | null;
+    }>;
+    mostPlayedChallenge?: {
+      __typename?: 'UncoverChallengeStatEntry';
+      challengeId: string;
+      date: Date;
+      albumTitle: string;
+      artistName: string;
+      coverUrl?: string | null;
+      cloudflareImageId?: string | null;
+      totalPlays: number;
+      totalWins: number;
+      winRate: number;
+      avgAttempts?: number | null;
+    } | null;
+    hardestChallenge?: {
+      __typename?: 'UncoverChallengeStatEntry';
+      challengeId: string;
+      date: Date;
+      albumTitle: string;
+      artistName: string;
+      coverUrl?: string | null;
+      cloudflareImageId?: string | null;
+      totalPlays: number;
+      totalWins: number;
+      winRate: number;
+      avgAttempts?: number | null;
+    } | null;
+    easiestChallenge?: {
+      __typename?: 'UncoverChallengeStatEntry';
+      challengeId: string;
+      date: Date;
+      albumTitle: string;
+      artistName: string;
+      coverUrl?: string | null;
+      cloudflareImageId?: string | null;
+      totalPlays: number;
+      totalWins: number;
+      winRate: number;
+      avgAttempts?: number | null;
+    } | null;
+  };
 };
 
 export type UpdateAlbumGameStatusMutationVariables = Exact<{
@@ -11080,6 +11236,157 @@ useInfiniteChallengeHistoryQuery.getKey = (
   variables === undefined
     ? ['ChallengeHistory.infinite']
     : ['ChallengeHistory.infinite', variables];
+
+export const UncoverGameStatsDocument = `
+    query UncoverGameStats {
+  uncoverGameStats {
+    totalChallenges
+    totalUniquePlayers
+    totalPlays
+    totalWins
+    overallWinRate
+    overallAvgAttempts
+    avgPlaysPerChallenge
+    globalWinDistribution
+    topPlayers {
+      userId
+      username
+      image
+      gamesPlayed
+      gamesWon
+      winRate
+      currentStreak
+      maxStreak
+    }
+    recentSessions {
+      sessionId
+      userId
+      username
+      image
+      challengeDate
+      albumTitle
+      artistName
+      won
+      attemptCount
+      completedAt
+    }
+    mostPlayedChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+    hardestChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+    easiestChallenge {
+      challengeId
+      date
+      albumTitle
+      artistName
+      coverUrl
+      cloudflareImageId
+      totalPlays
+      totalWins
+      winRate
+      avgAttempts
+    }
+  }
+}
+    `;
+
+export const useUncoverGameStatsQuery = <
+  TData = UncoverGameStatsQuery,
+  TError = unknown,
+>(
+  variables?: UncoverGameStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<UncoverGameStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      UncoverGameStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<UncoverGameStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['UncoverGameStats']
+        : ['UncoverGameStats', variables],
+    queryFn: fetcher<UncoverGameStatsQuery, UncoverGameStatsQueryVariables>(
+      UncoverGameStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useUncoverGameStatsQuery.getKey = (
+  variables?: UncoverGameStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverGameStats']
+    : ['UncoverGameStats', variables];
+
+export const useInfiniteUncoverGameStatsQuery = <
+  TData = InfiniteData<UncoverGameStatsQuery>,
+  TError = unknown,
+>(
+  variables: UncoverGameStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<UncoverGameStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      UncoverGameStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<UncoverGameStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['UncoverGameStats.infinite']
+            : ['UncoverGameStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<UncoverGameStatsQuery, UncoverGameStatsQueryVariables>(
+            UncoverGameStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteUncoverGameStatsQuery.getKey = (
+  variables?: UncoverGameStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['UncoverGameStats.infinite']
+    : ['UncoverGameStats.infinite', variables];
 
 export const UpdateAlbumGameStatusDocument = `
     mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {

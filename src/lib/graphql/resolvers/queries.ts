@@ -4058,6 +4058,202 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  uncoverGameStats: async (_, __, { prisma, user }) => {
+    try {
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      // Run multiple aggregation queries in parallel
+      const [
+        totalChallenges,
+        uniquePlayersResult,
+        sessionAggregates,
+        winDistributionData,
+        topPlayersData,
+        recentSessionsData,
+        challengesByPlays,
+      ] = await Promise.all([
+        // Total challenges that have had at least one play
+        prisma.uncoverChallenge.count({
+          where: { totalPlays: { gt: 0 } },
+        }),
+
+        // Total unique players
+        prisma.uncoverSession.findMany({
+          where: { userId: { not: null } },
+          select: { userId: true },
+          distinct: ['userId'],
+        }),
+
+        // Aggregate session stats (completed only)
+        prisma.uncoverSession.aggregate({
+          where: {
+            status: { in: ['WON', 'LOST'] },
+            userId: { not: null },
+          },
+          _count: { id: true },
+          _sum: { attemptCount: true },
+          _avg: { attemptCount: true },
+        }),
+
+        // Global win distribution from player stats
+        prisma.uncoverPlayerStats.findMany({
+          select: { winDistribution: true },
+        }),
+
+        // Top 10 players by games won
+        prisma.uncoverPlayerStats.findMany({
+          take: 10,
+          orderBy: [{ gamesWon: 'desc' }, { gamesPlayed: 'asc' }],
+          where: { gamesPlayed: { gt: 0 } },
+          include: {
+            user: {
+              select: { id: true, username: true, image: true },
+            },
+          },
+        }),
+
+        // Recent 20 completed sessions
+        prisma.uncoverSession.findMany({
+          take: 20,
+          where: {
+            status: { in: ['WON', 'LOST'] },
+            userId: { not: null },
+          },
+          orderBy: { completedAt: 'desc' },
+          include: {
+            user: {
+              select: { id: true, username: true, image: true },
+            },
+            challenge: {
+              include: {
+                album: {
+                  include: {
+                    artists: {
+                      include: { artist: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+
+        // All challenges with plays for most-played / hardest / easiest
+        prisma.uncoverChallenge.findMany({
+          where: { totalPlays: { gte: 3 } },
+          orderBy: { totalPlays: 'desc' },
+          include: {
+            album: {
+              include: {
+                artists: {
+                  include: { artist: true },
+                },
+              },
+            },
+          },
+        }),
+      ]);
+
+      const totalPlays = sessionAggregates._count.id;
+      const totalWins = await prisma.uncoverSession.count({
+        where: {
+          status: 'WON',
+          userId: { not: null },
+        },
+      });
+
+      // Sum up global win distribution across all players
+      const globalWinDist = [0, 0, 0, 0, 0, 0];
+      for (const p of winDistributionData) {
+        if (Array.isArray(p.winDistribution)) {
+          for (let i = 0; i < Math.min(p.winDistribution.length, 6); i++) {
+            globalWinDist[i] += p.winDistribution[i];
+          }
+        }
+      }
+
+      // Map challenge to stat entry helper
+      const mapChallenge = (c: (typeof challengesByPlays)[0]) => ({
+        challengeId: c.id,
+        date: c.date,
+        albumTitle: c.album.title,
+        artistName:
+          c.album.artists.map(a => a.artist.name).join(', ') || 'Unknown',
+        coverUrl: c.album.coverUrl,
+        cloudflareImageId: c.album.cloudflareImageId,
+        totalPlays: c.totalPlays,
+        totalWins: c.totalWins,
+        winRate: c.totalPlays > 0 ? c.totalWins / c.totalPlays : 0,
+        avgAttempts: c.avgAttempts,
+      });
+
+      // Most played = first in list (already sorted by totalPlays desc)
+      const mostPlayed =
+        challengesByPlays.length > 0
+          ? mapChallenge(challengesByPlays[0])
+          : null;
+
+      // Hardest = lowest win rate (min 3 plays)
+      const sortedByWinRate = [...challengesByPlays].sort((a, b) => {
+        const rateA = a.totalPlays > 0 ? a.totalWins / a.totalPlays : 0;
+        const rateB = b.totalPlays > 0 ? b.totalWins / b.totalPlays : 0;
+        return rateA - rateB;
+      });
+      const hardest =
+        sortedByWinRate.length > 0 ? mapChallenge(sortedByWinRate[0]) : null;
+
+      // Easiest = highest win rate (min 3 plays)
+      const easiest =
+        sortedByWinRate.length > 0
+          ? mapChallenge(sortedByWinRate[sortedByWinRate.length - 1])
+          : null;
+
+      return {
+        totalChallenges,
+        totalUniquePlayers: uniquePlayersResult.length,
+        totalPlays,
+        totalWins,
+        overallWinRate: totalPlays > 0 ? totalWins / totalPlays : 0,
+        overallAvgAttempts: sessionAggregates._avg.attemptCount ?? null,
+        avgPlaysPerChallenge:
+          totalChallenges > 0 ? totalPlays / totalChallenges : null,
+        globalWinDistribution: globalWinDist,
+        topPlayers: topPlayersData.map(p => ({
+          userId: p.user.id,
+          username: p.user.username,
+          image: p.user.image,
+          gamesPlayed: p.gamesPlayed,
+          gamesWon: p.gamesWon,
+          winRate: p.gamesPlayed > 0 ? p.gamesWon / p.gamesPlayed : 0,
+          currentStreak: p.currentStreak,
+          maxStreak: p.maxStreak,
+        })),
+        recentSessions: recentSessionsData.map(s => ({
+          sessionId: s.id,
+          userId: s.user?.id ?? '',
+          username: s.user?.username ?? null,
+          image: s.user?.image ?? null,
+          challengeDate: s.challenge.date,
+          albumTitle: s.challenge.album.title,
+          artistName:
+            s.challenge.album.artists.map(a => a.artist.name).join(', ') ||
+            'Unknown',
+          won: s.won,
+          attemptCount: s.attemptCount,
+          completedAt: s.completedAt,
+        })),
+        mostPlayedChallenge: mostPlayed,
+        hardestChallenge: hardest,
+        easiestChallenge: easiest,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch uncover game stats:', { error });
+      throw new GraphQLError(`Failed to fetch uncover game stats: ${error}`);
+    }
+  },
+
   // ---------------------------------------------------------------
   // Client-side game model queries (Wordle-style)
   // ---------------------------------------------------------------
