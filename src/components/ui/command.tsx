@@ -63,7 +63,7 @@ const CommandInput = React.forwardRef<
         <button
           type='button'
           onClick={onClear}
-          className='ml-2 h-4 w-4 shrink-0 opacity-50 hover:opacity-100 transition-opacity'
+          className='ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full opacity-50 transition-opacity hover:opacity-100 active:opacity-100'
           aria-label='Clear search'
         >
           <X className='h-4 w-4' />

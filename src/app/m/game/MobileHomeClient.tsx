@@ -25,12 +25,7 @@ export function MobileHomeClient() {
     mySession?.status === 'WON' || mySession?.status === 'LOST';
 
   return (
-    <div
-      className='flex flex-col items-center justify-center gap-6 px-6'
-      style={{
-        height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))',
-      }}
-    >
+    <div className='flex h-full flex-col items-center justify-center gap-6 px-6'>
       {/* Album cover — full reveal if completed, teaser otherwise */}
       <div className='w-full max-w-[200px]'>
         {hasCompleted && challenge?.imageUrl && challenge?.id ? (

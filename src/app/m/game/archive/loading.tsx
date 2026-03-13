@@ -1,6 +1,6 @@
 export default function MobileArchiveLoading() {
   return (
-    <div className='px-4 py-6'>
+    <div className='h-full overflow-y-auto px-4 py-6'>
       {/* Title skeleton */}
       <div className='h-7 w-40 bg-zinc-800 rounded animate-pulse mb-4' />
 

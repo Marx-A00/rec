@@ -13,14 +13,6 @@ import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
 import { LumaSpinner } from '@/components/ui/LumaSpinner';
 
-/**
- * Available height for game content inside the mobile layout.
- * Mobile layout has: MobileHeader (~56px) + MobileBottomNav (56px + safe-area).
- * Using CSS calc so it adapts to actual safe-area insets.
- */
-const MOBILE_CONTENT_HEIGHT =
-  'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))';
-
 interface MobilePlayClientProps {
   mode?: 'daily' | 'archive';
   challengeDate?: Date;
@@ -101,10 +93,7 @@ export function MobilePlayClient({
       : '/m/game';
 
     return (
-      <div
-        className='flex flex-col items-center justify-center gap-6 px-6'
-        style={{ height: MOBILE_CONTENT_HEIGHT }}
-      >
+      <div className='flex h-full flex-col items-center justify-center gap-6 px-6'>
         {game.isAuthLoading ? (
           <div className='text-zinc-400'>Loading...</div>
         ) : (
@@ -132,10 +121,7 @@ export function MobilePlayClient({
   // ── Loading ───────────────────────────────────────────────────────
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
-      <div
-        className='flex items-center justify-center'
-        style={{ height: MOBILE_CONTENT_HEIGHT }}
-      >
+      <div className='flex h-full items-center justify-center'>
         <LumaSpinner />
       </div>
     );
@@ -144,10 +130,7 @@ export function MobilePlayClient({
   // ── Error ─────────────────────────────────────────────────────────
   if (game.error && !game.sessionId) {
     return (
-      <div
-        className='flex flex-col items-center justify-center gap-4 px-6 text-center'
-        style={{ height: MOBILE_CONTENT_HEIGHT }}
-      >
+      <div className='flex h-full flex-col items-center justify-center gap-4 px-6 text-center'>
         <div>
           {isArchive && (
             <p className='mb-1 text-sm text-zinc-500'>{formattedDate}</p>
@@ -185,10 +168,7 @@ export function MobilePlayClient({
   // ── Game over — results ───────────────────────────────────────────
   if (game.isGameOver) {
     return (
-      <div
-        className='flex flex-col items-center overflow-y-auto px-4 py-4'
-        style={{ height: MOBILE_CONTENT_HEIGHT }}
-      >
+      <div className='flex h-full flex-col items-center overflow-y-auto px-4 py-4'>
         {isArchive && <p className='text-xs text-zinc-500'>{formattedDate}</p>}
         <div className='text-center'>
           <h2 className='mb-1 text-2xl font-bold text-white'>
@@ -238,10 +218,7 @@ export function MobilePlayClient({
 
   // ── Game board — IN_PROGRESS ──────────────────────────────────────
   return (
-    <div
-      className='flex flex-col overflow-hidden px-4 py-2'
-      style={{ height: MOBILE_CONTENT_HEIGHT }}
-    >
+    <div className='flex h-full flex-col overflow-hidden px-4 py-2'>
       {/* Header */}
       <div className='shrink-0 text-center'>
         <h2 className='text-lg font-bold text-white'>

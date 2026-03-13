@@ -22,6 +22,20 @@ import {
   type ClientGuess,
 } from '@/lib/uncover/client-game-logic';
 
+/** Generate a UUID, with fallback for contexts where crypto.randomUUID is unavailable (e.g. non-secure mobile WebViews). */
+function generateId(): string {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export interface UseUncoverGameOptions {
   mode: 'daily' | 'archive';
   challengeDate?: Date; // required when mode === 'archive'
@@ -195,7 +209,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
         const existing = puzzleData.existingResult;
 
         gameStore.setSession({
-          id: crypto.randomUUID(),
+          id: generateId(),
           challengeId: puzzleData.challengeId,
           mode,
           ...(isArchive && dateString ? { archiveDate: dateString } : {}),
@@ -238,7 +252,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
 
       // Fresh session
       gameStore.setSession({
-        id: crypto.randomUUID(),
+        id: generateId(),
         challengeId: puzzleData.challengeId,
         mode,
         ...(isArchive && dateString ? { archiveDate: dateString } : {}),

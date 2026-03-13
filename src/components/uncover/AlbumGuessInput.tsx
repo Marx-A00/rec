@@ -142,6 +142,12 @@ export function AlbumGuessInput({
               if (val.length >= 2) setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
+            onClear={() => {
+              setInputValue('');
+              setSelectedValue('');
+              setIsOpen(false);
+              inputRef.current?.focus();
+            }}
             disabled={disabled || isSubmitting}
             className='h-12 min-h-[44px]'
             aria-label='Search for an album'
