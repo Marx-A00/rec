@@ -8,7 +8,10 @@ import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
-import { useDailyChallengeQuery } from '@/generated/graphql';
+import {
+  useDailyChallengeQuery,
+  useSearchGameAlbumsQuery,
+} from '@/generated/graphql';
 import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
@@ -236,6 +239,18 @@ export function UncoverGame({
     : null;
 
   const archiveUrl = '/game/archive';
+
+  // Prefetch: fire a throwaway search to warm the D1 worker while the user
+  // is looking at the game screen. The query result is discarded — we just
+  // want the cold-start penalty to happen before they start typing.
+  useSearchGameAlbumsQuery(
+    { query: 'the', limit: 1 },
+    {
+      enabled: game.isAuthenticated && !game.isAuthLoading,
+      staleTime: Infinity,
+      gcTime: 0,
+    }
+  );
 
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
