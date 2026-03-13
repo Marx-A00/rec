@@ -24,6 +24,10 @@ import {
 import prisma from '@/lib/prisma';
 
 import type { DeezerAlbumData } from './mappers';
+import {
+  detectSuspiciousTitle,
+  type AlbumWarning,
+} from './suspicious-album-detection';
 
 // ============================================================================
 // Types
@@ -52,6 +56,8 @@ export interface DeezerPreviewAlbum {
   existsInDb?: boolean;
   /** The local database album ID if it exists */
   dbAlbumId?: string;
+  /** Warning for suspicious titles (compilations, deluxe, remastered, etc.) */
+  warning?: AlbumWarning;
 }
 
 export interface DeezerPlaylistPreviewResult {
@@ -64,6 +70,7 @@ export interface DeezerPlaylistPreviewResult {
     singlesFiltered: number;
     compilationsFiltered: number;
     existingInDb: number;
+    suspiciousWarned: number;
   };
 }
 
@@ -422,6 +429,28 @@ export async function annotateExistingAlbums(
 }
 
 // ============================================================================
+// Suspicious Title Detection (Read-Only)
+// ============================================================================
+
+/**
+ * Flag albums with suspicious titles (compilations, deluxe, remastered, etc.).
+ * Mutates albums in-place, setting `warning` on matched items.
+ */
+export function annotateSuspiciousAlbums(albums: DeezerPreviewAlbum[]): {
+  warned: number;
+} {
+  let warned = 0;
+  for (const album of albums) {
+    const warning = detectSuspiciousTitle(album.title);
+    if (warning) {
+      album.warning = warning;
+      warned++;
+    }
+  }
+  return { warned };
+}
+
+// ============================================================================
 // Preview (Read-Only)
 // ============================================================================
 
@@ -461,6 +490,12 @@ export async function previewDeezerPlaylistAlbums(
     console.log(`🔍 ${matched}/${albums.length} albums already in database`);
   }
 
+  // Flag albums with suspicious titles (compilations, deluxe, remastered, etc.)
+  const { warned } = annotateSuspiciousAlbums(albums);
+  if (warned > 0) {
+    console.log(`⚠️ ${warned}/${albums.length} albums flagged as suspicious`);
+  }
+
   const result: DeezerPlaylistPreviewResult = {
     playlist: metadata,
     albums,
@@ -471,6 +506,7 @@ export async function previewDeezerPlaylistAlbums(
       singlesFiltered,
       compilationsFiltered,
       existingInDb: matched,
+      suspiciousWarned: warned,
     },
   };
 

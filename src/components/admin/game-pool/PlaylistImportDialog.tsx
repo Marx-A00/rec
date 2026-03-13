@@ -10,6 +10,7 @@ import {
   Disc3,
   Filter,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 import {
@@ -96,7 +97,9 @@ export function PlaylistImportDialog({
   useEffect(() => {
     if (albums.length > 0) {
       setSelectedIds(
-        new Set(albums.filter(a => !a.existsInDb).map(a => a.deezerId))
+        new Set(
+          albums.filter(a => !a.existsInDb && !a.warning).map(a => a.deezerId)
+        )
       );
     }
   }, [albums]);
@@ -340,6 +343,12 @@ export function PlaylistImportDialog({
                     {preview.stats.existingInDb} already in DB
                   </span>
                 )}
+                {preview.stats.suspiciousWarned > 0 && (
+                  <span className='inline-flex items-center gap-1 text-amber-400'>
+                    <AlertTriangle className='h-3 w-3' />
+                    {preview.stats.suspiciousWarned} warned
+                  </span>
+                )}
                 {preview.stats.singlesFiltered +
                   preview.stats.compilationsFiltered >
                   0 && (
@@ -400,7 +409,7 @@ export function PlaylistImportDialog({
                           key={album.deezerId}
                           className={`cursor-pointer transition-colors ${
                             isSelected
-                              ? 'hover:bg-zinc-800/50'
+                              ? 'bg-zinc-800/40 hover:bg-zinc-800/60'
                               : 'opacity-50 hover:opacity-70'
                           }`}
                           onClick={() => toggleAlbum(album.deezerId)}
@@ -432,6 +441,12 @@ export function PlaylistImportDialog({
                                 <span className='inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 leading-none'>
                                   <CheckCircle2 className='h-2.5 w-2.5' />
                                   In DB
+                                </span>
+                              )}
+                              {album.warning && (
+                                <span className='inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400 leading-none'>
+                                  <AlertTriangle className='h-2.5 w-2.5' />
+                                  {album.warning.label}
                                 </span>
                               )}
                             </span>
