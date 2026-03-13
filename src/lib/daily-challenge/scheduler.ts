@@ -9,6 +9,10 @@
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { JOB_TYPES } from '@/lib/queue/jobs';
 import type { UncoverCreateDailyChallengeJobData } from '@/lib/queue/jobs';
+import {
+  getCentralToday,
+  formatDateUTC,
+} from '@/lib/daily-challenge/date-utils';
 
 /**
  * Initialize the daily challenge scheduler.
@@ -22,8 +26,13 @@ export async function initializeUncoverScheduler(): Promise<boolean> {
     const queue = getMusicBrainzQueue();
 
     // 1. Ensure today's challenge exists right now (idempotent — skips if already created)
+    // Use Central time so a late-night worker restart doesn't skip to tomorrow
+    const centralToday = getCentralToday();
+    const centralDateStr = formatDateUTC(centralToday);
+
     const immediateJobData: UncoverCreateDailyChallengeJobData = {
       source: 'scheduled',
+      date: centralToday.toISOString(),
       requestId: `uncover_bootstrap_${Date.now()}`,
     };
 
@@ -31,7 +40,7 @@ export async function initializeUncoverScheduler(): Promise<boolean> {
       JOB_TYPES.UNCOVER_CREATE_DAILY_CHALLENGE,
       immediateJobData,
       {
-        jobId: `uncover-bootstrap-${new Date().toISOString().slice(0, 10)}`,
+        jobId: `uncover-bootstrap-${centralDateStr}`,
         priority: 1,
         attempts: 3,
         backoff: { type: 'exponential', delay: 10000 },

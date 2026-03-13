@@ -39,3 +39,31 @@ export function getToday(): Date {
 export function formatDateUTC(date: Date): string {
   return date.toISOString().split('T')[0];
 }
+
+/**
+ * Get today's date in America/Chicago (Central) timezone as a UTC midnight Date.
+ *
+ * This is the single source of truth for "what day is it" in the Uncover system.
+ * The cron fires at 7 AM Central, so when the bootstrap runs (e.g. during a
+ * late-night worker restart), we need Central-time "today" — not UTC "today".
+ *
+ * Example: 11:30 PM Central on March 11 = 5:30 AM UTC March 12.
+ *   - `new Date()` would give March 12 (wrong for Central)
+ *   - `getCentralToday()` gives March 11 at UTC midnight (correct)
+ */
+export function getCentralToday(): Date {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find(p => p.type === 'year')!.value;
+  const month = parts.find(p => p.type === 'month')!.value;
+  const day = parts.find(p => p.type === 'day')!.value;
+
+  // Construct UTC midnight for this Central-time date
+  return new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+}
