@@ -6,8 +6,8 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   useMyUncoverSessionsQuery,
   useUncoverChallengeDatesQuery,
+  useFirstUncoverChallengeDateQuery,
 } from '@/generated/graphql';
-import { GAME_EPOCH } from '@/lib/daily-challenge/date-utils';
 import {
   format,
   isBefore,
@@ -50,19 +50,26 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
     toDate: monthEnd as unknown as Date,
   });
 
-  // Build set of dates that have a challenge
+  // Query the earliest challenge date to restrict calendar navigation
+  const { data: firstDateData } = useFirstUncoverChallengeDateQuery();
+
+  // Build set of dates that have a challenge.
+  // Dates arrive as UTC midnight strings (e.g. '2026-03-12T00:00:00.000Z').
+  // Using new Date() would shift them back a day in western timezones,
+  // so we extract the date portion directly from the ISO string.
   const challengeDateSet = new Set<string>();
   if (challengeDatesData?.uncoverChallengeDates) {
     for (const d of challengeDatesData.uncoverChallengeDates) {
-      challengeDateSet.add(format(new Date(d), 'yyyy-MM-dd'));
+      challengeDateSet.add(String(d).slice(0, 10));
     }
   }
 
   // Build session map: date string -> 'won' | 'lost'
+  // Same UTC-midnight slicing as challengeDateSet to avoid timezone shift.
   const sessionMap = new Map<string, 'won' | 'lost'>();
   if (data?.myUncoverSessions) {
     for (const session of data.myUncoverSessions) {
-      const dateKey = format(new Date(session.challengeDate), 'yyyy-MM-dd');
+      const dateKey = String(session.challengeDate).slice(0, 10);
       sessionMap.set(dateKey, session.won ? 'won' : 'lost');
     }
   }
@@ -73,12 +80,18 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
   const lostDates: Date[] = [];
   const missedDates: Date[] = [];
 
-  // Start from GAME_EPOCH in local-date terms
-  const epochLocal = new Date(
-    GAME_EPOCH.getUTCFullYear(),
-    GAME_EPOCH.getUTCMonth(),
-    GAME_EPOCH.getUTCDate()
-  );
+  // Derive the earliest challenge date for calendar bounds.
+  // Falls back to today so nothing renders until the query loads.
+  const firstDateStr = firstDateData?.firstUncoverChallengeDate
+    ? String(firstDateData.firstUncoverChallengeDate).slice(0, 10)
+    : null;
+  const epochLocal = firstDateStr
+    ? new Date(
+        parseInt(firstDateStr.slice(0, 4)),
+        parseInt(firstDateStr.slice(5, 7)) - 1,
+        parseInt(firstDateStr.slice(8, 10))
+      )
+    : today;
   const checkDate = new Date(epochLocal);
   while (isBefore(checkDate, today) || isSameDay(checkDate, today)) {
     // Only check dates in the current month view
@@ -98,8 +111,8 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       wonDates.push(new Date(checkDate));
     } else if (status === 'lost') {
       lostDates.push(new Date(checkDate));
-    } else if (isBefore(checkDate, today)) {
-      // Missed: before today and no session
+    } else if (isBefore(checkDate, today) && challengeDateSet.has(dateKey)) {
+      // Missed: before today, challenge exists, but no session
       missedDates.push(new Date(checkDate));
     }
 
@@ -116,27 +129,24 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       return;
     }
 
-    // Past dates go to archive — format as YYYY-MM-DD from local date parts
-    // so the URL matches the calendar cell the user clicked.
+    // Past dates go to archive — only if a challenge exists for that date.
+    // Format as YYYY-MM-DD from local date parts so the URL matches the
+    // calendar cell the user clicked.
     if (isBefore(date, today)) {
       const dateStr = format(date, 'yyyy-MM-dd');
+      if (!challengeDateSet.has(dateStr)) return;
       router.push(
         mobile ? `/m/game/archive/${dateStr}` : `/game/archive/${dateStr}`
       );
     }
   };
 
-  // Disable dates before GAME_EPOCH, after today, or without a challenge
+  // Disable dates before the first challenge, after today, or without a challenge
   const disabledDates = (date: Date) => {
     if (isBefore(date, epochLocal) || isAfter(date, today)) return true;
-    // Today is always clickable (redirects to daily game)
     if (isSameDay(date, today)) return false;
-    // If challenge dates have loaded, only enable dates with a challenge
-    if (challengeDatesData) {
-      const dateKey = format(date, 'yyyy-MM-dd');
-      return !challengeDateSet.has(dateKey);
-    }
-    return false;
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return !challengeDateSet.has(dateKey);
   };
 
   return (
@@ -165,6 +175,8 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
               mode='single'
               month={currentMonth}
               onMonthChange={setCurrentMonth}
+              startMonth={epochLocal}
+              endMonth={today}
               onSelect={isLoading ? undefined : handleDateSelect}
               disabled={disabledDates}
               modifiers={{

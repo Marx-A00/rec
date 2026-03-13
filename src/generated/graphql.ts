@@ -2025,6 +2025,11 @@ export type Query = {
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
+  /**
+   * Get the date of the earliest Uncover challenge.
+   * Used to restrict calendar navigation to months with challenges.
+   */
+  firstUncoverChallengeDate?: Maybe<Scalars['DateTime']['output']>;
   followingActivity: Array<Recommendation>;
   gamePoolStats: GamePoolStats;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -3899,6 +3904,15 @@ export type UncoverChallengeDatesQueryVariables = Exact<{
 export type UncoverChallengeDatesQuery = {
   __typename?: 'Query';
   uncoverChallengeDates: Array<Date>;
+};
+
+export type FirstUncoverChallengeDateQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type FirstUncoverChallengeDateQuery = {
+  __typename?: 'Query';
+  firstUncoverChallengeDate?: Date | null;
 };
 
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
@@ -8179,6 +8193,93 @@ useInfiniteUncoverChallengeDatesQuery.getKey = (
   variables === undefined
     ? ['UncoverChallengeDates.infinite']
     : ['UncoverChallengeDates.infinite', variables];
+
+export const FirstUncoverChallengeDateDocument = `
+    query FirstUncoverChallengeDate {
+  firstUncoverChallengeDate
+}
+    `;
+
+export const useFirstUncoverChallengeDateQuery = <
+  TData = FirstUncoverChallengeDateQuery,
+  TError = unknown,
+>(
+  variables?: FirstUncoverChallengeDateQueryVariables,
+  options?: Omit<
+    UseQueryOptions<FirstUncoverChallengeDateQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      FirstUncoverChallengeDateQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<FirstUncoverChallengeDateQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['FirstUncoverChallengeDate']
+        : ['FirstUncoverChallengeDate', variables],
+    queryFn: fetcher<
+      FirstUncoverChallengeDateQuery,
+      FirstUncoverChallengeDateQueryVariables
+    >(FirstUncoverChallengeDateDocument, variables),
+    ...options,
+  });
+};
+
+useFirstUncoverChallengeDateQuery.getKey = (
+  variables?: FirstUncoverChallengeDateQueryVariables
+) =>
+  variables === undefined
+    ? ['FirstUncoverChallengeDate']
+    : ['FirstUncoverChallengeDate', variables];
+
+export const useInfiniteFirstUncoverChallengeDateQuery = <
+  TData = InfiniteData<FirstUncoverChallengeDateQuery>,
+  TError = unknown,
+>(
+  variables: FirstUncoverChallengeDateQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<FirstUncoverChallengeDateQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      FirstUncoverChallengeDateQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<FirstUncoverChallengeDateQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['FirstUncoverChallengeDate.infinite']
+            : ['FirstUncoverChallengeDate.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            FirstUncoverChallengeDateQuery,
+            FirstUncoverChallengeDateQueryVariables
+          >(FirstUncoverChallengeDateDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteFirstUncoverChallengeDateQuery.getKey = (
+  variables?: FirstUncoverChallengeDateQueryVariables
+) =>
+  variables === undefined
+    ? ['FirstUncoverChallengeDate.infinite']
+    : ['FirstUncoverChallengeDate.infinite', variables];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {

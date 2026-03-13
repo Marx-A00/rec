@@ -1999,6 +1999,11 @@ export type Query = {
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
+  /**
+   * Get the date of the earliest Uncover challenge.
+   * Used to restrict calendar navigation to months with challenges.
+   */
+  firstUncoverChallengeDate?: Maybe<Scalars['DateTime']['output']>;
   followingActivity: Array<Recommendation>;
   gamePoolStats: GamePoolStats;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -6345,6 +6350,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryFailedJobsArgs, 'limit'>
+  >;
+  firstUncoverChallengeDate?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
   >;
   followingActivity?: Resolver<
     Array<ResolversTypes['Recommendation']>,

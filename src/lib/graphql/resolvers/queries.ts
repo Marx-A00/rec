@@ -4045,6 +4045,19 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  firstUncoverChallengeDate: async (_parent, _args, { prisma }) => {
+    try {
+      const challenge = await prisma.uncoverChallenge.findFirst({
+        select: { date: true },
+        orderBy: { date: 'asc' },
+      });
+      return challenge?.date ?? null;
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch first challenge date:', { error });
+      throw new GraphQLError(`Failed to fetch first challenge date: ${error}`);
+    }
+  },
+
   // ---------------------------------------------------------------
   // Client-side game model queries (Wordle-style)
   // ---------------------------------------------------------------

@@ -23,4 +23,8 @@ query UncoverChallengeDates($fromDate: DateTime, $toDate: DateTime) {
   uncoverChallengeDates(fromDate: $fromDate, toDate: $toDate)
 }
 
+query FirstUncoverChallengeDate {
+  firstUncoverChallengeDate
+}
+
 
