@@ -6,10 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Do NOT use markdown tables in responses. Use bullet points or plain text lists instead.
 
-## Database Queries
+## Environments & Database Access
 
-- **ALWAYS use Supabase MCP** (`mcp__supabase__execute_sql`) for database queries, NOT `npx prisma db execute`
+**Dev Environment:**
+- Database is PostgreSQL hosted on **Supabase**
+- Access via **Supabase MCP** (`mcp__supabase__execute_sql`) — always prefer this over `npx prisma db execute`
 - Supabase MCP is faster and doesn't have connection issues
+- Safe to query freely during development
+
+**Production Environment:**
+- Database is PostgreSQL hosted on **Railway**
+- Accessed via the public Railway Postgres URL
+- **ALWAYS ask for explicit permission before querying the prod database** — the public URL incurs egress charges on every query
+- Never run exploratory or debugging queries against prod without user approval
 
 ## 🔍 Search Components - IMPORTANT
 
