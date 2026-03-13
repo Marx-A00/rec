@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
+  X,
   XCircle,
   Plus,
   Search,
@@ -13,12 +14,22 @@ import {
   Loader2,
   ListMusic,
   ArrowLeft,
+  User,
 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
+import AnimatedLoader from '@/components/ui/AnimatedLoader';
 import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
 import type { UnifiedSearchResult } from '@/types/search';
+import {
+  useUniversalSearch,
+  type UseUniversalSearchOptions,
+} from '@/hooks/useUniversalSearch';
+import {
+  buildDualInputQuery,
+  hasSearchableInput,
+} from '@/lib/musicbrainz/query-builder';
+import { sanitizeArtistName } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -107,6 +118,11 @@ export function SuggestedAlbumsTable() {
   const [selectedResult, setSelectedResult] =
     useState<UnifiedSearchResult | null>(null);
 
+  // Dual-input external search state
+  const [extAlbumQuery, setExtAlbumQuery] = useState('');
+  const [extArtistQuery, setExtArtistQuery] = useState('');
+  const [extSearchQuery, setExtSearchQuery] = useState('');
+
   const { data, isLoading } = useSuggestedGameAlbumsQuery({
     limit: PAGE_SIZE,
     offset,
@@ -121,6 +137,53 @@ export function SuggestedAlbumsTable() {
 
   const { mutateAsync: addExternalToPool, isPending: isAddingExternal } =
     useAddExternalAlbumToPoolMutation();
+
+  // External search hook (dual-input: album + artist)
+  const extSearchOptions: UseUniversalSearchOptions = {
+    entityTypes: [
+      {
+        type: 'album',
+        displayName: 'Albums',
+        searchFields: ['title', 'artist', 'year'],
+        weight: 1,
+        deduplicate: true,
+        maxResults: 20,
+      },
+    ],
+    searchType: 'albums',
+    filters: [],
+    debounceMs: 0,
+    minQueryLength: 2,
+    maxResults: 20,
+    enabled: extSearchQuery.length >= 2,
+    searchMode: 'LOCAL_AND_EXTERNAL',
+  };
+
+  const { results: extSearchResults = [], isLoading: isExtSearching } =
+    useUniversalSearch(extSearchQuery, extSearchOptions);
+
+  const extAlbumResults = useMemo(
+    () => extSearchResults.filter(r => r.type === 'album'),
+    [extSearchResults]
+  );
+
+  const triggerExtSearch = useCallback(() => {
+    if (!hasSearchableInput(extAlbumQuery, extArtistQuery)) return;
+    const query = buildDualInputQuery(extAlbumQuery, extArtistQuery);
+    if (query) {
+      setExtSearchQuery(query);
+    }
+  }, [extAlbumQuery, extArtistQuery]);
+
+  const handleExtKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        triggerExtSearch();
+      }
+    },
+    [triggerExtSearch]
+  );
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['SuggestedGameAlbums'] });
@@ -169,9 +232,9 @@ export function SuggestedAlbumsTable() {
           res.addExternalAlbumToPool.message ||
             `"${selectedResult.title}" added to pool`
         );
-        setAddExternalOpen(false);
-        setExternalMode('menu');
+        // Go back to search results so user can add more albums
         setSelectedResult(null);
+        setExternalMode('search');
         invalidateAll();
       } else {
         toast.error(
@@ -608,7 +671,12 @@ export function SuggestedAlbumsTable() {
         open={addExternalOpen}
         onOpenChange={open => {
           setAddExternalOpen(open);
-          if (!open) setExternalMode('menu');
+          if (!open) {
+            setExternalMode('menu');
+            setExtAlbumQuery('');
+            setExtArtistQuery('');
+            setExtSearchQuery('');
+          }
         }}
       >
         <DialogContent
@@ -659,31 +727,150 @@ export function SuggestedAlbumsTable() {
                     variant='ghost'
                     size='sm'
                     className='h-8 w-8 p-0'
-                    onClick={() => setExternalMode('menu')}
+                    onClick={() => {
+                      setExternalMode('menu');
+                      setExtAlbumQuery('');
+                      setExtArtistQuery('');
+                      setExtSearchQuery('');
+                    }}
                   >
                     <ArrowLeft className='h-4 w-4' />
                   </Button>
                   <div>
                     <DialogTitle>Search Albums</DialogTitle>
                     <DialogDescription>
-                      Search and add directly to the pool
+                      Search by album title, artist name, or both
                     </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
-              <div className='pt-2'>
-                <UniversalSearchBar
-                  preset='modal'
-                  searchType='albums'
-                  placeholder='Search for an album and press Enter...'
-                  maxResults={6}
-                  initialSearchMode='LOCAL_AND_EXTERNAL'
-                  searchOnEnterOnly
-                  onResultSelect={handleExternalSearchSelect}
-                  customNavigationHandler={async result => {
-                    await handleExternalSearchSelect(result);
-                  }}
-                />
+              <div className='pt-2 space-y-3'>
+                {/* Album title input */}
+                <div className='relative'>
+                  <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+                  <input
+                    type='text'
+                    placeholder='Album title...'
+                    value={extAlbumQuery}
+                    onChange={e => setExtAlbumQuery(e.target.value)}
+                    onKeyDown={handleExtKeyDown}
+                    autoFocus
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                  />
+                  {extAlbumQuery && (
+                    <button
+                      type='button'
+                      onClick={() => setExtAlbumQuery('')}
+                      className='absolute right-3 top-3 text-zinc-500 hover:text-zinc-300 transition-colors'
+                    >
+                      <X className='h-4 w-4' />
+                    </button>
+                  )}
+                </div>
+
+                {/* Artist name input */}
+                <div className='relative'>
+                  <User className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+                  <input
+                    type='text'
+                    placeholder='Artist name...'
+                    value={extArtistQuery}
+                    onChange={e => setExtArtistQuery(e.target.value)}
+                    onKeyDown={handleExtKeyDown}
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                  />
+                  {extArtistQuery && (
+                    <button
+                      type='button'
+                      onClick={() => setExtArtistQuery('')}
+                      className='absolute right-3 top-3 text-zinc-500 hover:text-zinc-300 transition-colors'
+                    >
+                      <X className='h-4 w-4' />
+                    </button>
+                  )}
+                </div>
+
+                {/* Search button + hint */}
+                <div className='flex items-center gap-2'>
+                  <Button
+                    size='sm'
+                    className='h-9'
+                    disabled={
+                      !hasSearchableInput(extAlbumQuery, extArtistQuery)
+                    }
+                    onClick={triggerExtSearch}
+                  >
+                    <Search className='h-4 w-4 mr-1.5' />
+                    Search
+                  </Button>
+                  {hasSearchableInput(extAlbumQuery, extArtistQuery) &&
+                    !extSearchQuery && (
+                      <span className='text-xs text-zinc-500'>
+                        or press Enter
+                      </span>
+                    )}
+                </div>
+
+                {/* Results */}
+                {isExtSearching && (
+                  <div className='flex justify-center py-6'>
+                    <AnimatedLoader className='scale-50' />
+                  </div>
+                )}
+
+                {!isExtSearching &&
+                  extSearchQuery &&
+                  extAlbumResults.length === 0 && (
+                    <p className='text-center text-sm text-zinc-500 py-4'>
+                      No albums found
+                    </p>
+                  )}
+
+                {!isExtSearching && extAlbumResults.length > 0 && (
+                  <div className='space-y-1.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar'>
+                    {extAlbumResults.map(result => (
+                      <div
+                        key={result.id}
+                        onClick={() => handleExternalSearchSelect(result)}
+                        className='flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors'
+                      >
+                        <div className='w-10 h-10 flex-shrink-0'>
+                          <AlbumImage
+                            src={result.image?.url || result.cover_image}
+                            alt={result.title}
+                            width={40}
+                            height={40}
+                            className='w-full h-full rounded object-cover'
+                          />
+                        </div>
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-sm font-medium text-white truncate'>
+                            {result.title}
+                          </p>
+                          <p className='text-xs text-zinc-400 truncate'>
+                            {sanitizeArtistName(
+                              result.artist || 'Unknown Artist'
+                            )}
+                            {result.releaseDate && (
+                              <span className='text-zinc-600'>
+                                {' '}
+                                &middot;{' '}
+                                {new Date(result.releaseDate).getFullYear()}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {result.source !== 'local' && (
+                          <span className='text-[10px] text-zinc-600 flex-shrink-0'>
+                            {result.source === 'musicbrainz'
+                              ? 'MB'
+                              : result.source}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           ) : (
