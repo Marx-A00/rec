@@ -9,6 +9,7 @@ import path from 'path';
 
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import type { google } from '@google-cloud/vision/build/protos/protos';
+import sharp from 'sharp';
 import { calculateStringSimilarity } from '@/lib/utils/string-similarity';
 
 // ============================================================================
@@ -66,7 +67,6 @@ export function getVisionUsage(): VisionUsage & { limit: number } {
 // ============================================================================
 
 type IVertex = google.cloud.vision.v1.IVertex;
-type IEntityAnnotation = google.cloud.vision.v1.IEntityAnnotation;
 
 /** Normalized bounding box (0.0-1.0 coordinates) */
 export interface TextRegion {
@@ -175,29 +175,11 @@ export async function detectAllText(
     // First annotation is the full text block — skip it, use individual words
     const wordAnnotations = annotations.slice(1);
 
-    // We need image dimensions to normalize coordinates.
-    // Cloud Vision returns vertices in pixel coordinates.
-    // Determine image bounds from the full-text annotation (index 0).
-    const fullTextVertices = annotations[0].boundingPoly?.vertices;
-    if (!fullTextVertices || fullTextVertices.length < 4) {
-      console.warn('[Vision] No bounding poly on full text annotation');
-      return null;
-    }
-
-    // Calculate image dimensions from the full text bounding box
-    // This works because the first annotation encompasses all detected text
-    const allVertices: IVertex[] = annotations.flatMap(
-      (a: IEntityAnnotation) => (a.boundingPoly?.vertices ?? []) as IVertex[]
-    );
-    const maxX = Math.max(...allVertices.map((v: IVertex) => v.x ?? 0));
-    const maxY = Math.max(...allVertices.map((v: IVertex) => v.y ?? 0));
-
-    // Use the actual image dimensions if we can infer them.
-    // Cloud Vision vertices are in pixel coords, so we use the max extent
-    // as a reasonable proxy. For more accuracy, we could decode the image
-    // but this is sufficient for normalized coords.
-    const imgWidth = maxX > 0 ? maxX : 1;
-    const imgHeight = maxY > 0 ? maxY : 1;
+    // Get actual image dimensions for accurate coordinate normalization.
+    // Cloud Vision returns pixel coordinates — dividing by real image size
+    // gives correct 0.0-1.0 normalized values.
+    const { width: imgWidth = 1, height: imgHeight = 1 } =
+      await sharp(imageBuffer).metadata();
 
     const detectedTexts: DetectedText[] = [];
 
