@@ -30,6 +30,7 @@ query CuratedChallenges($limit: Int, $offset: Int) {
     usedDate
     album {
       id
+      musicbrainzId
       title
       cloudflareImageId
       coverArtUrl

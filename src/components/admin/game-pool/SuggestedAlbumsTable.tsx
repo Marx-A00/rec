@@ -15,11 +15,14 @@ import {
   ListMusic,
   ArrowLeft,
   User,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import AnimatedLoader from '@/components/ui/AnimatedLoader';
 import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
+import { ClaudeRecommendationsView } from '@/components/admin/game-pool/ClaudeRecommendationsView';
 import type { UnifiedSearchResult } from '@/types/search';
 import {
   useUniversalSearch,
@@ -57,6 +60,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   useSuggestedGameAlbumsQuery,
+  useCuratedChallengesQuery,
   useUpdateAlbumGameStatusMutation,
   useAddAlbumToPoolMutation,
   useAddExternalAlbumToPoolMutation,
@@ -113,7 +117,7 @@ export function SuggestedAlbumsTable() {
   const [addExternalOpen, setAddExternalOpen] = useState(false);
   const [playlistImportOpen, setPlaylistImportOpen] = useState(false);
   const [externalMode, setExternalMode] = useState<
-    'menu' | 'search' | 'preview'
+    'menu' | 'search' | 'preview' | 'claude'
   >('menu');
   const [selectedResult, setSelectedResult] =
     useState<UnifiedSearchResult | null>(null);
@@ -168,6 +172,47 @@ export function SuggestedAlbumsTable() {
         r => r.type === 'album' && r.primaryType !== 'Single'
       ),
     [extSearchResults]
+  );
+
+  // Fetch pool entries to cross-reference search results
+  const { data: poolData } = useCuratedChallengesQuery(
+    { limit: 2000 },
+    { enabled: addExternalOpen }
+  );
+
+  // Build lookup sets for "In Pool" badge
+  const poolMbIds = useMemo(() => {
+    const set = new Set<string>();
+    poolData?.curatedChallenges?.forEach(entry => {
+      if (entry.album.musicbrainzId) {
+        set.add(entry.album.musicbrainzId);
+      }
+    });
+    return set;
+  }, [poolData?.curatedChallenges]);
+
+  const poolAlbumIds = useMemo(() => {
+    const set = new Set<string>();
+    poolData?.curatedChallenges?.forEach(entry => {
+      set.add(entry.album.id);
+    });
+    return set;
+  }, [poolData?.curatedChallenges]);
+
+  /** Check if a search result is already in the pool */
+  const isInPool = useCallback(
+    (result: UnifiedSearchResult): boolean => {
+      // For local results, check by album ID
+      if (result.source === 'local' && poolAlbumIds.has(result.id)) {
+        return true;
+      }
+      // For MusicBrainz results, check by MB ID
+      if (result.source === 'musicbrainz' && poolMbIds.has(result.id)) {
+        return true;
+      }
+      return false;
+    },
+    [poolAlbumIds, poolMbIds]
   );
 
   const triggerExtSearch = useCallback(() => {
@@ -684,11 +729,13 @@ export function SuggestedAlbumsTable() {
       >
         <DialogContent
           className={
-            externalMode === 'search'
-              ? 'max-w-lg'
-              : externalMode === 'preview'
-                ? 'max-w-sm'
-                : 'max-w-sm'
+            externalMode === 'claude'
+              ? 'max-w-4xl max-h-[85vh] overflow-hidden p-0 flex flex-col'
+              : externalMode === 'search'
+                ? 'max-w-lg'
+                : externalMode === 'preview'
+                  ? 'max-w-sm'
+                  : 'max-w-sm'
           }
         >
           {externalMode === 'menu' ? (
@@ -699,7 +746,7 @@ export function SuggestedAlbumsTable() {
                   Add an album to the pool from an external source
                 </DialogDescription>
               </DialogHeader>
-              <div className='grid grid-cols-2 gap-3 pt-2'>
+              <div className='grid grid-cols-3 gap-3 pt-2'>
                 <Button
                   variant='outline'
                   className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
@@ -719,6 +766,14 @@ export function SuggestedAlbumsTable() {
                 >
                   <ListMusic className='h-5 w-5' />
                   <span className='text-sm'>Import Playlist</span>
+                </Button>
+                <Button
+                  variant='outline'
+                  className='flex flex-col items-center gap-2 h-24 hover:bg-zinc-800'
+                  onClick={() => setExternalMode('claude')}
+                >
+                  <Sparkles className='h-5 w-5' />
+                  <span className='text-sm'>Claude Picks</span>
                 </Button>
               </div>
             </>
@@ -747,7 +802,7 @@ export function SuggestedAlbumsTable() {
                   </div>
                 </div>
               </DialogHeader>
-              <div className='pt-2 space-y-3'>
+              <div className='pt-2 space-y-3 overflow-hidden'>
                 {/* Album title input */}
                 <div className='relative'>
                   <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
@@ -835,7 +890,7 @@ export function SuggestedAlbumsTable() {
                       <div
                         key={result.id}
                         onClick={() => handleExternalSearchSelect(result)}
-                        className='flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors'
+                        className='flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors overflow-hidden'
                       >
                         <div className='w-10 h-10 flex-shrink-0'>
                           <AlbumImage
@@ -847,9 +902,23 @@ export function SuggestedAlbumsTable() {
                           />
                         </div>
                         <div className='min-w-0 flex-1'>
-                          <p className='text-sm font-medium text-white truncate'>
-                            {result.title}
-                          </p>
+                          <div className='flex items-center gap-1.5 min-w-0'>
+                            <span className='text-sm font-medium text-white truncate'>
+                              {result.title}
+                            </span>
+                            {result.source === 'local' && (
+                              <span className='inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 leading-none flex-shrink-0'>
+                                <CheckCircle2 className='h-2.5 w-2.5' />
+                                In DB
+                              </span>
+                            )}
+                            {isInPool(result) && (
+                              <span className='inline-flex items-center gap-0.5 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-400 leading-none flex-shrink-0'>
+                                <CheckCircle2 className='h-2.5 w-2.5' />
+                                In Pool
+                              </span>
+                            )}
+                          </div>
                           <p className='text-xs text-zinc-400 truncate'>
                             {sanitizeArtistName(
                               result.artist || 'Unknown Artist'
@@ -876,7 +945,7 @@ export function SuggestedAlbumsTable() {
                 )}
               </div>
             </>
-          ) : (
+          ) : externalMode === 'preview' ? (
             <>
               <DialogHeader>
                 <div className='flex items-center gap-2'>
@@ -923,11 +992,11 @@ export function SuggestedAlbumsTable() {
                   </div>
 
                   {/* Album Details */}
-                  <div className='text-center space-y-1 w-full'>
-                    <p className='font-semibold text-white text-lg leading-tight'>
+                  <div className='text-center space-y-1 w-full min-w-0'>
+                    <p className='font-semibold text-white text-lg leading-tight line-clamp-2'>
                       {selectedResult.title}
                     </p>
-                    <p className='text-zinc-400 text-sm'>
+                    <p className='text-zinc-400 text-sm truncate'>
                       {selectedResult.artist || 'Unknown Artist'}
                     </p>
                     {selectedResult.releaseDate && (
@@ -937,36 +1006,66 @@ export function SuggestedAlbumsTable() {
                     )}
                   </div>
 
-                  {/* Source Badge */}
-                  <span className='inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700'>
-                    {selectedResult.source === 'musicbrainz'
-                      ? 'MusicBrainz'
-                      : selectedResult.source === 'local'
-                        ? 'Local DB'
-                        : selectedResult.source}
-                  </span>
+                  {/* Status Badges */}
+                  <div className='flex flex-wrap items-center justify-center gap-2'>
+                    <span className='inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700'>
+                      {selectedResult.source === 'musicbrainz'
+                        ? 'MusicBrainz'
+                        : selectedResult.source === 'local'
+                          ? 'Local DB'
+                          : selectedResult.source}
+                    </span>
+                    {selectedResult.source === 'local' && (
+                      <span className='inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-500/15 text-emerald-400'>
+                        <CheckCircle2 className='h-3 w-3' />
+                        In DB
+                      </span>
+                    )}
+                    {isInPool(selectedResult) && (
+                      <span className='inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-500/15 text-blue-400'>
+                        <CheckCircle2 className='h-3 w-3' />
+                        In Pool
+                      </span>
+                    )}
+                  </div>
 
                   {/* Action Button */}
-                  <Button
-                    className='w-full mt-2'
-                    disabled={isAddingExternal}
-                    onClick={handleConfirmAddToPool}
-                  >
-                    {isAddingExternal ? (
-                      <>
-                        <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className='h-4 w-4 mr-2' />
-                        Add to Pool
-                      </>
-                    )}
-                  </Button>
+                  {isInPool(selectedResult) ? (
+                    <p className='text-sm text-zinc-500 mt-2'>
+                      This album is already in the pool.
+                    </p>
+                  ) : (
+                    <Button
+                      className='w-full mt-2'
+                      disabled={isAddingExternal}
+                      onClick={handleConfirmAddToPool}
+                    >
+                      {isAddingExternal ? (
+                        <>
+                          <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className='h-4 w-4 mr-2' />
+                          Add to Pool
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </>
+          ) : (
+            <div className='flex flex-col h-full min-h-0 p-6'>
+              <ClaudeRecommendationsView
+                onBack={() => setExternalMode('menu')}
+                onComplete={() => {
+                  setAddExternalOpen(false);
+                  setExternalMode('menu');
+                }}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

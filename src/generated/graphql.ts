@@ -1672,6 +1672,7 @@ export type MutationAddCuratedChallengeArgs = {
 };
 
 export type MutationAddExternalAlbumToPoolArgs = {
+  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
   albumData: AlbumInput;
 };
 
@@ -3726,6 +3727,7 @@ export type AddAlbumToPoolMutation = {
 
 export type AddExternalAlbumToPoolMutationVariables = Exact<{
   albumData: AlbumInput;
+  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type AddExternalAlbumToPoolMutation = {
@@ -4673,6 +4675,7 @@ export type CuratedChallengesQuery = {
     album: {
       __typename?: 'Album';
       id: string;
+      musicbrainzId?: string | null;
       title: string;
       cloudflareImageId?: string | null;
       coverArtUrl?: string | null;
@@ -7594,8 +7597,8 @@ export const useAddAlbumToPoolMutation = <TError = unknown, TContext = unknown>(
 useAddAlbumToPoolMutation.getKey = () => ['AddAlbumToPool'];
 
 export const AddExternalAlbumToPoolDocument = `
-    mutation AddExternalAlbumToPool($albumData: AlbumInput!) {
-  addExternalAlbumToPool(albumData: $albumData) {
+    mutation AddExternalAlbumToPool($albumData: AlbumInput!, $addToPool: Boolean) {
+  addExternalAlbumToPool(albumData: $albumData, addToPool: $addToPool) {
     success
     message
     error
@@ -9726,6 +9729,7 @@ export const CuratedChallengesDocument = `
     usedDate
     album {
       id
+      musicbrainzId
       title
       cloudflareImageId
       coverArtUrl

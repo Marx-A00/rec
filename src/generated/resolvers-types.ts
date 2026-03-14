@@ -1646,6 +1646,7 @@ export type MutationAddCuratedChallengeArgs = {
 };
 
 export type MutationAddExternalAlbumToPoolArgs = {
+  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
   albumData: AlbumInput;
 };
 
