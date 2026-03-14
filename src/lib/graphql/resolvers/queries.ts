@@ -3377,7 +3377,7 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  searchGameAlbums: async (_, { query, limit = 10 }) => {
+  searchGameAlbums: async (_, { query, limit = 10 }, { prisma }) => {
     try {
       if (!query || query.trim().length < 2) {
         return [];
@@ -3419,14 +3419,38 @@ export const queryResolvers: QueryResolvers = {
           }>;
         };
 
-        return data.results.map(r => ({
-          id: r.id,
-          title: r.title,
-          artistName: r.artist_name,
-          score: r.listen_count || 0,
-          isLocalAlbum: false,
-          localAlbumId: null,
-        }));
+        // Cross-reference worker results with local albums via MusicBrainz ID
+        // so the game can match guesses against the correct album UUID
+        const mbids = data.results
+          .map(r => r.release_group_mbid)
+          .filter((mbid): mbid is string => !!mbid);
+
+        const localAlbumMap = new Map<string, string>();
+        if (mbids.length > 0) {
+          const localAlbums = await prisma.album.findMany({
+            where: { musicbrainzId: { in: mbids } },
+            select: { id: true, musicbrainzId: true },
+          });
+          for (const album of localAlbums) {
+            if (album.musicbrainzId) {
+              localAlbumMap.set(album.musicbrainzId, album.id);
+            }
+          }
+        }
+
+        return data.results.map(r => {
+          const localId = r.release_group_mbid
+            ? (localAlbumMap.get(r.release_group_mbid) ?? null)
+            : null;
+          return {
+            id: r.id,
+            title: r.title,
+            artistName: r.artist_name,
+            score: r.listen_count || 0,
+            isLocalAlbum: localId !== null,
+            localAlbumId: localId,
+          };
+        });
       } catch (err) {
         clearTimeout(timeout);
         if (err instanceof Error && err.name === 'AbortError') {
