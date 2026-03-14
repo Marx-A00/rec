@@ -163,7 +163,10 @@ export function SuggestedAlbumsTable() {
     useUniversalSearch(extSearchQuery, extSearchOptions);
 
   const extAlbumResults = useMemo(
-    () => extSearchResults.filter(r => r.type === 'album'),
+    () =>
+      extSearchResults.filter(
+        r => r.type === 'album' && r.primaryType !== 'Single'
+      ),
     [extSearchResults]
   );
 
