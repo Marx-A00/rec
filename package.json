@@ -25,6 +25,7 @@
     "db:seed": "tsx data/seeds/seed.ts",
     "db:reset": "prisma db push --force-reset && pnpm db:seed",
     "backfill:text-regions": "tsx src/scripts/backfill-text-regions.ts",
+    "fetch:claude-recs": "tsx src/scripts/fetch-claude-recommendations.ts",
     "codegen": "graphql-codegen --config codegen.yml",
     "codegen:watch": "graphql-codegen --config codegen.yml --watch",
     "prepare": "husky",

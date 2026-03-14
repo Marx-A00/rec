@@ -109,8 +109,11 @@ export async function createTestUser(
 }
 
 /**
- * Create a test album in the database
+ * Create a test album in the database.
+ * Title is always prefixed with "[TEST] " to ensure cleanup catches it.
  */
+export const TEST_PREFIX = '[TEST] ';
+
 export async function createTestAlbum(
   prisma: PrismaClient,
   data?: Partial<{
@@ -120,11 +123,15 @@ export async function createTestAlbum(
   }>
 ): Promise<any> {
   const id = randomUUID();
+  const rawTitle = data?.title || `Album ${id.substring(0, 8)}`;
+  const title = rawTitle.startsWith(TEST_PREFIX)
+    ? rawTitle
+    : `${TEST_PREFIX}${rawTitle}`;
 
   return prisma.album.create({
     data: {
       id,
-      title: data?.title || `Test Album ${id.substring(0, 8)}`,
+      title,
       releaseDate: data?.releaseDate || new Date('2024-01-01'),
       musicbrainzId: data?.musicbrainzId || id, // Must be valid UUID format
     },
@@ -235,9 +242,9 @@ export async function cleanupTestData(prisma: PrismaClient): Promise<void> {
     });
   }
 
-  // Get test album IDs
+  // Get test album IDs (matches the [TEST] prefix from createTestAlbum)
   const testAlbums = await prisma.album.findMany({
-    where: { title: { startsWith: 'Test Album' } },
+    where: { title: { startsWith: TEST_PREFIX } },
     select: { id: true },
   });
   const testAlbumIds = testAlbums.map(a => a.id);
@@ -263,7 +270,7 @@ export async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   });
 
   await prisma.album.deleteMany({
-    where: { title: { startsWith: 'Test Album' } },
+    where: { title: { startsWith: TEST_PREFIX } },
   });
 
   await prisma.artist.deleteMany({

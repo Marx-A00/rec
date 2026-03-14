@@ -37,6 +37,9 @@ export async function handleCreateDailyChallenge(
   };
 }
 
+/** Number of past days to backfill as archive challenges after a reset. */
+const BACKFILL_DAYS = 7;
+
 export async function handleResetChallenges(
   _data: UncoverResetChallengesJobData
 ): Promise<{
@@ -45,7 +48,8 @@ export async function handleResetChallenges(
   guessesDeleted: number;
   playerStatsDeleted: number;
   archiveStatsDeleted: number;
-  newChallengeAlbumTitle: string | null;
+  challengesCreated: number;
+  newChallengeAlbumTitles: string[];
 }> {
   const { prisma } = await import('@/lib/prisma');
 
@@ -67,16 +71,41 @@ export async function handleResetChallenges(
   const archiveStatsDeleted = await prisma.uncoverArchiveStats.deleteMany({});
   console.log(`   Deleted ${archiveStatsDeleted.count} archive stats`);
 
-  // Seed a new challenge for today
+  // Backfill challenges: 7 past days + today (oldest first so archive dates are sequential)
   const { getOrCreateDailyChallenge } = await import(
     '@/lib/daily-challenge/challenge-service'
   );
   const { getCentralToday } = await import('@/lib/daily-challenge/date-utils');
 
-  const challenge = await getOrCreateDailyChallenge(getCentralToday());
+  const today = getCentralToday();
+  const newChallengeAlbumTitles: string[] = [];
 
   console.log(
-    `✅ [Uncover] Reset complete. New challenge: ${challenge.album.title}`
+    `🔄 [Uncover] Backfilling ${BACKFILL_DAYS} archive days + today...`
+  );
+
+  for (let daysAgo = BACKFILL_DAYS; daysAgo >= 0; daysAgo--) {
+    const date = new Date(today);
+    date.setUTCDate(date.getUTCDate() - daysAgo);
+
+    try {
+      const challenge = await getOrCreateDailyChallenge(date);
+      newChallengeAlbumTitles.push(challenge.album.title);
+      const label = daysAgo === 0 ? 'today' : `${daysAgo}d ago`;
+      console.log(
+        `   ✅ ${date.toISOString().split('T')[0]} (${label}): ${challenge.album.title}`
+      );
+    } catch (error) {
+      console.error(
+        `   ❌ Failed to create challenge for ${date.toISOString().split('T')[0]}:`,
+        error
+      );
+      // Continue with remaining days — partial backfill is better than none
+    }
+  }
+
+  console.log(
+    `✅ [Uncover] Reset complete. Created ${newChallengeAlbumTitles.length} challenges.`
   );
 
   return {
@@ -85,6 +114,7 @@ export async function handleResetChallenges(
     guessesDeleted: guessesDeleted.count,
     playerStatsDeleted: playerStatsDeleted.count,
     archiveStatsDeleted: archiveStatsDeleted.count,
-    newChallengeAlbumTitle: challenge.album.title,
+    challengesCreated: newChallengeAlbumTitles.length,
+    newChallengeAlbumTitles,
   };
 }

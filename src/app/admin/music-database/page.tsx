@@ -1777,7 +1777,7 @@ export default function MusicDatabasePage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='w-12 text-zinc-400'>
+                    <TableHead className='w-[48px] text-zinc-400'>
                       <input
                         type='checkbox'
                         checked={
@@ -1787,15 +1787,27 @@ export default function MusicDatabasePage() {
                         onChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className='text-zinc-400'>Album</TableHead>
-                    <TableHead className='text-zinc-400'>Artists</TableHead>
-                    <TableHead className='text-zinc-400'>
+                    <TableHead className='min-w-[300px] text-zinc-400'>
+                      Album
+                    </TableHead>
+                    <TableHead className='min-w-[120px] text-zinc-400'>
+                      Artists
+                    </TableHead>
+                    <TableHead className='min-w-[100px] text-zinc-400'>
                       Release Date
                     </TableHead>
-                    <TableHead className='text-zinc-400'>Tracks</TableHead>
-                    <TableHead className='text-zinc-400'>Quality</TableHead>
-                    <TableHead className='text-zinc-400'>Status</TableHead>
-                    <TableHead className='text-zinc-400'>Actions</TableHead>
+                    <TableHead className='min-w-[60px] text-zinc-400'>
+                      Tracks
+                    </TableHead>
+                    <TableHead className='min-w-[130px] text-zinc-400 pr-4'>
+                      Quality
+                    </TableHead>
+                    <TableHead className='min-w-[140px] text-zinc-400 pl-4'>
+                      Status
+                    </TableHead>
+                    <TableHead className='min-w-[160px] text-zinc-400'>
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1831,8 +1843,8 @@ export default function MusicDatabasePage() {
                             }}
                           />
                         </TableCell>
-                        <TableCell>
-                          <div className='flex items-center gap-2'>
+                        <TableCell className='overflow-hidden'>
+                          <div className='flex items-center gap-2 min-w-0'>
                             {expandedRows.has(album.id) ? (
                               <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
                             ) : (
@@ -1842,22 +1854,22 @@ export default function MusicDatabasePage() {
                               <img
                                 src={album.coverArtUrl}
                                 alt={album.title}
-                                className='h-10 w-10 rounded'
+                                className='h-10 w-10 rounded flex-shrink-0'
                               />
                             )}
-                            <div>
-                              <div className='font-medium text-white'>
+                            <div className='min-w-0'>
+                              <div className='font-medium text-white truncate'>
                                 {album.title}
                               </div>
                               {album.label && (
-                                <div className='text-xs text-zinc-500'>
+                                <div className='text-xs text-zinc-500 truncate'>
                                   {album.label}
                                 </div>
                               )}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className='text-zinc-300'>
+                        <TableCell className='text-zinc-300 overflow-hidden'>
                           <div className='flex flex-wrap gap-1'>
                             {album.artists
                               .slice(0, 2)
@@ -1892,15 +1904,18 @@ export default function MusicDatabasePage() {
                         <TableCell className='text-zinc-300'>
                           {album.trackCount || '-'}
                         </TableCell>
-                        <TableCell onClick={e => e.stopPropagation()}>
+                        <TableCell
+                          className='pr-4'
+                          onClick={e => e.stopPropagation()}
+                        >
                           {getQualityBadge(
                             album.dataQuality,
                             album.id,
                             'album'
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className='flex items-center gap-1'>
+                        <TableCell className='whitespace-nowrap pl-4'>
+                          <div className='flex items-center gap-1.5'>
                             {getStatusIcon(album.enrichmentStatus)}
                             <span className='text-xs text-zinc-300'>
                               {album.enrichmentStatus}
@@ -2054,7 +2069,7 @@ export default function MusicDatabasePage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='w-12 text-zinc-400'>
+                    <TableHead className='w-[48px] text-zinc-400'>
                       <input
                         type='checkbox'
                         checked={
@@ -2064,14 +2079,30 @@ export default function MusicDatabasePage() {
                         onChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className='text-zinc-400'>Artist</TableHead>
-                    <TableHead className='text-zinc-400'>Country</TableHead>
-                    <TableHead className='text-zinc-400'>Formed</TableHead>
-                    <TableHead className='text-zinc-400'>Albums</TableHead>
-                    <TableHead className='text-zinc-400'>Tracks</TableHead>
-                    <TableHead className='text-zinc-400'>Quality</TableHead>
-                    <TableHead className='text-zinc-400'>Status</TableHead>
-                    <TableHead className='text-zinc-400'>Actions</TableHead>
+                    <TableHead className='min-w-[250px] text-zinc-400'>
+                      Artist
+                    </TableHead>
+                    <TableHead className='min-w-[70px] text-zinc-400'>
+                      Country
+                    </TableHead>
+                    <TableHead className='min-w-[70px] text-zinc-400'>
+                      Formed
+                    </TableHead>
+                    <TableHead className='min-w-[60px] text-zinc-400'>
+                      Albums
+                    </TableHead>
+                    <TableHead className='min-w-[60px] text-zinc-400'>
+                      Tracks
+                    </TableHead>
+                    <TableHead className='min-w-[130px] text-zinc-400 pr-4'>
+                      Quality
+                    </TableHead>
+                    <TableHead className='min-w-[140px] text-zinc-400 pl-4'>
+                      Status
+                    </TableHead>
+                    <TableHead className='min-w-[160px] text-zinc-400'>
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2107,8 +2138,8 @@ export default function MusicDatabasePage() {
                             }}
                           />
                         </TableCell>
-                        <TableCell>
-                          <div className='flex items-center gap-2'>
+                        <TableCell className='overflow-hidden'>
+                          <div className='flex items-center gap-2 min-w-0'>
                             {expandedRows.has(artist.id) ? (
                               <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
                             ) : (
@@ -2118,10 +2149,10 @@ export default function MusicDatabasePage() {
                               <img
                                 src={artist.imageUrl}
                                 alt={artist.name}
-                                className='h-10 w-10 rounded-full'
+                                className='h-10 w-10 rounded-full flex-shrink-0'
                               />
                             )}
-                            <div className='font-medium text-white'>
+                            <div className='font-medium text-white truncate'>
                               {artist.name}
                             </div>
                           </div>
@@ -2138,15 +2169,18 @@ export default function MusicDatabasePage() {
                         <TableCell className='text-zinc-300'>
                           {artist.trackCount}
                         </TableCell>
-                        <TableCell onClick={e => e.stopPropagation()}>
+                        <TableCell
+                          className='pr-4'
+                          onClick={e => e.stopPropagation()}
+                        >
                           {getQualityBadge(
                             artist.dataQuality,
                             artist.id,
                             'artist'
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className='flex items-center gap-1'>
+                        <TableCell className='whitespace-nowrap pl-4'>
+                          <div className='flex items-center gap-1.5'>
                             {getStatusIcon(artist.enrichmentStatus)}
                             <span className='text-xs text-zinc-300'>
                               {artist.enrichmentStatus}

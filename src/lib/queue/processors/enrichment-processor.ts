@@ -1668,6 +1668,7 @@ async function updateAlbumFromMusicBrainz(
     id: string;
     title: string;
     musicbrainzId: string | null;
+    coverArtUrl: string | null;
     releaseDate: Date | null;
     releaseType: string | null;
     genres: string[] | null;
@@ -1771,6 +1772,29 @@ async function updateAlbumFromMusicBrainz(
         before: album.releaseCountry,
         after: releaseWithCountry.country,
       });
+    }
+  }
+
+  // Fetch cover art from Cover Art Archive if album doesn't have one yet
+  if (!album.coverArtUrl && mbData.id) {
+    const coverArtUrl = `https://coverartarchive.org/release-group/${mbData.id}/front-500`;
+    try {
+      // Validate the URL actually has an image (HEAD request to avoid downloading)
+      const response = await fetch(coverArtUrl, {
+        method: 'HEAD',
+        redirect: 'follow',
+      });
+      if (response.ok) {
+        updateData.coverArtUrl = coverArtUrl;
+        fieldChanges.push({
+          field: 'coverArtUrl',
+          before: null,
+          after: coverArtUrl,
+        });
+      }
+    } catch {
+      // Cover Art Archive may not have art for this release group - that's fine
+      console.log(`No cover art found for release group ${mbData.id}`);
     }
   }
 

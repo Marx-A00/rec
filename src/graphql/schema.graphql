@@ -3290,7 +3290,7 @@ type Mutation {
   Admin: Find or create an album from external search results, then add it to the game pool.
   Accepts AlbumInput for albums that may not exist in the database yet.
   """
-  addExternalAlbumToPool(albumData: AlbumInput!): AddAlbumToPoolResult!
+  addExternalAlbumToPool(albumData: AlbumInput!, addToPool: Boolean): AddAlbumToPoolResult!
 
   # Daily Challenge mutations (Admin)
   """

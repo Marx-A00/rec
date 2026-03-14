@@ -23,6 +23,7 @@ import {
   createTestAlbum,
   createTestCollection,
   cleanupTestData,
+  TEST_PREFIX,
 } from './test-utils';
 
 // Helper type to call resolvers
@@ -128,8 +129,10 @@ describe('Activity-based Social Feed', () => {
 
       const metadata = activity?.metadata as Record<string, unknown>;
       expect(metadata.score).toBe(85);
-      expect(metadata.basisAlbumTitle).toBe('Basis Album');
-      expect(metadata.recommendedAlbumTitle).toBe('Recommended Album');
+      expect(metadata.basisAlbumTitle).toBe(`${TEST_PREFIX}Basis Album`);
+      expect(metadata.recommendedAlbumTitle).toBe(
+        `${TEST_PREFIX}Recommended Album`
+      );
     });
 
     it('should create Activity when adding album to collection', async () => {
@@ -167,7 +170,7 @@ describe('Activity-based Social Feed', () => {
 
       const metadata = activity?.metadata as Record<string, unknown>;
       expect(metadata.collectionName).toBe('Test Collection');
-      expect(metadata.albumTitle).toBe('Collection Album');
+      expect(metadata.albumTitle).toBe(`${TEST_PREFIX}Collection Album`);
     });
   });
 

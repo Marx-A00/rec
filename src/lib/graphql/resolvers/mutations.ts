@@ -4076,7 +4076,11 @@ export const mutationResolvers: MutationResolvers = {
   // Add external album to pool (find-or-create + add to pool)
   // ---------------------------------------------------------------
 
-  addExternalAlbumToPool: async (_, { albumData }, { prisma, user }) => {
+  addExternalAlbumToPool: async (
+    _,
+    { albumData, addToPool = true },
+    { prisma, user }
+  ) => {
     if (!user?.id) {
       return {
         success: false,
@@ -4139,10 +4143,52 @@ export const mutationResolvers: MutationResolvers = {
             })
           ),
         enrichment: 'queue-check',
+        queueCheckOptions: {
+          source: 'manual' as const,
+          priority: 'medium' as const,
+        },
         caller: 'addExternalAlbumToPool',
       });
 
-      // 2. Check if already in curated list
+      // 2. If addToPool is false, just import the album without adding to curated pool
+      if (!addToPool) {
+        // Set gameStatus to NONE so it shows up in suggested albums for review
+        await prisma.album.update({
+          where: { id: album.id },
+          data: { gameStatus: 'NONE' },
+        });
+
+        const llamaLogger = createLlamaLogger(prisma);
+        await llamaLogger.logEnrichment({
+          entityType: 'ALBUM',
+          entityId: album.id,
+          albumId: album.id,
+          operation: 'game-pool:import-for-review',
+          category: 'USER_ACTION',
+          sources: ['ADMIN'],
+          status: 'SUCCESS',
+          reason: `External album ${created ? 'created and ' : ''}imported for review via addExternalAlbumToPool`,
+          fieldsEnriched: ['gameStatus'],
+          userId: user.id,
+        });
+
+        graphqlLogger.info('Imported external album for review:', {
+          albumId: album.id,
+          albumTitle: albumData.title,
+          created,
+          gameStatus: 'NONE',
+        });
+
+        return {
+          success: true,
+          message: `"${albumData.title}" ${created ? 'created and ' : ''}imported for review`,
+          error: null,
+          album,
+          curatedChallenge: null,
+        };
+      }
+
+      // 3. Check if already in curated list
       const existingCurated = await prisma.curatedChallenge.findFirst({
         where: { albumId: album.id },
       });
@@ -4157,7 +4203,7 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
 
-      // 3. Atomic: set APPROVED + add to curated
+      // 4. Atomic: set APPROVED + add to curated
       const result = await prisma.$transaction(async (tx: typeof prisma) => {
         const updatedAlbum = await tx.album.update({
           where: { id: album.id },
@@ -4181,7 +4227,7 @@ export const mutationResolvers: MutationResolvers = {
         return { updatedAlbum, curatedEntry };
       });
 
-      // 4. Log activity
+      // 5. Log activity
       const llamaLogger = createLlamaLogger(prisma);
       await llamaLogger.logEnrichment({
         entityType: 'ALBUM',

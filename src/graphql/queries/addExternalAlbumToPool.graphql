@@ -1,5 +1,5 @@
-mutation AddExternalAlbumToPool($albumData: AlbumInput!) {
-  addExternalAlbumToPool(albumData: $albumData) {
+mutation AddExternalAlbumToPool($albumData: AlbumInput!, $addToPool: Boolean) {
+  addExternalAlbumToPool(albumData: $albumData, addToPool: $addToPool) {
     success
     message
     error
