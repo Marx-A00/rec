@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { isToday } from 'date-fns';
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { parseDateOnly, formatDateOnly } from '@/lib/date-utils';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
@@ -73,13 +74,7 @@ export function ChallengeHistoryTable() {
                       (challenge.totalWins / challenge.totalPlays) * 100
                     )
                   : 0;
-              // DB stores date-only values serialised as UTC midnight ISO strings.
-              // Parse the YYYY-MM-DD portion and build a local Date to avoid
-              // timezone shift (e.g. UTC midnight → previous day in Central).
-              const raw = String(challenge.date);
-              const datePart = raw.includes('T') ? raw.split('T')[0] : raw;
-              const [y, m, d] = datePart.split('-').map(Number);
-              const challengeDate = new Date(y, m - 1, d);
+              const challengeDate = parseDateOnly(challenge.date);
               const isTodayChallenge = isToday(challengeDate);
 
               return (
@@ -108,11 +103,7 @@ export function ChallengeHistoryTable() {
                   <TableCell>
                     <div className='flex items-center gap-2'>
                       <span className='text-zinc-300'>
-                        {challengeDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {formatDateOnly(challenge.date)}
                       </span>
                       {isTodayChallenge && (
                         <span className='text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded'>

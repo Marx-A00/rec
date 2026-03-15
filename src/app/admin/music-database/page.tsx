@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { formatDateOnly } from '@/lib/date-utils';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -1034,7 +1035,7 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300'>
               {albumDetails.releaseDate
-                ? new Date(albumDetails.releaseDate).toLocaleDateString()
+                ? formatDateOnly(albumDetails.releaseDate)
                 : 'N/A'}
             </div>
           </div>
@@ -1898,7 +1899,7 @@ export default function MusicDatabasePage() {
                         </TableCell>
                         <TableCell className='text-zinc-300'>
                           {album.releaseDate
-                            ? new Date(album.releaseDate).toLocaleDateString()
+                            ? formatDateOnly(album.releaseDate)
                             : '-'}
                         </TableCell>
                         <TableCell className='text-zinc-300'>

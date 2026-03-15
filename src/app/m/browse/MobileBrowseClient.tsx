@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { formatDateOnly } from '@/lib/date-utils';
 import { ArrowLeft, Users, TrendingUp, Music } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -333,7 +334,7 @@ function ReleaseCard({ album }: { album: LatestRelease }) {
       <p className='text-[11px] text-zinc-500 truncate'>{album.artists}</p>
       {album.releaseDate && (
         <p className='text-[10px] text-zinc-600 mt-0.5'>
-          {new Date(album.releaseDate).toLocaleDateString('en-US', {
+          {formatDateOnly(album.releaseDate, {
             month: 'short',
             day: 'numeric',
           })}

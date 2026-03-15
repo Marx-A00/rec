@@ -8,6 +8,7 @@ import {
   useGetLatestReleasesQuery,
   GetLatestReleasesQuery,
 } from '@/generated/graphql';
+import { formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 
 // Spotify icon component
@@ -227,11 +228,7 @@ function AlbumCard({ album }: { album: Album }) {
     .join(', ');
 
   const formattedDate = album.releaseDate
-    ? new Date(album.releaseDate).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
+    ? formatDateOnly(album.releaseDate)
     : 'Unknown date';
 
   return (

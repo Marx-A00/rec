@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatDateOnly } from '@/lib/date-utils';
 import { Trash2, Pin } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -142,7 +143,7 @@ export function PoolTable() {
                       {isPinned && (
                         <span
                           className='text-amber-400'
-                          title={`Pinned for ${format(new Date(entry.pinnedDate!), 'MMM d, yyyy')}`}
+                          title={`Pinned for ${formatDateOnly(entry.pinnedDate!)}`}
                         >
                           <Pin className='h-3.5 w-3.5' />
                         </span>
@@ -162,9 +163,7 @@ export function PoolTable() {
                     )}
                   </TableCell>
                   <TableCell className='text-zinc-400 text-sm'>
-                    {isUsed
-                      ? format(new Date(entry.usedDate!), 'MMM d, yyyy')
-                      : '—'}
+                    {isUsed ? formatDateOnly(entry.usedDate!) : '—'}
                   </TableCell>
                   <TableCell className='text-zinc-500 text-sm'>
                     {format(new Date(entry.createdAt), 'MMM d, yyyy')}

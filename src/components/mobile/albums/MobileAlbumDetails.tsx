@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatDateOnly } from '@/lib/date-utils';
 import {
   ArrowLeft,
   Calendar,
@@ -297,7 +298,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
               <div className='flex justify-between py-2 border-t border-zinc-800'>
                 <span className='text-zinc-400'>Released</span>
                 <span className='text-white'>
-                  {new Date(album.releaseDate).toLocaleDateString()}
+                  {formatDateOnly(album.releaseDate)}
                 </span>
               </div>
             )}

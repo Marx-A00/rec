@@ -15,6 +15,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { formatDateOnly } from '@/lib/date-utils';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -196,17 +197,11 @@ export default function UncoverPage() {
           </div>
           <p className='text-xs text-zinc-500 mb-3'>
             Generated{' '}
-            {(() => {
-              // DB stores date-only values — parse as UTC to avoid timezone shift
-              const raw = String(todaysChallenge.date);
-              const parts = raw.includes('T') ? raw.split('T')[0] : raw;
-              const [y, m, d] = parts.split('-').map(Number);
-              return new Date(y, m - 1, d).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-              });
-            })()}
+            {formatDateOnly(todaysChallenge.date, {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            })}
             {' · '}
             Next in {countdown}
           </p>

@@ -3,6 +3,7 @@ import { Users, Music, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 import { prisma } from '@/lib/prisma';
+import { formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -378,11 +379,7 @@ function SpotifyAlbumCard({
               {album.artists}
             </p>
             <p className='text-xs text-zinc-500'>
-              {new Date(album.releaseDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+              {formatDateOnly(album.releaseDate)}
             </p>
             {/* Spotify attribution */}
             <div className='flex items-center gap-1.5 pt-1'>
