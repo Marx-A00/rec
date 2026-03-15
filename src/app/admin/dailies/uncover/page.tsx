@@ -196,11 +196,17 @@ export default function UncoverPage() {
           </div>
           <p className='text-xs text-zinc-500 mb-3'>
             Generated{' '}
-            {new Date(todaysChallenge.date).toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}
+            {(() => {
+              // DB stores date-only values — parse as UTC to avoid timezone shift
+              const raw = String(todaysChallenge.date);
+              const parts = raw.includes('T') ? raw.split('T')[0] : raw;
+              const [y, m, d] = parts.split('-').map(Number);
+              return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              });
+            })()}
             {' · '}
             Next in {countdown}
           </p>
