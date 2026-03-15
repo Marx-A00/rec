@@ -24,6 +24,10 @@ export function escapeLuceneSpecialChars(term: string): string {
  * - `status:official` - Only official releases (excludes bootlegs, promos)
  * - `NOT secondarytype:compilation` - Excludes compilation albums
  * - `NOT secondarytype:dj-mix` - Excludes DJ mix albums
+ * - `NOT secondarytype:live` - Excludes live albums
+ * - `NOT secondarytype:remix` - Excludes remix albums
+ * - `NOT secondarytype:soundtrack` - Excludes soundtracks
+ * - `NOT secondarytype:"mixtape/street"` - Excludes mixtapes
  *
  * @param albumQuery - Optional album/release group title to search for
  * @param artistQuery - Optional artist name to filter by
@@ -56,9 +60,9 @@ export function buildDualInputQuery(
   const albumTrimmed = albumQuery?.trim() || '';
   const artistTrimmed = artistQuery?.trim() || '';
 
-  // Standard filters to exclude non-album content
+  // Standard filters to only return studio albums
   const filters =
-    'AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix';
+    'AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"';
 
   if (albumTrimmed && artistTrimmed) {
     // Both fields: precise AND search for album by specific artist

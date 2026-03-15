@@ -163,7 +163,7 @@ export class MusicBrainzService {
 
   /**
    * Search for release groups (albums) by title
-   * Filters out bootlegs, unofficial compilations, and DJ mixes
+   * Filters out bootlegs, compilations, DJ mixes, live albums, remixes, soundtracks, and mixtapes
    */
   async searchReleaseGroups(
     query: string,
@@ -183,11 +183,11 @@ export class MusicBrainzService {
         // Query is already formatted as Lucene syntax (e.g., from dual-input search)
         finalQuery = query;
       } else {
-        // Plain text query - enhance with filters to exclude junk:
+        // Plain text query - enhance with filters to only return studio albums:
+        // - primarytype:album (only albums, no singles/EPs)
         // - status:official (exclude bootlegs and promotional)
-        // - NOT secondarytype:compilation (exclude unofficial compilations)
-        // - NOT secondarytype:dj-mix (exclude DJ mixes)
-        finalQuery = `(artist:"${query}" OR releasegroup:"${query}") AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix`;
+        // - NOT secondarytype:* (exclude compilations, DJ mixes, live, remixes, soundtracks, mixtapes)
+        finalQuery = `(artist:"${query}" OR releasegroup:"${query}") AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"`;
       }
 
       const response = await this.api.search('release-group', {
@@ -232,7 +232,7 @@ export class MusicBrainzService {
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
     try {
-      const albumQuery = `artist:"${query}" AND status:official AND primarytype:album AND NOT secondarytype:compilation`;
+      const albumQuery = `artist:"${query}" AND status:official AND primarytype:album AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"`;
 
       const response = await this.api.search('release-group', {
         query: albumQuery,
