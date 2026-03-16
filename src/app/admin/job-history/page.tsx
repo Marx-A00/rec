@@ -8,8 +8,6 @@ import {
   Clock,
   RefreshCw,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Download,
   TrendingUp,
   TrendingDown,
@@ -26,6 +24,7 @@ import { useAlbumsByJobIdQuery } from '@/generated/graphql';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -758,35 +757,15 @@ export default function JobHistoryPage() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className='flex items-center justify-between mt-4 pt-4 border-t border-zinc-800'>
-              <div className='text-sm text-zinc-400'>
-                Page {page} of {totalPages}
-              </div>
-              <div className='flex items-center gap-2'>
-                <Button
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                  size='sm'
-                  variant='outline'
-                  className='border-zinc-700 text-white hover:bg-zinc-800'
-                >
-                  <ChevronLeft className='h-4 w-4' />
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                  size='sm'
-                  variant='outline'
-                  className='border-zinc-700 text-white hover:bg-zinc-800'
-                >
-                  Next
-                  <ChevronRight className='h-4 w-4' />
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className='mt-4 pt-4 border-t border-zinc-800'>
+            <TablePagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={20}
+              currentPageItemCount={jobs.length}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

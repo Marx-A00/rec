@@ -57,9 +57,5 @@ export default async function ArchiveGamePage({ params }: PageProps) {
     notFound();
   }
 
-  return (
-    <div className='mx-auto max-w-4xl px-4 py-8'>
-      <UncoverGame mode='archive' challengeDate={normalizedDate} />
-    </div>
-  );
+  return <UncoverGame mode='archive' challengeDate={normalizedDate} />;
 }

@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { ClearableInput } from '@/components/ui/ClearableInput';
 import {
   useGetAdminUsersQuery,
@@ -1190,30 +1191,16 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Pagination */}
-        {totalCount > limit && (
-          <div className='bg-zinc-900 px-6 py-4 border-t border-zinc-700 flex items-center justify-between'>
-            <div className='text-sm text-zinc-400'>
-              Showing {offset + 1} to {Math.min(offset + limit, totalCount)} of{' '}
-              {totalCount} users
-            </div>
-            <div className='flex gap-2'>
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className='px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={offset + limit >= totalCount}
-                className='px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <div className='bg-zinc-900 px-6 py-4 border-t border-zinc-700'>
+          <TablePagination
+            currentPage={page}
+            totalPages={Math.max(1, Math.ceil(totalCount / limit))}
+            onPageChange={setPage}
+            totalCount={totalCount}
+            pageSize={limit}
+            currentPageItemCount={data?.users?.length ?? 0}
+          />
+        </div>
       </div>
     </div>
   );

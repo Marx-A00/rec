@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { useChallengeHistoryQuery } from '@/generated/graphql';
 
 const PAGE_SIZE = 50;
@@ -28,6 +28,10 @@ export function ChallengeHistoryTable() {
   });
 
   const challenges = data?.challengeHistory ?? [];
+
+  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
+  const totalPages = currentPage + (challenges.length < PAGE_SIZE ? 0 : 1);
+  const goToPage = (page: number) => setOffset((page - 1) * PAGE_SIZE);
 
   if (isLoading) {
     return (
@@ -163,32 +167,12 @@ export function ChallengeHistoryTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className='flex items-center justify-between'>
-        <span className='text-sm text-zinc-400'>
-          Showing {offset + 1}–{offset + challenges.length}
-        </span>
-        <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-            className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-          >
-            Previous
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={challenges.length < PAGE_SIZE}
-            onClick={() => setOffset(offset + PAGE_SIZE)}
-            className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        currentPageItemCount={challenges.length}
+      />
     </div>
   );
 }

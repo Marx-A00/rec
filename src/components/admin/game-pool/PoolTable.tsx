@@ -17,9 +17,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   useCuratedChallengesQuery,
   useRemoveCuratedChallengeMutation,
+  useUncoverPoolStatusQuery,
 } from '@/generated/graphql';
 
 const PAGE_SIZE = 50;
@@ -32,6 +34,8 @@ export function PoolTable() {
     limit: PAGE_SIZE,
     offset,
   });
+
+  const { data: poolStatus } = useUncoverPoolStatusQuery();
 
   const { mutateAsync: removeCurated, isPending: isRemoving } =
     useRemoveCuratedChallengeMutation({
@@ -67,8 +71,13 @@ export function PoolTable() {
     );
   const entries = [...remaining, ...used];
 
-  const usedCount = used.length;
-  const remainingCount = remaining.length;
+  const totalRemaining = poolStatus?.uncoverPoolStatus?.remaining;
+  const totalUsed = poolStatus?.uncoverPoolStatus?.totalUsed;
+  const totalCurated = poolStatus?.uncoverPoolStatus?.totalCurated ?? 0;
+
+  const totalPages = Math.max(1, Math.ceil(totalCurated / PAGE_SIZE));
+  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
+  const goToPage = (page: number) => setOffset((page - 1) * PAGE_SIZE);
 
   if (isLoading) {
     return (
@@ -92,11 +101,16 @@ export function PoolTable() {
       <div className='flex items-center gap-4 text-sm'>
         <span className='text-zinc-400'>
           Showing {offset + 1}–{offset + entries.length}
+          {totalCurated > 0 && ` of ${totalCurated}`}
         </span>
         <span className='text-zinc-600'>|</span>
-        <span className='text-emerald-400'>{remainingCount} remaining</span>
+        <span className='text-emerald-400'>
+          {totalRemaining != null ? totalRemaining : '...'} remaining
+        </span>
         <span className='text-zinc-600'>|</span>
-        <span className='text-zinc-400'>{usedCount} used</span>
+        <span className='text-zinc-400'>
+          {totalUsed != null ? totalUsed : '...'} used
+        </span>
       </div>
 
       <div className='rounded-lg border border-zinc-800 overflow-hidden'>
@@ -187,29 +201,12 @@ export function PoolTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className='flex items-center justify-end'>
-        <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-            className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-          >
-            Previous
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={entries.length < PAGE_SIZE}
-            onClick={() => setOffset(offset + PAGE_SIZE)}
-            className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        currentPageItemCount={entries.length}
+      />
     </div>
   );
 }

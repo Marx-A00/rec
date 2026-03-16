@@ -27,9 +27,6 @@ import {
   ChevronRight,
   Disc,
   Hash,
-  ChevronLeft,
-  ChevronsLeft,
-  ChevronsRight,
   Loader2,
   Eye,
   ExternalLink,
@@ -45,6 +42,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { ClearableInput } from '@/components/ui/ClearableInput';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -912,41 +910,17 @@ export default function MusicDatabasePage() {
 
     if (!showPagination) return null;
 
+    const totalPages = page + (hasMore ? 1 : 0);
+
     return (
-      <div className='flex items-center justify-between px-4 py-3 border-t border-zinc-800'>
-        <div className='text-sm text-zinc-400'>
-          Page {page} {hasMore && '• More results available'}
-        </div>
-        <div className='flex items-center gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => handlePageChange(1)}
-            disabled={page === 1 || loading}
-            className='text-white border-zinc-700 hover:bg-zinc-700'
-          >
-            <ChevronsLeft className='h-4 w-4' />
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1 || loading}
-            className='text-white border-zinc-700 hover:bg-zinc-700'
-          >
-            <ChevronLeft className='h-4 w-4' />
-          </Button>
-          <span className='px-3 text-sm text-zinc-300'>Page {page}</span>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => handlePageChange(page + 1)}
-            disabled={!hasMore || loading}
-            className='text-white border-zinc-700 hover:bg-zinc-700'
-          >
-            <ChevronRight className='h-4 w-4' />
-          </Button>
-        </div>
+      <div className='px-4 py-3 border-t border-zinc-800'>
+        <TablePagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          pageSize={itemsPerPage}
+          currentPageItemCount={totalResults}
+        />
       </div>
     );
   };
