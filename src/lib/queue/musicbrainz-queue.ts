@@ -1,5 +1,5 @@
 // src/lib/queue/musicbrainz-queue.ts
-import { Queue, Worker, Job } from 'bullmq';
+import { Queue, QueueEvents, Worker, Job } from 'bullmq';
 import chalk from 'chalk';
 
 import { createRedisConnection } from './redis';
@@ -21,6 +21,7 @@ import {
 export class MusicBrainzQueue {
   private queue: Queue;
   private worker: Worker | null = null;
+  private queueEvents: QueueEvents | null = null;
   private readonly queueName = 'musicbrainz';
 
   constructor() {
@@ -305,6 +306,11 @@ export class MusicBrainzQueue {
       console.log('✅ MusicBrainz worker closed');
     }
 
+    if (this.queueEvents) {
+      await this.queueEvents.close();
+      this.queueEvents = null;
+    }
+
     await this.queue.close();
     console.log('✅ MusicBrainz queue closed');
   }
@@ -347,6 +353,19 @@ export class MusicBrainzQueue {
    */
   getWorker(): Worker | null {
     return this.worker;
+  }
+
+  /**
+   * Get QueueEvents instance (lazy, singleton per queue).
+   * Required by BullMQ's job.waitUntilFinished() to track job completion via Redis pub/sub.
+   */
+  getQueueEvents(): QueueEvents {
+    if (!this.queueEvents) {
+      this.queueEvents = new QueueEvents(this.queueName, {
+        connection: createRedisConnection(),
+      });
+    }
+    return this.queueEvents;
   }
 }
 

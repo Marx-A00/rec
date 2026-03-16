@@ -67,17 +67,6 @@ query UncoverSettings {
 }
 
 # Admin mutations
-mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
-  addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
-    id
-    pinnedDate
-    album {
-      id
-      title
-    }
-  }
-}
-
 mutation RemoveCuratedChallenge($id: UUID!) {
   removeCuratedChallenge(id: $id)
 }

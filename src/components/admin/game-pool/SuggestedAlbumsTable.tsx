@@ -63,7 +63,6 @@ import {
   useCuratedChallengesQuery,
   useUpdateAlbumGameStatusMutation,
   useAddAlbumToPoolMutation,
-  useAddExternalAlbumToPoolMutation,
   AlbumGameStatus,
 } from '@/generated/graphql';
 
@@ -140,7 +139,7 @@ export function SuggestedAlbumsTable() {
     useAddAlbumToPoolMutation();
 
   const { mutateAsync: addExternalToPool, isPending: isAddingExternal } =
-    useAddExternalAlbumToPoolMutation();
+    useAddAlbumToPoolMutation();
 
   // External search hook (dual-input: album + artist)
   const extSearchOptions: UseUniversalSearchOptions = {
@@ -275,9 +274,9 @@ export function SuggestedAlbumsTable() {
         },
       });
 
-      if (res.addExternalAlbumToPool.success) {
+      if (res.addAlbumToPool.success) {
         toast.success(
-          res.addExternalAlbumToPool.message ||
+          res.addAlbumToPool.message ||
             `"${selectedResult.title}" added to pool`
         );
         // Go back to search results so user can add more albums
@@ -285,9 +284,7 @@ export function SuggestedAlbumsTable() {
         setExternalMode('search');
         invalidateAll();
       } else {
-        toast.error(
-          res.addExternalAlbumToPool.error || 'Failed to add to pool'
-        );
+        toast.error(res.addAlbumToPool.error || 'Failed to add to pool');
       }
     } catch (error) {
       toast.error('Failed to add album to pool');

@@ -1318,6 +1318,15 @@ export enum HealthStatus {
   Unhealthy = 'UNHEALTHY',
 }
 
+export type ImportAlbumResult = {
+  __typename?: 'ImportAlbumResult';
+  album?: Maybe<Album>;
+  created?: Maybe<Scalars['Boolean']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type JobRecord = {
   __typename?: 'JobRecord';
   attempts: Scalars['Int']['output'];
@@ -1540,18 +1549,11 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
-   * Admin: Add album to game pool in one shot.
-   * Sets gameStatus to APPROVED and adds to curated rotation atomically.
+   * Admin: Add an album to the game pool.
+   * Provide albumId for an existing album, or albumData for an external album (will be created first).
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
-  /** Admin: Add an album to the curated challenge list */
-  addCuratedChallenge: CuratedChallengeEntry;
-  /**
-   * Admin: Find or create an album from external search results, then add it to the game pool.
-   * Accepts AlbumInput for albums that may not exist in the database yet.
-   */
-  addExternalAlbumToPool: AddAlbumToPoolResult;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1576,6 +1578,8 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
+  /** Admin: Import an external album into the database for review. No pool addition. */
+  importAlbum: ImportAlbumResult;
   /**
    * Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
    * No auth required — Deezer's public API is free and unlimited.
@@ -1659,21 +1663,13 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 };
 
 export type MutationAddAlbumToPoolArgs = {
-  albumId: Scalars['UUID']['input'];
+  albumData?: InputMaybe<AlbumInput>;
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
-};
-
-export type MutationAddCuratedChallengeArgs = {
-  albumId: Scalars['UUID']['input'];
-  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-};
-
-export type MutationAddExternalAlbumToPoolArgs = {
-  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
-  albumData: AlbumInput;
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1746,6 +1742,10 @@ export type MutationFollowUserArgs = {
 
 export type MutationHardDeleteUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationImportAlbumArgs = {
+  albumData: AlbumInput;
 };
 
 export type MutationImportDeezerPlaylistArgs = {
@@ -3702,37 +3702,14 @@ export type UpdateUserSettingsMutation = {
 };
 
 export type AddAlbumToPoolMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  albumData?: InputMaybe<AlbumInput>;
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
 }>;
 
 export type AddAlbumToPoolMutation = {
   __typename?: 'Mutation';
   addAlbumToPool: {
-    __typename?: 'AddAlbumToPoolResult';
-    success: boolean;
-    message?: string | null;
-    error?: string | null;
-    album?: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      gameStatus: AlbumGameStatus;
-    } | null;
-    curatedChallenge?: {
-      __typename?: 'CuratedChallengeEntry';
-      id: string;
-    } | null;
-  };
-};
-
-export type AddExternalAlbumToPoolMutationVariables = Exact<{
-  albumData: AlbumInput;
-  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
-}>;
-
-export type AddExternalAlbumToPoolMutation = {
-  __typename?: 'Mutation';
-  addExternalAlbumToPool: {
     __typename?: 'AddAlbumToPoolResult';
     success: boolean;
     message?: string | null;
@@ -4722,21 +4699,6 @@ export type UncoverSettingsQuery = {
   };
 };
 
-export type AddCuratedChallengeMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
-  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-}>;
-
-export type AddCuratedChallengeMutation = {
-  __typename?: 'Mutation';
-  addCuratedChallenge: {
-    __typename?: 'CuratedChallengeEntry';
-    id: string;
-    pinnedDate?: Date | null;
-    album: { __typename?: 'Album'; id: string; title: string };
-  };
-};
-
 export type RemoveCuratedChallengeMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
 }>;
@@ -5502,6 +5464,27 @@ export type GetUserProfileQuery = {
       profileVisibility: string;
     } | null;
   } | null;
+};
+
+export type ImportAlbumMutationVariables = Exact<{
+  albumData: AlbumInput;
+}>;
+
+export type ImportAlbumMutation = {
+  __typename?: 'Mutation';
+  importAlbum: {
+    __typename?: 'ImportAlbumResult';
+    success: boolean;
+    message?: string | null;
+    error?: string | null;
+    created?: boolean | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      gameStatus: AlbumGameStatus;
+    } | null;
+  };
 };
 
 export type ImportDeezerPlaylistMutationVariables = Exact<{
@@ -7553,8 +7536,12 @@ export const useUpdateUserSettingsMutation = <
 useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
 
 export const AddAlbumToPoolDocument = `
-    mutation AddAlbumToPool($albumId: UUID!) {
-  addAlbumToPool(albumId: $albumId) {
+    mutation AddAlbumToPool($albumId: UUID, $albumData: AlbumInput, $pinnedDate: DateTime) {
+  addAlbumToPool(
+    albumId: $albumId
+    albumData: $albumData
+    pinnedDate: $pinnedDate
+  ) {
     success
     message
     error
@@ -7595,53 +7582,6 @@ export const useAddAlbumToPoolMutation = <TError = unknown, TContext = unknown>(
 };
 
 useAddAlbumToPoolMutation.getKey = () => ['AddAlbumToPool'];
-
-export const AddExternalAlbumToPoolDocument = `
-    mutation AddExternalAlbumToPool($albumData: AlbumInput!, $addToPool: Boolean) {
-  addExternalAlbumToPool(albumData: $albumData, addToPool: $addToPool) {
-    success
-    message
-    error
-    album {
-      id
-      title
-      gameStatus
-    }
-    curatedChallenge {
-      id
-    }
-  }
-}
-    `;
-
-export const useAddExternalAlbumToPoolMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    AddExternalAlbumToPoolMutation,
-    TError,
-    AddExternalAlbumToPoolMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    AddExternalAlbumToPoolMutation,
-    TError,
-    AddExternalAlbumToPoolMutationVariables,
-    TContext
-  >({
-    mutationKey: ['AddExternalAlbumToPool'],
-    mutationFn: (variables?: AddExternalAlbumToPoolMutationVariables) =>
-      fetcher<
-        AddExternalAlbumToPoolMutation,
-        AddExternalAlbumToPoolMutationVariables
-      >(AddExternalAlbumToPoolDocument, variables)(),
-    ...options,
-  });
-};
-
-useAddExternalAlbumToPoolMutation.getKey = () => ['AddExternalAlbumToPool'];
 
 export const DeleteAlbumDocument = `
     mutation DeleteAlbum($id: UUID!) {
@@ -10081,48 +10021,6 @@ useInfiniteUncoverSettingsQuery.getKey = (
     ? ['UncoverSettings.infinite']
     : ['UncoverSettings.infinite', variables];
 
-export const AddCuratedChallengeDocument = `
-    mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
-  addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
-    id
-    pinnedDate
-    album {
-      id
-      title
-    }
-  }
-}
-    `;
-
-export const useAddCuratedChallengeMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    AddCuratedChallengeMutation,
-    TError,
-    AddCuratedChallengeMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    AddCuratedChallengeMutation,
-    TError,
-    AddCuratedChallengeMutationVariables,
-    TContext
-  >({
-    mutationKey: ['AddCuratedChallenge'],
-    mutationFn: (variables?: AddCuratedChallengeMutationVariables) =>
-      fetcher<
-        AddCuratedChallengeMutation,
-        AddCuratedChallengeMutationVariables
-      >(AddCuratedChallengeDocument, variables)(),
-    ...options,
-  });
-};
-
-useAddCuratedChallengeMutation.getKey = () => ['AddCuratedChallenge'];
-
 export const RemoveCuratedChallengeDocument = `
     mutation RemoveCuratedChallenge($id: UUID!) {
   removeCuratedChallenge(id: $id)
@@ -12255,6 +12153,48 @@ export const useInfiniteGetUserProfileQuery = <
 useInfiniteGetUserProfileQuery.getKey = (
   variables: GetUserProfileQueryVariables
 ) => ['GetUserProfile.infinite', variables];
+
+export const ImportAlbumDocument = `
+    mutation ImportAlbum($albumData: AlbumInput!) {
+  importAlbum(albumData: $albumData) {
+    success
+    message
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+    created
+  }
+}
+    `;
+
+export const useImportAlbumMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    ImportAlbumMutation,
+    TError,
+    ImportAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ImportAlbumMutation,
+    TError,
+    ImportAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ImportAlbum'],
+    mutationFn: (variables?: ImportAlbumMutationVariables) =>
+      fetcher<ImportAlbumMutation, ImportAlbumMutationVariables>(
+        ImportAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useImportAlbumMutation.getKey = () => ['ImportAlbum'];
 
 export const ImportDeezerPlaylistDocument = `
     mutation ImportDeezerPlaylist($playlistId: String!, $selectedDeezerIds: [String!]) {

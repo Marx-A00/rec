@@ -1995,6 +1995,12 @@ export const mutationResolvers: MutationResolvers = {
     try {
       const album = await prisma.album.findUnique({
         where: { id },
+        select: {
+          id: true,
+          title: true,
+          coverArtUrl: true,
+          cloudflareImageId: true,
+        },
       });
 
       if (!album) {
@@ -2015,6 +2021,9 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       const queue = getMusicBrainzQueue();
+      const jobPriority =
+        priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10;
+
       const jobData: CheckAlbumEnrichmentJobData = {
         albumId: id,
         source: 'admin_manual',
@@ -2027,11 +2036,27 @@ export const mutationResolvers: MutationResolvers = {
         JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
         jobData,
         {
-          priority: priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10,
+          priority: jobPriority,
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
         }
       );
+
+      // Also queue cover art caching if image is missing
+      if (album.coverArtUrl && !album.cloudflareImageId) {
+        await queue.addJob(
+          JOB_TYPES.CACHE_ALBUM_COVER_ART,
+          {
+            albumId: id,
+            requestId: `admin_cache_${Date.now()}`,
+          },
+          {
+            priority: jobPriority,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 2000 },
+          }
+        );
+      }
 
       // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
       // Otherwise shouldEnrichAlbum will see IN_PROGRESS and skip enrichment
@@ -3304,88 +3329,6 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
   // Daily Challenge mutations (Admin)
-  addCuratedChallenge: async (
-    _,
-    { albumId, pinnedDate }: { albumId: string; pinnedDate?: Date | string },
-    { prisma, user }
-  ) => {
-    try {
-      // Admin check
-      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
-        throw new GraphQLError('Admin access required');
-      }
-
-      const { toUTCMidnight } = await import(
-        '@/lib/daily-challenge/date-utils'
-      );
-
-      // Verify album exists and is eligible
-      const album = await prisma.album.findUnique({
-        where: { id: albumId },
-        select: { id: true, gameStatus: true, cloudflareImageId: true },
-      });
-
-      if (!album) {
-        throw new GraphQLError('Album not found');
-      }
-
-      if (album.gameStatus !== 'APPROVED') {
-        throw new GraphQLError(
-          'Album must be marked as APPROVED for game pool before adding to curated list'
-        );
-      }
-
-      if (!album.cloudflareImageId) {
-        throw new GraphQLError(
-          'Album must have cover art (cloudflareImageId) to be added to curated list'
-        );
-      }
-
-      // Check if album already in curated list
-      const existing = await prisma.curatedChallenge.findFirst({
-        where: { albumId },
-      });
-
-      if (existing) {
-        throw new GraphQLError(
-          'Album is already in the curated challenge list'
-        );
-      }
-
-      // Create curated challenge entry
-      const pinnedDateValue = pinnedDate
-        ? toUTCMidnight(new Date(pinnedDate))
-        : null;
-
-      const entry = await prisma.curatedChallenge.create({
-        data: {
-          albumId,
-          pinnedDate: pinnedDateValue,
-        },
-        include: {
-          album: {
-            include: {
-              artists: {
-                include: { artist: true },
-              },
-            },
-          },
-        },
-      });
-
-      graphqlLogger.info('Added album to curated challenge list:', {
-        albumId,
-      });
-      return entry;
-    } catch (error) {
-      graphqlLogger.error('Failed to add curated challenge:', {
-        error,
-        albumId,
-      });
-      throw new GraphQLError(`Failed to add curated challenge: ${error}`);
-    }
-  },
-
   removeCuratedChallenge: async (
     _,
     { id }: { id: string },
@@ -3934,151 +3877,28 @@ export const mutationResolvers: MutationResolvers = {
 
   addAlbumToPool: async (
     _: unknown,
-    { albumId }: { albumId: string },
-    { prisma, user }
-  ) => {
-    try {
-      // Admin check
-      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
-        throw new GraphQLError('Admin access required');
-      }
-
-      // Fetch album with artist count for eligibility check
-      const album = await prisma.album.findUnique({
-        where: { id: albumId },
-        include: {
-          artists: {
-            include: { artist: true },
-          },
-          _count: {
-            select: { artists: true },
-          },
-        },
-      });
-
-      if (!album) {
-        return {
-          success: false,
-          message: null,
-          error: 'Album not found',
-          album: null,
-          curatedChallenge: null,
-        };
-      }
-
-      // Validate eligibility
-      const { validateEligibility } = await import(
-        '@/lib/game-pool/eligibility'
-      );
-      const eligibility = validateEligibility(album, album._count.artists > 0);
-
-      if (!eligibility.eligible) {
-        return {
-          success: false,
-          message: null,
-          error: eligibility.reason || 'Album not eligible for game pool',
-          album: null,
-          curatedChallenge: null,
-        };
-      }
-
-      // Check if already in curated list
-      const existingCurated = await prisma.curatedChallenge.findFirst({
-        where: { albumId },
-      });
-
-      if (existingCurated) {
-        return {
-          success: false,
-          message: null,
-          error: 'Album is already in the pool',
-          album: null,
-          curatedChallenge: null,
-        };
-      }
-
-      // Atomic transaction: set APPROVED + add to curated
-      const { toUTCMidnight } = await import(
-        '@/lib/daily-challenge/date-utils'
-      );
-
-      const result = await prisma.$transaction(async (tx: typeof prisma) => {
-        // 1. Set game status to APPROVED
-        const updatedAlbum = await tx.album.update({
-          where: { id: albumId },
-          data: { gameStatus: 'APPROVED' },
-        });
-
-        // 2. Create curated challenge entry
-        const curatedEntry = await tx.curatedChallenge.create({
-          data: {
-            albumId,
-            pinnedDate: null,
-          },
-          include: {
-            album: {
-              include: {
-                artists: {
-                  include: { artist: true },
-                },
-              },
-            },
-          },
-        });
-
-        return { updatedAlbum, curatedEntry };
-      });
-
-      // Log activity
-      const llamaLogger = createLlamaLogger(prisma);
-      await llamaLogger.logEnrichment({
-        entityType: 'ALBUM',
-        entityId: albumId,
-        albumId,
-        operation: 'game-pool:add-to-pool',
-        category: 'USER_ACTION',
-        sources: ['ADMIN'],
-        status: 'SUCCESS',
-        reason: 'Added to game pool (APPROVED + curated) via addAlbumToPool',
-        fieldsEnriched: ['gameStatus'],
-        userId: user?.id,
-      });
-
-      graphqlLogger.info('Added album to game pool:', {
-        albumId,
-        gameStatus: 'APPROVED',
-      });
-
-      return {
-        success: true,
-        message: 'Album set to APPROVED and added to pool',
-        error: null,
-        album: result.updatedAlbum,
-        curatedChallenge: result.curatedEntry,
+    {
+      albumId,
+      albumData,
+      pinnedDate,
+    }: {
+      albumId?: string;
+      albumData?: {
+        title: string;
+        releaseDate?: string;
+        albumType?: string;
+        totalTracks?: number;
+        coverImageUrl?: string;
+        musicbrainzId?: string;
+        spotifyId?: string;
+        artists?: Array<{
+          artistName?: string | null;
+          artistId?: string | null;
+          role?: string | null;
+        }>;
       };
-    } catch (error) {
-      graphqlLogger.error('Failed to add album to pool:', {
-        error,
-        albumId,
-      });
-      if (error instanceof GraphQLError) throw error;
-      return {
-        success: false,
-        message: null,
-        error: `Failed to add album to pool: ${error}`,
-        album: null,
-        curatedChallenge: null,
-      };
-    }
-  },
-
-  // ---------------------------------------------------------------
-  // Add external album to pool (find-or-create + add to pool)
-  // ---------------------------------------------------------------
-
-  addExternalAlbumToPool: async (
-    _,
-    { albumData, addToPool = true },
+      pinnedDate?: Date | string;
+    },
     { prisma, user }
   ) => {
     if (!user?.id) {
@@ -4091,14 +3911,204 @@ export const mutationResolvers: MutationResolvers = {
       };
     }
 
-    // Admin check
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    if (!user.role || !['ADMIN', 'OWNER'].includes(user.role)) {
       return {
         success: false,
         message: null,
         error: 'Admin access required',
         album: null,
         curatedChallenge: null,
+      };
+    }
+
+    if ((!albumId && !albumData) || (albumId && albumData)) {
+      return {
+        success: false,
+        message: null,
+        error: 'Provide either albumId or albumData, not both',
+        album: null,
+        curatedChallenge: null,
+      };
+    }
+
+    try {
+      // If external albumData provided, find-or-create the album first
+      let targetAlbumId = albumId!;
+      let created = false;
+
+      if (albumData) {
+        const { findOrCreateAlbum } = await import('@/lib/albums');
+
+        const primaryArtist = albumData.artists?.[0];
+        const releaseDate = albumData.releaseDate
+          ? new Date(albumData.releaseDate)
+          : null;
+
+        const result = await findOrCreateAlbum({
+          db: prisma,
+          identity: {
+            title: albumData.title,
+            musicbrainzId: albumData.musicbrainzId ?? undefined,
+            spotifyId: albumData.spotifyId ?? undefined,
+            primaryArtistName: primaryArtist?.artistName ?? undefined,
+            releaseYear: releaseDate?.getFullYear() ?? undefined,
+          },
+          fields: {
+            releaseDate,
+            releaseType: albumData.albumType || 'ALBUM',
+            trackCount: albumData.totalTracks ?? undefined,
+            coverArtUrl: albumData.coverImageUrl ?? undefined,
+          },
+          artists: (albumData.artists || [])
+            .filter((a: { artistName?: string | null }) => a.artistName)
+            .map(
+              (
+                a: {
+                  artistName?: string | null;
+                  artistId?: string | null;
+                  role?: string | null;
+                },
+                i: number
+              ) => ({
+                name: a.artistName!,
+                role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+                position: i,
+              })
+            ),
+          enrichment: 'queue-check',
+          queueCheckOptions: {
+            source: 'manual' as const,
+            priority: 'medium' as const,
+          },
+          caller: 'addAlbumToPool',
+        });
+
+        targetAlbumId = result.album.id;
+        created = result.created;
+
+        // Await cover art caching so cloudflareImageId is ready for eligibility check.
+        // Queues a high-priority cache job and blocks until it completes (~1-2s).
+        // The lower-priority cache job from findOrCreateAlbum will skip via "already cached".
+        if (result.album.coverArtUrl && !result.album.cloudflareImageId) {
+          const queue = getMusicBrainzQueue();
+          const queueEvents = queue.getQueueEvents();
+
+          const cacheJob = await queue.addJob(
+            JOB_TYPES.CACHE_ALBUM_COVER_ART,
+            {
+              albumId: targetAlbumId,
+              requestId: `pool-cache-${targetAlbumId}`,
+            },
+            { priority: 1, attempts: 3 }
+          );
+
+          await cacheJob.waitUntilFinished(queueEvents, 30_000);
+        }
+      }
+
+      // Add to pool via shared helper
+      const { addAlbumToPool } = await import('@/lib/game-pool/add-to-pool');
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+
+      const pinnedDateValue = pinnedDate
+        ? toUTCMidnight(new Date(pinnedDate))
+        : null;
+
+      const entry = await addAlbumToPool(prisma, targetAlbumId, {
+        pinnedDate: pinnedDateValue,
+      });
+
+      // Log activity
+      const llamaLogger = createLlamaLogger(prisma);
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: targetAlbumId,
+        albumId: targetAlbumId,
+        operation: 'game-pool:add-to-pool',
+        category: 'USER_ACTION',
+        sources: ['ADMIN'],
+        status: 'SUCCESS',
+        reason: `Album ${created ? 'created and ' : ''}added to pool via addAlbumToPool`,
+        fieldsEnriched: ['gameStatus'],
+        userId: user.id,
+      });
+
+      graphqlLogger.info('Added album to game pool:', {
+        albumId: targetAlbumId,
+        created,
+        gameStatus: 'APPROVED',
+      });
+
+      return {
+        success: true,
+        message: `"${entry.album.title}" ${created ? 'created and ' : ''}added to pool`,
+        error: null,
+        album: entry.album,
+        curatedChallenge: entry,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to add album to pool:', {
+        error,
+        albumId: albumId || 'external',
+      });
+      return {
+        success: false,
+        message: null,
+        error:
+          error instanceof GraphQLError
+            ? error.message
+            : `Failed to add album to pool: ${error}`,
+        album: null,
+        curatedChallenge: null,
+      };
+    }
+  },
+
+  // ---------------------------------------------------------------
+  // Import external album (no pool addition)
+  // ---------------------------------------------------------------
+
+  importAlbum: async (
+    _: unknown,
+    {
+      albumData,
+    }: {
+      albumData: {
+        title: string;
+        releaseDate?: string;
+        albumType?: string;
+        totalTracks?: number;
+        coverImageUrl?: string;
+        musicbrainzId?: string;
+        spotifyId?: string;
+        artists?: Array<{
+          artistName?: string | null;
+          artistId?: string | null;
+          role?: string | null;
+        }>;
+      };
+    },
+    { prisma, user }
+  ) => {
+    if (!user?.id) {
+      return {
+        success: false,
+        message: null,
+        error: 'Authentication required',
+        album: null,
+        created: null,
+      };
+    }
+
+    if (!user.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+      return {
+        success: false,
+        message: null,
+        error: 'Admin access required',
+        album: null,
+        created: null,
       };
     }
 
@@ -4110,7 +4120,6 @@ export const mutationResolvers: MutationResolvers = {
         ? new Date(albumData.releaseDate)
         : null;
 
-      // 1. Find or create the album in local DB
       const { album, created } = await findOrCreateAlbum({
         db: prisma,
         identity: {
@@ -4147,124 +4156,54 @@ export const mutationResolvers: MutationResolvers = {
           source: 'manual' as const,
           priority: 'medium' as const,
         },
-        caller: 'addExternalAlbumToPool',
+        caller: 'importAlbum',
       });
 
-      // 2. If addToPool is false, just import the album without adding to curated pool
-      if (!addToPool) {
-        // Set gameStatus to NONE so it shows up in suggested albums for review
-        await prisma.album.update({
-          where: { id: album.id },
-          data: { gameStatus: 'NONE' },
-        });
-
-        const llamaLogger = createLlamaLogger(prisma);
-        await llamaLogger.logEnrichment({
-          entityType: 'ALBUM',
-          entityId: album.id,
-          albumId: album.id,
-          operation: 'game-pool:import-for-review',
-          category: 'USER_ACTION',
-          sources: ['ADMIN'],
-          status: 'SUCCESS',
-          reason: `External album ${created ? 'created and ' : ''}imported for review via addExternalAlbumToPool`,
-          fieldsEnriched: ['gameStatus'],
-          userId: user.id,
-        });
-
-        graphqlLogger.info('Imported external album for review:', {
-          albumId: album.id,
-          albumTitle: albumData.title,
-          created,
-          gameStatus: 'NONE',
-        });
-
-        return {
-          success: true,
-          message: `"${albumData.title}" ${created ? 'created and ' : ''}imported for review`,
-          error: null,
-          album,
-          curatedChallenge: null,
-        };
-      }
-
-      // 3. Check if already in curated list
-      const existingCurated = await prisma.curatedChallenge.findFirst({
-        where: { albumId: album.id },
+      // Set gameStatus to NONE for review
+      await prisma.album.update({
+        where: { id: album.id },
+        data: { gameStatus: 'NONE' },
       });
 
-      if (existingCurated) {
-        return {
-          success: false,
-          message: null,
-          error: `"${albumData.title}" is already in the pool`,
-          album: null,
-          curatedChallenge: null,
-        };
-      }
-
-      // 4. Atomic: set APPROVED + add to curated
-      const result = await prisma.$transaction(async (tx: typeof prisma) => {
-        const updatedAlbum = await tx.album.update({
-          where: { id: album.id },
-          data: { gameStatus: 'APPROVED' },
-        });
-
-        const curatedEntry = await tx.curatedChallenge.create({
-          data: {
-            albumId: album.id,
-            pinnedDate: null,
-          },
-          include: {
-            album: {
-              include: {
-                artists: { include: { artist: true } },
-              },
-            },
-          },
-        });
-
-        return { updatedAlbum, curatedEntry };
-      });
-
-      // 5. Log activity
+      // Log activity
       const llamaLogger = createLlamaLogger(prisma);
       await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: album.id,
         albumId: album.id,
-        operation: 'game-pool:add-external-to-pool',
+        operation: 'game-pool:import-for-review',
         category: 'USER_ACTION',
         sources: ['ADMIN'],
         status: 'SUCCESS',
-        reason: `External album ${created ? 'created and ' : ''}added to pool via addExternalAlbumToPool`,
+        reason: `Album ${created ? 'created and ' : ''}imported for review via importAlbum`,
         fieldsEnriched: ['gameStatus'],
         userId: user.id,
       });
 
-      graphqlLogger.info('Added external album to game pool:', {
+      graphqlLogger.info('Imported album for review:', {
         albumId: album.id,
         albumTitle: albumData.title,
         created,
-        gameStatus: 'APPROVED',
       });
 
       return {
         success: true,
-        message: `"${albumData.title}" ${created ? 'created and ' : ''}added to pool`,
+        message: `"${albumData.title}" ${created ? 'created and ' : ''}imported for review`,
         error: null,
-        album: result.updatedAlbum,
-        curatedChallenge: result.curatedEntry,
+        album,
+        created,
       };
     } catch (error) {
-      graphqlLogger.error('Failed to add external album to pool:', { error });
-      if (error instanceof GraphQLError) throw error;
+      graphqlLogger.error('Failed to import album:', { error });
       return {
         success: false,
         message: null,
-        error: `Failed to add external album to pool: ${error}`,
+        error:
+          error instanceof GraphQLError
+            ? error.message
+            : `Failed to import album: ${error}`,
         album: null,
-        curatedChallenge: null,
+        created: null,
       };
     }
   },

@@ -31,7 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAddExternalAlbumToPoolMutation } from '@/generated/graphql';
+import {
+  useAddAlbumToPoolMutation,
+  useImportAlbumMutation,
+} from '@/generated/graphql';
 import recommendations from '@/data/claude-recommendations.json';
 
 // ============================================================================
@@ -84,8 +87,8 @@ export function ClaudeRecommendationsView({
     total: number;
   } | null>(null);
 
-  const { mutateAsync: addExternalToPool } =
-    useAddExternalAlbumToPoolMutation();
+  const { mutateAsync: addAlbumToPool } = useAddAlbumToPoolMutation();
+  const { mutateAsync: importAlbum } = useImportAlbumMutation();
 
   const allRecs = recommendations as ClaudeRecommendation[];
 
@@ -253,31 +256,42 @@ export function ClaudeRecommendationsView({
             ? `https://coverartarchive.org/release-group/${rec.musicbrainzId}/front-250`
             : undefined;
 
-          const result = await addExternalToPool({
-            albumData: {
-              title: rec.mbTitle || rec.title,
-              musicbrainzId: rec.musicbrainzId!,
-              releaseDate: rec.releaseDate || undefined,
-              coverImageUrl,
-              artists: [
-                {
-                  artistName: rec.mbArtist || rec.artist,
-                  role: 'PRIMARY',
-                },
-              ],
-              albumType: rec.albumType || undefined,
-            },
-            addToPool,
-          });
+          const albumData = {
+            title: rec.mbTitle || rec.title,
+            musicbrainzId: rec.musicbrainzId!,
+            releaseDate: rec.releaseDate || undefined,
+            coverImageUrl,
+            artists: [
+              {
+                artistName: rec.mbArtist || rec.artist,
+                role: 'PRIMARY',
+              },
+            ],
+            albumType: rec.albumType || undefined,
+          };
 
-          if (result.addExternalAlbumToPool.success) {
-            success++;
+          if (addToPool) {
+            const result = await addAlbumToPool({ albumData });
+            if (result.addAlbumToPool.success) {
+              success++;
+            } else {
+              failed++;
+              console.warn(
+                `Failed to add "${rec.title}" to pool:`,
+                result.addAlbumToPool.error
+              );
+            }
           } else {
-            failed++;
-            console.warn(
-              `Failed to import "${rec.title}":`,
-              result.addExternalAlbumToPool.error
-            );
+            const result = await importAlbum({ albumData });
+            if (result.importAlbum.success) {
+              success++;
+            } else {
+              failed++;
+              console.warn(
+                `Failed to import "${rec.title}":`,
+                result.importAlbum.error
+              );
+            }
           }
         } catch (error) {
           failed++;
@@ -299,7 +313,14 @@ export function ClaudeRecommendationsView({
       invalidateAll();
       onComplete();
     },
-    [allRecs, selectedIds, addExternalToPool, invalidateAll, onComplete]
+    [
+      allRecs,
+      selectedIds,
+      addAlbumToPool,
+      importAlbum,
+      invalidateAll,
+      onComplete,
+    ]
   );
 
   // Cover Art Archive URL

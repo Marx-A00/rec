@@ -1,5 +1,5 @@
-mutation AddAlbumToPool($albumId: UUID!) {
-  addAlbumToPool(albumId: $albumId) {
+mutation AddAlbumToPool($albumId: UUID, $albumData: AlbumInput, $pinnedDate: DateTime) {
+  addAlbumToPool(albumId: $albumId, albumData: $albumData, pinnedDate: $pinnedDate) {
     success
     message
     error

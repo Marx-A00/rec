@@ -1292,6 +1292,15 @@ export enum HealthStatus {
   Unhealthy = 'UNHEALTHY',
 }
 
+export type ImportAlbumResult = {
+  __typename?: 'ImportAlbumResult';
+  album?: Maybe<Album>;
+  created?: Maybe<Scalars['Boolean']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type JobRecord = {
   __typename?: 'JobRecord';
   attempts: Scalars['Int']['output'];
@@ -1514,18 +1523,11 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   /**
-   * Admin: Add album to game pool in one shot.
-   * Sets gameStatus to APPROVED and adds to curated rotation atomically.
+   * Admin: Add an album to the game pool.
+   * Provide albumId for an existing album, or albumData for an external album (will be created first).
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
-  /** Admin: Add an album to the curated challenge list */
-  addCuratedChallenge: CuratedChallengeEntry;
-  /**
-   * Admin: Find or create an album from external search results, then add it to the game pool.
-   * Accepts AlbumInput for albums that may not exist in the database yet.
-   */
-  addExternalAlbumToPool: AddAlbumToPoolResult;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1550,6 +1552,8 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
+  /** Admin: Import an external album into the database for review. No pool addition. */
+  importAlbum: ImportAlbumResult;
   /**
    * Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
    * No auth required — Deezer's public API is free and unlimited.
@@ -1633,21 +1637,13 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 };
 
 export type MutationAddAlbumToPoolArgs = {
-  albumId: Scalars['UUID']['input'];
+  albumData?: InputMaybe<AlbumInput>;
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
-};
-
-export type MutationAddCuratedChallengeArgs = {
-  albumId: Scalars['UUID']['input'];
-  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-};
-
-export type MutationAddExternalAlbumToPoolArgs = {
-  addToPool?: InputMaybe<Scalars['Boolean']['input']>;
-  albumData: AlbumInput;
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1720,6 +1716,10 @@ export type MutationFollowUserArgs = {
 
 export type MutationHardDeleteUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationImportAlbumArgs = {
+  albumData: AlbumInput;
 };
 
 export type MutationImportDeezerPlaylistArgs = {
@@ -3597,6 +3597,7 @@ export type ResolversTypes = ResolversObject<{
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
   HealthStatus: HealthStatus;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  ImportAlbumResult: ResolverTypeWrapper<ImportAlbumResult>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
   JobRecord: ResolverTypeWrapper<JobRecord>;
@@ -3812,6 +3813,7 @@ export type ResolversParentTypes = ResolversObject<{
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
   ID: Scalars['ID']['output'];
+  ImportAlbumResult: ImportAlbumResult;
   Int: Scalars['Int']['output'];
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
@@ -5553,6 +5555,19 @@ export type HealthMetricsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ImportAlbumResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ImportAlbumResult'] = ResolversParentTypes['ImportAlbumResult'],
+> = ResolversObject<{
+  album?: Resolver<Maybe<ResolversTypes['Album']>, ParentType, ContextType>;
+  created?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export interface JsonScalarConfig
   extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
   name: 'JSON';
@@ -5807,25 +5822,13 @@ export type MutationResolvers<
     ResolversTypes['AddAlbumToPoolResult'],
     ParentType,
     ContextType,
-    RequireFields<MutationAddAlbumToPoolArgs, 'albumId'>
+    Partial<MutationAddAlbumToPoolArgs>
   >;
   addArtist?: Resolver<
     ResolversTypes['Artist'],
     ParentType,
     ContextType,
     RequireFields<MutationAddArtistArgs, 'input'>
-  >;
-  addCuratedChallenge?: Resolver<
-    ResolversTypes['CuratedChallengeEntry'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddCuratedChallengeArgs, 'albumId'>
-  >;
-  addExternalAlbumToPool?: Resolver<
-    ResolversTypes['AddAlbumToPoolResult'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddExternalAlbumToPoolArgs, 'albumData'>
   >;
   adminUpdateUserShowTour?: Resolver<
     ResolversTypes['AdminUpdateUserSettingsPayload'],
@@ -5930,6 +5933,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationHardDeleteUserArgs, 'userId'>
+  >;
+  importAlbum?: Resolver<
+    ResolversTypes['ImportAlbumResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationImportAlbumArgs, 'albumData'>
   >;
   importDeezerPlaylist?: Resolver<
     ResolversTypes['DeezerPlaylistImportResult'],
@@ -8280,6 +8289,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   GroupedSearchResult?: GroupedSearchResultResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
   HealthMetrics?: HealthMetricsResolvers<ContextType>;
+  ImportAlbumResult?: ImportAlbumResultResolvers<ContextType>;
   JSON?: GraphQLScalarType;
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;

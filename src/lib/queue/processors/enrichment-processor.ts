@@ -23,6 +23,7 @@ import {
   type EnrichArtistJobData,
   type EnrichTrackJobData,
   type CacheArtistImageJobData,
+  type CacheAlbumCoverArtJobData,
 } from '../jobs';
 import { analyzeTitle } from '../../musicbrainz/title-utils';
 import { getInitialQuality } from '@/lib/db';
@@ -946,6 +947,38 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       isRootJob: !data.parentJobId,
       triggeredBy: data.source || 'manual',
     });
+
+    // Queue album cover art caching to Cloudflare (non-blocking)
+    const enrichedAlbum = await prisma.album.findUnique({
+      where: { id: data.albumId },
+      select: { coverArtUrl: true, cloudflareImageId: true },
+    });
+
+    if (enrichedAlbum?.coverArtUrl && !enrichedAlbum.cloudflareImageId) {
+      try {
+        const queue = await import('../musicbrainz-queue').then(m =>
+          m.getMusicBrainzQueue()
+        );
+        const cacheJobData: CacheAlbumCoverArtJobData = {
+          albumId: data.albumId,
+          requestId: `enrich-cache-album-${data.albumId}`,
+          parentJobId: rootJobId,
+        };
+
+        await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheJobData, {
+          priority: 5,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        });
+
+        console.log(`📤 Queued album cover art caching for ${data.albumId}`);
+      } catch (cacheError) {
+        console.warn(
+          `Failed to queue album cover art caching for ${data.albumId}:`,
+          cacheError
+        );
+      }
+    }
 
     return {
       albumId: data.albumId,

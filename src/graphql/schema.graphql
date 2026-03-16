@@ -2972,6 +2972,14 @@ type AddAlbumToPoolResult {
   curatedChallenge: CuratedChallengeEntry
 }
 
+type ImportAlbumResult {
+  success: Boolean!
+  message: String
+  error: String
+  album: Album
+  created: Boolean
+}
+
 # =============================================
 # CLIENT-SIDE GAME MODEL TYPES (Wordle-style)
 # =============================================
@@ -3281,25 +3289,19 @@ type Mutation {
   importDeezerPlaylist(playlistId: String!, selectedDeezerIds: [String!]): DeezerPlaylistImportResult!
 
   """
-  Admin: Add album to game pool in one shot.
-  Sets gameStatus to APPROVED and adds to curated rotation atomically.
+  Admin: Add an album to the game pool.
+  Provide albumId for an existing album, or albumData for an external album (will be created first).
   """
-  addAlbumToPool(albumId: UUID!): AddAlbumToPoolResult!
-
-  """
-  Admin: Find or create an album from external search results, then add it to the game pool.
-  Accepts AlbumInput for albums that may not exist in the database yet.
-  """
-  addExternalAlbumToPool(albumData: AlbumInput!, addToPool: Boolean): AddAlbumToPoolResult!
-
-  # Daily Challenge mutations (Admin)
-  """
-  Admin: Add an album to the curated challenge list
-  """
-  addCuratedChallenge(
-    albumId: UUID!
+  addAlbumToPool(
+    albumId: UUID
+    albumData: AlbumInput
     pinnedDate: DateTime
-  ): CuratedChallengeEntry!
+  ): AddAlbumToPoolResult!
+
+  """
+  Admin: Import an external album into the database for review. No pool addition.
+  """
+  importAlbum(albumData: AlbumInput!): ImportAlbumResult!
 
   """
   Admin: Remove an album from the curated challenge list
