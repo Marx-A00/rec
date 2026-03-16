@@ -63,7 +63,6 @@ interface ExistingAlbumInfo {
 
 interface ClaudeRecommendationsViewProps {
   onBack: () => void;
-  onComplete: () => void;
 }
 
 // ============================================================================
@@ -72,7 +71,6 @@ interface ClaudeRecommendationsViewProps {
 
 export function ClaudeRecommendationsView({
   onBack,
-  onComplete,
 }: ClaudeRecommendationsViewProps) {
   const queryClient = useQueryClient();
   const [existingMap, setExistingMap] = useState<
@@ -104,8 +102,8 @@ export function ClaudeRecommendationsView({
     return allRecs.filter(r => r.genre === genreFilter);
   }, [allRecs, genreFilter]);
 
-  // Check which albums already exist in DB
-  useEffect(() => {
+  // Fetch which albums already exist in DB
+  const fetchExistingMap = useCallback(async () => {
     const mbIds = allRecs
       .filter(r => r.musicbrainzId)
       .map(r => r.musicbrainzId as string);
@@ -115,20 +113,27 @@ export function ClaudeRecommendationsView({
       return;
     }
 
-    fetch('/api/admin/claude-recs/check-existing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ musicbrainzIds: mbIds }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        setExistingMap(data.existing || {});
-      })
-      .catch(err => {
-        console.error('Failed to check existing albums:', err);
-      })
-      .finally(() => setCheckingExisting(false));
+    try {
+      const res = await fetch('/api/admin/claude-recs/check-existing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ musicbrainzIds: mbIds }),
+      });
+      const data = (await res.json()) as {
+        existing: Record<string, ExistingAlbumInfo>;
+      };
+      setExistingMap(data.existing || {});
+    } catch (err) {
+      console.error('Failed to check existing albums:', err);
+    } finally {
+      setCheckingExisting(false);
+    }
   }, [allRecs]);
+
+  // Check on mount
+  useEffect(() => {
+    fetchExistingMap();
+  }, [fetchExistingMap]);
 
   // Auto-select importable albums (matched + not in DB) when data loads
   useEffect(() => {
@@ -310,16 +315,19 @@ export function ClaudeRecommendationsView({
         toast.warning(`${success} imported, ${failed} failed`);
       }
 
+      // Re-fetch existing map so badges update inline
+      await fetchExistingMap();
+      // Clear selection since imported albums are no longer selectable
+      setSelectedIds(new Set());
       invalidateAll();
-      onComplete();
     },
     [
       allRecs,
       selectedIds,
       addAlbumToPool,
       importAlbum,
+      fetchExistingMap,
       invalidateAll,
-      onComplete,
     ]
   );
 

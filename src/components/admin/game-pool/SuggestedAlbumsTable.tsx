@@ -9,8 +9,6 @@ import {
   XCircle,
   Plus,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   ListMusic,
   ArrowLeft,
@@ -50,6 +48,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -77,33 +76,6 @@ const SYNC_SOURCE_OPTIONS = [
 ];
 
 const PAGE_SIZE = 50;
-
-/** Build the page number array: 1 2 ... 5 [6] 7 ... 10 */
-function getPageNumbers(current: number, total: number): (number | '...')[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  const pages: (number | '...')[] = [1];
-
-  if (current > 3) {
-    pages.push('...');
-  }
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  if (current < total - 2) {
-    pages.push('...');
-  }
-
-  pages.push(total);
-  return pages;
-}
 
 export function SuggestedAlbumsTable() {
   const queryClient = useQueryClient();
@@ -657,59 +629,13 @@ export function SuggestedAlbumsTable() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalCount > 0 && (
-        <div className='flex items-center justify-between'>
-          <p className='text-sm text-zinc-500'>
-            Showing {offset + 1}–{offset + albums.length} of{' '}
-            {totalCount.toLocaleString()}
-          </p>
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='h-8 w-8 p-0'
-              disabled={currentPage === 1}
-              onClick={() => goToPage(currentPage - 1)}
-            >
-              <ChevronLeft className='h-4 w-4' />
-            </Button>
-            {getPageNumbers(currentPage, totalPages).map((page, i) =>
-              page === '...' ? (
-                <span
-                  key={`ellipsis-${i}`}
-                  className='px-1 text-sm text-zinc-600'
-                >
-                  ...
-                </span>
-              ) : (
-                <Button
-                  key={page}
-                  variant='ghost'
-                  size='sm'
-                  className={`h-8 w-8 p-0 text-sm ${
-                    page === currentPage
-                      ? 'bg-zinc-700 text-white font-semibold'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                  onClick={() => goToPage(page as number)}
-                >
-                  {page}
-                </Button>
-              )
-            )}
-            <Button
-              variant='ghost'
-              size='sm'
-              className='h-8 w-8 p-0'
-              disabled={currentPage === totalPages}
-              onClick={() => goToPage(currentPage + 1)}
-            >
-              <ChevronRight className='h-4 w-4' />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        totalCount={totalCount}
+        currentPageItemCount={albums.length}
+      />
 
       {/* Add External Dialog */}
       <Dialog
@@ -1057,10 +983,6 @@ export function SuggestedAlbumsTable() {
             <div className='flex flex-col h-full min-h-0 p-6'>
               <ClaudeRecommendationsView
                 onBack={() => setExternalMode('menu')}
-                onComplete={() => {
-                  setAddExternalOpen(false);
-                  setExternalMode('menu');
-                }}
               />
             </div>
           )}
