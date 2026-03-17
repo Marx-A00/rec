@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRight,
+  FlaskConical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -219,6 +220,29 @@ export function QueueDashboard({
       fetchSnapshot();
     } catch {
       toast.error('Failed to cleanup queue');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleSendTestJobs = async () => {
+    setLoading('test-jobs');
+    try {
+      const response = await fetch('/api/admin/queue/test-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: 15,
+          includeSlow: true,
+          includeFail: true,
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to send test jobs');
+      const data = await response.json();
+      toast.success(`${data.total} test jobs queued`);
+      fetchSnapshot();
+    } catch {
+      toast.error('Failed to send test jobs');
     } finally {
       setLoading(null);
     }
@@ -436,6 +460,20 @@ export function QueueDashboard({
               >
                 <Trash2 className='h-3.5 w-3.5 mr-1.5' />
                 Clean Old Jobs (&gt;24h)
+              </Button>
+              <Button
+                onClick={handleSendTestJobs}
+                disabled={loading === 'test-jobs'}
+                variant='outline'
+                size='sm'
+                className='w-full justify-start text-purple-300 border-purple-800/50 hover:bg-purple-900/20'
+              >
+                {loading === 'test-jobs' ? (
+                  <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                ) : (
+                  <FlaskConical className='h-3.5 w-3.5 mr-1.5' />
+                )}
+                Send Test Jobs
               </Button>
             </CardContent>
           </Card>
