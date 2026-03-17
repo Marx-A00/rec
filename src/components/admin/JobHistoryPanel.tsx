@@ -1,4 +1,3 @@
-// src/app/admin/job-history/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,16 +10,13 @@ import {
   Download,
   TrendingUp,
   TrendingDown,
-  ExternalLink,
   Calendar,
   Music,
   Database,
   Pause,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
-import { useAlbumsByJobIdQuery } from '@/generated/graphql';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,7 +41,10 @@ import {
   type JobHistoryItem,
 } from '@/components/admin/ExpandableJobRow';
 
-// Simple date formatting function
+// ============================================================================
+// Helpers (same as original job-history page)
+// ============================================================================
+
 function formatDistanceToNow(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
@@ -61,6 +60,31 @@ function formatDistanceToNow(date: Date): string {
   const years = Math.floor(months / 12);
   return `${years} year${years !== 1 ? 's' : ''} ago`;
 }
+
+function formatTimeUntil(date: Date): string {
+  const now = Date.now();
+  const diff = date.getTime() - now;
+  if (diff < 0) return 'running now';
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `in ${days}d ${hours % 24}h`;
+  if (hours > 0) return `in ${hours}h ${minutes % 60}m`;
+  if (minutes > 0) return `in ${minutes}m`;
+  return 'soon';
+}
+
+function formatInterval(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface JobStats {
   totalJobs: number;
@@ -98,105 +122,13 @@ interface SchedulerStatus {
   };
 }
 
-// Use proxy route to securely access worker API
 const MONITORING_API = '/api/admin/worker';
 
-function JobAlbums({ jobId, jobName }: { jobId: string; jobName: string }) {
-  const { data, isLoading } = useAlbumsByJobIdQuery(
-    { jobId },
-    { enabled: jobName.includes('spotify') }
-  );
+// ============================================================================
+// JobHistoryPanel Component
+// ============================================================================
 
-  if (!jobName.includes('spotify')) {
-    return null;
-  }
-
-  if (isLoading) {
-    return (
-      <div className='space-y-2'>
-        <div className='text-sm text-zinc-400'>Albums Added</div>
-        <div className='text-zinc-500'>Loading albums...</div>
-      </div>
-    );
-  }
-
-  const albums = data?.albumsByJobId || [];
-
-  if (albums.length === 0) {
-    return (
-      <div className='space-y-2'>
-        <div className='text-sm text-zinc-400'>Albums Added</div>
-        <div className='text-zinc-500'>No albums found for this job</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className='space-y-2'>
-      <div className='text-sm text-zinc-400'>
-        Albums Added ({albums.length})
-      </div>
-      <div className='grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto'>
-        {albums.map(album => (
-          <Link
-            key={album.id}
-            href={`/admin/music-database?id=${album.id}`}
-            className='bg-zinc-800 rounded-lg p-2 hover:bg-zinc-700 transition-colors group'
-          >
-            <div className='flex gap-2'>
-              <div className='w-12 h-12 bg-zinc-700 rounded flex-shrink-0 overflow-hidden'>
-                {album.coverArtUrl && (
-                  <img
-                    src={album.coverArtUrl}
-                    alt={album.title}
-                    className='w-full h-full object-cover'
-                  />
-                )}
-              </div>
-              <div className='flex-1 min-w-0'>
-                <div className='text-sm font-medium text-white truncate group-hover:text-green-400'>
-                  {album.title}
-                </div>
-                <div className='text-xs text-zinc-400 truncate'>
-                  {album.artists[0]?.artist.name || 'Unknown Artist'}
-                </div>
-              </div>
-              <ExternalLink className='h-4 w-4 text-zinc-500 group-hover:text-green-400 flex-shrink-0' />
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Helper to format relative time for next sync
-function formatTimeUntil(date: Date): string {
-  const now = Date.now();
-  const diff = date.getTime() - now;
-
-  if (diff < 0) return 'running now';
-
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) return `in ${days}d ${hours % 24}h`;
-  if (hours > 0) return `in ${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `in ${minutes}m`;
-  return 'soon';
-}
-
-// Helper to format interval
-function formatInterval(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
-}
-
-export default function JobHistoryPage() {
+export function JobHistoryPanel() {
   const [jobs, setJobs] = useState<JobHistoryItem[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
   const [schedulerStatus, setSchedulerStatus] =
@@ -311,7 +243,7 @@ export default function JobHistoryPage() {
 
       toast.success('Job queued for retry');
       fetchJobHistory();
-    } catch (error) {
+    } catch {
       toast.error('Failed to retry job');
     }
   };
@@ -368,16 +300,9 @@ export default function JobHistoryPage() {
   });
 
   return (
-    <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-white'>Job History</h1>
-        <p className='text-zinc-400 mt-1'>
-          Historical view of all processed jobs and their outcomes
-        </p>
-      </div>
-
+    <div className='space-y-6'>
       {/* Scheduler Status Card */}
-      <Card className='bg-zinc-900 border-zinc-800 mb-6'>
+      <Card className='bg-zinc-900 border-zinc-800'>
         <CardHeader className='pb-3'>
           <div className='flex items-center justify-between'>
             <CardTitle className='text-lg font-semibold text-white flex items-center gap-2'>
@@ -538,7 +463,7 @@ export default function JobHistoryPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           <Card className='bg-zinc-900 border-zinc-800'>
             <CardHeader className='pb-3'>
               <CardTitle className='text-sm font-medium text-zinc-400'>
@@ -589,8 +514,10 @@ export default function JobHistoryPage() {
                 {stats.failedJobs}
               </div>
               <p className='text-xs text-zinc-500 mt-1'>
-                {((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)}%
-                failure rate
+                {stats.totalJobs > 0
+                  ? ((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)
+                  : '0'}
+                % failure rate
               </p>
             </CardContent>
           </Card>
@@ -611,8 +538,8 @@ export default function JobHistoryPage() {
         </div>
       )}
 
-      {/* Filters and Controls */}
-      <Card className='bg-zinc-900 border-zinc-800 mb-6'>
+      {/* Filters and Table */}
+      <Card className='bg-zinc-900 border-zinc-800'>
         <CardHeader>
           <div className='flex items-center justify-end'>
             <div className='flex items-center gap-2'>

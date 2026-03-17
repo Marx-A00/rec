@@ -82,7 +82,7 @@ export default function AdminLayout({
                   : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
               }`}
             >
-              <span>Queue Management</span>
+              <span>Queue</span>
             </Link>
             <Link
               href='/admin/music-database'
@@ -125,26 +125,6 @@ export default function AdminLayout({
                 </div>
               )}
             </div>
-            <Link
-              href='/admin/job-history'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/job-history'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Job History</span>
-            </Link>
-            <Link
-              href='/admin/weekly-sync'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/weekly-sync'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Weekly Sync</span>
-            </Link>
             <Link
               href='/admin/users'
               className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${

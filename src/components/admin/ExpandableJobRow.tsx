@@ -12,11 +12,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { useGetLlamaLogsQuery, type LlamaLog } from '@/generated/graphql';
+import {
+  useGetLlamaLogsQuery,
+  useGetSyncJobByJobIdQuery,
+  type LlamaLog,
+} from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
 import { SkeletonTimeline } from './SkeletonTimeline';
 import { EnrichmentTimelineModal } from './EnrichmentTimelineModal';
+import { JobDetailPanel } from './JobDetailPanel';
+import { EnrichmentSummaryStrip } from './EnrichmentSummaryStrip';
+import { SyncJobExpandedContent } from './SyncJobExpandedContent';
+import { isSyncJob } from './job-detail-utils';
 
 // ============================================================================
 // Types
@@ -64,7 +72,6 @@ export function ExpandableJobRow({
   onRetryJob,
 }: ExpandableJobRowProps) {
   // Lazy fetch enrichment logs when expanded
-  // Use job.id as parentJobId to find all logs linked to this BullMQ job
   const {
     data: logsData,
     isLoading: loadingLogs,
@@ -81,7 +88,6 @@ export function ExpandableJobRow({
         if (!isExpanded) return false;
         const logs = query.state.data?.llamaLogs || [];
         if (logs.length === 0) return false;
-        // Poll for 30 seconds after last log activity
         const lastLog = logs[logs.length - 1];
         const age = Date.now() - new Date(lastLog.createdAt).getTime();
         return age < 30000 ? 3000 : false;
@@ -89,9 +95,16 @@ export function ExpandableJobRow({
     }
   );
 
+  // Lazy fetch sync job record when expanded and job is a sync type
+  const isSyncType = isSyncJob(job.name);
+  const { data: syncData } = useGetSyncJobByJobIdQuery(
+    { jobId: job.id },
+    { enabled: isExpanded && isSyncType }
+  );
+
   const logs = logsData?.llamaLogs || [];
-  // Badge with count appears after data has been fetched (query was enabled at least once)
   const hasBeenFetched = logsData !== undefined;
+  const syncJob = syncData?.syncJobByJobId;
 
   return (
     <React.Fragment>
@@ -127,7 +140,7 @@ export function ExpandableJobRow({
           </div>
         </TableCell>
 
-        {/* Job Name column with lazy badge */}
+        {/* Job Name column with llama indicator */}
         <TableCell className='text-zinc-300 font-medium'>
           <div className='flex items-center gap-2'>
             {job.name}
@@ -136,7 +149,7 @@ export function ExpandableJobRow({
                 variant='outline'
                 className='text-xs bg-purple-500/10 text-purple-300 border-purple-500/20'
               >
-                <Activity className='h-3 w-3 mr-1' />
+                <span className='mr-1'>🦙</span>
                 {logs.length}
               </Badge>
             )}
@@ -193,7 +206,11 @@ export function ExpandableJobRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80'>
           <TableCell colSpan={8} className='p-0'>
-            <div className='p-4 max-h-96 overflow-y-auto'>
+            <div className='p-4 max-h-[600px] overflow-y-auto space-y-4'>
+              {/* Section 1: Job Details (always shown) */}
+              <JobDetailPanel job={job} />
+
+              {/* Section 2: Enrichment data (when logs exist) */}
               {loadingLogs ? (
                 <SkeletonTimeline itemCount={3} />
               ) : logsError ? (
@@ -213,26 +230,37 @@ export function ExpandableJobRow({
                     Retry
                   </Button>
                 </div>
-              ) : logs.length === 0 ? (
-                <div className='py-4 text-center'>
-                  <p className='text-sm text-zinc-500'>
-                    No enrichment logs for this job
-                  </p>
-                </div>
-              ) : (
-                <>
+              ) : logs.length > 0 ? (
+                <div className='space-y-3'>
+                  <div className='flex items-center gap-1.5'>
+                    <Activity className='h-3 w-3 text-purple-400' />
+                    <span className='text-xs font-medium text-purple-300 uppercase tracking-wider'>
+                      Enrichment Logs ({logs.length})
+                    </span>
+                  </div>
+                  <EnrichmentSummaryStrip log={logs[0] as LlamaLog} />
                   <EnrichmentTimeline
                     logs={logs as LlamaLog[]}
                     variant='compact'
                     truncateChildren={5}
                   />
-                  {logs.length > 0 && (
-                    <EnrichmentTimelineModal
-                      parentLog={logs[0] as LlamaLog}
-                      childLogs={logs.slice(1) as LlamaLog[]}
-                    />
-                  )}
-                </>
+                  <EnrichmentTimelineModal
+                    parentLog={logs[0] as LlamaLog}
+                    childLogs={logs.slice(1) as LlamaLog[]}
+                  />
+                </div>
+              ) : null}
+
+              {/* Section 3: Sync job details (when sync job record exists) */}
+              {isSyncType && syncJob && (
+                <div className='border-t border-zinc-800 pt-4'>
+                  <SyncJobExpandedContent syncJob={syncJob} />
+                </div>
+              )}
+              {isSyncType && !syncJob && hasBeenFetched && (
+                <div className='text-xs text-zinc-600 text-center py-2'>
+                  No sync record found for this job
+                </div>
               )}
             </div>
           </TableCell>

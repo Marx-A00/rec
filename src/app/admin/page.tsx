@@ -772,7 +772,7 @@ export default function AdminDashboard() {
                       className='text-white border-zinc-700 hover:bg-zinc-700'
                       asChild
                     >
-                      <a href='/admin/weekly-sync'>Sync History</a>
+                      <a href='/admin/queue'>Sync History</a>
                     </Button>
                     <Button
                       variant='outline'
@@ -780,7 +780,7 @@ export default function AdminDashboard() {
                       className='text-white border-zinc-700 hover:bg-zinc-700'
                       asChild
                     >
-                      <a href='/admin/job-history'>Job History</a>
+                      <a href='/admin/queue'>Job History</a>
                     </Button>
                   </div>
                 </div>
