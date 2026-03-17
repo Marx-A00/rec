@@ -117,7 +117,7 @@ export function PoolTable() {
         <Table>
           <TableHeader>
             <TableRow className='border-zinc-800 hover:bg-transparent'>
-              <TableHead className='text-zinc-400 w-[60px]'>Cover</TableHead>
+              <TableHead className='text-zinc-400 w-[96px]'>Cover</TableHead>
               <TableHead className='text-zinc-400'>Album</TableHead>
               <TableHead className='text-zinc-400'>Artist</TableHead>
               <TableHead className='text-zinc-400 w-28'>Status</TableHead>
@@ -140,13 +140,13 @@ export function PoolTable() {
                   className='border-zinc-800 hover:bg-zinc-800/50'
                 >
                   <TableCell>
-                    <div className='w-10 h-10 rounded overflow-hidden'>
+                    <div className='w-20 h-20 rounded overflow-hidden'>
                       <AlbumImage
                         src={entry.album.coverArtUrl}
                         cloudflareImageId={entry.album.cloudflareImageId}
                         alt={entry.album.title}
-                        width={40}
-                        height={40}
+                        width={80}
+                        height={80}
                         className='object-cover'
                       />
                     </div>
