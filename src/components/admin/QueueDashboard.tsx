@@ -239,10 +239,29 @@ export function QueueDashboard({
       });
       if (!response.ok) throw new Error('Failed to send test jobs');
       const data = await response.json();
-      toast.success(`${data.total} test jobs queued`);
+      toast.success(`${data.total} real test jobs queued`);
       fetchSnapshot();
     } catch {
       toast.error('Failed to send test jobs');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleSendFakeJobs = async () => {
+    setLoading('fake-jobs');
+    try {
+      const response = await fetch('/api/admin/queue/test-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 10, mode: 'fake' }),
+      });
+      if (!response.ok) throw new Error('Failed to send fake jobs');
+      const data = await response.json();
+      toast.success(`${data.total} fake jobs queued (no API calls)`);
+      fetchSnapshot();
+    } catch {
+      toast.error('Failed to send fake jobs');
     } finally {
       setLoading(null);
     }
@@ -473,7 +492,24 @@ export function QueueDashboard({
                 ) : (
                   <FlaskConical className='h-3.5 w-3.5 mr-1.5' />
                 )}
-                Send Test Jobs
+                Send Real Jobs
+              </Button>
+              <Button
+                onClick={handleSendFakeJobs}
+                disabled={loading === 'fake-jobs'}
+                variant='outline'
+                size='sm'
+                className='w-full justify-start text-zinc-400 border-zinc-700 hover:bg-zinc-800'
+              >
+                {loading === 'fake-jobs' ? (
+                  <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                ) : (
+                  <FlaskConical className='h-3.5 w-3.5 mr-1.5' />
+                )}
+                Send Fake Jobs
+                <span className='ml-auto text-xs text-zinc-600'>
+                  no API calls
+                </span>
               </Button>
             </CardContent>
           </Card>

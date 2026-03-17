@@ -224,6 +224,50 @@ function makeFailJob(): JobSpec {
 // Route handler
 // ============================================================================
 
+// ============================================================================
+// Fake job names — cosmetic labels so they look varied in the dashboard
+// ============================================================================
+
+const FAKE_JOB_LABELS = [
+  'Search: Radiohead',
+  'Search: Aphex Twin',
+  'Enrich: OK Computer',
+  'Lookup: Burial',
+  'Cache: Dummy cover art',
+  'Discogs: MF DOOM',
+  'Search: Bjork',
+  'Enrich: Mezzanine',
+  'Cache: Slowdive image',
+  'Lookup: Cocteau Twins',
+  'Search: Portishead',
+  'Enrich: Loveless',
+  'Discogs: Sigur Ros',
+  'Search: Deftones',
+  'Cache: Homogenic cover',
+];
+
+/** Build a batch of fake jobs that only burn time (no real API calls). */
+function buildFakeJobs(count: number): JobSpec[] {
+  const jobs: JobSpec[] = [];
+  for (let i = 0; i < count; i++) {
+    const seconds = 2 + Math.floor(Math.random() * 7); // 2-8s each
+    jobs.push({
+      type: JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS,
+      data: {
+        query: pick(FAKE_JOB_LABELS),
+        slowProcessing: true,
+        delaySeconds: seconds,
+      } as unknown as MusicBrainzJobData,
+      priority: PRIORITY_TIERS.BACKGROUND,
+    });
+  }
+  return jobs;
+}
+
+// ============================================================================
+// Route handler
+// ============================================================================
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
@@ -232,38 +276,43 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const count = Math.min(Math.max(Number(body.count) || 10, 1), 100);
+  const mode: string = body.mode || 'real'; // 'real' | 'fake'
   const includeSlow = Boolean(body.includeSlow);
   const includeFail = Boolean(body.includeFail);
 
   try {
     const queue = getMusicBrainzQueue();
-    const jobs: JobSpec[] = [];
+    let jobs: JobSpec[];
 
-    // Random mix of job types
-    for (let i = 0; i < count; i++) {
-      jobs.push(pick(generators)());
-    }
+    if (mode === 'fake') {
+      // Fake mode: only mock jobs that burn time, no real API calls
+      jobs = buildFakeJobs(count);
+    } else {
+      // Real mode: actual job types that hit APIs
+      jobs = [];
+      for (let i = 0; i < count; i++) {
+        jobs.push(pick(generators)());
+      }
 
-    // Sprinkle in delayed jobs (~15% of count)
-    const delayedCount = Math.max(2, Math.floor(count * 0.15));
-    for (let i = 0; i < delayedCount; i++) {
-      jobs.push(makeDelayedJob());
-    }
+      // Sprinkle in delayed jobs (~15% of count)
+      const delayedCount = Math.max(2, Math.floor(count * 0.15));
+      for (let i = 0; i < delayedCount; i++) {
+        jobs.push(makeDelayedJob());
+      }
 
-    // Optional slow jobs
-    if (includeSlow) {
-      jobs.push(makeSlowJob(10));
-      jobs.push(makeSlowJob(20));
-    }
+      if (includeSlow) {
+        jobs.push(makeSlowJob(10));
+        jobs.push(makeSlowJob(20));
+      }
 
-    // Optional fail jobs
-    if (includeFail) {
-      jobs.push(makeFailJob());
-      jobs.push({
-        type: JOB_TYPES.ENRICH_ALBUM,
-        data: { albumId: 'nonexistent-id', source: 'manual' as const },
-        priority: PRIORITY_TIERS.ENRICHMENT,
-      });
+      if (includeFail) {
+        jobs.push(makeFailJob());
+        jobs.push({
+          type: JOB_TYPES.ENRICH_ALBUM,
+          data: { albumId: 'nonexistent-id', source: 'manual' as const },
+          priority: PRIORITY_TIERS.ENRICHMENT,
+        });
+      }
     }
 
     // Shuffle
@@ -289,8 +338,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Queued ${jobs.length} test jobs`,
+      message: `Queued ${jobs.length} ${mode} test jobs`,
       total: jobs.length,
+      mode,
       breakdown,
     });
   } catch (error) {
