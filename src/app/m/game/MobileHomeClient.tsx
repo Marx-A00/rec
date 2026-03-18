@@ -41,9 +41,8 @@ export function MobileHomeClient() {
         )}
       </div>
 
-      {/* Title + description */}
+      {/* Status + description */}
       <div className='text-center'>
-        <h1 className='text-3xl font-bold text-white'>Uncover</h1>
         {hasCompleted ? (
           <div className='mt-2'>
             <span

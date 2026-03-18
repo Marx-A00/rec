@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, CalendarDays } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
@@ -219,38 +219,12 @@ export function MobilePlayClient({
   // ── Game board — IN_PROGRESS ──────────────────────────────────────
   return (
     <div className='flex h-full flex-col overflow-hidden px-4 py-2'>
-      {/* Header */}
-      <div className='shrink-0 text-center'>
-        <h2 className='text-lg font-bold text-white'>
-          {isArchive ? 'Archive' : 'Daily Uncover'}
-        </h2>
-        <p className='text-xs text-zinc-400'>
-          {isArchive ? (
-            <>
-              <Link
-                href='/m/game/archive'
-                className='inline-flex items-center gap-1 text-xs text-zinc-500 transition-colors hover:text-white'
-              >
-                <Calendar className='h-3 w-3' />
-                Calendar
-              </Link>
-              {' · '}
-              {formattedDate}
-            </>
-          ) : (
-            <>
-              <Link
-                href='/m/game/archive'
-                className='inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition-colors'
-              >
-                <CalendarDays className='h-3 w-3' />
-                Archive
-              </Link>{' '}
-              Guess the album from the cover art
-            </>
-          )}
+      {/* Archive date label */}
+      {isArchive && formattedDate && (
+        <p className='shrink-0 text-center text-xs text-zinc-500'>
+          {formattedDate}
         </p>
-      </div>
+      )}
 
       {/* Reveal image — capped height so it doesn't eat the viewport */}
       {challengeImageUrl && game.challengeId && (

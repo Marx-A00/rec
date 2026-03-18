@@ -22,8 +22,8 @@ query DailyChallenge($date: DateTime) {
 }
 
 # Admin queries
-query CuratedChallenges($limit: Int, $offset: Int) {
-  curatedChallenges(limit: $limit, offset: $offset) {
+query CuratedChallenges($limit: Int, $offset: Int, $status: CuratedPoolFilter) {
+  curatedChallenges(limit: $limit, offset: $offset, status: $status) {
     id
     pinnedDate
     createdAt

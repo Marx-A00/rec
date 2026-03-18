@@ -3709,7 +3709,11 @@ export const queryResolvers: QueryResolvers = {
 
   curatedChallenges: async (
     _,
-    { limit, offset }: { limit?: number; offset?: number },
+    {
+      limit,
+      offset,
+      status,
+    }: { limit?: number; offset?: number; status?: string },
     { prisma, user }
   ) => {
     try {
@@ -3720,8 +3724,27 @@ export const queryResolvers: QueryResolvers = {
 
       const limitValue = limit ?? 50;
       const offsetValue = offset ?? 0;
+      const filterStatus = status ?? 'ALL';
+
+      // Get all used album IDs upfront (needed for filtering + usedDate computation)
+      const allUsedChallenges = await prisma.uncoverChallenge.findMany({
+        select: { albumId: true, date: true },
+      });
+      const usedAlbumIdSet = new Set(allUsedChallenges.map(uc => uc.albumId));
+      const usedDateMap = new Map(
+        allUsedChallenges.map(uc => [uc.albumId, uc.date])
+      );
+
+      // Build where clause based on status filter
+      const where =
+        filterStatus === 'REMAINING'
+          ? { albumId: { notIn: [...usedAlbumIdSet] } }
+          : filterStatus === 'USED'
+            ? { albumId: { in: [...usedAlbumIdSet] } }
+            : undefined;
 
       const curated = await prisma.curatedChallenge.findMany({
+        where,
         take: limitValue,
         skip: offsetValue,
         orderBy: { createdAt: 'asc' },
@@ -3736,20 +3759,21 @@ export const queryResolvers: QueryResolvers = {
         },
       });
 
-      // Join with uncover_challenges to get used dates
-      const albumIds = curated.map(c => c.albumId);
-      const usedChallenges = await prisma.uncoverChallenge.findMany({
-        where: { albumId: { in: albumIds } },
-        select: { albumId: true, date: true },
-      });
-      const usedDateMap = new Map(
-        usedChallenges.map(uc => [uc.albumId, uc.date])
-      );
-
-      return curated.map(c => ({
+      const result = curated.map(c => ({
         ...c,
         usedDate: usedDateMap.get(c.albumId) ?? null,
       }));
+
+      // For USED filter, sort by usedDate desc (most recently used first)
+      if (filterStatus === 'USED') {
+        result.sort((a, b) => {
+          const dateA = a.usedDate ? new Date(a.usedDate).getTime() : 0;
+          const dateB = b.usedDate ? new Date(b.usedDate).getTime() : 0;
+          return dateB - dateA;
+        });
+      }
+
+      return result;
     } catch (error) {
       graphqlLogger.error('Failed to fetch curated challenges:', { error });
       throw new GraphQLError(`Failed to fetch curated challenges: ${error}`);

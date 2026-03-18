@@ -1,14 +1,15 @@
 'use client';
 
 import { SmokeBackground } from '@/components/ui/smoke-background';
+import { MobileUncoverNav } from '@/components/uncover/MobileUncoverNav';
 import { useUncoverGameStore } from '@/stores/useUncoverGameStore';
 
 /**
  * Shared layout for all /m/game/* routes.
  * Mirrors the desktop game layout: animated smoke background + vignette overlay.
  *
- * Fills the available viewport between MobileHeader (56px) and MobileBottomNav
- * (56px + safe-area-inset-bottom), which are rendered by the parent mobile layout.
+ * The parent mobile layout uses a flex column with <main> as the scroll container,
+ * so this layout simply fills its parent with h-full — no height calculations needed.
  *
  * Smoke color reacts to game status:
  *  - LOST → red (#ef4444)
@@ -23,12 +24,7 @@ export default function MobileGameLayout({
   const smokeColor = status === 'LOST' ? '#ef4444' : '#10b981';
 
   return (
-    <div
-      className='relative flex flex-col overflow-hidden'
-      style={{
-        height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))',
-      }}
-    >
+    <div className='relative h-full flex flex-col overflow-hidden'>
       <SmokeBackground
         smokeColor={smokeColor}
         speed={0.015}
@@ -46,6 +42,7 @@ export default function MobileGameLayout({
       />
 
       <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
+        <MobileUncoverNav />
         {children}
       </div>
     </div>

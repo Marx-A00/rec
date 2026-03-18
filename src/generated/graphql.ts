@@ -981,6 +981,12 @@ export type CuratedChallengeEntry = {
   usedDate?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export enum CuratedPoolFilter {
+  All = 'ALL',
+  Remaining = 'REMAINING',
+  Used = 'USED',
+}
+
 /** Daily challenge info - does NOT include the answer album */
 export type DailyChallengeInfo = {
   __typename?: 'DailyChallengeInfo';
@@ -2194,6 +2200,7 @@ export type QueryCorrectionSearchArgs = {
 export type QueryCuratedChallengesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<CuratedPoolFilter>;
 };
 
 export type QueryDailyChallengeArgs = {
@@ -4639,6 +4646,7 @@ export type DailyChallengeQuery = {
 export type CuratedChallengesQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<CuratedPoolFilter>;
 }>;
 
 export type CuratedChallengesQuery = {
@@ -9661,8 +9669,8 @@ useInfiniteDailyChallengeQuery.getKey = (
     : ['DailyChallenge.infinite', variables];
 
 export const CuratedChallengesDocument = `
-    query CuratedChallenges($limit: Int, $offset: Int) {
-  curatedChallenges(limit: $limit, offset: $offset) {
+    query CuratedChallenges($limit: Int, $offset: Int, $status: CuratedPoolFilter) {
+  curatedChallenges(limit: $limit, offset: $offset, status: $status) {
     id
     pinnedDate
     createdAt

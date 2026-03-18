@@ -955,6 +955,12 @@ export type CuratedChallengeEntry = {
   usedDate?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export enum CuratedPoolFilter {
+  All = 'ALL',
+  Remaining = 'REMAINING',
+  Used = 'USED',
+}
+
 /** Daily challenge info - does NOT include the answer album */
 export type DailyChallengeInfo = {
   __typename?: 'DailyChallengeInfo';
@@ -2168,6 +2174,7 @@ export type QueryCorrectionSearchArgs = {
 export type QueryCuratedChallengesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<CuratedPoolFilter>;
 };
 
 export type QueryDailyChallengeArgs = {
@@ -3560,6 +3567,7 @@ export type ResolversTypes = ResolversObject<{
   CreateRecommendationPayload: ResolverTypeWrapper<CreateRecommendationPayload>;
   CreateRecommendationWithAlbumsInput: CreateRecommendationWithAlbumsInput;
   CuratedChallengeEntry: ResolverTypeWrapper<CuratedChallengeEntry>;
+  CuratedPoolFilter: CuratedPoolFilter;
   DailyChallengeInfo: ResolverTypeWrapper<DailyChallengeInfo>;
   DailyPuzzle: ResolverTypeWrapper<DailyPuzzle>;
   DataQuality: DataQuality;

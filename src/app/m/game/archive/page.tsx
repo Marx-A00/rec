@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 export default function MobileArchivePage() {
   return (
     <div className='flex h-full flex-col items-center overflow-y-auto px-4 py-6'>
-      <h1 className='mb-4 text-2xl font-bold text-white'>Archive</h1>
       <p className='mb-6 text-center text-sm text-zinc-400'>
         Play past daily challenges you missed
       </p>

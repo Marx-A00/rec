@@ -67,15 +67,17 @@ export function MobileSideDrawer({
     onOpenChange(false);
   }, [pathname, onOpenChange]);
 
-  // Lock body scroll when open
+  // Lock scroll container when drawer is open
   useEffect(() => {
+    const container = document.getElementById('mobile-scroll-container');
+    if (!container) return;
     if (open) {
-      document.body.style.overflow = 'hidden';
+      container.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      container.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = '';
+      container.style.overflow = '';
     };
   }, [open]);
 

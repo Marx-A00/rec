@@ -55,8 +55,9 @@ export default function MobileBottomNav() {
 
   return (
     <nav
+      id='mobile-bottom-nav'
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50',
+        'shrink-0',
         'h-14 bg-zinc-900/95 backdrop-blur-lg',
         'border-t border-zinc-800',
         'pb-[env(safe-area-inset-bottom)]'

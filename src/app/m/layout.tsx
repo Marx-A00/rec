@@ -45,19 +45,20 @@ export default async function MobileLayout({
   }
 
   return (
-    <div className='min-h-screen bg-black text-white'>
-      {/* Sticky header with search */}
+    <div
+      id='mobile-root'
+      className='fixed inset-0 flex flex-col bg-black text-white'
+    >
       <MobileHeader />
 
-      {/* Main scrollable content */}
+      {/* Scroll container — all page content scrolls within this element */}
       <main
-        className='pb-[calc(56px+env(safe-area-inset-bottom))]'
-        id='mobile-main-content'
+        className='flex-1 min-h-0 overflow-y-auto'
+        id='mobile-scroll-container'
       >
         {children}
       </main>
 
-      {/* Fixed bottom navigation */}
       <MobileBottomNav />
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useSearchGameAlbumsQuery } from '@/generated/graphql';
 import {
@@ -19,6 +20,13 @@ interface AlbumGuessInputProps {
   isSubmitting?: boolean;
 }
 
+interface DropdownPosition {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+}
+
 /**
  * Autocomplete search input for guessing albums.
  *
@@ -34,6 +42,8 @@ interface AlbumGuessInputProps {
  *   - Tab: Move to Skip button (natural tab order)
  * - Click-outside to close
  * - Mobile-friendly: 44px+ touch targets, scrollable dropdown
+ * - Dropdown rendered via portal into root mobile container (not document.body)
+ * - Uses position:absolute (not fixed) to avoid iOS Safari keyboard bugs
  */
 export function AlbumGuessInput({
   onGuess,
@@ -48,8 +58,68 @@ export function AlbumGuessInput({
   // after each guess. Without this, cmdk holds onto the previous selection
   // and keyboard navigation (Enter/arrows) breaks on subsequent guesses.
   const [selectedValue, setSelectedValue] = useState('');
+  const [dropdownPos, setDropdownPos] = useState<DropdownPosition | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const commandRef = useRef<HTMLDivElement>(null);
+
+  // Portal target: the root mobile layout container (fixed inset-0).
+  // We portal here instead of document.body so we can use position:absolute
+  // relative to this container. This avoids iOS Safari's broken position:fixed
+  // behavior when the virtual keyboard is open.
+  const getPortalTarget = useCallback(() => {
+    return document.getElementById('mobile-root') ?? document.body;
+  }, []);
+
+  // Measure the input's position and compute where the portal dropdown should go.
+  // Uses position:absolute relative to the root mobile container instead of
+  // position:fixed on document.body, avoiding iOS Safari keyboard positioning bugs.
+  const updateDropdownPosition = useCallback(() => {
+    if (!commandRef.current) return;
+    const portalTarget = getPortalTarget();
+    const inputRect = commandRef.current.getBoundingClientRect();
+    const containerRect = portalTarget.getBoundingClientRect();
+    const DROPDOWN_GAP = 4;
+    const VIEWPORT_PADDING = 8;
+    // Position relative to the portal target container
+    const relativeTop = inputRect.bottom - containerRect.top;
+    const relativeLeft = inputRect.left - containerRect.left;
+    const availableBelow =
+      containerRect.height - relativeTop - DROPDOWN_GAP - VIEWPORT_PADDING;
+    const maxHeight = Math.min(300, availableBelow);
+    setDropdownPos({
+      top: relativeTop + DROPDOWN_GAP,
+      left: relativeLeft,
+      width: inputRect.width,
+      maxHeight: Math.max(maxHeight, 120), // minimum usable height
+    });
+  }, [getPortalTarget]);
+
+  const showDropdown = isOpen && inputValue.length >= 2;
+
+  // Recalculate position when dropdown becomes visible or viewport changes.
+  // Keyed on showDropdown (not just isOpen) because the keyboard may have
+  // shifted elements between focus and the user typing 2+ characters.
+  useEffect(() => {
+    if (!showDropdown) return;
+    updateDropdownPosition();
+
+    const handleChange = () => updateDropdownPosition();
+    const vv = window.visualViewport;
+
+    // visualViewport fires on keyboard open/close, pinch zoom, address bar
+    vv?.addEventListener('resize', handleChange);
+    vv?.addEventListener('scroll', handleChange);
+    window.addEventListener('resize', handleChange);
+
+    return () => {
+      vv?.removeEventListener('resize', handleChange);
+      vv?.removeEventListener('scroll', handleChange);
+      window.removeEventListener('resize', handleChange);
+    };
+  }, [showDropdown, updateDropdownPosition]);
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -105,13 +175,15 @@ export function AlbumGuessInput({
     // Enter and arrow keys are handled by cmdk Command component
   };
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside (checks both container and portaled dropdown)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const inContainer =
+        containerRef.current && containerRef.current.contains(target);
+      const inDropdown =
+        dropdownRef.current && dropdownRef.current.contains(target);
+      if (!inContainer && !inDropdown) {
         setIsOpen(false);
       }
     };
@@ -120,10 +192,42 @@ export function AlbumGuessInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const dropdownContent = showDropdown && dropdownPos && (
+    <CommandList
+      className='custom-scrollbar overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 shadow-lg'
+      style={{ maxHeight: dropdownPos.maxHeight }}
+    >
+      {isError ? (
+        <CommandEmpty>Search unavailable. Keep typing to retry.</CommandEmpty>
+      ) : isLoading ? (
+        <CommandEmpty>Searching...</CommandEmpty>
+      ) : results.length === 0 ? (
+        <CommandEmpty>No albums found</CommandEmpty>
+      ) : (
+        <CommandGroup>
+          {results.map(result => (
+            <CommandItem
+              key={result.id}
+              value={String(result.id)}
+              onSelect={() => handleSelect(String(result.id))}
+              className='min-h-[44px] cursor-pointer py-3 data-[selected=true]:bg-zinc-700'
+            >
+              <div>
+                <div className='font-medium'>{result.title}</div>
+                <div className='text-sm text-zinc-400'>{result.artistName}</div>
+              </div>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      )}
+    </CommandList>
+  );
+
   return (
     <div className='space-y-3' ref={containerRef}>
       <div className='relative w-full'>
         <Command
+          ref={commandRef}
           shouldFilter={false}
           value={selectedValue}
           onValueChange={setSelectedValue}
@@ -152,37 +256,26 @@ export function AlbumGuessInput({
             className='h-12 min-h-[44px]'
             aria-label='Search for an album'
           />
-          {isOpen && inputValue.length >= 2 && (
-            <CommandList className='custom-scrollbar absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 shadow-lg'>
-              {isError ? (
-                <CommandEmpty>
-                  Search unavailable. Keep typing to retry.
-                </CommandEmpty>
-              ) : isLoading ? (
-                <CommandEmpty>Searching...</CommandEmpty>
-              ) : results.length === 0 ? (
-                <CommandEmpty>No albums found</CommandEmpty>
-              ) : (
-                <CommandGroup>
-                  {results.map(result => (
-                    <CommandItem
-                      key={result.id}
-                      value={String(result.id)}
-                      onSelect={() => handleSelect(String(result.id))}
-                      className='min-h-[44px] cursor-pointer py-3 data-[selected=true]:bg-zinc-700'
-                    >
-                      <div>
-                        <div className='font-medium'>{result.title}</div>
-                        <div className='text-sm text-zinc-400'>
-                          {result.artistName}
-                        </div>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          )}
+
+          {/* Portal dropdown into the root mobile container (fixed inset-0) to escape
+              stacking context and overflow clipping. Uses position:absolute instead of
+              position:fixed to avoid iOS Safari keyboard positioning bugs. */}
+          {dropdownContent &&
+            createPortal(
+              <div
+                ref={dropdownRef}
+                className='z-[60]'
+                style={{
+                  position: 'absolute',
+                  top: dropdownPos!.top,
+                  left: dropdownPos!.left,
+                  width: dropdownPos!.width,
+                }}
+              >
+                {dropdownContent}
+              </div>,
+              getPortalTarget()
+            )}
         </Command>
       </div>
 

@@ -115,11 +115,13 @@ export default function MobileFollowListClient({
 
   const users: UserItem[] = data?.pages.flatMap(page => page[type] ?? []) || [];
 
-  // Infinite scroll handler
+  // Infinite scroll handler — listens on the mobile scroll container, not window
   const handleScroll = useCallback(() => {
+    const container = document.getElementById('mobile-scroll-container');
+    if (!container) return;
     if (
-      window.innerHeight + document.documentElement.scrollTop >=
-      document.documentElement.offsetHeight - 800
+      container.clientHeight + container.scrollTop >=
+      container.scrollHeight - 800
     ) {
       if (hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
@@ -128,8 +130,10 @@ export default function MobileFollowListClient({
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const container = document.getElementById('mobile-scroll-container');
+    if (!container) return;
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
   const handleFollowChange = useCallback(() => {

@@ -2578,7 +2578,7 @@ type Query {
   """
   Admin: Get curated challenge list
   """
-  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
+  curatedChallenges(limit: Int, offset: Int, status: CuratedPoolFilter): [CuratedChallengeEntry!]!
 
   """
   Admin: Get count of curated challenges
@@ -2693,6 +2693,12 @@ enum UncoverSessionStatus {
   IN_PROGRESS
   WON
   LOST
+}
+
+enum CuratedPoolFilter {
+  ALL
+  REMAINING
+  USED
 }
 
 """
