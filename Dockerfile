@@ -60,10 +60,10 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN mkdir -p /pnpm
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 --home /home/nextjs nextjs
 
-# tsx for worker mode (devDep, but worker needs it at runtime)
-RUN pnpm add -g tsx
+# tsx (worker runtime) + prisma (migrate deploy at startup)
+RUN pnpm add -g tsx prisma
 
 # Production node_modules (worker needs full deps)
 COPY --from=prod-deps /app/node_modules ./node_modules
