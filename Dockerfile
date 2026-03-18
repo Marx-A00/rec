@@ -69,7 +69,7 @@ RUN pnpm add -g tsx
 COPY --from=prod-deps /app/node_modules ./node_modules
 
 # Generated Prisma client (overlay onto prod node_modules)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Prisma schema + migrations (for prisma migrate deploy)
 COPY --from=builder /app/prisma ./prisma
