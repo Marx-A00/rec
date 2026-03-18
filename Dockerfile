@@ -43,7 +43,8 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile --prod
+# HUSKY=0 disables the "prepare" hook (husky is a devDep, not available here)
+RUN HUSKY=0 pnpm install --frozen-lockfile --prod
 
 # ==========================================================================
 # Stage 5: Runner (final production image)
