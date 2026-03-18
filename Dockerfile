@@ -40,7 +40,6 @@ RUN pnpm build
 FROM base AS prod-deps
 
 WORKDIR /app
-ENV HUSKY=0
 
 COPY package.json pnpm-lock.yaml ./
 
