@@ -18,8 +18,6 @@ const nextConfig: NextConfig = {
   transpilePackages: ['lucide-react'],
   // Do not ignore ESLint during builds; we fix issues instead
   images: {
-    loader: 'custom',
-    loaderFile: './src/lib/image-loader.ts',
     remotePatterns: [
       {
         protocol: 'https',
