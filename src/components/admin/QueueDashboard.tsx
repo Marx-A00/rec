@@ -45,7 +45,7 @@ interface QueueStats {
 interface QueueJob {
   id: string;
   name: string;
-  status: 'active' | 'waiting' | 'delayed' | 'failed';
+  status: 'active' | 'waiting' | 'delayed' | 'completed' | 'failed';
   data: {
     query?: string;
     mbid?: string;
@@ -53,8 +53,11 @@ interface QueueJob {
     albumId?: string;
     artistId?: string;
   };
+  priority?: number;
   createdAt: string;
   processedOn?: string;
+  finishedOn?: string;
+  duration?: number;
   attempts: number;
   error?: string;
 }
@@ -65,6 +68,7 @@ interface QueueSnapshot {
     active: QueueJob[];
     waiting: QueueJob[];
     delayed: QueueJob[];
+    completed: QueueJob[];
     failed: QueueJob[];
   };
   timestamp: string;
@@ -91,6 +95,12 @@ function formatTimeAgo(dateString: string): string {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = Math.round(ms / 100) / 10;
+  return `${seconds}s`;
 }
 
 function getJobDescription(job: QueueJob): string {
@@ -754,45 +764,91 @@ export function QueueDashboard({
                 <div className='flex items-center justify-center py-4'>
                   <Loader2 className='h-4 w-4 text-zinc-500 animate-spin' />
                 </div>
-              ) : jobs?.failed && jobs.failed.length > 0 ? (
-                <div className='space-y-1'>
-                  {jobs.failed.slice(0, 10).map(job => (
-                    <div
-                      key={job.id}
-                      onClick={() => handleJobClick(job)}
-                      className='bg-red-900/10 border border-red-900/20 rounded-lg px-3 py-2 cursor-pointer hover:bg-red-900/20 transition-colors'
-                    >
-                      <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
-                          <XCircle className='h-3 w-3 text-red-500' />
-                          <span className='text-zinc-300 text-sm'>
-                            {job.name}
-                          </span>
-                          {getJobDescription(job) && (
-                            <span className='text-zinc-500 text-xs'>
-                              {getJobDescription(job)}
-                            </span>
-                          )}
-                        </div>
-                        <Badge
-                          variant='outline'
-                          className='text-xs border-red-800 text-red-400'
-                        >
-                          {job.attempts} attempts
-                        </Badge>
-                      </div>
-                      {job.error && (
-                        <p className='text-xs text-red-400/70 mt-1 truncate'>
-                          {job.error}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
               ) : (
-                <div className='text-center py-4 text-zinc-600 text-sm'>
-                  No recent failures
-                </div>
+                (() => {
+                  // Merge completed + failed, sort by most recently finished
+                  const finished = [
+                    ...(jobs?.completed ?? []),
+                    ...(jobs?.failed ?? []),
+                  ].sort((a, b) => {
+                    const aTime = a.finishedOn || a.processedOn || a.createdAt;
+                    const bTime = b.finishedOn || b.processedOn || b.createdAt;
+                    return (
+                      new Date(bTime).getTime() - new Date(aTime).getTime()
+                    );
+                  });
+
+                  if (finished.length === 0) {
+                    return (
+                      <div className='text-center py-4 text-zinc-600 text-sm'>
+                        No recently finished jobs
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className='space-y-1'>
+                      {finished.slice(0, 10).map(job => {
+                        const isFailed = job.status === 'failed';
+                        return (
+                          <div
+                            key={`${job.status}-${job.id}`}
+                            onClick={() => handleJobClick(job)}
+                            className={`rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                              isFailed
+                                ? 'bg-red-900/10 border border-red-900/20 hover:bg-red-900/20'
+                                : 'bg-zinc-800/30 hover:bg-zinc-800/60'
+                            }`}
+                          >
+                            <div className='flex items-center justify-between'>
+                              <div className='flex items-center gap-2'>
+                                {isFailed ? (
+                                  <XCircle className='h-3 w-3 text-red-500' />
+                                ) : (
+                                  <CheckCircle className='h-3 w-3 text-green-600' />
+                                )}
+                                <span className='text-zinc-300 text-sm'>
+                                  {job.name}
+                                </span>
+                                {getJobDescription(job) && (
+                                  <span className='text-zinc-500 text-xs'>
+                                    {getJobDescription(job)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className='flex items-center gap-2'>
+                                {job.duration != null && (
+                                  <span className='text-xs text-zinc-600'>
+                                    {formatDuration(job.duration)}
+                                  </span>
+                                )}
+                                {isFailed ? (
+                                  <Badge
+                                    variant='outline'
+                                    className='text-xs border-red-800 text-red-400'
+                                  >
+                                    failed
+                                  </Badge>
+                                ) : (
+                                  <span className='text-xs text-zinc-600'>
+                                    {formatTimeAgo(
+                                      job.finishedOn || job.createdAt
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {isFailed && job.error && (
+                              <p className='text-xs text-red-400/70 mt-1 truncate'>
+                                {job.error}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>

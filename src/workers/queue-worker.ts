@@ -439,12 +439,13 @@ class MusicBrainzWorkerService {
 
         // BullMQ v5+: jobs with priority > 0 are in "prioritized" state,
         // not "waiting". We need both to show all pending jobs.
-        const [waiting, prioritized, active, delayed, failed] =
+        const [waiting, prioritized, active, delayed, completed, failed] =
           await Promise.all([
             queue.getWaiting(0, 20),
             queue.getJobs(['prioritized'], 0, 20),
             queue.getActive(0, 10),
             queue.getDelayed(0, 10),
+            queue.getCompleted(0, 10),
             queue.getFailed(0, 10),
           ]);
 
@@ -467,6 +468,13 @@ class MusicBrainzWorkerService {
           processedOn: job.processedOn
             ? new Date(job.processedOn).toISOString()
             : undefined,
+          finishedOn: job.finishedOn
+            ? new Date(job.finishedOn).toISOString()
+            : undefined,
+          duration:
+            job.finishedOn && job.processedOn
+              ? job.finishedOn - job.processedOn
+              : undefined,
           attempts: job.attemptsMade || 0,
           error: job.failedReason,
         });
@@ -487,6 +495,7 @@ class MusicBrainzWorkerService {
             active: active.map(j => formatJob(j, 'active')),
             waiting: allWaiting.map(j => formatJob(j, 'waiting')),
             delayed: delayed.map(j => formatJob(j, 'delayed')),
+            completed: completed.map(j => formatJob(j, 'completed')),
             failed: failed.map(j => formatJob(j, 'failed')),
           },
           timestamp: new Date().toISOString(),
