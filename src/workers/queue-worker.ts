@@ -456,19 +456,16 @@ class MusicBrainzWorkerService {
           id: job.id,
           name: job.name,
           status,
-          data: {
-            query: job.data?.query,
-            mbid: job.data?.mbid,
-            artistMbid: job.data?.artistMbid,
-            albumId: job.data?.albumId,
-            artistId: job.data?.artistId,
-          },
+          data: job.data ?? {},
+          result: job.returnvalue ?? undefined,
           priority: job.opts?.priority,
+          delay: job.delay ?? 0,
+          progress: job.progress ?? 0,
           createdAt: new Date(job.timestamp).toISOString(),
           processedOn: job.processedOn
             ? new Date(job.processedOn).toISOString()
             : undefined,
-          finishedOn: job.finishedOn
+          completedAt: job.finishedOn
             ? new Date(job.finishedOn).toISOString()
             : undefined,
           duration:
@@ -476,7 +473,9 @@ class MusicBrainzWorkerService {
               ? job.finishedOn - job.processedOn
               : undefined,
           attempts: job.attemptsMade || 0,
+          maxAttempts: job.opts?.attempts ?? 3,
           error: job.failedReason,
+          stacktrace: job.stacktrace ?? [],
         });
 
         // Get prioritized count for accurate stats

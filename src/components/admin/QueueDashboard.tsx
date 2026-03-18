@@ -46,20 +46,19 @@ interface QueueJob {
   id: string;
   name: string;
   status: 'active' | 'waiting' | 'delayed' | 'completed' | 'failed';
-  data: {
-    query?: string;
-    mbid?: string;
-    artistMbid?: string;
-    albumId?: string;
-    artistId?: string;
-  };
+  data: Record<string, unknown>;
+  result?: Record<string, unknown>;
   priority?: number;
+  delay?: number;
+  progress?: number;
   createdAt: string;
   processedOn?: string;
-  finishedOn?: string;
+  completedAt?: string;
   duration?: number;
   attempts: number;
+  maxAttempts?: number;
   error?: string;
+  stacktrace?: string[];
 }
 
 interface QueueSnapshot {
@@ -104,14 +103,15 @@ function formatDuration(ms: number): string {
 }
 
 function getJobDescription(job: QueueJob): string {
-  if (job.data.query) return `"${job.data.query}"`;
-  if (job.data.mbid) return `MBID: ${job.data.mbid.substring(0, 8)}...`;
-  if (job.data.artistMbid)
-    return `Artist: ${job.data.artistMbid.substring(0, 8)}...`;
-  if (job.data.albumId)
-    return `Album ID: ${job.data.albumId.substring(0, 8)}...`;
-  if (job.data.artistId)
-    return `Artist ID: ${job.data.artistId.substring(0, 8)}...`;
+  const d = job.data;
+  if (typeof d.query === 'string') return `"${d.query}"`;
+  if (typeof d.mbid === 'string') return `MBID: ${d.mbid.substring(0, 8)}...`;
+  if (typeof d.artistMbid === 'string')
+    return `Artist: ${d.artistMbid.substring(0, 8)}...`;
+  if (typeof d.albumId === 'string')
+    return `Album ID: ${d.albumId.substring(0, 8)}...`;
+  if (typeof d.artistId === 'string')
+    return `Artist ID: ${d.artistId.substring(0, 8)}...`;
   return '';
 }
 
@@ -123,16 +123,14 @@ function queueJobToHistoryItem(job: QueueJob): JobHistoryItem {
   return {
     id: job.id,
     name: job.name,
-    status:
-      job.status === 'failed'
-        ? 'failed'
-        : job.status === 'active'
-          ? 'active'
-          : 'waiting',
-    data: job.data as Record<string, unknown>,
+    status: job.status,
+    data: job.data,
+    result: job.result,
     error: job.error,
     createdAt: job.createdAt,
     processedOn: job.processedOn,
+    completedAt: job.completedAt,
+    duration: job.duration,
     attempts: job.attempts,
   };
 }
@@ -285,7 +283,7 @@ export function QueueDashboard({
   const jobs = snapshot?.jobs;
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pb-16'>
       {/* Queue Paused Banner */}
       {stats?.paused && (
         <div className='p-4 bg-yellow-900/20 border border-yellow-800 rounded-lg flex items-center gap-3'>
@@ -771,8 +769,8 @@ export function QueueDashboard({
                     ...(jobs?.completed ?? []),
                     ...(jobs?.failed ?? []),
                   ].sort((a, b) => {
-                    const aTime = a.finishedOn || a.processedOn || a.createdAt;
-                    const bTime = b.finishedOn || b.processedOn || b.createdAt;
+                    const aTime = a.completedAt || a.processedOn || a.createdAt;
+                    const bTime = b.completedAt || b.processedOn || b.createdAt;
                     return (
                       new Date(bTime).getTime() - new Date(aTime).getTime()
                     );
@@ -832,7 +830,7 @@ export function QueueDashboard({
                                 ) : (
                                   <span className='text-xs text-zinc-600'>
                                     {formatTimeAgo(
-                                      job.finishedOn || job.createdAt
+                                      job.completedAt || job.createdAt
                                     )}
                                   </span>
                                 )}
