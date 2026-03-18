@@ -437,12 +437,19 @@ class MusicBrainzWorkerService {
         const stats = await getMusicBrainzQueue().getStats();
         const isPaused = await queue.isPaused();
 
-        const [waiting, active, delayed, failed] = await Promise.all([
-          queue.getWaiting(0, 20),
-          queue.getActive(0, 10),
-          queue.getDelayed(0, 10),
-          queue.getFailed(0, 10),
-        ]);
+        // BullMQ v5+: jobs with priority > 0 are in "prioritized" state,
+        // not "waiting". We need both to show all pending jobs.
+        const [waiting, prioritized, active, delayed, failed] =
+          await Promise.all([
+            queue.getWaiting(0, 20),
+            queue.getJobs(['prioritized'], 0, 20),
+            queue.getActive(0, 10),
+            queue.getDelayed(0, 10),
+            queue.getFailed(0, 10),
+          ]);
+
+        // Merge waiting + prioritized into a single list
+        const allWaiting = [...waiting, ...prioritized].slice(0, 20);
 
         const formatJob = (job: any, status: string) => ({
           id: job.id,
@@ -455,6 +462,7 @@ class MusicBrainzWorkerService {
             albumId: job.data?.albumId,
             artistId: job.data?.artistId,
           },
+          priority: job.opts?.priority,
           createdAt: new Date(job.timestamp).toISOString(),
           processedOn: job.processedOn
             ? new Date(job.processedOn).toISOString()
@@ -463,9 +471,12 @@ class MusicBrainzWorkerService {
           error: job.failedReason,
         });
 
+        // Get prioritized count for accurate stats
+        const prioritizedCount = await queue.getJobCountByTypes('prioritized');
+
         res.json({
           stats: {
-            waiting: stats.waiting,
+            waiting: stats.waiting + prioritizedCount,
             active: stats.active,
             delayed: stats.delayed,
             completed: stats.completed,
@@ -474,7 +485,7 @@ class MusicBrainzWorkerService {
           },
           jobs: {
             active: active.map(j => formatJob(j, 'active')),
-            waiting: waiting.map(j => formatJob(j, 'waiting')),
+            waiting: allWaiting.map(j => formatJob(j, 'waiting')),
             delayed: delayed.map(j => formatJob(j, 'delayed')),
             failed: failed.map(j => formatJob(j, 'failed')),
           },

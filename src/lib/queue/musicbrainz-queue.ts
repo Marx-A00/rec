@@ -217,19 +217,26 @@ export class MusicBrainzQueue {
    * Get queue statistics
    */
   async getStats(): Promise<QueueStats> {
-    const waiting = await this.queue.getWaiting();
-    const active = await this.queue.getActive();
-    const completed = await this.queue.getCompleted();
-    const failed = await this.queue.getFailed();
-    const delayed = await this.queue.getDelayed();
+    // BullMQ v5+: jobs with priority > 0 are in "prioritized" state,
+    // not "waiting". We need to count both for accurate stats.
+    const [waiting, active, completed, failed, delayed, prioritized, paused] =
+      await Promise.all([
+        this.queue.getWaiting(),
+        this.queue.getActive(),
+        this.queue.getCompleted(),
+        this.queue.getFailed(),
+        this.queue.getDelayed(),
+        this.queue.getJobCountByTypes('prioritized'),
+        this.queue.isPaused(),
+      ]);
 
     return {
-      waiting: waiting.length,
+      waiting: waiting.length + prioritized,
       active: active.length,
       completed: completed.length,
       failed: failed.length,
       delayed: delayed.length,
-      paused: (await this.queue.isPaused()) ? 1 : 0,
+      paused: paused ? 1 : 0,
     };
   }
 
