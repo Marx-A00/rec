@@ -1,0 +1,48 @@
+# Dependencies (installed in Docker)
+node_modules
+.pnpm-store
+
+# Build output (built in Docker)
+.next
+out
+build
+
+# Environment files
+.env*
+
+# Git
+.git
+.gitignore
+
+# Testing
+test-results
+playwright-report
+coverage
+tests
+
+# Dev tools
+.claude
+.taskmaster
+.cursor
+.vscode
+.idea
+.roo
+.ralph-tui
+
+# Data and backups
+data/musicbrainz
+backups
+d1-chunks
+tmp_chunks
+logs
+*.log
+*.db
+*.dump
+*.csv
+
+# Misc
+.DS_Store
+*.pem
+.wrangler
+designs
+scripts/archive

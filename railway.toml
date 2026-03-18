@@ -1,11 +1,10 @@
 # Railway Configuration for REC
-# Defines multiple services: web (Next.js) and worker (BullMQ)
+# Multi-stage Dockerfile for web + worker services
 
 [build]
-builder = "NIXPACKS"
-buildCommand = "pnpm install && pnpm prisma generate && pnpm build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
-# Smart start command - uses SERVICE_TYPE env var to decide
 [deploy]
 startCommand = "bash scripts/railway-start.sh"
 restartPolicyType = "ON_FAILURE"
