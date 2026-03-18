@@ -143,6 +143,9 @@ importers:
       disconnect:
         specifier: ^1.2.2
         version: 1.2.2
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
       driver.js:
         specifier: ^1.4.0
         version: 1.4.0
@@ -312,9 +315,6 @@ importers:
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.6.1
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
