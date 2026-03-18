@@ -28,6 +28,15 @@ FROM base AS builder
 
 WORKDIR /app
 
+# NEXT_PUBLIC_* vars must be available at build time for Next.js to inline
+# them into the client bundle. Railway injects service env vars as build
+# args, but they must be declared with ARG to be accessible.
+ARG NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL
+ARG NEXT_PUBLIC_URL
+ARG NEXT_PUBLIC_ADMIN_EMAIL
+ARG NEXT_PUBLIC_MONITORING_API_URL
+ARG NEXT_PUBLIC_ADMIN_OVERLAY
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
