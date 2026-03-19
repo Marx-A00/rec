@@ -101,6 +101,7 @@ export function getTilesForStage(
   stage: number,
   totalStages = TOTAL_STAGES
 ): Tile[] {
+  if (stage <= 0) return [];
   const clampedStage = Math.max(1, Math.min(stage, totalStages));
   const target = STAGE_REVEAL_TARGETS[clampedStage - 1] ?? 1.0;
   const count = Math.floor(target * orderedTiles.length);
@@ -340,6 +341,7 @@ export function getRegionTilesForStage(
   stage: number,
   gridSize = 16
 ): Tile[] {
+  if (stage <= 0) return [];
   const clampedStage = Math.max(1, Math.min(stage, regions.length));
   const revealedSet = new Set<number>();
   const tiles: Tile[] = [];

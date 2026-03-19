@@ -26,7 +26,7 @@ export function TeaserImage({ className }: { className?: string }) {
     <RevealImage
       imageUrl={data.dailyChallenge.imageUrl}
       challengeId={data.dailyChallenge.id}
-      stage={1}
+      stage={0}
       revealMode='regions'
       showToggle={false}
       className={`aspect-square w-full overflow-hidden rounded-lg ${className ?? ''}`}
