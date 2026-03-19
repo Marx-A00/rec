@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, X, Menu, Bell } from 'lucide-react';
 
@@ -24,6 +24,11 @@ export default function MobileHeader() {
   // Collapse search on game pages by default, expand everywhere else
   const isGameRoute = pathname.startsWith('/m/game');
   const [searchExpanded, setSearchExpanded] = useState(!isGameRoute);
+
+  // Sync search bar visibility when navigating between routes
+  useEffect(() => {
+    setSearchExpanded(!pathname.startsWith('/m/game'));
+  }, [pathname]);
 
   // Use Zustand store for search type persistence
   const preferredSearchType = useSearchStore(

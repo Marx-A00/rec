@@ -368,6 +368,17 @@ Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `S
 - **Database Indexes**: On userId, albumId for fast lookups
 - **Pagination**: Cursor-based for large datasets
 
+### Docker & Railway Deployment
+
+Production builds use a multi-stage Dockerfile (not Nixpacks). Next.js runs in `standalone` output mode.
+
+- **One image, two services**: Web and worker share a Docker image, differentiated at runtime by `SERVICE_TYPE` env var (`worker` for BullMQ, anything else for web)
+- **Layer caching**: `pnpm install` is cached as a Docker layer keyed on `package.json` + `pnpm-lock.yaml`. Code-only deploys skip dependency installation entirely
+- **Worker runtime**: `tsx` and `prisma` are installed globally in the Docker image since they're devDependencies but needed at runtime by the worker
+- **Migrations**: `prisma migrate deploy` runs automatically at container startup (in `scripts/railway-start.sh`) before either service starts
+
+**IMPORTANT — devDependencies vs dependencies**: The Docker prod stage only installs production `dependencies`. If the worker (or any runtime code) imports a package that's currently a `devDependency`, the container will crash with `Cannot find module`. When adding new imports to worker code or shared `src/lib/` files, make sure the package is in `dependencies`, not `devDependencies`.
+
 ### Common Gotchas
 
 - Always run `pnpm codegen` after modifying `.graphql` files
@@ -375,6 +386,7 @@ Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `S
 - MusicBrainz API requires rate limiting (1 req/sec)
 - Prisma UUID fields require `@db.Uuid` for PostgreSQL
 - Next.js Image requires `unoptimized` prop for external images
+- Worker runtime packages must be in `dependencies` not `devDependencies` (Docker prod install only includes production deps)
 
 ## TypeScript Standards
 

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { TeaserImage } from '@/components/uncover/TeaserImage';
+import { SmokeBackground } from '@/components/ui/smoke-background';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 
 /**
@@ -73,24 +74,38 @@ export function MobileHomeClient() {
       <div className='flex w-full max-w-xs flex-col gap-3'>
         <Link
           href='/m/game/play'
-          className='flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-emeraled-green px-6 py-3.5 text-base font-semibold text-white transition-transform active:scale-[0.98]'
+          className='relative flex min-h-[48px] items-center justify-center gap-2 overflow-hidden rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-transform active:scale-[0.98] shadow-2xl shadow-black/90'
         >
-          {hasCompleted ? (
-            <>
-              <Eye className='h-5 w-5' />
-              View Results
-            </>
-          ) : (
-            <>
-              <Play className='h-5 w-5 fill-current' />
-              Play
-            </>
-          )}
+          {/* Live smoke inside button */}
+          <div className='absolute inset-0' style={{ opacity: 0.5 }}>
+            <SmokeBackground smokeColor='#0d9668' speed={0.1} density={4.0} />
+          </div>
+
+          {/* Frosted glass overlay */}
+          <div
+            className='absolute inset-0 backdrop-blur-md rounded-xl border border-black/30'
+            style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}
+          />
+
+          {/* Button content */}
+          <span className='relative z-10 flex items-center gap-2'>
+            {hasCompleted ? (
+              <>
+                <Eye className='h-5 w-5' />
+                View Results
+              </>
+            ) : (
+              <>
+                <Play className='h-5 w-5 fill-current' />
+                Play
+              </>
+            )}
+          </span>
         </Link>
 
         <Link
           href='/m/game/archive'
-          className='flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/50 px-6 py-3 text-sm text-zinc-300 transition-colors active:bg-zinc-800'
+          className='flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm text-zinc-400 transition-colors active:bg-zinc-800/50'
         >
           <Archive className='h-4 w-4' />
           Archive
