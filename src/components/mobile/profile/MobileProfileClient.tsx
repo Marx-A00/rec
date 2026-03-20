@@ -336,7 +336,7 @@ export default function MobileProfileClient({
                     {/* Score Badge */}
                     <div className='flex justify-center mb-2'>
                       <span className='text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full'>
-                        {rec.score}% match
+                        {rec.score}/10
                       </span>
                     </div>
 
