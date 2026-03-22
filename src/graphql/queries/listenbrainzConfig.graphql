@@ -1,0 +1,9 @@
+mutation UpdateListenBrainzConfig($input: UpdateListenBrainzConfigInput!) {
+  updateListenBrainzConfig(input: $input) {
+    days
+    includeFuture
+    maxReleases
+    minListenCount
+    minArtistListeners
+  }
+}

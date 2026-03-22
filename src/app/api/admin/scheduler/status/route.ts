@@ -2,7 +2,10 @@
 import { NextResponse } from 'next/server';
 import { Queue } from 'bullmq';
 
-import { getSchedulerEnabled } from '@/lib/config/app-config';
+import {
+  getSchedulerEnabled,
+  getListenBrainzConfig,
+} from '@/lib/config/app-config';
 import { createRedisConnection } from '@/lib/queue/redis';
 
 interface SpotifyConfig {
@@ -31,6 +34,21 @@ interface SchedulerStatus {
     intervalMinutes: number;
     jobKey: string | null;
   };
+  listenbrainz: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+    config: {
+      days: number;
+      includeFuture: boolean;
+      primaryTypes: string[];
+      minListenCount: number;
+      maxReleases: number;
+      minArtistListeners: number;
+    };
+  };
   queue: {
     waiting: number;
     active: number;
@@ -56,12 +74,18 @@ export async function GET() {
     const musicbrainzJob = repeatableJobs.find(job =>
       job.key.includes('musicbrainz-new-releases')
     );
+    const listenbrainzJob = repeatableJobs.find(job =>
+      job.key.includes('listenbrainz-fresh-releases')
+    );
 
-    // Read scheduler enabled state from database (source of truth)
-    const [spotifyEnabled, musicbrainzEnabled] = await Promise.all([
-      getSchedulerEnabled('spotify'),
-      getSchedulerEnabled('musicbrainz'),
-    ]);
+    // Read scheduler enabled state and LB config from database (source of truth)
+    const [spotifyEnabled, musicbrainzEnabled, listenbrainzEnabled, lbConfig] =
+      await Promise.all([
+        getSchedulerEnabled('spotify'),
+        getSchedulerEnabled('musicbrainz'),
+        getSchedulerEnabled('listenbrainz'),
+        getListenBrainzConfig(),
+      ]);
 
     // Get delayed jobs to find next scheduled runs
     const delayedJobs = await queue.getDelayed();
@@ -74,6 +98,9 @@ export async function GET() {
       job =>
         job.name.includes('musicbrainz') && job.name.includes('new-releases')
     );
+    const nextListenbrainzJob = delayedJobs.find(job =>
+      job.name.includes('listenbrainz')
+    );
 
     // Get recent completed jobs to find last run times
     const completedJobs = await queue.getCompleted(0, 50);
@@ -82,6 +109,9 @@ export async function GET() {
     );
     const lastMusicbrainzSync = completedJobs.find(job =>
       job.name.includes('musicbrainz-sync-new-releases')
+    );
+    const lastListenbrainzSync = completedJobs.find(job =>
+      job.name.includes('listenbrainz')
     );
 
     // Get queue stats
@@ -189,6 +219,27 @@ export async function GET() {
           : null,
         intervalMinutes: getIntervalMinutes(musicbrainzJob),
         jobKey: musicbrainzJob?.key || null,
+      },
+      listenbrainz: {
+        enabled: listenbrainzEnabled,
+        nextRunAt: getNextRunTime(listenbrainzJob, nextListenbrainzJob),
+        lastRunAt: lastListenbrainzSync?.finishedOn
+          ? new Date(lastListenbrainzSync.finishedOn).toISOString()
+          : null,
+        intervalMinutes: getIntervalMinutes(listenbrainzJob),
+        jobKey: listenbrainzJob?.key || null,
+        config: {
+          days: lbConfig.days,
+          includeFuture: lbConfig.includeFuture,
+          primaryTypes: process.env.LISTENBRAINZ_SYNC_PRIMARY_TYPES
+            ? process.env.LISTENBRAINZ_SYNC_PRIMARY_TYPES.split(',').map(t =>
+                t.trim()
+              )
+            : ['Album', 'EP', 'Single'],
+          minListenCount: lbConfig.minListenCount,
+          maxReleases: lbConfig.maxReleases,
+          minArtistListeners: lbConfig.minArtistListeners,
+        },
       },
       queue: {
         waiting,

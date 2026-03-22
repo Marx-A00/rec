@@ -33,7 +33,9 @@ import { Button } from '@/components/ui/button';
 import {
   useGetMyRecommendationsQuery,
   useDeleteRecommendationMutation,
+  useUpdateListenBrainzConfigMutation,
 } from '@/generated/graphql';
+import { Input } from '@/components/ui/input';
 
 interface DashboardData {
   health: string;
@@ -96,6 +98,21 @@ interface SchedulerStatusData {
     intervalMinutes: number;
     jobKey: string | null;
   };
+  listenbrainz: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+    config?: {
+      days: number;
+      includeFuture: boolean;
+      primaryTypes: string[];
+      minListenCount: number;
+      maxReleases: number;
+      minArtistListeners: number;
+    };
+  };
 }
 
 // In dev, call worker directly for speed; in prod, use the authenticated proxy
@@ -119,6 +136,60 @@ export default function AdminDashboard() {
   const [togglingScheduler, setTogglingScheduler] = useState<string | null>(
     null
   ); // 'spotify-start' | 'spotify-stop' | 'musicbrainz-start' | etc.
+
+  // ListenBrainz editable config state
+  const [lbConfigEdits, setLbConfigEdits] = useState<{
+    days: number;
+    includeFuture: boolean;
+    maxReleases: number;
+    minListenCount: number;
+    minArtistListeners: number;
+  } | null>(null);
+  const [savingLbConfig, setSavingLbConfig] = useState(false);
+  const [lbConfigMessage, setLbConfigMessage] = useState<string | null>(null);
+
+  const updateLbConfig = useUpdateListenBrainzConfigMutation();
+
+  // Sync editable state when scheduler status loads
+  useEffect(() => {
+    if (schedulerStatus?.listenbrainz?.config && !lbConfigEdits) {
+      const c = schedulerStatus.listenbrainz.config;
+      setLbConfigEdits({
+        days: c.days,
+        includeFuture: c.includeFuture,
+        maxReleases: c.maxReleases,
+        minListenCount: c.minListenCount,
+        minArtistListeners: c.minArtistListeners,
+      });
+    }
+  }, [schedulerStatus, lbConfigEdits]);
+
+  const handleSaveLbConfig = async () => {
+    if (!lbConfigEdits) return;
+    setSavingLbConfig(true);
+    setLbConfigMessage(null);
+    try {
+      await updateLbConfig.mutateAsync({
+        input: {
+          days: lbConfigEdits.days,
+          includeFuture: lbConfigEdits.includeFuture,
+          maxReleases: lbConfigEdits.maxReleases,
+          minListenCount: lbConfigEdits.minListenCount,
+          minArtistListeners: lbConfigEdits.minArtistListeners,
+        },
+      });
+      setLbConfigMessage('Config saved');
+      // Refresh scheduler status to reflect new values
+      fetchSchedulerStatus();
+      setTimeout(() => setLbConfigMessage(null), 3000);
+    } catch (err) {
+      setLbConfigMessage(
+        `Error: ${err instanceof Error ? err.message : 'Failed to save'}`
+      );
+    } finally {
+      setSavingLbConfig(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -161,7 +232,7 @@ export default function AdminDashboard() {
   };
 
   const toggleScheduler = async (
-    scheduler: 'spotify' | 'musicbrainz',
+    scheduler: 'spotify' | 'musicbrainz' | 'listenbrainz',
     action: 'start' | 'stop' | 'sync'
   ) => {
     const key = `${scheduler}-${action}`;
@@ -176,7 +247,12 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (data.success) {
-        const label = scheduler === 'spotify' ? 'Spotify' : 'MusicBrainz';
+        const labelMap: Record<string, string> = {
+          spotify: 'Spotify',
+          musicbrainz: 'MusicBrainz',
+          listenbrainz: 'ListenBrainz',
+        };
+        const label = labelMap[scheduler] ?? scheduler;
         const actionLabel =
           action === 'start'
             ? 'started'
@@ -750,6 +826,203 @@ export default function AdminDashboard() {
                   <p className='text-xs text-zinc-500'>
                     MusicBrainz sync is currently disabled.
                   </p>
+                </div>
+
+                {/* ListenBrainz Scheduler */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Database className='h-4 w-4 text-orange-500' />
+                      <h4 className='text-sm font-medium text-white'>
+                        ListenBrainz Fresh Releases
+                      </h4>
+                    </div>
+                    <Badge
+                      className={
+                        schedulerStatus?.listenbrainz?.enabled
+                          ? 'bg-orange-600'
+                          : 'bg-zinc-600'
+                      }
+                    >
+                      {schedulerStatus?.listenbrainz?.enabled
+                        ? 'Running'
+                        : 'Stopped'}
+                    </Badge>
+                  </div>
+
+                  {schedulerStatus?.listenbrainz && (
+                    <div className='text-xs text-zinc-400 space-y-1 mb-3'>
+                      {schedulerStatus.listenbrainz.intervalMinutes > 0 && (
+                        <p>
+                          Interval:{' '}
+                          {Math.round(
+                            schedulerStatus.listenbrainz.intervalMinutes / 1440
+                          )}{' '}
+                          days
+                        </p>
+                      )}
+                      {schedulerStatus.listenbrainz.nextRunAt && (
+                        <p>
+                          Next run:{' '}
+                          {new Date(
+                            schedulerStatus.listenbrainz.nextRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                      {schedulerStatus.listenbrainz.lastRunAt && (
+                        <p>
+                          Last run:{' '}
+                          {new Date(
+                            schedulerStatus.listenbrainz.lastRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {lbConfigEdits && (
+                    <div className='border border-zinc-700/50 rounded bg-zinc-900/50 p-2.5 mb-3'>
+                      <p className='text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5'>
+                        Sync Config
+                      </p>
+                      <div className='grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs items-center'>
+                        <span className='text-zinc-500'>Lookback (days)</span>
+                        <Input
+                          type='number'
+                          min={1}
+                          value={lbConfigEdits.days}
+                          onChange={e =>
+                            setLbConfigEdits({
+                              ...lbConfigEdits,
+                              days: parseInt(e.target.value) || 1,
+                            })
+                          }
+                          className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                        />
+                        <span className='text-zinc-500'>Future releases</span>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            setLbConfigEdits({
+                              ...lbConfigEdits,
+                              includeFuture: !lbConfigEdits.includeFuture,
+                            })
+                          }
+                          className={`h-7 px-2 rounded text-xs border ${
+                            lbConfigEdits.includeFuture
+                              ? 'bg-green-900/50 border-green-700 text-green-300'
+                              : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                          }`}
+                        >
+                          {lbConfigEdits.includeFuture ? 'Yes' : 'No'}
+                        </button>
+                        <span className='text-zinc-500'>Types</span>
+                        <span className='text-zinc-300 text-xs'>
+                          {schedulerStatus?.listenbrainz?.config?.primaryTypes?.join(
+                            ', '
+                          ) || 'Album, EP, Single'}
+                        </span>
+                        <span className='text-zinc-500'>Max releases</span>
+                        <Input
+                          type='number'
+                          min={0}
+                          value={lbConfigEdits.maxReleases}
+                          onChange={e =>
+                            setLbConfigEdits({
+                              ...lbConfigEdits,
+                              maxReleases: parseInt(e.target.value) || 0,
+                            })
+                          }
+                          className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                        />
+                        <span className='text-zinc-500'>
+                          Min artist listeners
+                        </span>
+                        <Input
+                          type='number'
+                          min={0}
+                          value={lbConfigEdits.minArtistListeners}
+                          onChange={e =>
+                            setLbConfigEdits({
+                              ...lbConfigEdits,
+                              minArtistListeners: parseInt(e.target.value) || 0,
+                            })
+                          }
+                          className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                        />
+                      </div>
+                      <div className='flex items-center gap-2 mt-2'>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-xs h-7 border-zinc-700'
+                          onClick={handleSaveLbConfig}
+                          disabled={savingLbConfig}
+                        >
+                          {savingLbConfig ? 'Saving...' : 'Save Config'}
+                        </Button>
+                        {lbConfigMessage && (
+                          <span
+                            className={`text-xs ${
+                              lbConfigMessage.startsWith('Error')
+                                ? 'text-red-400'
+                                : 'text-green-400'
+                            }`}
+                          >
+                            {lbConfigMessage}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className='flex flex-wrap gap-2'>
+                    {schedulerStatus?.listenbrainz?.enabled ? (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-red-400 border-red-900 hover:bg-red-950'
+                        onClick={() => toggleScheduler('listenbrainz', 'stop')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'listenbrainz-stop' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Square className='mr-2 h-3 w-3' />
+                        )}
+                        Stop Scheduler
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-green-400 border-green-900 hover:bg-green-950'
+                        onClick={() => toggleScheduler('listenbrainz', 'start')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'listenbrainz-start' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Play className='mr-2 h-3 w-3' />
+                        )}
+                        Start Scheduler
+                      </Button>
+                    )}
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='text-white border-zinc-700 hover:bg-zinc-700'
+                      onClick={() => toggleScheduler('listenbrainz', 'sync')}
+                      disabled={togglingScheduler !== null}
+                    >
+                      {togglingScheduler === 'listenbrainz-sync' ? (
+                        <Activity className='mr-2 h-3 w-3 animate-spin' />
+                      ) : (
+                        <RefreshCw className='mr-2 h-3 w-3' />
+                      )}
+                      Sync Now
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Quick Links */}

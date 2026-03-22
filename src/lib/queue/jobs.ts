@@ -3,6 +3,8 @@
  * Job types and interfaces for BullMQ job processing
  */
 
+import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
+
 // ============================================================================
 // Job Type Definitions
 // ============================================================================
@@ -45,6 +47,8 @@ export const JOB_TYPES = {
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
   DISCOGS_SEARCH_ALBUM: 'discogs:search-album',
   DISCOGS_GET_MASTER: 'discogs:get-master',
+  // ListenBrainz Sync Jobs
+  LISTENBRAINZ_SYNC_FRESH_RELEASES: 'listenbrainz:sync-fresh-releases',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -388,7 +392,8 @@ export type MusicBrainzJobData =
   | DiscogsSearchArtistJobData
   | DiscogsGetArtistJobData
   | DiscogsSearchAlbumJobData
-  | DiscogsGetMasterJobData;
+  | DiscogsGetMasterJobData
+  | ListenBrainzSyncFreshReleasesJobData;
 
 // ============================================================================
 // Job Result Interfaces

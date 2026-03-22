@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -40,6 +40,12 @@ import {
   ExpandableJobRow,
   type JobHistoryItem,
 } from '@/components/admin/ExpandableJobRow';
+import {
+  useGetSyncJobsQuery,
+  SyncJobType,
+  SyncJobStatus,
+  type GetSyncJobsQuery,
+} from '@/generated/graphql';
 
 // ============================================================================
 // Helpers (same as original job-history page)
@@ -80,6 +86,80 @@ function formatInterval(minutes: number): string {
   if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
   return `${days}d`;
+}
+
+// ============================================================================
+// SyncJob → JobHistoryItem mapping
+// ============================================================================
+
+/** Filter values that should query the SyncJob Postgres table */
+const SYNC_FILTERS: Record<string, SyncJobType | undefined> = {
+  spotify: SyncJobType.SpotifyNewReleases,
+  musicbrainz: SyncJobType.MusicbrainzNewReleases,
+  listenbrainz: SyncJobType.ListenbrainzFreshReleases,
+};
+
+type SyncJobRecord = GetSyncJobsQuery['syncJobs']['jobs'][number];
+
+function syncJobTypeToName(jobType: SyncJobType): string {
+  switch (jobType) {
+    case SyncJobType.SpotifyNewReleases:
+      return 'spotify:sync-new-releases';
+    case SyncJobType.MusicbrainzNewReleases:
+      return 'musicbrainz:sync-new-releases';
+    case SyncJobType.ListenbrainzFreshReleases:
+      return 'listenbrainz:sync-fresh-releases';
+    default:
+      return jobType.toLowerCase().replace(/_/g, '-');
+  }
+}
+
+function mapSyncStatus(status: SyncJobStatus): JobHistoryItem['status'] {
+  switch (status) {
+    case SyncJobStatus.Completed:
+      return 'completed';
+    case SyncJobStatus.Failed:
+      return 'failed';
+    case SyncJobStatus.Running:
+      return 'active';
+    case SyncJobStatus.Pending:
+      return 'waiting';
+    case SyncJobStatus.Cancelled:
+      return 'failed';
+    default:
+      return 'completed';
+  }
+}
+
+function syncJobToHistoryItem(syncJob: SyncJobRecord): JobHistoryItem {
+  return {
+    id: syncJob.jobId || syncJob.id,
+    name: syncJobTypeToName(syncJob.jobType),
+    status: mapSyncStatus(syncJob.status),
+    data: {
+      source: syncJob.triggeredBy,
+      ...(typeof syncJob.metadata === 'object' && syncJob.metadata !== null
+        ? (syncJob.metadata as Record<string, unknown>)
+        : {}),
+    },
+    result: {
+      albumsCreated: syncJob.albumsCreated,
+      albumsUpdated: syncJob.albumsUpdated,
+      albumsSkipped: syncJob.albumsSkipped,
+      artistsCreated: syncJob.artistsCreated,
+      artistsUpdated: syncJob.artistsUpdated,
+    },
+    error: syncJob.errorMessage ?? undefined,
+    createdAt: new Date(syncJob.startedAt || syncJob.createdAt).toISOString(),
+    completedAt: syncJob.completedAt
+      ? new Date(syncJob.completedAt).toISOString()
+      : undefined,
+    processedOn: syncJob.startedAt
+      ? new Date(syncJob.startedAt).toISOString()
+      : undefined,
+    duration: syncJob.durationMs ?? undefined,
+    attempts: 1,
+  };
 }
 
 // ============================================================================
@@ -144,6 +224,35 @@ export function JobHistoryPanel() {
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Determine data source based on job type filter
+  const isSyncFilter = jobTypeFilter in SYNC_FILTERS;
+  const syncJobType = SYNC_FILTERS[jobTypeFilter];
+
+  // Query SyncJob Postgres table when a sync filter is selected or "all"
+  const PAGE_SIZE = 20;
+  const {
+    data: syncJobsData,
+    isLoading: syncJobsLoading,
+    refetch: refetchSyncJobs,
+  } = useGetSyncJobsQuery(
+    {
+      input: {
+        ...(syncJobType ? { jobType: syncJobType } : {}),
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      },
+    },
+    {
+      enabled: isSyncFilter || jobTypeFilter === 'all',
+    }
+  );
+
+  // Convert SyncJob records to JobHistoryItem format
+  const syncJobItems: JobHistoryItem[] = useMemo(() => {
+    if (!syncJobsData?.syncJobs?.jobs) return [];
+    return syncJobsData.syncJobs.jobs.map(syncJobToHistoryItem);
+  }, [syncJobsData]);
 
   const toggleRow = (jobId: string) => {
     setExpandedRows(prev => {
@@ -229,6 +338,7 @@ export function JobHistoryPanel() {
     setRefreshing(true);
     fetchJobHistory();
     fetchSchedulerStatus();
+    refetchSyncJobs();
   };
 
   const handleRetryJob = async (jobId: string) => {
@@ -287,17 +397,98 @@ export function JobHistoryPanel() {
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
-  // Filter jobs by type
-  const filteredJobs = jobs.filter(job => {
-    if (jobTypeFilter === 'all') return true;
-    if (jobTypeFilter === 'spotify') return job.name.includes('spotify');
-    if (jobTypeFilter === 'musicbrainz')
-      return job.name.includes('musicbrainz');
-    if (jobTypeFilter === 'enrichment') return job.name.includes('enrichment');
-    if (jobTypeFilter === 'cache') return job.name.includes('cache');
-    if (jobTypeFilter === 'discogs') return job.name.includes('discogs');
-    return true;
-  });
+  // Build the final job list based on data source
+  const filteredJobs = useMemo(() => {
+    if (isSyncFilter) {
+      // Sync filter selected → use SyncJob Postgres data exclusively
+      return syncJobItems;
+    }
+
+    if (jobTypeFilter === 'all') {
+      // "All" → merge BullMQ + SyncJob data, dedup by job ID
+      // SyncJob records win over BullMQ records (richer data)
+      const syncJobIds = new Set(syncJobItems.map(j => j.id));
+      const bullMqOnly = jobs.filter(j => !syncJobIds.has(j.id));
+      const merged = [...syncJobItems, ...bullMqOnly];
+      // Sort by createdAt descending
+      merged.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      return merged;
+    }
+
+    // Non-sync filter → BullMQ only, client-side filter
+    return jobs.filter(job => {
+      if (jobTypeFilter === 'enrichment')
+        return job.name.includes('enrichment');
+      if (jobTypeFilter === 'cache') return job.name.includes('cache');
+      if (jobTypeFilter === 'discogs') return job.name.includes('discogs');
+      return true;
+    });
+  }, [isSyncFilter, jobTypeFilter, syncJobItems, jobs]);
+
+  // Compute effective loading/stats based on data source
+  const isEffectivelyLoading = isSyncFilter
+    ? syncJobsLoading
+    : jobTypeFilter === 'all'
+      ? loading && syncJobsLoading
+      : loading;
+
+  const effectiveTotalPages = isSyncFilter
+    ? Math.ceil((syncJobsData?.syncJobs?.totalCount ?? 0) / PAGE_SIZE) || 1
+    : totalPages;
+
+  // Compute stats from SyncJob data when sync filter is active
+  const effectiveStats: JobStats | null = useMemo(() => {
+    if (!isSyncFilter) return stats;
+    if (!syncJobsData?.syncJobs) return null;
+
+    const syncJobs = syncJobsData.syncJobs.jobs;
+    const total = syncJobsData.syncJobs.totalCount;
+    const completed = syncJobs.filter(
+      j => j.status === SyncJobStatus.Completed
+    ).length;
+    const failed = syncJobs.filter(
+      j =>
+        j.status === SyncJobStatus.Failed ||
+        j.status === SyncJobStatus.Cancelled
+    ).length;
+    const durations = syncJobs
+      .map(j => j.durationMs)
+      .filter((d): d is number => d != null && d > 0);
+    const avgDuration =
+      durations.length > 0
+        ? durations.reduce((a, b) => a + b, 0) / durations.length
+        : 0;
+
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    const jobsToday = syncJobs.filter(
+      j => new Date(j.startedAt || j.createdAt) >= todayStart
+    ).length;
+    const jobsThisWeek = syncJobs.filter(
+      j => new Date(j.startedAt || j.createdAt) >= weekStart
+    ).length;
+
+    return {
+      totalJobs: total,
+      completedJobs: completed,
+      failedJobs: failed,
+      avgDuration,
+      successRate: total > 0 ? completed / total : 0,
+      jobsToday,
+      jobsThisWeek,
+      trendsUp: completed > failed,
+    };
+  }, [isSyncFilter, syncJobsData, stats]);
 
   return (
     <div className='space-y-6'>
@@ -462,7 +653,7 @@ export function JobHistoryPanel() {
       </Card>
 
       {/* Stats Cards */}
-      {stats && (
+      {effectiveStats && (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           <Card className='bg-zinc-900 border-zinc-800'>
             <CardHeader className='pb-3'>
@@ -472,10 +663,10 @@ export function JobHistoryPanel() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-white'>
-                {stats.totalJobs.toLocaleString()}
+                {effectiveStats.totalJobs.toLocaleString()}
               </div>
               <p className='text-xs text-zinc-500 mt-1'>
-                {stats.jobsToday} today
+                {effectiveStats.jobsToday} today
               </p>
             </CardContent>
           </Card>
@@ -489,16 +680,16 @@ export function JobHistoryPanel() {
             <CardContent>
               <div className='flex items-center gap-2'>
                 <div className='text-2xl font-bold text-white'>
-                  {(stats.successRate * 100).toFixed(1)}%
+                  {(effectiveStats.successRate * 100).toFixed(1)}%
                 </div>
-                {stats.trendsUp ? (
+                {effectiveStats.trendsUp ? (
                   <TrendingUp className='h-4 w-4 text-green-500' />
                 ) : (
                   <TrendingDown className='h-4 w-4 text-red-500' />
                 )}
               </div>
               <p className='text-xs text-zinc-500 mt-1'>
-                {stats.completedJobs} completed
+                {effectiveStats.completedJobs} completed
               </p>
             </CardContent>
           </Card>
@@ -511,11 +702,14 @@ export function JobHistoryPanel() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-red-400'>
-                {stats.failedJobs}
+                {effectiveStats.failedJobs}
               </div>
               <p className='text-xs text-zinc-500 mt-1'>
-                {stats.totalJobs > 0
-                  ? ((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)
+                {effectiveStats.totalJobs > 0
+                  ? (
+                      (effectiveStats.failedJobs / effectiveStats.totalJobs) *
+                      100
+                    ).toFixed(1)
                   : '0'}
                 % failure rate
               </p>
@@ -530,7 +724,7 @@ export function JobHistoryPanel() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold text-white'>
-                {formatDuration(stats.avgDuration)}
+                {formatDuration(effectiveStats.avgDuration)}
               </div>
               <p className='text-xs text-zinc-500 mt-1'>Per job processing</p>
             </CardContent>
@@ -580,6 +774,9 @@ export function JobHistoryPanel() {
                   <SelectItem value='enrichment'>Enrichment</SelectItem>
                   <SelectItem value='cache'>Cache</SelectItem>
                   <SelectItem value='discogs'>Discogs</SelectItem>
+                  <SelectItem value='listenbrainz'>
+                    ListenBrainz Sync
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -623,7 +820,7 @@ export function JobHistoryPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {isEffectivelyLoading ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -632,7 +829,7 @@ export function JobHistoryPanel() {
                       Loading job history...
                     </TableCell>
                   </TableRow>
-                ) : error ? (
+                ) : error && !isSyncFilter ? (
                   <TableRow>
                     <TableCell colSpan={8} className='py-12'>
                       <div className='flex flex-col items-center gap-4'>
@@ -687,10 +884,10 @@ export function JobHistoryPanel() {
           <div className='mt-4 pt-4 border-t border-zinc-800'>
             <TablePagination
               currentPage={page}
-              totalPages={totalPages}
+              totalPages={effectiveTotalPages}
               onPageChange={setPage}
-              pageSize={20}
-              currentPageItemCount={jobs.length}
+              pageSize={PAGE_SIZE}
+              currentPageItemCount={filteredJobs.length}
             />
           </div>
         </CardContent>

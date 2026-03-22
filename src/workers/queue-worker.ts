@@ -10,6 +10,8 @@
  * Auto-restarts on failures, production-ready
  */
 
+import type { Server } from 'http';
+
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
@@ -17,7 +19,6 @@ import express from 'express';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import type { Server } from 'http';
 
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/processors';
@@ -36,6 +37,11 @@ import {
   initializeUncoverScheduler,
   shutdownUncoverScheduler,
 } from '@/lib/daily-challenge/scheduler';
+import {
+  initializeListenBrainzScheduler,
+  shutdownListenBrainzScheduler,
+  listenbrainzScheduler,
+} from '@/lib/listenbrainz/scheduler';
 import {
   healthChecker,
   metricsCollector,
@@ -112,6 +118,14 @@ class MusicBrainzWorkerService {
       console.log('  ✅ Uncover scheduler enabled (7 AM Central daily)');
     } else {
       console.log('  ⏸️  Uncover scheduler failed to start');
+    }
+
+    // ListenBrainz scheduler
+    const lbSchedulerStarted = await initializeListenBrainzScheduler();
+    if (lbSchedulerStarted) {
+      console.log('  ✅ ListenBrainz scheduler enabled');
+    } else {
+      console.log('  ⏸️  ListenBrainz scheduler disabled');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
@@ -689,6 +703,76 @@ class MusicBrainzWorkerService {
       }
     });
 
+    // ─── ListenBrainz Scheduler ──────────────────────────────────
+
+    app.get('/listenbrainz/metrics', async (_req, res) => {
+      try {
+        const status = await listenbrainzScheduler.getStatus();
+
+        res.json({
+          scheduler: {
+            isRunning: status.isRunning,
+            activeSchedules: status.activeSchedules,
+            config: status.config,
+          },
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to get ListenBrainz metrics',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
+    app.post('/listenbrainz/:action', async (req, res) => {
+      const { action } = req.params;
+
+      try {
+        switch (action) {
+          case 'start': {
+            await setSchedulerEnabled('listenbrainz', true);
+            const started = await initializeListenBrainzScheduler();
+            res.json({
+              success: started,
+              message: started
+                ? 'ListenBrainz scheduler started'
+                : 'Failed to start ListenBrainz scheduler',
+            });
+            break;
+          }
+
+          case 'stop': {
+            await listenbrainzScheduler.stop();
+            res.json({
+              success: true,
+              message: 'ListenBrainz scheduler stopped',
+            });
+            break;
+          }
+
+          case 'sync': {
+            await listenbrainzScheduler.triggerSync();
+            res.json({
+              success: true,
+              message: 'ListenBrainz fresh releases sync triggered',
+            });
+            break;
+          }
+
+          default:
+            res.status(400).json({
+              error: 'Invalid action. Use: start, stop, or sync',
+            });
+        }
+      } catch (error) {
+        res.status(500).json({
+          error: 'ListenBrainz action failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
     // ─── Job History ───────────────────────────────────────────────
 
     app.get('/jobs/history', async (req, res) => {
@@ -884,6 +968,10 @@ class MusicBrainzWorkerService {
           'POST /musicbrainz/start - Start MusicBrainz Scheduler',
           'POST /musicbrainz/stop - Stop MusicBrainz Scheduler',
           'POST /musicbrainz/sync - Trigger MusicBrainz Sync',
+          '/listenbrainz/metrics - ListenBrainz Metrics',
+          'POST /listenbrainz/start - Start ListenBrainz Scheduler',
+          'POST /listenbrainz/stop - Stop ListenBrainz Scheduler',
+          'POST /listenbrainz/sync - Trigger ListenBrainz Sync',
         ],
       });
     });
@@ -980,6 +1068,10 @@ class MusicBrainzWorkerService {
         // Stop Uncover scheduler
         console.log('🛑 Stopping Uncover scheduler...');
         await shutdownUncoverScheduler();
+
+        // Stop ListenBrainz scheduler
+        console.log('🛑 Stopping ListenBrainz scheduler...');
+        await shutdownListenBrainzScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');

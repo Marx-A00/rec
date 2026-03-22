@@ -11,6 +11,8 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -65,6 +67,7 @@ export function SyncJobExpandedContent({
   syncJob,
   onRollbackComplete,
 }: SyncJobExpandedContentProps) {
+  const [showAlbums, setShowAlbums] = useState(false);
   const [rollbackDialogOpen, setRollbackDialogOpen] = useState(false);
   const [rollbackStep, setRollbackStep] = useState<
     'preview' | 'confirming' | 'done' | 'error'
@@ -205,48 +208,68 @@ export function SyncJobExpandedContent({
         )}
       </div>
 
-      {/* Albums Grid */}
-      {detailLoading ? (
-        <div className='text-zinc-500 text-center py-4 text-sm'>
-          Loading albums...
-        </div>
-      ) : albums.length === 0 ? (
-        <div className='text-zinc-500 text-center py-3 text-sm'>
-          No albums found for this sync job
-        </div>
-      ) : (
-        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2'>
-          {albums.map(album => (
-            <Link
-              key={album.id}
-              href={`/admin/music-database?id=${album.id}`}
-              className='bg-zinc-800 rounded-lg p-2 hover:bg-zinc-700 transition-colors group'
-            >
-              <div className='flex gap-2'>
-                <div className='w-10 h-10 bg-zinc-700 rounded flex-shrink-0 overflow-hidden'>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {album.coverArtUrl && (
-                    <img
-                      src={album.coverArtUrl}
-                      alt={album.title}
-                      className='w-full h-full object-cover'
-                    />
-                  )}
-                </div>
-                <div className='flex-1 min-w-0'>
-                  <div className='text-xs font-medium text-white truncate group-hover:text-green-400'>
-                    {album.title}
-                  </div>
-                  <div className='text-xs text-zinc-400 truncate'>
-                    {album.artists?.[0]?.artist?.name || 'Unknown Artist'}
-                  </div>
-                </div>
-                <ExternalLink className='h-3 w-3 text-zinc-600 group-hover:text-green-400 flex-shrink-0 mt-0.5' />
+      {/* Collapsible Albums Section */}
+      <div>
+        <button
+          type='button'
+          onClick={() => setShowAlbums(!showAlbums)}
+          className='flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors'
+        >
+          {showAlbums ? (
+            <ChevronDown className='h-3.5 w-3.5' />
+          ) : (
+            <ChevronRight className='h-3.5 w-3.5' />
+          )}
+          <Music className='h-3.5 w-3.5' />
+          <span>Albums ({detailLoading ? '...' : albums.length})</span>
+        </button>
+
+        {showAlbums && (
+          <div className='mt-2'>
+            {detailLoading ? (
+              <div className='text-zinc-500 text-center py-4 text-sm'>
+                Loading albums...
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
+            ) : albums.length === 0 ? (
+              <div className='text-zinc-500 text-center py-3 text-sm'>
+                No albums found for this sync job
+              </div>
+            ) : (
+              <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2'>
+                {albums.map(album => (
+                  <Link
+                    key={album.id}
+                    href={`/admin/music-database?id=${album.id}`}
+                    className='bg-zinc-800 rounded-lg p-2 hover:bg-zinc-700 transition-colors group'
+                  >
+                    <div className='flex gap-2'>
+                      <div className='w-10 h-10 bg-zinc-700 rounded flex-shrink-0 overflow-hidden'>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {album.coverArtUrl && (
+                          <img
+                            src={album.coverArtUrl}
+                            alt={album.title}
+                            className='w-full h-full object-cover'
+                          />
+                        )}
+                      </div>
+                      <div className='flex-1 min-w-0'>
+                        <div className='text-xs font-medium text-white truncate group-hover:text-green-400'>
+                          {album.title}
+                        </div>
+                        <div className='text-xs text-zinc-400 truncate'>
+                          {album.artists?.[0]?.artist?.name || 'Unknown Artist'}
+                        </div>
+                      </div>
+                      <ExternalLink className='h-3 w-3 text-zinc-600 group-hover:text-green-400 flex-shrink-0 mt-0.5' />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Error message for failed sync */}
       {syncJob.errorMessage && (

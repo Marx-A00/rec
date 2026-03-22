@@ -2204,6 +2204,29 @@ type SpotifySyncResult {
   stats: SpotifySyncStats
 }
 
+type ListenBrainzSyncResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+}
+
+# ListenBrainz Config (DB-backed, editable from admin UI)
+input UpdateListenBrainzConfigInput {
+  days: Int
+  includeFuture: Boolean
+  maxReleases: Int
+  minListenCount: Int
+  minArtistListeners: Int
+}
+
+type ListenBrainzConfig {
+  days: Int!
+  includeFuture: Boolean!
+  maxReleases: Int!
+  minListenCount: Int!
+  minArtistListeners: Int!
+}
+
 type SpotifySyncStats {
   albumsQueued: Int!
   albumsCreated: Int!
@@ -2222,6 +2245,7 @@ enum SyncJobType {
   MUSICBRAINZ_SYNC
   DISCOGS_SYNC
   ENRICHMENT_BATCH
+  LISTENBRAINZ_FRESH_RELEASES
 }
 
 enum SyncJobStatus {
@@ -3128,6 +3152,12 @@ type Mutation {
 
   # Spotify Sync
   triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
+
+  # ListenBrainz Sync
+  triggerListenBrainzSync: ListenBrainzSyncResult!
+
+  # ListenBrainz Config (Admin)
+  updateListenBrainzConfig(input: UpdateListenBrainzConfigInput!): ListenBrainzConfig!
 
   # Sync Job Management
   rollbackSyncJob(

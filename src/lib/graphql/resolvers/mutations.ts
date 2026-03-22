@@ -4,12 +4,12 @@
 
 import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
-import { graphqlLogger } from '@/lib/logger';
 
 import {
   MutationResolvers,
   CorrectionSource as GqlCorrectionSource,
 } from '@/generated/graphql';
+import { graphqlLogger } from '@/lib/logger';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import {
   previewAlbumEnrichment,
@@ -26,6 +26,10 @@ import type {
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 import {
+  getListenBrainzConfig,
+  setListenBrainzConfig,
+} from '@/lib/config/app-config';
+import {
   logActivity,
   OPERATIONS,
   SOURCES,
@@ -33,7 +37,6 @@ import {
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { isAdmin } from '@/lib/permissions';
 import { requireOwnerNotSelf } from '@/lib/graphql/resolvers/utils';
-
 // Correction system imports
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
@@ -372,6 +375,97 @@ export const mutationResolvers: MutationResolvers = {
       return results;
     } catch (error) {
       throw new GraphQLError(`Failed to trigger Spotify sync: ${error}`);
+    }
+  },
+
+  // ListenBrainz Sync
+  triggerListenBrainzSync: async (_, _args, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const queue = getMusicBrainzQueue();
+
+      // Read config from DB (falls back to defaults)
+      const dbConfig = await getListenBrainzConfig();
+
+      const jobData = {
+        days: dbConfig.days,
+        includeFuture: dbConfig.includeFuture,
+        primaryTypes: process.env.LISTENBRAINZ_SYNC_PRIMARY_TYPES
+          ? process.env.LISTENBRAINZ_SYNC_PRIMARY_TYPES.split(',').map(t =>
+              t.trim()
+            )
+          : ['Album', 'EP', 'Single'],
+        minListenCount: dbConfig.minListenCount,
+        maxReleases: dbConfig.maxReleases,
+        minArtistListeners: dbConfig.minArtistListeners,
+        priority: 'high' as const,
+        source: 'graphql' as const,
+        requestId: `graphql_listenbrainz_${Date.now()}`,
+      };
+
+      const job = await queue.addJob(
+        JOB_TYPES.LISTENBRAINZ_SYNC_FRESH_RELEASES,
+        jobData,
+        {
+          priority: 3,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+        }
+      );
+
+      return {
+        success: true,
+        jobId: job.id,
+        message: 'ListenBrainz fresh releases sync triggered',
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger ListenBrainz sync: ${error}`);
+    }
+  },
+
+  // ListenBrainz Config (Admin)
+  updateListenBrainzConfig: async (_, { input }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const updates: Record<string, number | boolean> = {};
+      if (input.days !== undefined && input.days !== null)
+        updates.days = input.days;
+      if (input.includeFuture !== undefined && input.includeFuture !== null)
+        updates.includeFuture = input.includeFuture;
+      if (input.maxReleases !== undefined && input.maxReleases !== null)
+        updates.maxReleases = input.maxReleases;
+      if (input.minListenCount !== undefined && input.minListenCount !== null)
+        updates.minListenCount = input.minListenCount;
+      if (
+        input.minArtistListeners !== undefined &&
+        input.minArtistListeners !== null
+      )
+        updates.minArtistListeners = input.minArtistListeners;
+
+      const config = await setListenBrainzConfig(updates);
+      return config;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update ListenBrainz config: ${error}`);
     }
   },
 

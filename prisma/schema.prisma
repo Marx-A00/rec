@@ -473,6 +473,7 @@ model LlamaLog {
 enum ContentSource {
   DEEZER
   DISCOGS
+  LISTENBRAINZ
   MUSICBRAINZ
   SPOTIFY
   YOUTUBE
@@ -529,6 +530,7 @@ enum SyncJobType {
   MUSICBRAINZ_SYNC
   DISCOGS_SYNC
   ENRICHMENT_BATCH
+  LISTENBRAINZ_FRESH_RELEASES
 }
 
 enum SyncJobStatus {
@@ -718,6 +720,15 @@ model AppConfig {
   id                          String                   @id @default("default")
   spotifySchedulerEnabled     Boolean                  @default(false) @map("spotify_scheduler_enabled")
   musicbrainzSchedulerEnabled Boolean                  @default(false) @map("musicbrainz_scheduler_enabled")
+  listenbrainzSchedulerEnabled Boolean                 @default(false) @map("listenbrainz_scheduler_enabled")
+
+  // ListenBrainz sync configuration (DB overrides env vars)
+  listenbrainzDays               Int                     @default(14) @map("listenbrainz_days")
+  listenbrainzIncludeFuture      Boolean                 @default(true) @map("listenbrainz_include_future")
+  listenbrainzMaxReleases        Int                     @default(50) @map("listenbrainz_max_releases")
+  listenbrainzMinListenCount     Int                     @default(0) @map("listenbrainz_min_listen_count")
+  listenbrainzMinArtistListeners Int                     @default(1000) @map("listenbrainz_min_artist_listeners")
+
   uncoverSelectionMode        UncoverSelectionMode     @default(RANDOM) @map("uncover_selection_mode")
   uncoverPoolExhaustedMode    UncoverPoolExhaustedMode @default(AUTO_RESET) @map("uncover_pool_exhausted_mode")
   updatedAt                   DateTime                 @updatedAt @map("updated_at")
