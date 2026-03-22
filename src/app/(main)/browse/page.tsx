@@ -23,6 +23,7 @@ interface SpotifyTrendingData {
     image: string | null;
     spotifyUrl: string | null;
     releaseDate: string;
+    source: string;
   }>;
   hasData: boolean;
   lastUpdated: Date;
@@ -31,7 +32,7 @@ interface SpotifyTrendingData {
 async function getSpotifyTrending(): Promise<SpotifyTrendingData> {
   // Query Album table directly for Spotify-sourced albums
   const albums = await prisma.album.findMany({
-    where: { source: 'SPOTIFY' },
+    where: { source: { in: ['SPOTIFY', 'LISTENBRAINZ', 'MUSICBRAINZ'] } },
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: {
@@ -55,6 +56,7 @@ async function getSpotifyTrending(): Promise<SpotifyTrendingData> {
     spotifyUrl: album.spotifyUrl,
     releaseDate:
       album.releaseDate?.toISOString() || album.createdAt.toISOString(),
+    source: album.source,
   }));
 
   return {
@@ -348,6 +350,44 @@ function SpotifyIcon({ className }: { className?: string }) {
   );
 }
 
+function SourceAttribution({ source }: { source: string }) {
+  switch (source) {
+    case 'LISTENBRAINZ':
+      return (
+        <div className='flex items-center gap-1.5 pt-1'>
+          <span className='text-xs text-zinc-600'>via</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/listenbrainz.svg'
+            alt='ListenBrainz'
+            title='ListenBrainz'
+            className='w-3.5 h-3.5'
+          />
+        </div>
+      );
+    case 'MUSICBRAINZ':
+      return (
+        <div className='flex items-center gap-1.5 pt-1'>
+          <span className='text-xs text-zinc-600'>via</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/musicbrainz.svg'
+            alt='MusicBrainz'
+            title='MusicBrainz'
+            className='w-3.5 h-3.5'
+          />
+        </div>
+      );
+    default:
+      return (
+        <div className='flex items-center gap-1.5 pt-1'>
+          <span className='text-xs text-zinc-600'>via</span>
+          <SpotifyIcon className='w-3.5 h-3.5 text-green-500' />
+        </div>
+      );
+  }
+}
+
 function SpotifyAlbumCard({
   album,
 }: {
@@ -358,6 +398,7 @@ function SpotifyAlbumCard({
     image: string | null;
     spotifyUrl: string | null;
     releaseDate: string;
+    source: string;
   };
 }) {
   return (
@@ -381,11 +422,7 @@ function SpotifyAlbumCard({
             <p className='text-xs text-zinc-500'>
               {formatDateOnly(album.releaseDate)}
             </p>
-            {/* Spotify attribution */}
-            <div className='flex items-center gap-1.5 pt-1'>
-              <span className='text-xs text-zinc-600'>via</span>
-              <SpotifyIcon className='w-3.5 h-3.5 text-green-500' />
-            </div>
+            <SourceAttribution source={album.source} />
           </div>
         </div>
       </Link>

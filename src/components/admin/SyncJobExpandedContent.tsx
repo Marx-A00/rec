@@ -284,7 +284,7 @@ export function SyncJobExpandedContent({
       {syncJob.metadata && (
         <div className='rounded-md bg-zinc-900/50 border border-zinc-800 px-3 py-2'>
           <div className='text-xs text-zinc-500 mb-1'>Metadata</div>
-          <pre className='text-xs text-zinc-400 whitespace-pre-wrap break-all max-h-32 overflow-y-auto'>
+          <pre className='text-xs text-zinc-400 whitespace-pre-wrap break-all max-h-32 overflow-y-auto custom-scrollbar'>
             {JSON.stringify(syncJob.metadata, null, 2)}
           </pre>
         </div>

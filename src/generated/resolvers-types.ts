@@ -145,6 +145,7 @@ export type Album = {
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
   spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
@@ -4184,6 +4185,7 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  source?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   spotifyId?: Resolver<
     Maybe<ResolversTypes['String']>,
     ParentType,

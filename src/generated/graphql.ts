@@ -171,6 +171,7 @@ export type Album = {
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
   spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
@@ -5579,6 +5580,8 @@ export type GetLatestReleasesQuery = {
     title: string;
     releaseDate?: Date | null;
     coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    source?: string | null;
     createdAt: Date;
     artists: Array<{
       __typename?: 'ArtistCredit';
@@ -12376,7 +12379,7 @@ useInfiniteAlbumsByJobIdQuery.getKey = (
 ) => ['AlbumsByJobId.infinite', variables];
 
 export const GetLatestReleasesDocument = `
-    query GetLatestReleases($source: String = "SPOTIFY", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
+    query GetLatestReleases($source: String = "all", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
   searchAlbums(
     source: $source
     sortBy: $sortBy
@@ -12387,6 +12390,8 @@ export const GetLatestReleasesDocument = `
     title
     releaseDate
     coverArtUrl
+    cloudflareImageId
+    source
     createdAt
     artists {
       artist {

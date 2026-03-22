@@ -206,7 +206,7 @@ export function ExpandableJobRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80'>
           <TableCell colSpan={8} className='p-0'>
-            <div className='p-4 max-h-[600px] overflow-y-auto space-y-4'>
+            <div className='p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-4'>
               {isSyncType ? (
                 <>
                   {/* Sync jobs: show SyncJobExpandedContent directly */}

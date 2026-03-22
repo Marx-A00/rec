@@ -63,6 +63,7 @@ type Album {
   durationMs: Int
   coverArtUrl: String
   cloudflareImageId: String
+  source: String
   barcode: String
   label: String
   catalogNumber: String
