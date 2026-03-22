@@ -906,22 +906,74 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Spotify Scheduler (not currently in use) */}
-                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50 opacity-40 pointer-events-none'>
+                {/* Spotify Scheduler (disabled — controls exposed to drain orphaned jobs) */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
                   <div className='flex items-center justify-between mb-3'>
                     <div className='flex items-center gap-2'>
-                      <Music className='h-4 w-4 text-zinc-500' />
-                      <h4 className='text-sm font-medium text-zinc-400'>
+                      <Music className='h-4 w-4 text-green-500' />
+                      <h4 className='text-sm font-medium text-white'>
                         Spotify New Releases
                       </h4>
                     </div>
-                    <Badge className='bg-zinc-700 text-zinc-400'>
-                      Not in use
+                    <Badge
+                      className={
+                        schedulerStatus?.spotify?.enabled
+                          ? 'bg-green-600'
+                          : 'bg-zinc-600'
+                      }
+                    >
+                      {schedulerStatus?.spotify?.enabled
+                        ? 'Running'
+                        : 'Stopped'}
                     </Badge>
                   </div>
-                  <p className='text-xs text-zinc-500'>
-                    Spotify sync is currently disabled.
-                  </p>
+                  <div className='flex flex-wrap gap-2'>
+                    {schedulerStatus?.spotify?.enabled ? (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-red-400 border-red-900 hover:bg-red-950'
+                        onClick={() => toggleScheduler('spotify', 'stop')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'spotify-stop' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Square className='mr-2 h-3 w-3' />
+                        )}
+                        Stop Scheduler
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-green-400 border-green-900 hover:bg-green-950'
+                        onClick={() => toggleScheduler('spotify', 'start')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'spotify-start' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Play className='mr-2 h-3 w-3' />
+                        )}
+                        Start Scheduler
+                      </Button>
+                    )}
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='text-white border-zinc-700 hover:bg-zinc-700'
+                      onClick={() => toggleScheduler('spotify', 'sync')}
+                      disabled={togglingScheduler !== null}
+                    >
+                      {togglingScheduler === 'spotify-sync' ? (
+                        <Activity className='mr-2 h-3 w-3 animate-spin' />
+                      ) : (
+                        <RefreshCw className='mr-2 h-3 w-3' />
+                      )}
+                      Sync Now
+                    </Button>
+                  </div>
                 </div>
 
                 {/* MusicBrainz Scheduler (not currently in use) */}
