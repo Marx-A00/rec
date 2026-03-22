@@ -34,6 +34,7 @@ import {
   type UncoverCreateDailyChallengeJobData,
   type UncoverResetChallengesJobData,
 } from '../jobs';
+import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 
 import { toStructuredJobError } from './utils';
 import {
@@ -74,6 +75,7 @@ import {
   handleCreateDailyChallenge,
   handleResetChallenges,
 } from './uncover-processor';
+import { handleListenBrainzSyncFreshReleases } from './listenbrainz-processor';
 
 // Re-export JOB_TYPES for convenience
 export { JOB_TYPES } from '../jobs';
@@ -287,6 +289,14 @@ export async function processMusicBrainzJob(
       case JOB_TYPES.UNCOVER_RESET_CHALLENGES:
         result = await handleResetChallenges(
           job.data as UncoverResetChallengesJobData
+        );
+        break;
+
+      // ListenBrainz sync handler
+      case JOB_TYPES.LISTENBRAINZ_SYNC_FRESH_RELEASES:
+        result = await handleListenBrainzSyncFreshReleases(
+          job.data as ListenBrainzSyncFreshReleasesJobData,
+          job.id
         );
         break;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -8,17 +8,10 @@ import {
   RefreshCw,
   AlertCircle,
   Download,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Music,
-  Database,
-  Pause,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
@@ -40,6 +33,12 @@ import {
   ExpandableJobRow,
   type JobHistoryItem,
 } from '@/components/admin/ExpandableJobRow';
+import {
+  useGetSyncJobsQuery,
+  SyncJobType,
+  SyncJobStatus,
+  type GetSyncJobsQuery,
+} from '@/generated/graphql';
 
 // ============================================================================
 // Helpers (same as original job-history page)
@@ -61,66 +60,83 @@ function formatDistanceToNow(date: Date): string {
   return `${years} year${years !== 1 ? 's' : ''} ago`;
 }
 
-function formatTimeUntil(date: Date): string {
-  const now = Date.now();
-  const diff = date.getTime() - now;
-  if (diff < 0) return 'running now';
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `in ${days}d ${hours % 24}h`;
-  if (hours > 0) return `in ${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `in ${minutes}m`;
-  return 'soon';
+// ============================================================================
+// SyncJob → JobHistoryItem mapping
+// ============================================================================
+
+/** Filter values that should query the SyncJob Postgres table */
+const SYNC_FILTERS: Record<string, SyncJobType | undefined> = {
+  spotify: SyncJobType.SpotifyNewReleases,
+  musicbrainz: SyncJobType.MusicbrainzNewReleases,
+  listenbrainz: SyncJobType.ListenbrainzFreshReleases,
+};
+
+type SyncJobRecord = GetSyncJobsQuery['syncJobs']['jobs'][number];
+
+function syncJobTypeToName(jobType: SyncJobType): string {
+  switch (jobType) {
+    case SyncJobType.SpotifyNewReleases:
+      return 'spotify:sync-new-releases';
+    case SyncJobType.MusicbrainzNewReleases:
+      return 'musicbrainz:sync-new-releases';
+    case SyncJobType.ListenbrainzFreshReleases:
+      return 'listenbrainz:sync-fresh-releases';
+    default:
+      return jobType.toLowerCase().replace(/_/g, '-');
+  }
 }
 
-function formatInterval(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
+function mapSyncStatus(status: SyncJobStatus): JobHistoryItem['status'] {
+  switch (status) {
+    case SyncJobStatus.Completed:
+      return 'completed';
+    case SyncJobStatus.Failed:
+      return 'failed';
+    case SyncJobStatus.Running:
+      return 'active';
+    case SyncJobStatus.Pending:
+      return 'waiting';
+    case SyncJobStatus.Cancelled:
+      return 'failed';
+    default:
+      return 'completed';
+  }
+}
+
+function syncJobToHistoryItem(syncJob: SyncJobRecord): JobHistoryItem {
+  return {
+    id: syncJob.jobId || syncJob.id,
+    name: syncJobTypeToName(syncJob.jobType),
+    status: mapSyncStatus(syncJob.status),
+    data: {
+      source: syncJob.triggeredBy,
+      ...(typeof syncJob.metadata === 'object' && syncJob.metadata !== null
+        ? (syncJob.metadata as Record<string, unknown>)
+        : {}),
+    },
+    result: {
+      albumsCreated: syncJob.albumsCreated,
+      albumsUpdated: syncJob.albumsUpdated,
+      albumsSkipped: syncJob.albumsSkipped,
+      artistsCreated: syncJob.artistsCreated,
+      artistsUpdated: syncJob.artistsUpdated,
+    },
+    error: syncJob.errorMessage ?? undefined,
+    createdAt: new Date(syncJob.startedAt || syncJob.createdAt).toISOString(),
+    completedAt: syncJob.completedAt
+      ? new Date(syncJob.completedAt).toISOString()
+      : undefined,
+    processedOn: syncJob.startedAt
+      ? new Date(syncJob.startedAt).toISOString()
+      : undefined,
+    duration: syncJob.durationMs ?? undefined,
+    attempts: 1,
+  };
 }
 
 // ============================================================================
 // Types
 // ============================================================================
-
-interface JobStats {
-  totalJobs: number;
-  completedJobs: number;
-  failedJobs: number;
-  avgDuration: number;
-  successRate: number;
-  jobsToday: number;
-  jobsThisWeek: number;
-  trendsUp: boolean;
-}
-
-interface SchedulerStatus {
-  spotify: {
-    enabled: boolean;
-    nextRunAt: string | null;
-    lastRunAt: string | null;
-    intervalMinutes: number;
-    jobKey: string | null;
-  };
-  musicbrainz: {
-    enabled: boolean;
-    nextRunAt: string | null;
-    lastRunAt: string | null;
-    intervalMinutes: number;
-    jobKey: string | null;
-  };
-  queue: {
-    waiting: number;
-    active: number;
-    completed: number;
-    failed: number;
-    delayed: number;
-    paused: boolean;
-  };
-}
 
 const MONITORING_API = '/api/admin/worker';
 
@@ -130,11 +146,6 @@ const MONITORING_API = '/api/admin/worker';
 
 export function JobHistoryPanel() {
   const [jobs, setJobs] = useState<JobHistoryItem[]>([]);
-  const [stats, setStats] = useState<JobStats | null>(null);
-  const [schedulerStatus, setSchedulerStatus] =
-    useState<SchedulerStatus | null>(null);
-  const [schedulerLoading, setSchedulerLoading] = useState(true);
-  const [schedulerError, setSchedulerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -144,6 +155,35 @@ export function JobHistoryPanel() {
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Determine data source based on job type filter
+  const isSyncFilter = jobTypeFilter in SYNC_FILTERS;
+  const syncJobType = SYNC_FILTERS[jobTypeFilter];
+
+  // Query SyncJob Postgres table when a sync filter is selected or "all"
+  const PAGE_SIZE = 20;
+  const {
+    data: syncJobsData,
+    isLoading: syncJobsLoading,
+    refetch: refetchSyncJobs,
+  } = useGetSyncJobsQuery(
+    {
+      input: {
+        ...(syncJobType ? { jobType: syncJobType } : {}),
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      },
+    },
+    {
+      enabled: isSyncFilter || jobTypeFilter === 'all',
+    }
+  );
+
+  // Convert SyncJob records to JobHistoryItem format
+  const syncJobItems: JobHistoryItem[] = useMemo(() => {
+    if (!syncJobsData?.syncJobs?.jobs) return [];
+    return syncJobsData.syncJobs.jobs.map(syncJobToHistoryItem);
+  }, [syncJobsData]);
 
   const toggleRow = (jobId: string) => {
     setExpandedRows(prev => {
@@ -155,30 +195,6 @@ export function JobHistoryPanel() {
       }
       return next;
     });
-  };
-
-  const fetchSchedulerStatus = async () => {
-    setSchedulerLoading(true);
-    setSchedulerError(null);
-    try {
-      const response = await fetch('/api/admin/scheduler/status');
-      if (!response.ok) {
-        throw new Error('Failed to fetch scheduler status');
-      }
-      const data = await response.json();
-      if (data.success) {
-        setSchedulerStatus(data.status);
-      } else {
-        throw new Error(data.error || 'Unknown error');
-      }
-    } catch (err) {
-      setSchedulerError(
-        err instanceof Error ? err.message : 'Failed to load scheduler status'
-      );
-      console.error('Error fetching scheduler status:', err);
-    } finally {
-      setSchedulerLoading(false);
-    }
   };
 
   const fetchJobHistory = async () => {
@@ -201,7 +217,6 @@ export function JobHistoryPanel() {
       const data = await response.json();
 
       setJobs(data.jobs || []);
-      setStats(data.stats || null);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       const isConnectionError =
@@ -218,17 +233,13 @@ export function JobHistoryPanel() {
   };
 
   useEffect(() => {
-    fetchSchedulerStatus();
-  }, []);
-
-  useEffect(() => {
     fetchJobHistory();
   }, [page, statusFilter, timeFilter]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     fetchJobHistory();
-    fetchSchedulerStatus();
+    refetchSyncJobs();
   };
 
   const handleRetryJob = async (jobId: string) => {
@@ -287,257 +298,50 @@ export function JobHistoryPanel() {
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
-  // Filter jobs by type
-  const filteredJobs = jobs.filter(job => {
-    if (jobTypeFilter === 'all') return true;
-    if (jobTypeFilter === 'spotify') return job.name.includes('spotify');
-    if (jobTypeFilter === 'musicbrainz')
-      return job.name.includes('musicbrainz');
-    if (jobTypeFilter === 'enrichment') return job.name.includes('enrichment');
-    if (jobTypeFilter === 'cache') return job.name.includes('cache');
-    if (jobTypeFilter === 'discogs') return job.name.includes('discogs');
-    return true;
-  });
+  // Build the final job list based on data source
+  const filteredJobs = useMemo(() => {
+    if (isSyncFilter) {
+      // Sync filter selected → use SyncJob Postgres data exclusively
+      return syncJobItems;
+    }
+
+    if (jobTypeFilter === 'all') {
+      // "All" → merge BullMQ + SyncJob data, dedup by job ID
+      // SyncJob records win over BullMQ records (richer data)
+      const syncJobIds = new Set(syncJobItems.map(j => j.id));
+      const bullMqOnly = jobs.filter(j => !syncJobIds.has(j.id));
+      const merged = [...syncJobItems, ...bullMqOnly];
+      // Sort by createdAt descending
+      merged.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      return merged;
+    }
+
+    // Non-sync filter → BullMQ only, client-side filter
+    return jobs.filter(job => {
+      if (jobTypeFilter === 'enrichment')
+        return job.name.includes('enrichment');
+      if (jobTypeFilter === 'cache') return job.name.includes('cache');
+      if (jobTypeFilter === 'discogs') return job.name.includes('discogs');
+      return true;
+    });
+  }, [isSyncFilter, jobTypeFilter, syncJobItems, jobs]);
+
+  // Compute effective loading/stats based on data source
+  const isEffectivelyLoading = isSyncFilter
+    ? syncJobsLoading
+    : jobTypeFilter === 'all'
+      ? loading && syncJobsLoading
+      : loading;
+
+  const effectiveTotalPages = isSyncFilter
+    ? Math.ceil((syncJobsData?.syncJobs?.totalCount ?? 0) / PAGE_SIZE) || 1
+    : totalPages;
 
   return (
     <div className='space-y-6'>
-      {/* Scheduler Status Card */}
-      <Card className='bg-zinc-900 border-zinc-800'>
-        <CardHeader className='pb-3'>
-          <div className='flex items-center justify-between'>
-            <CardTitle className='text-lg font-semibold text-white flex items-center gap-2'>
-              <Calendar className='h-5 w-5 text-green-500' />
-              Sync Schedules
-            </CardTitle>
-            {schedulerStatus?.queue.paused && (
-              <Badge
-                variant='outline'
-                className='text-yellow-500 border-yellow-500'
-              >
-                <Pause className='h-3 w-3 mr-1' />
-                Queue Paused
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {schedulerLoading ? (
-            <div className='text-zinc-500'>Loading scheduler status...</div>
-          ) : schedulerError ? (
-            <div className='flex items-center gap-2 text-red-400'>
-              <AlertCircle className='h-4 w-4' />
-              <span>{schedulerError}</span>
-            </div>
-          ) : schedulerStatus ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              {/* Spotify Sync */}
-              <div className='bg-zinc-800 rounded-lg p-4'>
-                <div className='flex items-center gap-2 mb-3'>
-                  <Music className='h-5 w-5 text-green-500' />
-                  <span className='font-medium text-white'>Spotify Sync</span>
-                  {schedulerStatus.spotify.enabled ? (
-                    <Badge className='bg-green-500/20 text-green-400 text-xs'>
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant='outline' className='text-zinc-500 text-xs'>
-                      Disabled
-                    </Badge>
-                  )}
-                </div>
-                {schedulerStatus.spotify.enabled ? (
-                  <div className='space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span className='text-zinc-400'>Next sync</span>
-                      <span className='text-white font-medium'>
-                        {schedulerStatus.spotify.nextRunAt
-                          ? formatTimeUntil(
-                              new Date(schedulerStatus.spotify.nextRunAt)
-                            )
-                          : 'Unknown'}
-                      </span>
-                    </div>
-                    {schedulerStatus.spotify.intervalMinutes > 0 && (
-                      <div className='flex justify-between'>
-                        <span className='text-zinc-400'>Interval</span>
-                        <span className='text-zinc-300'>
-                          Every{' '}
-                          {formatInterval(
-                            schedulerStatus.spotify.intervalMinutes
-                          )}
-                        </span>
-                      </div>
-                    )}
-                    {schedulerStatus.spotify.lastRunAt && (
-                      <div className='flex justify-between'>
-                        <span className='text-zinc-400'>Last run</span>
-                        <span className='text-zinc-300'>
-                          {formatDistanceToNow(
-                            new Date(schedulerStatus.spotify.lastRunAt)
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className='text-zinc-500 text-sm'>
-                    No Spotify sync scheduled
-                  </p>
-                )}
-              </div>
-
-              {/* MusicBrainz Sync */}
-              <div className='bg-zinc-800 rounded-lg p-4'>
-                <div className='flex items-center gap-2 mb-3'>
-                  <Database className='h-5 w-5 text-blue-500' />
-                  <span className='font-medium text-white'>
-                    MusicBrainz Sync
-                  </span>
-                  {schedulerStatus.musicbrainz.enabled ? (
-                    <Badge className='bg-blue-500/20 text-blue-400 text-xs'>
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant='outline' className='text-zinc-500 text-xs'>
-                      Disabled
-                    </Badge>
-                  )}
-                </div>
-                {schedulerStatus.musicbrainz.enabled ? (
-                  <div className='space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span className='text-zinc-400'>Next sync</span>
-                      <span className='text-white font-medium'>
-                        {schedulerStatus.musicbrainz.nextRunAt
-                          ? formatTimeUntil(
-                              new Date(schedulerStatus.musicbrainz.nextRunAt)
-                            )
-                          : 'Unknown'}
-                      </span>
-                    </div>
-                    {schedulerStatus.musicbrainz.intervalMinutes > 0 && (
-                      <div className='flex justify-between'>
-                        <span className='text-zinc-400'>Interval</span>
-                        <span className='text-zinc-300'>
-                          Every{' '}
-                          {formatInterval(
-                            schedulerStatus.musicbrainz.intervalMinutes
-                          )}
-                        </span>
-                      </div>
-                    )}
-                    {schedulerStatus.musicbrainz.lastRunAt && (
-                      <div className='flex justify-between'>
-                        <span className='text-zinc-400'>Last run</span>
-                        <span className='text-zinc-300'>
-                          {formatDistanceToNow(
-                            new Date(schedulerStatus.musicbrainz.lastRunAt)
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className='text-zinc-500 text-sm'>
-                    No MusicBrainz sync scheduled
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Queue Summary */}
-          {schedulerStatus && (
-            <div className='mt-4 pt-4 border-t border-zinc-700'>
-              <div className='flex items-center gap-4 text-sm text-zinc-400'>
-                <span>
-                  Queue: {schedulerStatus.queue.waiting} waiting ·{' '}
-                  {schedulerStatus.queue.active} active ·{' '}
-                  {schedulerStatus.queue.delayed} delayed
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Stats Cards */}
-      {stats && (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-3'>
-              <CardTitle className='text-sm font-medium text-zinc-400'>
-                Total Jobs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {stats.totalJobs.toLocaleString()}
-              </div>
-              <p className='text-xs text-zinc-500 mt-1'>
-                {stats.jobsToday} today
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-3'>
-              <CardTitle className='text-sm font-medium text-zinc-400'>
-                Success Rate
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='flex items-center gap-2'>
-                <div className='text-2xl font-bold text-white'>
-                  {(stats.successRate * 100).toFixed(1)}%
-                </div>
-                {stats.trendsUp ? (
-                  <TrendingUp className='h-4 w-4 text-green-500' />
-                ) : (
-                  <TrendingDown className='h-4 w-4 text-red-500' />
-                )}
-              </div>
-              <p className='text-xs text-zinc-500 mt-1'>
-                {stats.completedJobs} completed
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-3'>
-              <CardTitle className='text-sm font-medium text-zinc-400'>
-                Failed Jobs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-red-400'>
-                {stats.failedJobs}
-              </div>
-              <p className='text-xs text-zinc-500 mt-1'>
-                {stats.totalJobs > 0
-                  ? ((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)
-                  : '0'}
-                % failure rate
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-3'>
-              <CardTitle className='text-sm font-medium text-zinc-400'>
-                Avg Duration
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {formatDuration(stats.avgDuration)}
-              </div>
-              <p className='text-xs text-zinc-500 mt-1'>Per job processing</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Filters and Table */}
       <Card className='bg-zinc-900 border-zinc-800'>
         <CardHeader>
@@ -580,6 +384,9 @@ export function JobHistoryPanel() {
                   <SelectItem value='enrichment'>Enrichment</SelectItem>
                   <SelectItem value='cache'>Cache</SelectItem>
                   <SelectItem value='discogs'>Discogs</SelectItem>
+                  <SelectItem value='listenbrainz'>
+                    ListenBrainz Sync
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -608,7 +415,7 @@ export function JobHistoryPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className='h-[600px] overflow-auto'>
+          <div>
             <Table>
               <TableHeader>
                 <TableRow className='border-zinc-800'>
@@ -623,7 +430,7 @@ export function JobHistoryPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {isEffectivelyLoading ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -632,7 +439,7 @@ export function JobHistoryPanel() {
                       Loading job history...
                     </TableCell>
                   </TableRow>
-                ) : error ? (
+                ) : error && !isSyncFilter ? (
                   <TableRow>
                     <TableCell colSpan={8} className='py-12'>
                       <div className='flex flex-col items-center gap-4'>
@@ -687,10 +494,10 @@ export function JobHistoryPanel() {
           <div className='mt-4 pt-4 border-t border-zinc-800'>
             <TablePagination
               currentPage={page}
-              totalPages={totalPages}
+              totalPages={effectiveTotalPages}
               onPageChange={setPage}
-              pageSize={20}
-              currentPageItemCount={jobs.length}
+              pageSize={PAGE_SIZE}
+              currentPageItemCount={filteredJobs.length}
             />
           </div>
         </CardContent>

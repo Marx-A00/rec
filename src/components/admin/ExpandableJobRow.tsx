@@ -206,61 +206,67 @@ export function ExpandableJobRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80'>
           <TableCell colSpan={8} className='p-0'>
-            <div className='p-4 max-h-[600px] overflow-y-auto space-y-4'>
-              {/* Section 1: Job Details (always shown) */}
-              <JobDetailPanel job={job} />
+            <div className='p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-4'>
+              {isSyncType ? (
+                <>
+                  {/* Sync jobs: show SyncJobExpandedContent directly */}
+                  {syncJob ? (
+                    <SyncJobExpandedContent syncJob={syncJob} />
+                  ) : hasBeenFetched ? (
+                    <div className='text-xs text-zinc-600 text-center py-2'>
+                      No sync record found for this job
+                    </div>
+                  ) : (
+                    <div className='text-zinc-500 text-center py-4 text-sm'>
+                      Loading sync job details...
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Non-sync jobs: show generic detail panel + enrichment logs */}
+                  <JobDetailPanel job={job} />
 
-              {/* Section 2: Enrichment data (when logs exist) */}
-              {loadingLogs ? (
-                <SkeletonTimeline itemCount={3} />
-              ) : logsError ? (
-                <div className='py-4 text-center'>
-                  <p className='text-sm text-red-400'>
-                    Failed to load enrichment logs
-                  </p>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={e => {
-                      e.stopPropagation();
-                      refetchLogs();
-                    }}
-                    className='mt-2 text-xs'
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : logs.length > 0 ? (
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-1.5'>
-                    <Activity className='h-3 w-3 text-purple-400' />
-                    <span className='text-xs font-medium text-purple-300 uppercase tracking-wider'>
-                      Enrichment Logs ({logs.length})
-                    </span>
-                  </div>
-                  <EnrichmentSummaryStrip log={logs[0] as LlamaLog} />
-                  <EnrichmentTimeline
-                    logs={logs as LlamaLog[]}
-                    variant='compact'
-                    truncateChildren={5}
-                  />
-                  <EnrichmentTimelineModal
-                    parentLog={logs[0] as LlamaLog}
-                    childLogs={logs.slice(1) as LlamaLog[]}
-                  />
-                </div>
-              ) : null}
-
-              {/* Section 3: Sync job details (when sync job record exists) */}
-              {isSyncType && syncJob && (
-                <div className='border-t border-zinc-800 pt-4'>
-                  <SyncJobExpandedContent syncJob={syncJob} />
-                </div>
-              )}
-              {isSyncType && !syncJob && hasBeenFetched && (
-                <div className='text-xs text-zinc-600 text-center py-2'>
-                  No sync record found for this job
-                </div>
+                  {loadingLogs ? (
+                    <SkeletonTimeline itemCount={3} />
+                  ) : logsError ? (
+                    <div className='py-4 text-center'>
+                      <p className='text-sm text-red-400'>
+                        Failed to load enrichment logs
+                      </p>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={e => {
+                          e.stopPropagation();
+                          refetchLogs();
+                        }}
+                        className='mt-2 text-xs'
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  ) : logs.length > 0 ? (
+                    <div className='space-y-3'>
+                      <div className='flex items-center gap-1.5'>
+                        <Activity className='h-3 w-3 text-purple-400' />
+                        <span className='text-xs font-medium text-purple-300 uppercase tracking-wider'>
+                          Enrichment Logs ({logs.length})
+                        </span>
+                      </div>
+                      <EnrichmentSummaryStrip log={logs[0] as LlamaLog} />
+                      <EnrichmentTimeline
+                        logs={logs as LlamaLog[]}
+                        variant='compact'
+                        truncateChildren={5}
+                      />
+                      <EnrichmentTimelineModal
+                        parentLog={logs[0] as LlamaLog}
+                        childLogs={logs.slice(1) as LlamaLog[]}
+                      />
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </TableCell>

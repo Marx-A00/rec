@@ -21,7 +21,9 @@ export interface JobDetailField {
 
 export function isSyncJob(jobName: string): boolean {
   return (
-    jobName.startsWith('spotify:sync') || jobName.startsWith('musicbrainz:sync')
+    jobName.startsWith('spotify:sync') ||
+    jobName.startsWith('musicbrainz:sync') ||
+    jobName.startsWith('listenbrainz:sync')
   );
 }
 
@@ -56,6 +58,10 @@ export function isUncoverJob(jobName: string): boolean {
   return jobName.startsWith('uncover:');
 }
 
+export function isListenBrainzJob(jobName: string): boolean {
+  return jobName.startsWith('listenbrainz:');
+}
+
 // ============================================================================
 // Job Category Label
 // ============================================================================
@@ -71,6 +77,7 @@ export function getJobCategory(jobName: string): string {
   if (isCacheJob(jobName)) return 'Cache';
   if (isDiscogsJob(jobName)) return 'Discogs';
   if (isUncoverJob(jobName)) return 'Uncover';
+  if (isListenBrainzJob(jobName)) return 'ListenBrainz Sync';
   if (jobName.startsWith('migration:')) return 'Migration';
   return 'Other';
 }
@@ -198,6 +205,19 @@ export function getJobDetailFields(
       field('Artist Name', data.artistName),
       field('Album Title', data.albumTitle),
       field('Limit', data.limit),
+      field('Parent Job ID', data.parentJobId, 'id'),
+      field('Request ID', data.requestId, 'id'),
+    ]);
+  }
+
+  // ListenBrainz Sync jobs
+  if (isListenBrainzJob(jobName)) {
+    return compact([
+      field('Days', data.days),
+      field('Include Future', data.includeFuture),
+      field('Primary Types', formatArray(data.primaryTypes), 'list'),
+      field('Priority', data.priority),
+      field('Source', data.source),
       field('Parent Job ID', data.parentJobId, 'id'),
       field('Request ID', data.requestId, 'id'),
     ]);

@@ -145,6 +145,7 @@ export type Album = {
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
   spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
@@ -1340,6 +1341,22 @@ export type JobStatusUpdate = {
   type: Scalars['String']['output'];
 };
 
+export type ListenBrainzConfig = {
+  __typename?: 'ListenBrainzConfig';
+  days: Scalars['Int']['output'];
+  includeFuture: Scalars['Boolean']['output'];
+  maxReleases: Scalars['Int']['output'];
+  minArtistListeners: Scalars['Int']['output'];
+  minListenCount: Scalars['Int']['output'];
+};
+
+export type ListenBrainzSyncResult = {
+  __typename?: 'ListenBrainzSyncResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type LlamaLog = {
   __typename?: 'LlamaLog';
   apiCallCount: Scalars['Int']['output'];
@@ -1607,6 +1624,7 @@ export type Mutation = {
   submitGameResult: SubmitGameResultResponse;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
+  triggerListenBrainzSync: ListenBrainzSyncResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   /** Admin: Unpin a curated challenge (remove date override) */
@@ -1619,6 +1637,7 @@ export type Mutation = {
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
+  updateListenBrainzConfig: ListenBrainzConfig;
   updateOnboardingStatus: OnboardingStatus;
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
@@ -1854,6 +1873,10 @@ export type MutationUpdateCollectionAlbumArgs = {
 
 export type MutationUpdateDashboardLayoutArgs = {
   layout: Scalars['JSON']['input'];
+};
+
+export type MutationUpdateListenBrainzConfigArgs = {
+  input: UpdateListenBrainzConfigInput;
 };
 
 export type MutationUpdateOnboardingStatusArgs = {
@@ -2810,6 +2833,7 @@ export enum SyncJobStatus {
 export enum SyncJobType {
   DiscogsSync = 'DISCOGS_SYNC',
   EnrichmentBatch = 'ENRICHMENT_BATCH',
+  ListenbrainzFreshReleases = 'LISTENBRAINZ_FRESH_RELEASES',
   MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
   MusicbrainzSync = 'MUSICBRAINZ_SYNC',
   SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
@@ -3241,6 +3265,14 @@ export type UpdateCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+export type UpdateListenBrainzConfigInput = {
+  days?: InputMaybe<Scalars['Int']['input']>;
+  includeFuture?: InputMaybe<Scalars['Boolean']['input']>;
+  maxReleases?: InputMaybe<Scalars['Int']['input']>;
+  minArtistListeners?: InputMaybe<Scalars['Int']['input']>;
+  minListenCount?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
@@ -3611,6 +3643,8 @@ export type ResolversTypes = ResolversObject<{
   JobRecord: ResolverTypeWrapper<JobRecord>;
   JobStatus: JobStatus;
   JobStatusUpdate: ResolverTypeWrapper<JobStatusUpdate>;
+  ListenBrainzConfig: ResolverTypeWrapper<ListenBrainzConfig>;
+  ListenBrainzSyncResult: ResolverTypeWrapper<ListenBrainzSyncResult>;
   LlamaLog: ResolverTypeWrapper<LlamaLog>;
   LlamaLogCategory: LlamaLogCategory;
   LlamaLogChainResponse: ResolverTypeWrapper<LlamaLogChainResponse>;
@@ -3711,6 +3745,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateAlbumGameStatusResult: ResolverTypeWrapper<UpdateAlbumGameStatusResult>;
   UpdateCollectionAlbumPayload: ResolverTypeWrapper<UpdateCollectionAlbumPayload>;
   UpdateCollectionPayload: ResolverTypeWrapper<UpdateCollectionPayload>;
+  UpdateListenBrainzConfigInput: UpdateListenBrainzConfigInput;
   UpdateProfilePayload: ResolverTypeWrapper<UpdateProfilePayload>;
   UpdateRecommendationPayload: ResolverTypeWrapper<UpdateRecommendationPayload>;
   UpdateTrackInput: UpdateTrackInput;
@@ -3826,6 +3861,8 @@ export type ResolversParentTypes = ResolversObject<{
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
   JobStatusUpdate: JobStatusUpdate;
+  ListenBrainzConfig: ListenBrainzConfig;
+  ListenBrainzSyncResult: ListenBrainzSyncResult;
   LlamaLog: LlamaLog;
   LlamaLogChainResponse: LlamaLogChainResponse;
   MBArtist: MbArtist;
@@ -3911,6 +3948,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateAlbumGameStatusResult: UpdateAlbumGameStatusResult;
   UpdateCollectionAlbumPayload: UpdateCollectionAlbumPayload;
   UpdateCollectionPayload: UpdateCollectionPayload;
+  UpdateListenBrainzConfigInput: UpdateListenBrainzConfigInput;
   UpdateProfilePayload: UpdateProfilePayload;
   UpdateRecommendationPayload: UpdateRecommendationPayload;
   UpdateTrackInput: UpdateTrackInput;
@@ -4147,6 +4185,7 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  source?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   spotifyId?: Resolver<
     Maybe<ResolversTypes['String']>,
     ParentType,
@@ -5622,6 +5661,30 @@ export type JobStatusUpdateResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ListenBrainzConfigResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ListenBrainzConfig'] = ResolversParentTypes['ListenBrainzConfig'],
+> = ResolversObject<{
+  days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  includeFuture?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  maxReleases?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  minArtistListeners?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  minListenCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ListenBrainzSyncResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ListenBrainzSyncResult'] = ResolversParentTypes['ListenBrainzSyncResult'],
+> = ResolversObject<{
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type LlamaLogResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6074,6 +6137,11 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationTriggerArtistEnrichmentArgs, 'id'>
   >;
+  triggerListenBrainzSync?: Resolver<
+    ResolversTypes['ListenBrainzSyncResult'],
+    ParentType,
+    ContextType
+  >;
   triggerSpotifySync?: Resolver<
     ResolversTypes['SpotifySyncResult'],
     ParentType,
@@ -6139,6 +6207,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationUpdateDashboardLayoutArgs, 'layout'>
+  >;
+  updateListenBrainzConfig?: Resolver<
+    ResolversTypes['ListenBrainzConfig'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateListenBrainzConfigArgs, 'input'>
   >;
   updateOnboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
@@ -8301,6 +8375,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   JSON?: GraphQLScalarType;
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;
+  ListenBrainzConfig?: ListenBrainzConfigResolvers<ContextType>;
+  ListenBrainzSyncResult?: ListenBrainzSyncResultResolvers<ContextType>;
   LlamaLog?: LlamaLogResolvers<ContextType>;
   LlamaLogChainResponse?: LlamaLogChainResponseResolvers<ContextType>;
   MBArtist?: MbArtistResolvers<ContextType>;

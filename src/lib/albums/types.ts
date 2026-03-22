@@ -34,7 +34,13 @@ export interface AlbumFields {
   releaseStatus?: string | null;
   trackCount?: number | null;
   coverArtUrl?: string | null;
-  source?: 'DEEZER' | 'MUSICBRAINZ' | 'SPOTIFY' | 'DISCOGS' | 'USER_SUBMITTED';
+  source?:
+    | 'DEEZER'
+    | 'LISTENBRAINZ'
+    | 'MUSICBRAINZ'
+    | 'SPOTIFY'
+    | 'DISCOGS'
+    | 'USER_SUBMITTED';
   sourceUrl?: string | null;
   spotifyUrl?: string | null;
   secondaryTypes?: string[];

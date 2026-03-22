@@ -72,7 +72,7 @@ function GameOver({
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
   mode: 'daily' | 'archive';
-  formattedDate: string | null;
+  formattedDate: string;
   archiveUrl: string;
   onDevReset?: () => void;
 }) {
@@ -106,10 +106,8 @@ function GameOver({
 
       {/* Controls Column — result + actions */}
       <div className='flex min-h-0 flex-1 flex-col'>
-        {/* Archive: date label */}
-        {!isDaily && formattedDate && (
-          <p className='pb-1 text-xs text-zinc-500'>{formattedDate}</p>
-        )}
+        {/* Date label */}
+        <p className='pb-1 text-xs text-zinc-500'>{formattedDate}</p>
 
         {/* Result header */}
         <h2 className='pb-1 text-2xl font-bold text-white'>
@@ -228,15 +226,14 @@ export function UncoverGame({
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasStarted, setHasStarted] = useState(isArchive); // archive auto-starts
 
-  // Format archive date in UTC
-  const formattedDate = challengeDate
-    ? new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        timeZone: 'UTC',
-      }).format(challengeDate)
-    : null;
+  // Format date in UTC — archive uses challengeDate, daily uses today
+  const displayDate = challengeDate ?? new Date();
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(displayDate);
 
   const archiveUrl = '/game/archive';
 
@@ -458,9 +455,7 @@ export function UncoverGame({
       return (
         <div className='flex h-full flex-col items-center justify-center gap-5 p-8'>
           <div className='text-center'>
-            {formattedDate && (
-              <p className='mb-1 text-sm text-zinc-500'>{formattedDate}</p>
-            )}
+            <p className='mb-1 text-sm text-zinc-500'>{formattedDate}</p>
             <h2 className='mb-2 text-xl font-bold text-white'>
               No challenge available
             </h2>
@@ -521,11 +516,12 @@ export function UncoverGame({
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
+        <p className='text-sm text-zinc-500'>{formattedDate}</p>
         {challengeImageUrl && game.challengeId && (
           <Lens
             zoomFactor={2}
             lensSize={170}
-            className='rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'
+            className='rounded-2xl border border-cosmic-latte/25 bg-zinc-900'
           >
             <div className='h-[500px] w-[500px]'>
               <RevealImage
@@ -551,11 +547,9 @@ export function UncoverGame({
 
       {/* Controls Column */}
       <div className='flex min-h-0 flex-1 flex-col'>
-        {/* Archive: date label */}
-        {isArchive && formattedDate && (
-          <p className='pb-3 text-sm text-zinc-500'>{formattedDate}</p>
-        )}
-
+        {/* Invisible spacer to align input with album art (matches date height above art) */}
+        <p className='invisible text-sm'>&nbsp;</p>
+        <div className='h-4' />
         {/* Search input */}
         <div className='pb-3'>
           <AlbumGuessInput

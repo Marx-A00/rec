@@ -171,6 +171,7 @@ export type Album = {
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
   spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
@@ -1366,6 +1367,22 @@ export type JobStatusUpdate = {
   type: Scalars['String']['output'];
 };
 
+export type ListenBrainzConfig = {
+  __typename?: 'ListenBrainzConfig';
+  days: Scalars['Int']['output'];
+  includeFuture: Scalars['Boolean']['output'];
+  maxReleases: Scalars['Int']['output'];
+  minArtistListeners: Scalars['Int']['output'];
+  minListenCount: Scalars['Int']['output'];
+};
+
+export type ListenBrainzSyncResult = {
+  __typename?: 'ListenBrainzSyncResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type LlamaLog = {
   __typename?: 'LlamaLog';
   apiCallCount: Scalars['Int']['output'];
@@ -1633,6 +1650,7 @@ export type Mutation = {
   submitGameResult: SubmitGameResultResponse;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
+  triggerListenBrainzSync: ListenBrainzSyncResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   /** Admin: Unpin a curated challenge (remove date override) */
@@ -1645,6 +1663,7 @@ export type Mutation = {
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
+  updateListenBrainzConfig: ListenBrainzConfig;
   updateOnboardingStatus: OnboardingStatus;
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
@@ -1880,6 +1899,10 @@ export type MutationUpdateCollectionAlbumArgs = {
 
 export type MutationUpdateDashboardLayoutArgs = {
   layout: Scalars['JSON']['input'];
+};
+
+export type MutationUpdateListenBrainzConfigArgs = {
+  input: UpdateListenBrainzConfigInput;
 };
 
 export type MutationUpdateOnboardingStatusArgs = {
@@ -2836,6 +2859,7 @@ export enum SyncJobStatus {
 export enum SyncJobType {
   DiscogsSync = 'DISCOGS_SYNC',
   EnrichmentBatch = 'ENRICHMENT_BATCH',
+  ListenbrainzFreshReleases = 'LISTENBRAINZ_FRESH_RELEASES',
   MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
   MusicbrainzSync = 'MUSICBRAINZ_SYNC',
   SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
@@ -3265,6 +3289,14 @@ export type UpdateCollectionAlbumPayload = {
 export type UpdateCollectionPayload = {
   __typename?: 'UpdateCollectionPayload';
   id: Scalars['String']['output'];
+};
+
+export type UpdateListenBrainzConfigInput = {
+  days?: InputMaybe<Scalars['Int']['input']>;
+  includeFuture?: InputMaybe<Scalars['Boolean']['input']>;
+  maxReleases?: InputMaybe<Scalars['Int']['input']>;
+  minArtistListeners?: InputMaybe<Scalars['Int']['input']>;
+  minListenCount?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateProfilePayload = {
@@ -5548,6 +5580,8 @@ export type GetLatestReleasesQuery = {
     title: string;
     releaseDate?: Date | null;
     coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    source?: string | null;
     createdAt: Date;
     artists: Array<{
       __typename?: 'ArtistCredit';
@@ -5555,6 +5589,22 @@ export type GetLatestReleasesQuery = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   }>;
+};
+
+export type UpdateListenBrainzConfigMutationVariables = Exact<{
+  input: UpdateListenBrainzConfigInput;
+}>;
+
+export type UpdateListenBrainzConfigMutation = {
+  __typename?: 'Mutation';
+  updateListenBrainzConfig: {
+    __typename?: 'ListenBrainzConfig';
+    days: number;
+    includeFuture: boolean;
+    maxReleases: number;
+    minListenCount: number;
+    minArtistListeners: number;
+  };
 };
 
 export type GetLlamaLogChainQueryVariables = Exact<{
@@ -12329,7 +12379,7 @@ useInfiniteAlbumsByJobIdQuery.getKey = (
 ) => ['AlbumsByJobId.infinite', variables];
 
 export const GetLatestReleasesDocument = `
-    query GetLatestReleases($source: String = "SPOTIFY", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
+    query GetLatestReleases($source: String = "all", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
   searchAlbums(
     source: $source
     sortBy: $sortBy
@@ -12340,6 +12390,8 @@ export const GetLatestReleasesDocument = `
     title
     releaseDate
     coverArtUrl
+    cloudflareImageId
+    source
     createdAt
     artists {
       artist {
@@ -12429,6 +12481,47 @@ useInfiniteGetLatestReleasesQuery.getKey = (
   variables === undefined
     ? ['GetLatestReleases.infinite']
     : ['GetLatestReleases.infinite', variables];
+
+export const UpdateListenBrainzConfigDocument = `
+    mutation UpdateListenBrainzConfig($input: UpdateListenBrainzConfigInput!) {
+  updateListenBrainzConfig(input: $input) {
+    days
+    includeFuture
+    maxReleases
+    minListenCount
+    minArtistListeners
+  }
+}
+    `;
+
+export const useUpdateListenBrainzConfigMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateListenBrainzConfigMutation,
+    TError,
+    UpdateListenBrainzConfigMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateListenBrainzConfigMutation,
+    TError,
+    UpdateListenBrainzConfigMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateListenBrainzConfig'],
+    mutationFn: (variables?: UpdateListenBrainzConfigMutationVariables) =>
+      fetcher<
+        UpdateListenBrainzConfigMutation,
+        UpdateListenBrainzConfigMutationVariables
+      >(UpdateListenBrainzConfigDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateListenBrainzConfigMutation.getKey = () => ['UpdateListenBrainzConfig'];
 
 export const GetLlamaLogChainDocument = `
     query GetLlamaLogChain($entityType: EnrichmentEntityType!, $entityId: UUID!, $categories: [LlamaLogCategory!], $startDate: DateTime, $endDate: DateTime, $limit: Int = 20, $cursor: String) {

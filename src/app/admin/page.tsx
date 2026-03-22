@@ -17,6 +17,7 @@ import {
   Play,
   Square,
   RefreshCw,
+  Pencil,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -33,7 +34,9 @@ import { Button } from '@/components/ui/button';
 import {
   useGetMyRecommendationsQuery,
   useDeleteRecommendationMutation,
+  useUpdateListenBrainzConfigMutation,
 } from '@/generated/graphql';
+import { Input } from '@/components/ui/input';
 
 interface DashboardData {
   health: string;
@@ -96,6 +99,21 @@ interface SchedulerStatusData {
     intervalMinutes: number;
     jobKey: string | null;
   };
+  listenbrainz: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+    config?: {
+      days: number;
+      includeFuture: boolean;
+      primaryTypes: string[];
+      minListenCount: number;
+      maxReleases: number;
+      minArtistListeners: number;
+    };
+  };
 }
 
 // In dev, call worker directly for speed; in prod, use the authenticated proxy
@@ -112,13 +130,68 @@ export default function AdminDashboard() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [syncingSpotify, setSyncingSpotify] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [schedulerStatus, setSchedulerStatus] =
     useState<SchedulerStatusData | null>(null);
   const [togglingScheduler, setTogglingScheduler] = useState<string | null>(
     null
   ); // 'spotify-start' | 'spotify-stop' | 'musicbrainz-start' | etc.
+
+  // ListenBrainz editable config state
+  const [lbConfigEdits, setLbConfigEdits] = useState<{
+    days: number;
+    includeFuture: boolean;
+    maxReleases: number;
+    minListenCount: number;
+    minArtistListeners: number;
+  } | null>(null);
+  const [editingLbConfig, setEditingLbConfig] = useState(false);
+  const [savingLbConfig, setSavingLbConfig] = useState(false);
+  const [lbConfigMessage, setLbConfigMessage] = useState<string | null>(null);
+
+  const updateLbConfig = useUpdateListenBrainzConfigMutation();
+
+  // Sync editable state when scheduler status loads
+  useEffect(() => {
+    if (schedulerStatus?.listenbrainz?.config && !lbConfigEdits) {
+      const c = schedulerStatus.listenbrainz.config;
+      setLbConfigEdits({
+        days: c.days,
+        includeFuture: c.includeFuture,
+        maxReleases: c.maxReleases,
+        minListenCount: c.minListenCount,
+        minArtistListeners: c.minArtistListeners,
+      });
+    }
+  }, [schedulerStatus, lbConfigEdits]);
+
+  const handleSaveLbConfig = async () => {
+    if (!lbConfigEdits) return;
+    setSavingLbConfig(true);
+    setLbConfigMessage(null);
+    try {
+      await updateLbConfig.mutateAsync({
+        input: {
+          days: lbConfigEdits.days,
+          includeFuture: lbConfigEdits.includeFuture,
+          maxReleases: lbConfigEdits.maxReleases,
+          minListenCount: lbConfigEdits.minListenCount,
+          minArtistListeners: lbConfigEdits.minArtistListeners,
+        },
+      });
+      setLbConfigMessage('Config saved');
+      setEditingLbConfig(false);
+      // Refresh scheduler status to reflect new values
+      fetchSchedulerStatus();
+      setTimeout(() => setLbConfigMessage(null), 3000);
+    } catch (err) {
+      setLbConfigMessage(
+        `Error: ${err instanceof Error ? err.message : 'Failed to save'}`
+      );
+    } finally {
+      setSavingLbConfig(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -161,7 +234,7 @@ export default function AdminDashboard() {
   };
 
   const toggleScheduler = async (
-    scheduler: 'spotify' | 'musicbrainz',
+    scheduler: 'spotify' | 'musicbrainz' | 'listenbrainz',
     action: 'start' | 'stop' | 'sync'
   ) => {
     const key = `${scheduler}-${action}`;
@@ -176,7 +249,12 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (data.success) {
-        const label = scheduler === 'spotify' ? 'Spotify' : 'MusicBrainz';
+        const labelMap: Record<string, string> = {
+          spotify: 'Spotify',
+          musicbrainz: 'MusicBrainz',
+          listenbrainz: 'ListenBrainz',
+        };
+        const label = labelMap[scheduler] ?? scheduler;
         const actionLabel =
           action === 'start'
             ? 'started'
@@ -210,59 +288,6 @@ export default function AdminDashboard() {
       );
     } finally {
       setTogglingScheduler(null);
-      setTimeout(() => setSyncMessage(null), 5000);
-    }
-  };
-
-  const triggerSpotifySync = async () => {
-    setSyncingSpotify(true);
-    setSyncMessage(null);
-
-    try {
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            mutation TriggerSpotifySync {
-              triggerSpotifySync(type: NEW_RELEASES) {
-                success
-                jobId
-                message
-                stats {
-                  albumsQueued
-                  albumsCreated
-                  albumsUpdated
-                  enrichmentJobsQueued
-                }
-              }
-            }
-          `,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.errors) {
-        throw new Error(data.errors[0].message);
-      }
-
-      if (data.data.triggerSpotifySync.success) {
-        setSyncMessage(`✅ ${data.data.triggerSpotifySync.message}`);
-        // Refresh dashboard data after triggering sync
-        setTimeout(fetchData, 2000);
-      } else {
-        throw new Error('Sync failed');
-      }
-    } catch (err) {
-      setSyncMessage(
-        `❌ Error: ${err instanceof Error ? err.message : 'Failed to trigger sync'}`
-      );
-    } finally {
-      setSyncingSpotify(false);
-      // Clear message after 5 seconds
       setTimeout(() => setSyncMessage(null), 5000);
     }
   };
@@ -575,126 +600,273 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {/* Spotify Scheduler */}
+                {/* ListenBrainz Scheduler */}
                 <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
                   <div className='flex items-center justify-between mb-3'>
                     <div className='flex items-center gap-2'>
-                      <Music className='h-4 w-4 text-green-500' />
+                      <Database className='h-4 w-4 text-orange-500' />
                       <h4 className='text-sm font-medium text-white'>
-                        Spotify New Releases
+                        ListenBrainz Fresh Releases
                       </h4>
                     </div>
                     <Badge
                       className={
-                        schedulerStatus?.spotify.enabled
-                          ? 'bg-green-600'
+                        schedulerStatus?.listenbrainz?.enabled
+                          ? 'bg-orange-600'
                           : 'bg-zinc-600'
                       }
                     >
-                      {schedulerStatus?.spotify.enabled ? 'Running' : 'Stopped'}
+                      {schedulerStatus?.listenbrainz?.enabled
+                        ? 'Running'
+                        : 'Stopped'}
                     </Badge>
                   </div>
 
-                  {schedulerStatus?.spotify && (
+                  {schedulerStatus?.listenbrainz && (
                     <div className='text-xs text-zinc-400 space-y-1 mb-3'>
-                      {schedulerStatus.spotify.intervalMinutes > 0 && (
+                      {schedulerStatus.listenbrainz.intervalMinutes > 0 && (
                         <p>
                           Interval:{' '}
                           {Math.round(
-                            schedulerStatus.spotify.intervalMinutes / 1440
+                            schedulerStatus.listenbrainz.intervalMinutes / 1440
                           )}{' '}
-                          days (
-                          {schedulerStatus.spotify.intervalMinutes.toLocaleString()}{' '}
-                          min)
+                          days
                         </p>
                       )}
-                      {schedulerStatus.spotify.nextRunAt && (
+                      {schedulerStatus.listenbrainz.nextRunAt && (
                         <p>
                           Next run:{' '}
                           {new Date(
-                            schedulerStatus.spotify.nextRunAt
+                            schedulerStatus.listenbrainz.nextRunAt
                           ).toLocaleString()}
                         </p>
                       )}
-                      {schedulerStatus.spotify.lastRunAt && (
+                      {schedulerStatus.listenbrainz.lastRunAt && (
                         <p>
                           Last run:{' '}
                           {new Date(
-                            schedulerStatus.spotify.lastRunAt
+                            schedulerStatus.listenbrainz.lastRunAt
                           ).toLocaleString()}
                         </p>
                       )}
                     </div>
                   )}
 
-                  {/* Spotify sync config */}
-                  {schedulerStatus?.spotify.config && (
+                  {lbConfigEdits && (
                     <div className='border border-zinc-700/50 rounded bg-zinc-900/50 p-2.5 mb-3'>
-                      <p className='text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5'>
-                        Sync Config
-                      </p>
-                      <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs'>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Limit</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.limit}/page
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Pages</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.pages}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Max albums</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.maxAlbums}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Country</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.country}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Min followers</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.minFollowers.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-zinc-500'>Year</span>
-                          <span className='text-zinc-300'>
-                            {schedulerStatus.spotify.config.year}
-                          </span>
-                        </div>
-                        {schedulerStatus.spotify.config.genreTags.length >
-                          0 && (
-                          <div className='col-span-2 flex justify-between'>
-                            <span className='text-zinc-500'>Genres</span>
-                            <span className='text-zinc-300'>
-                              {schedulerStatus.spotify.config.genreTags.join(
-                                ', '
-                              )}
-                            </span>
-                          </div>
+                      <div className='flex items-center justify-between mb-1.5'>
+                        <p className='text-[11px] font-medium text-zinc-500 uppercase tracking-wide'>
+                          Sync Config
+                        </p>
+                        {!editingLbConfig && (
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='text-xs h-6 px-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                            onClick={() => {
+                              // Reset edits to current server values before editing
+                              if (schedulerStatus?.listenbrainz?.config) {
+                                const c = schedulerStatus.listenbrainz.config;
+                                setLbConfigEdits({
+                                  days: c.days,
+                                  includeFuture: c.includeFuture,
+                                  maxReleases: c.maxReleases,
+                                  minListenCount: c.minListenCount,
+                                  minArtistListeners: c.minArtistListeners,
+                                });
+                              }
+                              setEditingLbConfig(true);
+                            }}
+                          >
+                            <Pencil className='mr-1 h-3 w-3' />
+                            Edit
+                          </Button>
                         )}
                       </div>
+
+                      {editingLbConfig ? (
+                        <>
+                          <div className='grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs items-center'>
+                            <span className='text-zinc-500'>
+                              Lookback (days)
+                            </span>
+                            <Input
+                              type='number'
+                              min={1}
+                              value={lbConfigEdits.days}
+                              onChange={e =>
+                                setLbConfigEdits({
+                                  ...lbConfigEdits,
+                                  days: parseInt(e.target.value) || 1,
+                                })
+                              }
+                              className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                            />
+                            <span className='text-zinc-500'>
+                              Future releases
+                            </span>
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setLbConfigEdits({
+                                  ...lbConfigEdits,
+                                  includeFuture: !lbConfigEdits.includeFuture,
+                                })
+                              }
+                              className={`h-7 px-2 rounded text-xs border ${
+                                lbConfigEdits.includeFuture
+                                  ? 'bg-green-900/50 border-green-700 text-green-300'
+                                  : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                              }`}
+                            >
+                              {lbConfigEdits.includeFuture ? 'Yes' : 'No'}
+                            </button>
+                            <span className='text-zinc-500'>Types</span>
+                            <span className='text-zinc-300 text-xs'>
+                              {schedulerStatus?.listenbrainz?.config?.primaryTypes?.join(
+                                ', '
+                              ) || 'Album, EP, Single'}
+                            </span>
+                            <span className='text-zinc-500'>Max releases</span>
+                            <Input
+                              type='number'
+                              min={0}
+                              value={lbConfigEdits.maxReleases}
+                              onChange={e =>
+                                setLbConfigEdits({
+                                  ...lbConfigEdits,
+                                  maxReleases: parseInt(e.target.value) || 0,
+                                })
+                              }
+                              className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                            />
+                            <span className='text-zinc-500'>
+                              Min artist listeners
+                            </span>
+                            <Input
+                              type='number'
+                              min={0}
+                              value={lbConfigEdits.minArtistListeners}
+                              onChange={e =>
+                                setLbConfigEdits({
+                                  ...lbConfigEdits,
+                                  minArtistListeners:
+                                    parseInt(e.target.value) || 0,
+                                })
+                              }
+                              className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                            />
+                          </div>
+                          <div className='flex items-center gap-2 mt-2'>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              className='text-xs h-7 border-zinc-700'
+                              onClick={handleSaveLbConfig}
+                              disabled={savingLbConfig}
+                            >
+                              {savingLbConfig ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              className='text-xs h-7 text-zinc-400 hover:text-white'
+                              onClick={() => {
+                                setEditingLbConfig(false);
+                                setLbConfigMessage(null);
+                                // Reset to server values
+                                if (schedulerStatus?.listenbrainz?.config) {
+                                  const c = schedulerStatus.listenbrainz.config;
+                                  setLbConfigEdits({
+                                    days: c.days,
+                                    includeFuture: c.includeFuture,
+                                    maxReleases: c.maxReleases,
+                                    minListenCount: c.minListenCount,
+                                    minArtistListeners: c.minArtistListeners,
+                                  });
+                                }
+                              }}
+                              disabled={savingLbConfig}
+                            >
+                              Cancel
+                            </Button>
+                            {lbConfigMessage && (
+                              <span
+                                className={`text-xs ${
+                                  lbConfigMessage.startsWith('Error')
+                                    ? 'text-red-400'
+                                    : 'text-green-400'
+                                }`}
+                              >
+                                {lbConfigMessage}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs'>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Lookback</span>
+                            <span className='text-zinc-300'>
+                              {lbConfigEdits.days} days
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>
+                              Future releases
+                            </span>
+                            <span className='text-zinc-300'>
+                              {lbConfigEdits.includeFuture ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Types</span>
+                            <span className='text-zinc-300'>
+                              {schedulerStatus?.listenbrainz?.config?.primaryTypes?.join(
+                                ', '
+                              ) || 'Album, EP, Single'}
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Max releases</span>
+                            <span className='text-zinc-300'>
+                              {lbConfigEdits.maxReleases}
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Min listeners</span>
+                            <span className='text-zinc-300'>
+                              {lbConfigEdits.minArtistListeners.toLocaleString()}
+                            </span>
+                          </div>
+                          {lbConfigMessage && (
+                            <div className='col-span-2 mt-1'>
+                              <span
+                                className={`text-xs ${
+                                  lbConfigMessage.startsWith('Error')
+                                    ? 'text-red-400'
+                                    : 'text-green-400'
+                                }`}
+                              >
+                                {lbConfigMessage}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   <div className='flex flex-wrap gap-2'>
-                    {schedulerStatus?.spotify.enabled ? (
+                    {schedulerStatus?.listenbrainz?.enabled ? (
                       <Button
                         variant='outline'
                         size='sm'
                         className='text-red-400 border-red-900 hover:bg-red-950'
-                        onClick={() => toggleScheduler('spotify', 'stop')}
+                        onClick={() => toggleScheduler('listenbrainz', 'stop')}
                         disabled={togglingScheduler !== null}
                       >
-                        {togglingScheduler === 'spotify-stop' ? (
+                        {togglingScheduler === 'listenbrainz-stop' ? (
                           <Activity className='mr-2 h-3 w-3 animate-spin' />
                         ) : (
                           <Square className='mr-2 h-3 w-3' />
@@ -706,10 +878,10 @@ export default function AdminDashboard() {
                         variant='outline'
                         size='sm'
                         className='text-green-400 border-green-900 hover:bg-green-950'
-                        onClick={() => toggleScheduler('spotify', 'start')}
+                        onClick={() => toggleScheduler('listenbrainz', 'start')}
                         disabled={togglingScheduler !== null}
                       >
-                        {togglingScheduler === 'spotify-start' ? (
+                        {togglingScheduler === 'listenbrainz-start' ? (
                           <Activity className='mr-2 h-3 w-3 animate-spin' />
                         ) : (
                           <Play className='mr-2 h-3 w-3' />
@@ -721,10 +893,10 @@ export default function AdminDashboard() {
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => toggleScheduler('spotify', 'sync')}
+                      onClick={() => toggleScheduler('listenbrainz', 'sync')}
                       disabled={togglingScheduler !== null}
                     >
-                      {togglingScheduler === 'spotify-sync' ? (
+                      {togglingScheduler === 'listenbrainz-sync' ? (
                         <Activity className='mr-2 h-3 w-3 animate-spin' />
                       ) : (
                         <RefreshCw className='mr-2 h-3 w-3' />
@@ -732,6 +904,24 @@ export default function AdminDashboard() {
                       Sync Now
                     </Button>
                   </div>
+                </div>
+
+                {/* Spotify Scheduler (not currently in use) */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50 opacity-40 pointer-events-none'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Music className='h-4 w-4 text-zinc-500' />
+                      <h4 className='text-sm font-medium text-zinc-400'>
+                        Spotify New Releases
+                      </h4>
+                    </div>
+                    <Badge className='bg-zinc-700 text-zinc-400'>
+                      Not in use
+                    </Badge>
+                  </div>
+                  <p className='text-xs text-zinc-500'>
+                    Spotify sync is currently disabled.
+                  </p>
                 </div>
 
                 {/* MusicBrainz Scheduler (not currently in use) */}
