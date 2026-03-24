@@ -279,20 +279,17 @@ export function UncoverGame({
     };
   }, [game.isAuthenticated, game.isAuthLoading, hasStarted, challengeImageUrl]);
 
-  /** Daily: clear stale completed sessions so the home screen shows cleanly for a new day. */
+  /** Daily: auto-resume in-progress sessions OR skip home screen when
+   *  the server confirms the user already completed today's challenge. */
   useEffect(() => {
-    if (isDaily && game.sessionId && game.isGameOver) {
-      game.resetGame();
+    if (isDaily && !hasStarted) {
+      if (game.sessionId && !game.isGameOver) {
+        setHasStarted(true); // resume in-progress game from store
+      } else if (game.hasExistingResult) {
+        setHasStarted(true); // server says already played — go straight to GameOver
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /** Daily: auto-resume if user has an active IN_PROGRESS session (e.g. refreshed mid-game). */
-  useEffect(() => {
-    if (isDaily && game.sessionId && !hasStarted && !game.isGameOver) {
-      setHasStarted(true);
-    }
-  }, [isDaily, game.sessionId, hasStarted, game.isGameOver]);
+  }, [isDaily, hasStarted, game.sessionId, game.isGameOver, game.hasExistingResult]);
 
   // ─── Auth loading ─────────────────────────────────────────────
   if (!game.isAuthenticated) {
@@ -379,7 +376,9 @@ export function UncoverGame({
   }
 
   // ─── Daily: Pre-game home state ───────────────────────────────
-  if (isDaily && !hasStarted && !isInitializing) {
+  // Wait for puzzle query before showing home screen so we can skip it
+  // for users who already completed today's challenge.
+  if (isDaily && !hasStarted && !isInitializing && !game.isPuzzleLoading && !game.hasExistingResult) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
         {/* Puzzle info */}
@@ -440,7 +439,7 @@ export function UncoverGame({
   }
 
   // ─── Initializing ─────────────────────────────────────────────
-  if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
+  if (isInitializing || game.isPuzzleLoading || (game.isAuthenticated && !game.sessionId)) {
     return (
       <div className='flex h-full items-center justify-center'>
         <LumaSpinner />

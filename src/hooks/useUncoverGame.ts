@@ -484,6 +484,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
     // Computed values
     revealStage,
     isGameOver: gameStore.status === 'WON' || gameStore.status === 'LOST',
+    hasExistingResult: !!puzzle?.existingResult,
 
     // Actions
     startGame,
