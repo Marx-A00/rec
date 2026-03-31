@@ -7,7 +7,6 @@ import { Music } from 'lucide-react';
 import { getImageUrl } from '@/lib/cloudflare-images';
 
 const FALLBACK_IMAGE = '/default-album.svg';
-const MAX_RETRIES = 2;
 
 // TODO: Consolidate image handling
 interface AlbumImageProps {
@@ -85,7 +84,6 @@ export default function AlbumImage({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
 
   // Update imgSrc when props change (subsequent renders only)
   useEffect(() => {
@@ -93,7 +91,6 @@ export default function AlbumImage({
     setImgSrc(resolved);
     setIsLoading(resolved !== FALLBACK_IMAGE && resolved !== null);
     setHasError(false);
-    setRetryCount(0);
   }, [src, cloudflareImageId, width, height]);
 
   const handleImageLoad = () => {
@@ -104,25 +101,18 @@ export default function AlbumImage({
   const handleImageError = () => {
     setIsLoading(false);
 
-    if (retryCount < MAX_RETRIES && imgSrc !== FALLBACK_IMAGE) {
-      // First retry: try removing any query parameters from the URL
-      if (retryCount === 0 && imgSrc && imgSrc.includes('?')) {
-        const cleanUrl = imgSrc.split('?')[0];
-        setImgSrc(cleanUrl);
-        setRetryCount(1);
-        setIsLoading(true);
-        return;
-      }
-
-      // Second retry: try without CORS (for some external images)
-      if (retryCount === 1) {
-        setRetryCount(2);
-        setIsLoading(true);
-        return;
-      }
+    // Cloudflare image failed → fall back to the original src URL
+    if (
+      imgSrc?.includes('imagedelivery.net') &&
+      src &&
+      !src.includes('imagedelivery.net')
+    ) {
+      setImgSrc(src);
+      setIsLoading(true);
+      return;
     }
 
-    // All retries failed, use fallback
+    // Everything failed → generic fallback
     setImgSrc(FALLBACK_IMAGE);
     setHasError(true);
   };
