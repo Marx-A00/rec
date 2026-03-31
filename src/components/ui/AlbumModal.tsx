@@ -834,6 +834,7 @@ export default function AlbumModal({
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
             <AlbumImage
               src={getImageUrl()}
+              cloudflareImageId={data && 'cloudflareImageId' in data ? data.cloudflareImageId : undefined}
               alt={`${getTitle()} by ${getArtist()}`}
               width={384}
               height={384}
