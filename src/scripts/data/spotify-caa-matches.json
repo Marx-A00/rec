@@ -1,0 +1,2302 @@
+{
+  "generatedAt": "2026-03-28T07:54:10.371Z",
+  "threshold": 0.8,
+  "stats": {
+    "total": 258,
+    "matched": 32,
+    "unmatched": 226,
+    "editionsDetected": 19
+  },
+  "matches": [
+    {
+      "albumId": "4ecaa521-c176-4a5c-b7c9-17d9a39519d8",
+      "albumTitle": "Teka (with Peso Pluma)",
+      "artistName": "DJ Snake",
+      "releaseGroupMbid": "f5e39549-065f-45e3-a5bb-fc2d3f903f21",
+      "mbTitle": "Teka",
+      "mbArtist": "DJ Snake, Peso Pluma",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/f5e39549-065f-45e3-a5bb-fc2d3f903f21/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d00001e0224861100b34630be0af122ce",
+      "currentCloudflareImageId": "album-4ecaa521-c176-4a5c-b7c9-17d9a39519d8",
+      "isEdition": false
+    },
+    {
+      "albumId": "a60aa26b-037c-4833-bb4c-13e463ac4d18",
+      "albumTitle": "Wasteland, Baby! (Special Edition)",
+      "artistName": "Hozier",
+      "releaseGroupMbid": "29cffbed-9ae1-4e75-be82-6058c7e9e9b4",
+      "mbTitle": "Wasteland, Baby!",
+      "mbArtist": "Hozier",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/29cffbed-9ae1-4e75-be82-6058c7e9e9b4/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d00001e02f0722706190993eadd8ad6aa",
+      "currentCloudflareImageId": "album-a60aa26b-037c-4833-bb4c-13e463ac4d18",
+      "isEdition": true
+    },
+    {
+      "albumId": "6ec4e212-8c40-4398-a673-cbb765ce25ac",
+      "albumTitle": "For Life (feat. Nile Rodgers)",
+      "artistName": "Kygo",
+      "releaseGroupMbid": "f7ecf6dc-ddf7-4f54-8777-98ffd050f062",
+      "mbTitle": "For Life",
+      "mbArtist": "Kygo, Zak Abel, Nile Rodgers",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/f7ecf6dc-ddf7-4f54-8777-98ffd050f062/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d00001e027198e498826796ff81f560a7",
+      "currentCloudflareImageId": "album-6ec4e212-8c40-4398-a673-cbb765ce25ac",
+      "isEdition": false
+    },
+    {
+      "albumId": "d3b31877-ba90-4d96-8020-7225ca88be35",
+      "albumTitle": "WAHALA (FEAT. OLAMIDE)",
+      "artistName": "CKay",
+      "releaseGroupMbid": "6ea27f93-13c2-4b70-b8ed-63e540f214b5",
+      "mbTitle": "WAHALA",
+      "mbArtist": "CKay, OLAMIDE",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/6ea27f93-13c2-4b70-b8ed-63e540f214b5/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d00001e02133915918d2fee0b960a067d",
+      "currentCloudflareImageId": "album-d3b31877-ba90-4d96-8020-7225ca88be35",
+      "isEdition": false
+    },
+    {
+      "albumId": "da17b5c0-67ff-4edf-81bf-584276505f22",
+      "albumTitle": "Opalite",
+      "artistName": "Taylor Swift",
+      "releaseGroupMbid": "d8072326-3f01-42a6-b70f-44301d9bb77e",
+      "mbTitle": "Opalite",
+      "mbArtist": "Taylor Swift",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/d8072326-3f01-42a6-b70f-44301d9bb77e/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2738b312c2d2873e7da95e316d2",
+      "currentCloudflareImageId": "album-da17b5c0-67ff-4edf-81bf-584276505f22",
+      "isEdition": false
+    },
+    {
+      "albumId": "d6d37e8f-dfd4-4831-bcff-5fa4af62ae43",
+      "albumTitle": "All of You",
+      "artistName": "RIIZE",
+      "releaseGroupMbid": "4dc1c060-7c99-408b-8ffe-2afb1a9032bb",
+      "mbTitle": "All of You",
+      "mbArtist": "RIIZE",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/4dc1c060-7c99-408b-8ffe-2afb1a9032bb/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273d22af3f34491053f467c0c5e",
+      "currentCloudflareImageId": "album-d6d37e8f-dfd4-4831-bcff-5fa4af62ae43",
+      "isEdition": false
+    },
+    {
+      "albumId": "3c47e246-196c-43e2-b986-2d308bd740d6",
+      "albumTitle": "DEPR</3$$ED MFKZ",
+      "artistName": "Junior H",
+      "releaseGroupMbid": "a2bc0f52-f71a-4316-a0e8-e3329b18291f",
+      "mbTitle": "DEPR</3$$ED MFKZ",
+      "mbArtist": "Junior H",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/a2bc0f52-f71a-4316-a0e8-e3329b18291f/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2732ad154d7a7e3e2353b2bd2f9",
+      "currentCloudflareImageId": "album-3c47e246-196c-43e2-b986-2d308bd740d6",
+      "isEdition": false
+    },
+    {
+      "albumId": "e3f9f91e-df29-49e6-997a-e7c9cfdb59e1",
+      "albumTitle": "Be Her",
+      "artistName": "Ella Langley",
+      "releaseGroupMbid": "ff8c5dfe-5f12-4b7c-a901-af414c791d44",
+      "mbTitle": "Be Her",
+      "mbArtist": "Ella Langley",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/ff8c5dfe-5f12-4b7c-a901-af414c791d44/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b27344cfd85001629f8f476d2723",
+      "currentCloudflareImageId": "album-e3f9f91e-df29-49e6-997a-e7c9cfdb59e1",
+      "isEdition": false
+    },
+    {
+      "albumId": "06637bd2-902f-4273-84e3-e0addb55f004",
+      "albumTitle": "Cloud 9",
+      "artistName": "Megan Moroney",
+      "releaseGroupMbid": "3047a273-2097-4442-8910-bc3a3e7cce0b",
+      "mbTitle": "Cloud 9",
+      "mbArtist": "Megan Moroney",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/3047a273-2097-4442-8910-bc3a3e7cce0b/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2731ecf24075a93598bf1397605",
+      "currentCloudflareImageId": "album-06637bd2-902f-4273-84e3-e0addb55f004",
+      "isEdition": false
+    },
+    {
+      "albumId": "c1770d26-d861-431c-ad47-bbb12f061e9e",
+      "albumTitle": "Thorns",
+      "artistName": "Jelly Roll",
+      "releaseGroupMbid": "1ace63f7-1dc4-4682-8966-ac7e27352015",
+      "mbTitle": "Thorns",
+      "mbArtist": "Jelly Roll",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/1ace63f7-1dc4-4682-8966-ac7e27352015/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273f627694204cc70967f389b91",
+      "currentCloudflareImageId": "album-c1770d26-d861-431c-ad47-bbb12f061e9e",
+      "isEdition": false
+    },
+    {
+      "albumId": "5e99afaf-ae07-4910-a722-0e7d17d25573",
+      "albumTitle": "getting money still sad too",
+      "artistName": "Lil Peep",
+      "releaseGroupMbid": "bd2523a3-8d7f-43ee-84d3-3747e9f83855",
+      "mbTitle": "getting money still sad too",
+      "mbArtist": "Lil Peep, Horse Head",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/bd2523a3-8d7f-43ee-84d3-3747e9f83855/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273402590443e6ef2c05f0483d2",
+      "currentCloudflareImageId": "album-5e99afaf-ae07-4910-a722-0e7d17d25573",
+      "isEdition": false
+    },
+    {
+      "albumId": "bdeaa291-3d69-41d4-9d10-ddafd67f6f81",
+      "albumTitle": "The Star Spangled Banner (Live)",
+      "artistName": "Charlie Puth",
+      "releaseGroupMbid": "93397d1b-22d9-4a3e-8512-04db468aa627",
+      "mbTitle": "The Star Spangled Banner (live)",
+      "mbArtist": "Charlie Puth",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/93397d1b-22d9-4a3e-8512-04db468aa627/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b27380973ebeccdf5c8a4b7b1e2f",
+      "currentCloudflareImageId": "album-bdeaa291-3d69-41d4-9d10-ddafd67f6f81",
+      "isEdition": true
+    },
+    {
+      "albumId": "74361cb2-5f36-4550-883a-3edc8b4b7989",
+      "albumTitle": "Buenos Días",
+      "artistName": "Eladio Carrión",
+      "releaseGroupMbid": "9a208dc1-7ece-4fac-b9c8-d044d2742c57",
+      "mbTitle": "Buenos Días",
+      "mbArtist": "Eladio Carrión",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/9a208dc1-7ece-4fac-b9c8-d044d2742c57/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273aa4491f635497528c1ca09d4",
+      "currentCloudflareImageId": "album-74361cb2-5f36-4550-883a-3edc8b4b7989",
+      "isEdition": false
+    },
+    {
+      "albumId": "502c3411-ae5c-46e6-874e-df0cb0691a0d",
+      "albumTitle": "Con el Corazón",
+      "artistName": "Maluma",
+      "releaseGroupMbid": "21e9fa52-b0f6-45fd-97a7-9f74dc009f6f",
+      "mbTitle": "Con el Corazón",
+      "mbArtist": "Maluma & Yeison Jimenez",
+      "combinedScore": 1.00001014500066,
+      "mbScore": 100,
+      "jaccardScore": 1.000033816668867,
+      "caaUrl": "https://coverartarchive.org/release-group/21e9fa52-b0f6-45fd-97a7-9f74dc009f6f/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273072470173fe798ae1e060cf3",
+      "currentCloudflareImageId": "album-502c3411-ae5c-46e6-874e-df0cb0691a0d",
+      "isEdition": false
+    },
+    {
+      "albumId": "a57ed8bd-d9ad-4579-8a81-6685af943e21",
+      "albumTitle": "Concertos for Flute, Violin and Oboe D'Amore (Orchestra of St. Luke's)",
+      "artistName": "Johann Sebastian Bach",
+      "releaseGroupMbid": "c08ff457-3201-46b9-8c34-dd12b554bc71",
+      "mbTitle": "Concertos for Flute, Violin and Oboe D'Amore (Orchestra of St. Luke's)",
+      "mbArtist": "Johann Sebastian Bach",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/c08ff457-3201-46b9-8c34-dd12b554bc71/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273ea23745bfdc581444e47801d",
+      "currentCloudflareImageId": "album-a57ed8bd-d9ad-4579-8a81-6685af943e21",
+      "isEdition": false
+    },
+    {
+      "albumId": "6f500e43-dbd3-41cd-95d1-6c836613e3b3",
+      "albumTitle": "DISNEY PRINCESS",
+      "artistName": "Melanie Martinez",
+      "releaseGroupMbid": "c52ee475-cfe4-4684-9214-b237a9b0e186",
+      "mbTitle": "DISNEY PRINCESS",
+      "mbArtist": "Melanie Martinez",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/c52ee475-cfe4-4684-9214-b237a9b0e186/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273bf77cf695b3605a4f5ceceff",
+      "currentCloudflareImageId": "album-6f500e43-dbd3-41cd-95d1-6c836613e3b3",
+      "isEdition": false
+    },
+    {
+      "albumId": "61cab5a3-6ac2-431b-b12a-da55b416c8df",
+      "albumTitle": "How I Get",
+      "artistName": "Laufey",
+      "releaseGroupMbid": "3b00649d-67f7-44ab-93ae-181fa9b24917",
+      "mbTitle": "How I Get",
+      "mbArtist": "Laufey",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/3b00649d-67f7-44ab-93ae-181fa9b24917/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273fd23708303dca437cde66dd7",
+      "currentCloudflareImageId": "album-61cab5a3-6ac2-431b-b12a-da55b416c8df",
+      "isEdition": false
+    },
+    {
+      "albumId": "debed67c-abd2-4153-9739-dc6aa244610c",
+      "albumTitle": "miss u 2 (with Leon Thomas)",
+      "artistName": "Ty Dolla $ign",
+      "releaseGroupMbid": "8b34bbcc-76d8-48b0-a798-062c4702833c",
+      "mbTitle": "miss u 2",
+      "mbArtist": "Ty Dolla $ign, Leon Thomas",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/8b34bbcc-76d8-48b0-a798-062c4702833c/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b27339cb62640c72c6b03a9ff347",
+      "currentCloudflareImageId": "album-debed67c-abd2-4153-9739-dc6aa244610c",
+      "isEdition": false
+    },
+    {
+      "albumId": "c41c7832-ee0b-4c86-a7bf-60eccab4f8d3",
+      "albumTitle": "Concertos for Flute, Violin and Oboe D'Amore (Orchestra of St. Luke's)",
+      "artistName": "Johann Sebastian Bach",
+      "releaseGroupMbid": "c08ff457-3201-46b9-8c34-dd12b554bc71",
+      "mbTitle": "Concertos for Flute, Violin and Oboe D'Amore (Orchestra of St. Luke's)",
+      "mbArtist": "Johann Sebastian Bach",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/c08ff457-3201-46b9-8c34-dd12b554bc71/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273ce347ccda8a7e38564e14d0c",
+      "currentCloudflareImageId": "album-c41c7832-ee0b-4c86-a7bf-60eccab4f8d3",
+      "isEdition": false
+    },
+    {
+      "albumId": "11644361-6d0b-41c7-97d2-256d8229312a",
+      "albumTitle": "A Thousand Years",
+      "artistName": "John Michael Howell",
+      "releaseGroupMbid": "ba162d37-ce08-49b9-be2b-7eb38d5ac735",
+      "mbTitle": "A Thousand Years",
+      "mbArtist": "John Michael Howell, JVKE, ZVC",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/ba162d37-ce08-49b9-be2b-7eb38d5ac735/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2737f578d3fdfad86ae99447118",
+      "currentCloudflareImageId": "album-11644361-6d0b-41c7-97d2-256d8229312a",
+      "isEdition": false
+    },
+    {
+      "albumId": "d688d502-1c36-4c73-b0ff-232bd05ad12d",
+      "albumTitle": "Aguántame",
+      "artistName": "Banda MS de Sergio Lizárraga",
+      "releaseGroupMbid": "9ce060b4-250d-4f45-9df5-8dd02cd4411e",
+      "mbTitle": "Aguántame",
+      "mbArtist": "Banda MS de Sergio Lizárraga, Xavi",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/9ce060b4-250d-4f45-9df5-8dd02cd4411e/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273467feb4aa8117018689d9fa5",
+      "currentCloudflareImageId": "album-d688d502-1c36-4c73-b0ff-232bd05ad12d",
+      "isEdition": false
+    },
+    {
+      "albumId": "15506425-b4c2-4d48-a4c2-b1bfc41c169f",
+      "albumTitle": "Mírame Baby",
+      "artistName": "Arcángel",
+      "releaseGroupMbid": "4c9d1860-e3fe-4498-8d74-98461650d3ba",
+      "mbTitle": "Mírame Baby",
+      "mbArtist": "Arcángel",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/4c9d1860-e3fe-4498-8d74-98461650d3ba/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273a72b5fb7485311cc4251a960",
+      "currentCloudflareImageId": "album-15506425-b4c2-4d48-a4c2-b1bfc41c169f",
+      "isEdition": false
+    },
+    {
+      "albumId": "d0daa176-bdfa-4bd7-aa17-43cd45600d4b",
+      "albumTitle": "All I Did Was Dream of You (feat. The Marías)",
+      "artistName": "beabadoobee",
+      "releaseGroupMbid": "c999d427-08a8-4b5b-9e70-f1bd6c5a46ae",
+      "mbTitle": "All I Did Was Dream of You",
+      "mbArtist": "beabadoobee, The Marías",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/c999d427-08a8-4b5b-9e70-f1bd6c5a46ae/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273e0cd9495603ed7f6b4867494",
+      "currentCloudflareImageId": "album-d0daa176-bdfa-4bd7-aa17-43cd45600d4b",
+      "isEdition": false
+    },
+    {
+      "albumId": "6e0a44f1-fd90-4c18-aeb6-81f6f617ab93",
+      "albumTitle": "Jump (feat. Steve Vai & Travis Barker) [Coca-Cola Anthem for the FIFA World Cup 26™]",
+      "artistName": "J Balvin",
+      "releaseGroupMbid": "68e4a008-744b-4f0f-8267-7adc1c912164",
+      "mbTitle": "Jump [Coca-Cola Anthem for the FIFA World Cup 26™]",
+      "mbArtist": "J Balvin, Amber Mark, Steve Vai, Travis Barker",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/68e4a008-744b-4f0f-8267-7adc1c912164/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b27372a778f6d1b68fb9532a6dee",
+      "currentCloudflareImageId": "album-6e0a44f1-fd90-4c18-aeb6-81f6f617ab93",
+      "isEdition": false
+    },
+    {
+      "albumId": "8a71eff0-0bed-49b4-b1be-5e5e845213a2",
+      "albumTitle": "We Don’t Get Along (with Marshmello)",
+      "artistName": "Juice WRLD",
+      "releaseGroupMbid": "4ef3119f-6d26-4346-bd44-9a302e14e391",
+      "mbTitle": "We Don’t Get Along",
+      "mbArtist": "Juice WRLD, Marshmello",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/4ef3119f-6d26-4346-bd44-9a302e14e391/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2731aac4d6120a958701d232837",
+      "currentCloudflareImageId": "album-8a71eff0-0bed-49b4-b1be-5e5e845213a2",
+      "isEdition": false
+    },
+    {
+      "albumId": "7808e416-31de-47ec-aa95-5811289b88e5",
+      "albumTitle": "No One Told Us",
+      "artistName": "50 Cent",
+      "releaseGroupMbid": "12416507-d3ba-4127-89f3-f226766aece6",
+      "mbTitle": "No One Told Us",
+      "mbArtist": "50 Cent, Leon Thomas",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/12416507-d3ba-4127-89f3-f226766aece6/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273947b554e58fcddcf1553c296",
+      "currentCloudflareImageId": "album-7808e416-31de-47ec-aa95-5811289b88e5",
+      "isEdition": false
+    },
+    {
+      "albumId": "80c06589-4e30-4524-9ba8-8c274f713a86",
+      "albumTitle": "Home (feat. Hikaru Utada)",
+      "artistName": "Charlie Puth",
+      "releaseGroupMbid": "fba52b98-85fb-451e-b7d4-a09f9f318f20",
+      "mbTitle": "Home",
+      "mbArtist": "Charlie Puth, Hikaru Utada",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/fba52b98-85fb-451e-b7d4-a09f9f318f20/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273674523e990240dc0317a82c6",
+      "currentCloudflareImageId": "album-80c06589-4e30-4524-9ba8-8c274f713a86",
+      "isEdition": false
+    },
+    {
+      "albumId": "0809e50d-2ce7-4641-8c02-15b00b2b5745",
+      "albumTitle": "Just Believe",
+      "artistName": "Bailey Zimmerman",
+      "releaseGroupMbid": "c8c56441-7ba7-48d0-a925-8bcb2344b179",
+      "mbTitle": "Just Believe",
+      "mbArtist": "Bailey Zimmerman, Brandon Lake",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/c8c56441-7ba7-48d0-a925-8bcb2344b179/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273ffb7c3bdbb119e986556f0f3",
+      "currentCloudflareImageId": "album-0809e50d-2ce7-4641-8c02-15b00b2b5745",
+      "isEdition": false
+    },
+    {
+      "albumId": "751be7eb-8575-4c47-8db3-0888e6da1556",
+      "albumTitle": "Video Shoot",
+      "artistName": "Chief Keef",
+      "releaseGroupMbid": "b2bd623e-ac90-4b40-8651-fe3954c034a1",
+      "mbTitle": "Video Shoot",
+      "mbArtist": "Chief Keef, ian",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/b2bd623e-ac90-4b40-8651-fe3954c034a1/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b273aeafc6fa8cfbcee539b0d0b5",
+      "currentCloudflareImageId": "album-751be7eb-8575-4c47-8db3-0888e6da1556",
+      "isEdition": false
+    },
+    {
+      "albumId": "71856f8a-36ce-4ab3-9b99-15b04b540c96",
+      "albumTitle": "USB002 REMIXES",
+      "artistName": "Fred again..",
+      "releaseGroupMbid": "5d157da8-d165-44bb-ac45-7333d1588200",
+      "mbTitle": "USB002 REMIXES",
+      "mbArtist": "Fred again..",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/5d157da8-d165-44bb-ac45-7333d1588200/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2731145a91fb01b492374bc77e6",
+      "currentCloudflareImageId": "album-71856f8a-36ce-4ab3-9b99-15b04b540c96",
+      "isEdition": false
+    },
+    {
+      "albumId": "c52e2d83-0068-49ed-b7e5-f43c7de88d54",
+      "albumTitle": "Borrowed Time",
+      "artistName": "Sam Barber",
+      "releaseGroupMbid": "9937d2de-4ca7-4631-b6d7-1222f18f6a25",
+      "mbTitle": "Borrowed Time",
+      "mbArtist": "Sam Barber",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/9937d2de-4ca7-4631-b6d7-1222f18f6a25/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2736ea58ead9c0a759444028633",
+      "currentCloudflareImageId": "album-c52e2d83-0068-49ed-b7e5-f43c7de88d54",
+      "isEdition": false
+    },
+    {
+      "albumId": "174603ba-be00-474f-997b-84b9b1806a2e",
+      "albumTitle": "25 Greatest Works - Bach",
+      "artistName": "Johann Sebastian Bach",
+      "releaseGroupMbid": "0590f456-e8ac-4fdd-b033-43d67904b068",
+      "mbTitle": "25 Greatest Works - Bach",
+      "mbArtist": "Johann Sebastian Bach",
+      "combinedScore": 1,
+      "mbScore": 100,
+      "jaccardScore": 1,
+      "caaUrl": "https://coverartarchive.org/release-group/0590f456-e8ac-4fdd-b033-43d67904b068/front",
+      "currentCoverArtUrl": "https://i.scdn.co/image/ab67616d0000b2730de7bd467d1d37c0a9ea1c16",
+      "currentCloudflareImageId": "album-174603ba-be00-474f-997b-84b9b1806a2e",
+      "isEdition": false
+    }
+  ],
+  "unmatched": [
+    {
+      "albumId": "cb594ca2-8a40-40f0-9bcf-588dbd230973",
+      "albumTitle": "Half Life",
+      "artistName": "Wyatt Flores",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5c6d8983-e963-4a42-95cd-af53eb3dfa76",
+      "albumTitle": "Super Bowl LX Halftime Show (Live)",
+      "artistName": "Bad Bunny",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d59e04af-1606-4904-ab6b-a07874c7b8ba",
+      "albumTitle": "5-7",
+      "artistName": "Karan Aujla",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d2c08f60-b6bc-40af-acd1-96cdcfc5041c",
+      "albumTitle": "Adios Amor (En vivo)",
+      "artistName": "Conjunto Primavera",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "189697fa-9cc4-4a4c-9d1b-7574abd1af9f",
+      "albumTitle": "Heer Lofi Mix By Deepanshu Ruhela",
+      "artistName": "Vishal Mishra",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "58876341-1511-449e-bdcd-f7d35f234a7b",
+      "albumTitle": "El Peor Hombre Del Mundo",
+      "artistName": "GeezyDee",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4c78aa0a-f838-4443-9a9d-78b2b1623b3d",
+      "albumTitle": "Eu Boto Forte",
+      "artistName": "MC Jhey",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "76153d5a-dd29-4e0d-84c1-34cade2f7f4f",
+      "albumTitle": "Days Of Ash EP",
+      "artistName": "U2",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1ed21718-25ae-4420-8d5a-94c4143c2632",
+      "albumTitle": "Piya Tu Ab To Aja (Club Mix)",
+      "artistName": "Asha Bhosle",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d32edaeb-b4ad-44d4-894b-688caaed39d4",
+      "albumTitle": "או לה פופה",
+      "artistName": "Noa Kirel",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5c71b295-d620-4517-b71e-0fda53a08475",
+      "albumTitle": "你我經歷的一刻",
+      "artistName": "Faye Wong",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5d4e14d2-5ed9-465d-bc9c-38ac0c1d925b",
+      "albumTitle": "Bakuretsu Aishiteru / Sukisugite METSU!",
+      "artistName": "M!LK",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f9eb5736-741d-4d46-b3a3-613f9d14ccee",
+      "albumTitle": "CRACKERS",
+      "artistName": "Salmo",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f8911027-88f0-4be1-9be2-e9c42e65673f",
+      "albumTitle": "VIP",
+      "artistName": "La Mano 1.9",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "af675abf-62d1-40c1-acaf-512cde8a4529",
+      "albumTitle": "What Do You Hear?",
+      "artistName": "Super Simple Songs",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "9d0342c4-99ef-4676-9508-cf6403ed9998",
+      "albumTitle": "Best of Sunidhi Chauhan",
+      "artistName": "Sunidhi Chauhan",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "acb79ad7-1147-42d0-aa09-eb418b72bbdb",
+      "albumTitle": "Puta Original",
+      "artistName": "MC Rick",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7cddd55d-2f61-4aa4-b585-56b4c939f64d",
+      "albumTitle": "Famoso Ímã | O poderoso chatão",
+      "artistName": "Mc Lele JP",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "888e574c-20a6-4125-adbb-1b9c3679d52b",
+      "albumTitle": "Alaeyoon - Dangal",
+      "artistName": "Pritam",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "8333af2e-0fda-49e9-866b-bf405402ab32",
+      "albumTitle": "Arijit Singh Lofi Love Songs",
+      "artistName": "Arijit Singh",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4a20128f-6a85-4dcf-b9cc-ba125ab88ee9",
+      "albumTitle": "Jogo Da Seleção",
+      "artistName": "MC Jvila",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d36ec396-02aa-4e6d-a530-9364496ae12e",
+      "albumTitle": "Tu Sacaganas (Remix)",
+      "artistName": "Migrantes",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "b0727ff9-d77f-4757-ba34-a60768bbd846",
+      "albumTitle": "كلكوا خاينين",
+      "artistName": "Tamer Ashour",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4e61a287-71aa-4718-bec8-fb4cc36a6ff0",
+      "albumTitle": "تحية (من مسلسل لعبة وقلبت بجد)",
+      "artistName": "Mahmoud El Leithy",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "79c2b1c3-1d61-4ff5-9a3e-2f55993247f1",
+      "albumTitle": "VRR",
+      "artistName": "R.S.A.",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7372f49f-6f0b-4414-ac3c-6a758a4a2839",
+      "albumTitle": "PISTEPSE ME",
+      "artistName": "Strat",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "77bb144e-d298-49a3-8bfb-97010fb96813",
+      "albumTitle": "Decyzje",
+      "artistName": "Vito Bambino",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c323abe6-98c5-48a7-bd35-d9f7b6025d10",
+      "albumTitle": "انا في المرايا",
+      "artistName": "Essam Sasa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "0168733f-e9a1-4751-a9c2-95fba2b45cbf",
+      "albumTitle": "En moins 3aytili Moral Rah Tayehli",
+      "artistName": "Abdou",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d7d3286c-5f9a-4b46-90bb-69e9461868c0",
+      "albumTitle": "Best Of Sonu Nigam",
+      "artistName": "Sonu Nigam",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ce9842ab-345a-4e72-a654-e89b42d8527c",
+      "albumTitle": "انا مش لقمة سهله",
+      "artistName": "Eslam Kabonga",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "cfa606ec-f954-4a38-84d3-26934beb12a9",
+      "albumTitle": "Got Em",
+      "artistName": "AlbertNBN",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "652bcc13-f76f-4850-84cb-1a2c4bec79ae",
+      "albumTitle": "Vagabond",
+      "artistName": "Iuly Neamțu",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "83d42577-c90b-481b-8d56-5357ae5ff53b",
+      "albumTitle": "Lilith Tape 2",
+      "artistName": "Fann",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e0d94517-37ef-4488-b156-601c36c5b37e",
+      "albumTitle": "ابتدا موسم الدكن",
+      "artistName": "Zahar",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ba3140d4-7d2b-4d18-ab7c-863f01dc4cfc",
+      "albumTitle": "マカロニえんぴつ Billboard Live TOKYO",
+      "artistName": "Macaroni Empitsu",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e2ef1c8c-1751-420d-ad16-3a5de705a913",
+      "albumTitle": "stardust",
+      "artistName": "Freya Skye",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ba8a1ee4-71d0-4953-9353-4b64d8fe30e3",
+      "albumTitle": "Alleluia",
+      "artistName": "Elevation Worship",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4ff2c4fd-a0ff-45da-b239-27806470641e",
+      "albumTitle": "Time Goes On",
+      "artistName": "Koe Wetzel",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "41d25d79-8ec7-4112-aa03-75986ae7c09c",
+      "albumTitle": "Not So Virgo of You",
+      "artistName": "LUCKI",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c21187bb-c385-4e4d-8a69-39afbd65e464",
+      "albumTitle": "Sofia The First: Royal Collection",
+      "artistName": "[Disney]",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a4ee338c-84a6-4b62-8439-48e6fb55af17",
+      "albumTitle": "Icon (Director's Cut)",
+      "artistName": "Brent Faiyaz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1f208b02-7ae4-424f-ad2e-0696d5ddc231",
+      "albumTitle": "Dark Chocolate (Prison Tapes)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fcf0fa30-7395-4827-aa86-f523d5614be3",
+      "albumTitle": "Go (Lost Tapes 2022)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ae84e992-2484-4e57-b78c-dc94bbdcb50d",
+      "albumTitle": "Disney Jr. Music: Sleep Lullabies",
+      "artistName": "[Disney]",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "43cbe563-822f-4d9d-8562-2a7021e3a653",
+      "albumTitle": "DROGA LETAL",
+      "artistName": "Junior H",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "691a6e4a-de6e-43b1-adc3-cb7ae3a3835d",
+      "albumTitle": "GOLDEN HOUR : Part.4",
+      "artistName": "ATEEZ",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "68569851-f52b-4dce-9223-29064567cdb5",
+      "albumTitle": "Handsome (Lost Tapes 2016)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c88ce01a-30fd-4be1-a899-7e43f0e19a5d",
+      "albumTitle": "Before Artistry",
+      "artistName": "A Boogie Wit da Hoodie",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "024e1514-1954-44e5-a9c3-89a6e1aeca45",
+      "albumTitle": "TGIF (Lost Tapes 2022)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "891c45e4-8116-4e71-8323-8d38d9468a82",
+      "albumTitle": "Disney Jr. Music: Nursery Rhymes",
+      "artistName": "[Disney]",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c604e4e5-f5fb-4fe8-bc29-4e556ec14032",
+      "albumTitle": "PGD (feat. Kyle Richh & ZEDDY WILL)",
+      "artistName": "A Boogie Wit da Hoodie",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "94fca3a5-6bbc-404a-8b14-b5b96761f06e",
+      "albumTitle": "Red Light (feat. Trippie Redd)",
+      "artistName": "A Boogie Wit da Hoodie",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "97b589f4-fbc3-413f-aad0-04115b9c0c86",
+      "albumTitle": "BELLA",
+      "artistName": "Julianno Sosa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "55d59779-dd42-421b-a110-998ffe2a7f4f",
+      "albumTitle": "LLEGALE",
+      "artistName": "Julianno Sosa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "bbd14884-bd1b-4ca0-a6fb-c28e206df358",
+      "albumTitle": "SOLO PIENSO EN USTED",
+      "artistName": "Julianno Sosa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e462b235-d975-42dd-aa1e-729e4a9fe4f6",
+      "albumTitle": "DAME TIEMPO",
+      "artistName": "Julianno Sosa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4b85e6aa-42ec-4c30-81b3-11b891b93e9c",
+      "albumTitle": "Treinamento do bumbum",
+      "artistName": "Yuri Redicopa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "2943ade0-bd9c-4f97-ab4e-d39844fbaa55",
+      "albumTitle": "PANTI Y COLALE 2.0",
+      "artistName": "El Alfa",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5fb937d2-bfb4-4530-821b-b579cf29a69e",
+      "albumTitle": "TETRICO",
+      "artistName": "Dareyes de la Sierra",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "920cd2fd-8130-419c-beb8-0e7064bb9508",
+      "albumTitle": "ICEMAN FREESTYLE",
+      "artistName": "Central Cee",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4dd6609f-5ef5-494a-9529-580e62b1c2bc",
+      "albumTitle": "Skidamarink",
+      "artistName": "Super Simple Songs",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "73ac2be3-204a-45e2-844b-b701e7d1cbb9",
+      "albumTitle": "Chromatische Fantasie Und Fuge: I. Fantasia. Vivacissimo",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c646477f-02a0-447c-8e99-b4ceec2c3fe6",
+      "albumTitle": "The Animals On the Farm",
+      "artistName": "Super Simple Songs",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "abf7ab96-0595-4a15-812b-892c8ef834c8",
+      "albumTitle": "Chaconne in D Minor",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ee0f977e-ad2f-420f-8189-818036113e96",
+      "albumTitle": "Bach: French Suite No. 6 in E Major, BWV 817: V. Polonaise - Petit Menuet",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7bb47f19-3fa0-431b-910a-4332f60f14cd",
+      "albumTitle": "i miss you (5020 RCRDS Sessions)",
+      "artistName": "Beéle",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "59e2c1a5-fbb3-4b65-8dcc-20c840adddb4",
+      "albumTitle": "J.S. Bach: Piano Concerto in G Major (after Antonio Vivaldi), BWV 973: II. Largo",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "8122eff5-cd86-4d0d-a075-d21d16631318",
+      "albumTitle": "J.S. Bach: Goldberg Variations, BWV 988 (Arr. for String Trio by Dmitry Sitkovetsky)",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "bfa5d524-aaa6-41ed-90bf-a053d90d5c0c",
+      "albumTitle": "J.S. Bach: Goldberg Variations, BWV 988",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a71e13b4-cc20-4985-8d67-81e3991827f6",
+      "albumTitle": "J. S. Bach on Nine Strings. Suite, Partita and Sonata for Two Piccolo Cellos",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "6b5bb7d1-2ded-4f73-b20b-3f517591ceee",
+      "albumTitle": "J.S. Bach: Harpsichord Concerto in F Minor, BWV 1056. II. Largo",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "454df253-fdd2-4283-b411-c15f473c546c",
+      "albumTitle": "J. S. Bach: Mein Geist",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "6893be97-8169-4714-b91c-2cf66ba43e28",
+      "albumTitle": "J.S. Bach: Johannes-Passion, BWV 245, Prima parte: No. 1, Chorus. Herr, unser Herrscher",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "3a1488d4-4088-482c-8439-865d43d5b9b9",
+      "albumTitle": "J.S. Bach: Sonata for Violin and Continuo in E Minor, BWV 1023 (Transc. for Viola da Gamba and Harpsichord by Atsushi Sakai): I. [Prelude] – Adagio ma non tanto",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "b640b32c-162f-42cc-81b7-3e1d7666f1c7",
+      "albumTitle": "Renaud Capuçon Plays Bach",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a0805113-8d1d-4437-ad03-76a4f7f86008",
+      "albumTitle": "Sax Saliente",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1694e1cf-1beb-4821-a51e-574e2c4cca16",
+      "albumTitle": "Reconhecimento facial",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4d59d991-48c8-4398-95f6-0e8b4c698390",
+      "albumTitle": "Melodia de Contradições",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "b7f353bb-42eb-41ed-866e-a1a1969bc7b0",
+      "albumTitle": "Melodia Natalina",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e85579f4-ab84-48d1-a51a-9eefd73021b3",
+      "albumTitle": "Ultra Fenomenal",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c5849b59-41d4-41b4-aa98-4b6cefe9e5bb",
+      "albumTitle": "Ta Chapada de Balinha",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "6b7cbce4-7153-4982-9d03-05c0fd60e9d6",
+      "albumTitle": "Rave Automotiva",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "8f1670a4-df6e-4ca2-a7fe-49ac4b9bb63c",
+      "albumTitle": "MTG Joga Xerecada (Versions)",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "9fa09fe4-7c6d-40a1-98d4-38a5aee01402",
+      "albumTitle": "Mandela Alternativo",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "69aeae95-49e4-421c-bae8-4ffbb753d64c",
+      "albumTitle": "Pontinho Nostálgico",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "06cc24b5-b491-4cca-af73-51a3af76b7e3",
+      "albumTitle": "Os Crias Vai Te Macetar",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "9f00e01f-de1f-4352-9fe2-55335116af95",
+      "albumTitle": "Senta com Força",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e650dc58-25fb-45e4-bc66-b69a3117471a",
+      "albumTitle": "MACETIAMENTO RITMADO",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "20655d2c-a38a-4f93-9b33-800f285b4479",
+      "albumTitle": "Senta Gostoso",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "232f0359-ac15-483f-b9f3-36de3d171eed",
+      "albumTitle": "Fusão do Submundo",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e0e59be6-e545-4929-8443-6e3e8c7abf14",
+      "albumTitle": "Ambalapravinte (From \"Bhishmar\")",
+      "artistName": "Vineeth Sreenivasan",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "00310bcf-1c59-4a84-b72f-52178611ca1e",
+      "albumTitle": "DEMONS",
+      "artistName": "Thug Slime",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "83fb7bcb-bb2e-49e3-8ee5-d9cd9ffc4732",
+      "albumTitle": "Tinga (From \"Moonwalk (Original Motion Picture Soundtrack)\")",
+      "artistName": "A. R. Rahman",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "6183b3ba-a38d-4cc0-bc9d-371a5c974cde",
+      "albumTitle": "Yethu (From \"Moonwalk (Original Motion Picture Soundtrack)\")",
+      "artistName": "A. R. Rahman",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fc013e94-ff10-443d-b336-7874de41fc20",
+      "albumTitle": "6SEOUL",
+      "artistName": "Sik‐K",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "99a885b4-37df-4a22-bcc6-d3ed17e65eb1",
+      "albumTitle": "Quédate Con Él (En Vivo)",
+      "artistName": "DesaKTa2",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "3a93900f-1bcf-468c-a370-a92b40ae19ea",
+      "albumTitle": "หนึ่งคนตรงนี้ (I'm here)",
+      "artistName": "PURPEECH",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "45ceb56e-a299-482a-97e5-2ef257073689",
+      "albumTitle": "Perfil #138 Culpa do Homem",
+      "artistName": "Pineapple StormTv",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c8f9979f-e406-41b1-9ab3-a7b80032bc2f",
+      "albumTitle": "Karunai Amuthai",
+      "artistName": "Haricharan",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "783feae8-f9b8-4e89-b45e-bae5ddbc206f",
+      "albumTitle": "Saathiya",
+      "artistName": "Darshan Raval",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7bfb3467-5389-43af-965c-e14be574e622",
+      "albumTitle": "Thamma Telugu (Original Motion Picture Soundtrack)",
+      "artistName": "Sachin‐Jigar",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "0db32c9a-718e-45b1-9c20-8b49fef6f905",
+      "albumTitle": "KC",
+      "artistName": "Kizo",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "b1ea3609-1d3c-44b6-8ce7-8ab387569894",
+      "albumTitle": "Hum Mile Na Mile (Lofi Mix)",
+      "artistName": "Udit Narayan",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d39fe18c-b64a-459a-bd72-dc23dac88bec",
+      "albumTitle": "Daru Marda Ki Butti",
+      "artistName": "Masoom Sharma",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5c027281-1c91-41c2-8770-86875dac0b8b",
+      "albumTitle": "TYPE BEAT / HIP THRUST",
+      "artistName": "Yzomandias",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "b1d159da-cdcd-4d01-ad96-5e3aa220b6ff",
+      "albumTitle": "Beraya Dengan Saya",
+      "artistName": "Siti Nurhaliza",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c96bc294-3ad0-4986-beca-f9abb55f334a",
+      "albumTitle": "Om Sakthi",
+      "artistName": "M. G. Sreekumar",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "46d54eaf-f212-4534-b79d-3072f3562e8b",
+      "albumTitle": "Gia Panta",
+      "artistName": "Stavento",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "258c6475-8007-4e15-a9a8-ca52cf3e8142",
+      "albumTitle": "La Luna (En Vivo Estadio Vélez)",
+      "artistName": "La K'onga",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "30fcc262-8ea8-4e08-9b48-419d990db757",
+      "albumTitle": "Anii în care nu dormim",
+      "artistName": "Smiley",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "55d9a8cc-a091-4589-9a50-7019eb68ea96",
+      "albumTitle": "ขอให้เราทั้งคู่โชคดี (Good Luck to The Both of Us)",
+      "artistName": "Tattoo Colour",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "526c9765-b951-412a-8957-a40af0734f6a",
+      "albumTitle": "Молчащая гора",
+      "artistName": "Pika",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c13ee6bb-a317-4150-bff7-8fbc42f37c13",
+      "albumTitle": "Zara Pass Aaiye",
+      "artistName": "Kumar Sanu",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "8775a90f-1bf5-4215-ada5-56b67d3f4e81",
+      "albumTitle": "Yin i Yang",
+      "artistName": "Opał",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4a58b2a2-7f17-44c6-963b-9e4f16fd17d8",
+      "albumTitle": "Запах прошедшего февраля (karmv remix)",
+      "artistName": "Kavabanga Depo Kolibri",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f45a06e4-c427-45d4-8513-a3bab4120520",
+      "albumTitle": "布拉格廣場 (JOLIN Version/ 星宇航空布拉格開航主題曲)",
+      "artistName": "Jolin",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "123dee29-7407-43b6-a3e4-ed89f700fe56",
+      "albumTitle": "Tropa do Kevin 2",
+      "artistName": "Mc IG",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d96c12f9-07c4-4d4e-833e-f3c060e56cd2",
+      "albumTitle": "ORIUNDE FREESTYLE",
+      "artistName": "DZWS",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "769d9a1d-c3bb-4d50-8a80-6e3f972fd6fc",
+      "albumTitle": "PARA: TODAS QUE FINGI AMAR",
+      "artistName": "Alee",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "83c09872-d562-4c1f-9e42-bed193f17619",
+      "albumTitle": "Medellin Baby",
+      "artistName": "Sin Boy",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "536348ce-5940-4594-952b-410b606d86e3",
+      "albumTitle": "Hekaya",
+      "artistName": "Watendawili",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d42dd959-e160-4a66-b069-8dcba379897e",
+      "albumTitle": "dreams about her",
+      "artistName": "Shiloh Dynasty",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fff6c11f-beaa-4e4f-9c76-b71d19b7ee41",
+      "albumTitle": "Xerecão Doidão",
+      "artistName": "MC Jhey",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f3876a8c-a2da-44fc-9df1-49f8c9445b7e",
+      "albumTitle": "FRISBEE",
+      "artistName": "Sentino",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5403e3fd-c9cc-4604-90da-5f0d8412ebec",
+      "albumTitle": "OKE",
+      "artistName": "Lil’ Kleine",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a018c7d7-d4d9-46ec-bd75-f809c043158a",
+      "albumTitle": "De Segunda A Domingueira",
+      "artistName": "DJ Glenner",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1adf1a63-35f5-4eaa-bae1-3d69938733ae",
+      "albumTitle": "Estrela Cadente",
+      "artistName": "DJ Glenner",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e0f66711-3f74-41e5-88e4-8b3b72bfb6fd",
+      "albumTitle": "To Solteiro Agora",
+      "artistName": "DJ Glenner",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "35b0c961-038b-4217-a4eb-6082345cd6ff",
+      "albumTitle": "Cutremur Pe Scara 2",
+      "artistName": "Lele Lele",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "896e347c-ba42-4a89-b245-b2ef72b4566b",
+      "albumTitle": "Save The Day (From \"Hoppers\")",
+      "artistName": "SZA",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fb074c74-c5f5-401e-bb76-e8c6eca327b1",
+      "albumTitle": "Rang Dalela Devar",
+      "artistName": "Shilpi Raj",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "9fa8ddbd-5541-469b-a9d1-d4839afa0c8e",
+      "albumTitle": "Rangila Gila Kara",
+      "artistName": "Shilpi Raj",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4699697d-3aa3-4da2-96c8-29592aee67c9",
+      "albumTitle": "War (Snippet)",
+      "artistName": "T.I.",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "42258ddb-e86a-41b1-8b67-98b3efde2f9b",
+      "albumTitle": "Undertale - Undying Battlegrounds (Orchestral Arrengement)",
+      "artistName": "Toby Fox",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e9e5f355-9b7c-4556-b93f-beead995170a",
+      "albumTitle": "Dulces SueñoZzz (+INTERLUDIO)",
+      "artistName": "Omar Courtz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ac129434-a492-4180-a8e7-9fab005d562d",
+      "albumTitle": "$UELTA GATITA $UELTA",
+      "artistName": "Omar Courtz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e5639925-19c8-408c-9a07-5335796f8dc0",
+      "albumTitle": "WO OH OH",
+      "artistName": "Omar Courtz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fa7afe02-4f1a-4cf1-a140-1e72407cb00d",
+      "albumTitle": "Mega Magrão da Putaria",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "39291152-3d4e-4663-b921-8364a07e1654",
+      "albumTitle": "Vai Sentando",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e5abb039-f97c-4c6f-b907-0fc61f80071b",
+      "albumTitle": "FOREVER TU GANTEL",
+      "artistName": "Omar Courtz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1d7065d1-9934-47fe-8612-8853ddf4f9f8",
+      "albumTitle": "PIROCA TORTA",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "6f7d557d-bd67-4bd2-b53e-bd27141b3aa8",
+      "albumTitle": "Migajero",
+      "artistName": "Grupo Marca Registrada",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1b8cf374-3096-43b6-a139-b3c1170639ff",
+      "albumTitle": "MOONLIGHT",
+      "artistName": "Omar Courtz",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5eb685fc-9a05-46c0-9e0d-a803c43035c0",
+      "albumTitle": "RoadHouse",
+      "artistName": "BONES",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "31ea14ad-59fd-4c17-b81b-2185ee1cd006",
+      "albumTitle": "Circumstances (Lost Tapes 2016)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "98bd6f70-9bef-4140-825c-635fa368bb53",
+      "albumTitle": "MadMan (Lost Tapes 2020)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4fc295a5-a3b3-4b63-9c7c-5bb4e2386b3d",
+      "albumTitle": "NO BATIDÃO (Remix)",
+      "artistName": "ZXKAI",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "16589367-050f-48e7-981a-425cbe8b9f77",
+      "albumTitle": "PARA",
+      "artistName": "MXZI",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "88587378-2677-4c96-b1c0-436d27ee1cd3",
+      "albumTitle": "Vickyni",
+      "artistName": "Donaty",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a080c29e-7f3f-41b7-bf1f-a7fd04966215",
+      "albumTitle": "Cheio de Ódio (feat. Mc Negão Original)",
+      "artistName": "MC Ryan SP",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "0d3a84bb-375a-4ad1-b643-b5f7517dabed",
+      "albumTitle": "Zara Larsson - Spotify Live Room",
+      "artistName": "Zara Larsson",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4c10f909-ea9d-4f21-a9e1-e1a794dc62b7",
+      "albumTitle": "Тұмар",
+      "artistName": "Duman",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1fe5affe-864b-4f4e-84ed-c0121bd1f819",
+      "albumTitle": "Ti Oreo",
+      "artistName": "Panos Mouzourakis",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "df44ab25-9e3f-4327-91c3-459f437e4bd9",
+      "albumTitle": "When Feelings Get Loud",
+      "artistName": "Shiloh Dynasty",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7c819c95-1769-4e78-9c9e-7c039cc8d97c",
+      "albumTitle": "Sai Rehem Nazar Karna (Lofi Mix)",
+      "artistName": "Alka Yagnik",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c35bcdbe-cbd2-4189-a7ac-de0edb3bd2db",
+      "albumTitle": "S.Saraswathi (Original Motion Picture Soundtrack)",
+      "artistName": "Thaman S",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c87e7df2-0329-49ac-8598-e50ad60694aa",
+      "albumTitle": "BE:FIRST ALL DAY",
+      "artistName": "BE:FIRST",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a09ecc1d-1bae-447c-9990-556ad99139bd",
+      "albumTitle": "Blame Texas",
+      "artistName": "Cody Johnson",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ca71db24-3168-4854-a8ec-c2b921122501",
+      "albumTitle": "I Ain't No Cowboy",
+      "artistName": "Luke Combs",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1fbd4aa4-a795-459d-9f25-21a9d850e124",
+      "albumTitle": "bad bitch alert",
+      "artistName": "Ty Dolla $ign",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a560fce8-30a4-4bfc-97f9-896f50b1f5b4",
+      "albumTitle": "intention (with Brandy)",
+      "artistName": "Ty Dolla $ign",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "176cd80f-1e0f-4da5-b598-e6ba365c61d0",
+      "albumTitle": "Half Blood (BloodLuxe)",
+      "artistName": "slayr",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "95ac398e-c82f-47f4-be25-262060e553c0",
+      "albumTitle": "girl music vol. 1",
+      "artistName": "Ty Dolla $ign",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "07174589-fd7d-4e60-9e69-3585965e54ad",
+      "albumTitle": "VIN",
+      "artistName": "Gibbs",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ffdfeae4-b581-4df9-8617-fa147c7af210",
+      "albumTitle": "Когда я умер",
+      "artistName": "Кишлак",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4356d56c-784e-429a-b58e-730f8a072985",
+      "albumTitle": "nobody has to know (with Ronald Isley)",
+      "artistName": "Ty Dolla $ign",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f6aed515-592d-46a2-87b7-3d4e8ba7a4ea",
+      "albumTitle": "Karab Na Gulami",
+      "artistName": "Pawan Singh",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "159137ab-8184-43d6-8011-ce3216332d45",
+      "albumTitle": "I Diki Mou Patrida",
+      "artistName": "Vasilis Karras",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c04cbbe8-75ae-4401-ae02-0720b7b22dbb",
+      "albumTitle": "UNIQUE",
+      "artistName": "P1Harmony",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "66529455-5dab-488b-ba4b-21d4189ef0ef",
+      "albumTitle": "Apambichao",
+      "artistName": "Manuel Turizo",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c812da0f-687f-4bd0-8516-4129f384e573",
+      "albumTitle": "Muchacho Alegre",
+      "artistName": "Luis R. Conriquez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "311fd214-babe-4777-9fb6-019b1badbc6f",
+      "albumTitle": "moonboy",
+      "artistName": "JVKE",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "648f463a-c895-465f-89ac-2c7fbf594991",
+      "albumTitle": "Alaska",
+      "artistName": "Victor Mendivil",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "cfb1ce51-dad2-4190-93f0-b93ac7fb6b64",
+      "albumTitle": "Sing Of Your Love",
+      "artistName": "Bethel Music",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fc657b20-8a1c-4777-978d-ebf4f90e505a",
+      "albumTitle": "IMPOSIBLE",
+      "artistName": "Grupo Frontera",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e9ec6d1a-e7c8-49fc-8c77-8cb01cbc717f",
+      "albumTitle": "Ojos Cafe (Live)",
+      "artistName": "Farruko",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c26ece1e-2661-4392-80cf-dc89dca80768",
+      "albumTitle": "Drink The Water (from the SURFILMUSIC Soundtrack)",
+      "artistName": "Jack Johnson",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5b347efe-2f28-4a6d-9084-4f6d84a55ece",
+      "albumTitle": "BERIMBAU FANTÁSTICO",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a95a7d0a-dcdc-4b4b-b3f2-4137d9d26b6b",
+      "albumTitle": "Stroke U Up",
+      "artistName": "Jeremih",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ddb4fc03-8f0b-429d-a9aa-bd8a80817e16",
+      "albumTitle": "Ritmo Jessica",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d8d3c566-aba3-4908-b456-a9b9b896f58c",
+      "albumTitle": "N.O.M.A",
+      "artistName": "Jeremih",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "bcc6faa3-3be4-4cfa-92d6-31bce023c342",
+      "albumTitle": "Tropa do Sem Amor",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e5d354e5-1d27-4d47-8972-36ec09f0a371",
+      "albumTitle": "Piseiro Sem Sinal",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "bae8b579-15fd-48e6-ae03-7ca87384c2e3",
+      "albumTitle": "Bandida Apaixonada",
+      "artistName": "MC GW",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ebc7ff5b-2701-46d3-b785-50901c48aea5",
+      "albumTitle": "Suntan Season",
+      "artistName": "Luke Bryan",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "64ca2a7c-e662-4649-ac9d-c362b28c2163",
+      "albumTitle": "\"These Are Going Nowhere\": A Mixtape by Koe Wetzel",
+      "artistName": "Koe Wetzel",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e71b915a-d128-4428-9d6f-9a49e266a6e9",
+      "albumTitle": "Simba (Lost Tapes 2022)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "0869dd50-fdde-4da2-b096-0c002adb462d",
+      "albumTitle": "Dada Di (Lost Tapes 2022)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "4e15544f-e70f-4fe5-a5be-39aa2d347423",
+      "albumTitle": "Carol",
+      "artistName": "Eagles",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f453e96c-0469-4f8b-8b92-b9f04b88ec4d",
+      "albumTitle": "Slow (Lost Tapes 2021)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "18cc1cf3-5a93-4fa0-acea-66212e0ff311",
+      "albumTitle": "Popular Chance (Lost Tapes 2022)",
+      "artistName": "Tory Lanez",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ae1bde8f-926a-405a-8af5-be9b9ba80318",
+      "albumTitle": "San Charly",
+      "artistName": "Xavi",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "e0c5a3d8-88c1-4b2d-bebc-33b78dbe89e0",
+      "albumTitle": "J.S. Bach: Cello Suite No. 2 in D Minor, BWV 1008 (Arr. for Viola by Marc Sabbah)",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "1adf65e1-89aa-4a24-8906-913a77e71c63",
+      "albumTitle": "Bach: French Suite No. 5 in G Major, BWV 816: VII. Gigue",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "94761ca6-fe97-4d6f-9061-50a025bab578",
+      "albumTitle": "Variatio 9 (Canone Alla Terza)",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "06595087-34ed-4fd2-a4b3-062456c1c522",
+      "albumTitle": "Mozart: Violin Sonata in E Minor, K.304/300c: II. Tempo di Menuetto",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "905b8f94-a571-4ad9-8a8e-99dce148723c",
+      "albumTitle": "Bach: The Six Cello Suites, BWV 1007 - 1012",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5b6e42ac-0114-4fbd-b283-94eac4f5c9bc",
+      "albumTitle": "Mozart: The Complete Piano Sonatas, Vol. 1",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "fb477449-69e3-4390-bb80-550383f2c5c5",
+      "albumTitle": "J.S. Bach: Missa in F Major, BWV 233: II. Gloria in excelsis Deo",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5914393e-9b04-426a-9fae-a9501c72f3c3",
+      "albumTitle": "Incompatibles",
+      "artistName": "Christian Nodal",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ae824e4d-bd93-42c2-9fd7-8065f6af940f",
+      "albumTitle": "Clear Brain Fog",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "85e8dc9e-aca5-4c76-964b-d8ee69753a4b",
+      "albumTitle": "Bach: Écouter la lumière",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d07d47fb-19ea-4c29-a55a-344ec49779b9",
+      "albumTitle": "J. S. Bach: Chaconnes BWV 1178 & 1179",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c96f1cf1-8bde-46d0-aaee-be0cb459decc",
+      "albumTitle": "Otto Klemperer in Jerusalem Vol. 3 Mozart - the late Symphonies (Live)",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "320e469a-0538-4fb5-9c01-9d91b7fdcab8",
+      "albumTitle": "\"15 Sinfonias\" and Other Works for Piano",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a7db4646-fb02-4832-be7c-b191b458242f",
+      "albumTitle": "Mozart: Les petits riens, Divertimento No. 1 & German Dances",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a7e524ee-d0f3-47e9-8cf3-d775cd859c74",
+      "albumTitle": "Johann Sebastian Bach: Harpsichord Concertos Vol. 2",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "aae2a1e5-32b4-4266-bfa7-a6544f0097e9",
+      "albumTitle": "J.S. Bach: Sonata for Viola da Gamba and Harpsichord in G Major, BWV 1027: III. Andante",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7d8c1c70-cd4d-42ab-9c13-a17034fa7fe1",
+      "albumTitle": "DON'T DIE",
+      "artistName": "Odetari",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5779bf79-1247-448f-8c02-c4ab2b0751af",
+      "albumTitle": "\"Continuo: The Classical Tradition\": Vol. III",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "d2cc6c2e-3eca-4657-90e6-bd865c57720b",
+      "albumTitle": "Mozart: Thamos, K. 345",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "ad182fcd-2994-4acb-b93c-3d6aa0b1ce7b",
+      "albumTitle": "Mozart: Serenade No. 13 in G Major, 'Eine kleine Nachtmusik', K. 525: IV. Rondo. Allegro",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "a8d9e75e-c496-4a08-8804-1c5dafed9e95",
+      "albumTitle": "Mozart: Vorrei spiegarvi, oh Dio, K. 418",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "7bdc2910-c2d9-4371-ae19-5664e5179bfa",
+      "albumTitle": "\"Berceuse au clair de lune\" - Sleep Well",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5cb879c5-1764-42c9-aa48-3b856e72199b",
+      "albumTitle": "Mozart: Piano Concertos, Vol. 12",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5be1aaeb-edd2-441f-a3ba-4db80e334e17",
+      "albumTitle": "Bach: Die Kunst der Fuge, BWV 1080: Contrapunctus 1",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5df97af5-3036-44e6-9c4d-6e1c8252cf37",
+      "albumTitle": "J.S. Bach: 6 Violin Sonatas, BWV 1014-1019",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5257a72e-9f6e-4174-a13c-8ed5e1cffa28",
+      "albumTitle": "\"The Magic of Piano\": Mozart and More",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "f5ce628c-0b02-43e4-b2d2-1b2fb88c445c",
+      "albumTitle": "Peaceful & Relaxing Classical Music",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "c4a46e1b-5075-4abe-a74a-1d6895a06d05",
+      "albumTitle": "\"Piano Miniatures\": Works by Mozart & More",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "34768738-8bfe-4842-b589-e12863c6e997",
+      "albumTitle": "\"Crescendo in the Clouds\" - Classical Works",
+      "artistName": "Wolfgang Amadeus Mozart",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "444e6831-2b65-4b89-96e2-2ee1ebcefc15",
+      "albumTitle": "J.S. Bach – Hand und Mund und Tat und Leben",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "43eba769-08cd-4c13-80f4-7dedc579c492",
+      "albumTitle": "\"Ammonite\": Classical Flowers",
+      "artistName": "Johann Sebastian Bach",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "5d1b1405-2a32-42f8-9dfa-498296f4f8ba",
+      "albumTitle": "El Último Jaripeo (Vol.2/En Vivo)",
+      "artistName": "Joan Sebastian",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    },
+    {
+      "albumId": "60fbcc71-a28f-4c67-b3a7-8f4a1217a149",
+      "albumTitle": "Y Las Mariposas (En Vivo)",
+      "artistName": "Joan Sebastian",
+      "bestScore": null,
+      "bestMbTitle": null,
+      "reason": "no_results"
+    }
+  ]
+}

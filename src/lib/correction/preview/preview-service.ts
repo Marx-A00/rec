@@ -7,6 +7,7 @@
 
 import type { Album, Artist, Prisma, Track } from '@prisma/client';
 
+import { getCAAUrl } from '@/lib/cover-art-archive';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
@@ -598,7 +599,7 @@ export class CorrectionPreviewService {
     const sourceUrl =
       mbData && searchResult.releaseGroupMbid
         ? (searchResult.coverArtUrl ??
-          `https://coverartarchive.org/release-group/${searchResult.releaseGroupMbid}/front-250`)
+          getCAAUrl(searchResult.releaseGroupMbid, '500'))
         : null;
 
     const changeType = this.diffEngine.classifyChange(currentUrl, sourceUrl);

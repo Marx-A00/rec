@@ -6,6 +6,7 @@
  * Provides scored, grouped, and deduplicated search via searchWithScoring().
  */
 
+import { getCAAUrl } from '@/lib/cover-art-archive';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { PRIORITY_TIERS } from '@/lib/queue';
 import {
@@ -327,8 +328,8 @@ export class CorrectionSearchService {
     // Build primary artist name from credits (comma-separated)
     const primaryArtistName = artistCredits.map(ac => ac.name).join(', ');
 
-    // Compute CAA URL (250px thumbnail)
-    const coverArtUrl = `https://coverartarchive.org/release-group/${rg.id}/front-250`;
+    // Compute CAA URL (500px thumbnail)
+    const coverArtUrl = getCAAUrl(rg.id, '500');
 
     return {
       releaseGroupMbid: rg.id,
@@ -365,10 +366,10 @@ export class CorrectionSearchService {
     // Build primary artist name from credits (comma-separated)
     const primaryArtistName = artistCredits.map(ac => ac.name).join(', ');
 
-    // Compute CAA URL (250px thumbnail)
+    // Compute CAA URL (500px thumbnail)
     // Note: CAA may return 404 if no cover art exists - UI handles this gracefully
     // by falling back to placeholder image (see AlbumImage component pattern)
-    const coverArtUrl = `https://coverartarchive.org/release-group/${rg.id}/front-250`;
+    const coverArtUrl = getCAAUrl(rg.id, '500');
 
     return {
       releaseGroupMbid: rg.id,

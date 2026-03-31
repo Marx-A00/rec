@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
+import { getCAAUrl } from '@/lib/cover-art-archive';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -258,7 +259,7 @@ export function ClaudeRecommendationsView({
 
         try {
           const coverImageUrl = rec.musicbrainzId
-            ? `https://coverartarchive.org/release-group/${rec.musicbrainzId}/front-250`
+            ? getCAAUrl(rec.musicbrainzId)
             : undefined;
 
           const albumData = {
@@ -334,7 +335,7 @@ export function ClaudeRecommendationsView({
   // Cover Art Archive URL
   const getCoverUrl = (rec: ClaudeRecommendation) => {
     if (!rec.musicbrainzId) return null;
-    return `https://coverartarchive.org/release-group/${rec.musicbrainzId}/front-250`;
+    return getCAAUrl(rec.musicbrainzId, '500');
   };
 
   if (checkingExisting) {

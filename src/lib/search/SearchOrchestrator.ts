@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 
+import { getCAAUrl, getCAAUrlForRelease } from '@/lib/cover-art-archive';
 import type {
   UnifiedSearchResult,
   SearchContext,
@@ -952,6 +953,18 @@ export class SearchOrchestrator {
       // This is a MusicBrainz ID (UUID format)
       keys.push(`musicbrainz:${result.id}`);
     }
+    // Also check if local album has a stored MusicBrainz ID (for deduplication with external results)
+    if (result.type === 'album') {
+      const mbData = (result as UnifiedSearchResult & { _musicbrainz?: { albumId?: string } })._musicbrainz;
+      if (
+        mbData?.albumId &&
+        mbData.albumId.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
+      ) {
+        keys.push(`musicbrainz:${mbData.albumId}`);
+      }
+    }
     if (result._discogs?.uri) {
       keys.push(`discogs:${result._discogs.uri}`);
     }
@@ -1090,6 +1103,12 @@ export class SearchOrchestrator {
       _discogs: {
         uri: album.discogsId ? `/releases/${album.discogsId}` : undefined,
       },
+      // Include MusicBrainz ID for deduplication with external results
+      ...(album.musicbrainzId && {
+        _musicbrainz: {
+          albumId: album.musicbrainzId,
+        },
+      }),
     };
   }
 
@@ -1193,7 +1212,7 @@ export class SearchOrchestrator {
     // Use Cover Art Archive direct URLs - browser will fetch in parallel
     // Falls back to placeholder image via AlbumImage component error handling
     // Use release-group endpoint which works with MusicBrainz release group IDs
-    const coverArtUrl = `https://coverartarchive.org/release-group/${release.id}/front-250`;
+    const coverArtUrl = getCAAUrl(release.id, '500');
 
     // Purple borders for cover art URL generation (distinct from other logs)
     const border = chalk.magenta('─'.repeat(60));
@@ -1358,7 +1377,7 @@ export class SearchOrchestrator {
     // Generate Cover Art Archive URL from first release MBID
     const firstReleaseMbid = recording.releases?.[0]?.id;
     const coverArtUrl = firstReleaseMbid
-      ? `https://coverartarchive.org/release/${firstReleaseMbid}/front-250`
+      ? getCAAUrlForRelease(firstReleaseMbid, '500')
       : '';
 
     // Extract first ISRC if available

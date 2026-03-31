@@ -14,6 +14,7 @@
 import type { Prisma } from '@prisma/client';
 
 import { findOrCreateAlbum } from '@/lib/albums/find-or-create';
+import { getCAAUrlFromCaaId } from '@/lib/cover-art-archive';
 import { prisma } from '@/lib/prisma';
 
 import type { ListenBrainzFreshRelease, ListenBrainzSyncResult } from './types';
@@ -54,7 +55,7 @@ export async function processListenBrainzReleases(
       // Build Cover Art Archive URL if available
       const coverArtUrl =
         release.caa_id && release.caa_release_mbid
-          ? `https://coverartarchive.org/release/${release.caa_release_mbid}/${release.caa_id}-500.jpg`
+          ? getCAAUrlFromCaaId(release.caa_release_mbid, release.caa_id)
           : undefined;
 
       // Parse release date

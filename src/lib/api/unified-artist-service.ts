@@ -1,5 +1,6 @@
 import { Client } from 'disconnect';
 
+import { getCAAUrl } from '@/lib/cover-art-archive';
 import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
@@ -521,7 +522,7 @@ class UnifiedArtistService {
           }))
         : [],
       // Use Cover Art Archive release-group front image (will 404 if not available; UI has fallback)
-      imageUrl: `https://coverartarchive.org/release-group/${rg.id}/front-250`,
+      imageUrl: getCAAUrl(rg.id, '500'),
       source: 'musicbrainz' as const,
     }));
 

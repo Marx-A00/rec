@@ -100,6 +100,7 @@ import {
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
+import { getImageUrl } from '@/lib/cloudflare-images';
 import {
   Tooltip,
   TooltipContent,
@@ -223,6 +224,11 @@ export default function MusicDatabasePage() {
     name: string;
   } | null>(null);
   const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{
+    url: string;
+    cloudflareId?: string | null;
+    title: string;
+  } | null>(null);
   const [enrichingItems, setEnrichingItems] = useState<Set<string>>(new Set());
   const [previewingItems, setPreviewingItems] = useState<Set<string>>(
     new Set()
@@ -1069,10 +1075,27 @@ export default function MusicDatabasePage() {
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Image Status
             </div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.coverArtUrl && albumDetails.cloudflareImageId
-                ? '✓ Has images'
-                : '✗ Missing images'}
+            <div className='text-sm text-zinc-300 flex items-center gap-2'>
+              <span>
+                {albumDetails.coverArtUrl && albumDetails.cloudflareImageId
+                  ? '✓ Has images'
+                  : '✗ Missing images'}
+              </span>
+              {(albumDetails.coverArtUrl || albumDetails.cloudflareImageId) && (
+                <button
+                  className='text-zinc-500 hover:text-zinc-200 transition-colors'
+                  onClick={() =>
+                    setImagePreview({
+                      url: albumDetails.coverArtUrl || '',
+                      cloudflareId: albumDetails.cloudflareImageId,
+                      title: albumDetails.title,
+                    })
+                  }
+                  title='View image'
+                >
+                  <Eye className='h-3.5 w-3.5' />
+                </button>
+              )}
             </div>
             {albumDetails.coverArtUrl && (
               <div
@@ -1312,10 +1335,27 @@ export default function MusicDatabasePage() {
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Image Status
             </div>
-            <div className='text-sm text-zinc-300'>
-              {artistDetails.imageUrl && artistDetails.cloudflareImageId
-                ? '✓ Has images'
-                : '✗ Missing images'}
+            <div className='text-sm text-zinc-300 flex items-center gap-2'>
+              <span>
+                {artistDetails.imageUrl && artistDetails.cloudflareImageId
+                  ? '✓ Has images'
+                  : '✗ Missing images'}
+              </span>
+              {(artistDetails.imageUrl || artistDetails.cloudflareImageId) && (
+                <button
+                  className='text-zinc-500 hover:text-zinc-200 transition-colors'
+                  onClick={() =>
+                    setImagePreview({
+                      url: artistDetails.imageUrl || '',
+                      cloudflareId: artistDetails.cloudflareImageId,
+                      title: artistDetails.name,
+                    })
+                  }
+                  title='View image'
+                >
+                  <Eye className='h-3.5 w-3.5' />
+                </button>
+              )}
             </div>
             {artistDetails.imageUrl && (
               <div
@@ -2640,6 +2680,53 @@ export default function MusicDatabasePage() {
                 : 'Delete Permanently'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog
+        open={imagePreview !== null}
+        onOpenChange={open => {
+          if (!open) setImagePreview(null);
+        }}
+      >
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <Eye className='h-5 w-5' />
+              {imagePreview?.title}
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              {imagePreview?.cloudflareId && (
+                <span className='font-mono text-xs'>
+                  CF: {imagePreview.cloudflareId}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {imagePreview && (
+            <div className='flex flex-col items-center gap-4'>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  imagePreview.cloudflareId &&
+                  imagePreview.cloudflareId !== 'none'
+                    ? getImageUrl(imagePreview.cloudflareId, {
+                        width: 800,
+                        height: 800,
+                      })
+                    : imagePreview.url
+                }
+                alt={imagePreview.title}
+                className='max-w-full max-h-[60vh] rounded-lg object-contain'
+              />
+              {imagePreview.url && (
+                <div className='text-xs text-zinc-500 break-all text-center max-w-full'>
+                  {imagePreview.url}
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

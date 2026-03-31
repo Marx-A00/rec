@@ -1810,7 +1810,8 @@ async function updateAlbumFromMusicBrainz(
 
   // Fetch cover art from Cover Art Archive if album doesn't have one yet
   if (!album.coverArtUrl && mbData.id) {
-    const coverArtUrl = `https://coverartarchive.org/release-group/${mbData.id}/front-500`;
+    const { getCAAUrl } = await import('@/lib/cover-art-archive');
+    const coverArtUrl = getCAAUrl(mbData.id);
     try {
       // Validate the URL actually has an image (HEAD request to avoid downloading)
       const response = await fetch(coverArtUrl, {
