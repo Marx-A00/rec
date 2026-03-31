@@ -3,15 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { X, Archive, Calendar, Zap, Share2, Lock } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import { X, Calendar, Zap, Share2, ChevronLeft, ChevronRight, Archive } from 'lucide-react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
-import {
-  useDailyChallengeQuery,
-  useSearchGameAlbumsQuery,
-} from '@/generated/graphql';
+import { useSearchGameAlbumsQuery } from '@/generated/graphql';
 import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
@@ -28,34 +24,55 @@ export interface UncoverGameProps {
   challengeDate?: Date;
 }
 
-// ─── Sub-components (daily-only) ────────────────────────────────
+// ─── Date Navigation ─────────────────────────────────────────────
 
-/**
- * Teaser image component for unauthenticated users.
- * Shows stage 1 obscured image to create curiosity.
- */
-function TeaserImage() {
-  const { data, isLoading } = useDailyChallengeQuery();
+/** Chevron arrows around the date for navigating between daily challenges. */
+function DateNav({
+  displayDate,
+  formattedDate,
+  className,
+}: {
+  displayDate: Date;
+  formattedDate: string;
+  className?: string;
+}) {
+  const router = useRouter();
 
-  if (isLoading) {
-    return (
-      <div className='aspect-square w-full overflow-hidden rounded-2xl bg-zinc-800/50 animate-pulse' />
-    );
-  }
+  const prevDateStr = new Date(displayDate.getTime() - 86_400_000)
+    .toISOString()
+    .split('T')[0];
+  const nextDateStr = new Date(displayDate.getTime() + 86_400_000)
+    .toISOString()
+    .split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  if (!data?.dailyChallenge?.imageUrl || !data?.dailyChallenge?.id) {
-    return null;
-  }
+  const canGoNext = nextDateStr <= todayStr;
+
+  const navigate = (dateStr: string) => {
+    if (dateStr === todayStr) {
+      router.push('/game/play');
+    } else {
+      router.push(`/game/archive/${dateStr}`);
+    }
+  };
 
   return (
-    <RevealImage
-      imageUrl={data.dailyChallenge.imageUrl}
-      challengeId={data.dailyChallenge.id}
-      stage={1}
-      revealMode='regions'
-      showToggle={false}
-      className='aspect-square w-full overflow-hidden rounded-2xl'
-    />
+    <div className={`flex items-center gap-1.5 ${className ?? ''}`}>
+      <button
+        onClick={() => navigate(prevDateStr)}
+        className='rounded-md p-0.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300'
+      >
+        <ChevronLeft className='h-4 w-4' />
+      </button>
+      <span className='text-sm text-zinc-500'>{formattedDate}</span>
+      <button
+        onClick={() => navigate(nextDateStr)}
+        disabled={!canGoNext}
+        className='rounded-md p-0.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-20 disabled:pointer-events-none'
+      >
+        <ChevronRight className='h-4 w-4' />
+      </button>
+    </div>
   );
 }
 
@@ -65,6 +82,7 @@ function GameOver({
   game,
   challengeImageUrl,
   mode,
+  displayDate,
   formattedDate,
   archiveUrl,
   onDevReset,
@@ -72,6 +90,7 @@ function GameOver({
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
   mode: 'daily' | 'archive';
+  displayDate: Date;
   formattedDate: string;
   archiveUrl: string;
   onDevReset?: () => void;
@@ -106,8 +125,8 @@ function GameOver({
 
       {/* Controls Column — result + actions */}
       <div className='flex min-h-0 flex-1 flex-col'>
-        {/* Date label */}
-        <p className='pb-1 text-xs text-zinc-500'>{formattedDate}</p>
+        {/* Date nav */}
+        <DateNav displayDate={displayDate} formattedDate={formattedDate} className='pb-1' />
 
         {/* Result header */}
         <h2 className='pb-1 text-2xl font-bold text-white'>
@@ -201,19 +220,16 @@ function GameOver({
 
 /**
  * Unified Uncover game component for both daily and archive modes.
+ * Always auto-starts the game on mount (home screen is at /game).
  *
- * Daily mode (default): Pre-game home screen, auth gate with providers,
- * streak/stats display.
- *
- * Archive mode: Auto-starts on mount, shows date label, "Back to Archive"
- * navigation, no pre-game screen.
+ * Daily mode (default): Starts today's challenge immediately.
+ * Archive mode: Starts the archive challenge for the given date.
  */
 export function UncoverGame({
   mode = 'daily',
   challengeDate,
 }: UncoverGameProps) {
   const router = useRouter();
-  const isDaily = mode === 'daily';
   const isArchive = mode === 'archive';
 
   const game = useUncoverGame(
@@ -224,7 +240,6 @@ export function UncoverGame({
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const [hasStarted, setHasStarted] = useState(isArchive); // archive auto-starts
 
   // Format date in UTC — archive uses challengeDate, daily uses today
   const displayDate = challengeDate ?? new Date();
@@ -252,10 +267,9 @@ export function UncoverGame({
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
 
-  /** Start session when user clicks play (daily) or on mount (archive). */
+  /** Auto-start game session on mount. */
   useEffect(() => {
     if (!game.isAuthenticated || game.isAuthLoading) return;
-    if (!hasStarted) return;
     if (challengeImageUrl) return;
 
     let cancelled = false;
@@ -277,19 +291,7 @@ export function UncoverGame({
     return () => {
       cancelled = true;
     };
-  }, [game.isAuthenticated, game.isAuthLoading, hasStarted, challengeImageUrl]);
-
-  /** Daily: auto-resume in-progress sessions OR skip home screen when
-   *  the server confirms the user already completed today's challenge. */
-  useEffect(() => {
-    if (isDaily && !hasStarted) {
-      if (game.sessionId && !game.isGameOver) {
-        setHasStarted(true); // resume in-progress game from store
-      } else if (game.hasExistingResult) {
-        setHasStarted(true); // server says already played — go straight to GameOver
-      }
-    }
-  }, [isDaily, hasStarted, game.sessionId, game.isGameOver, game.hasExistingResult]);
+  }, [game.isAuthenticated, game.isAuthLoading, challengeImageUrl]);
 
   // ─── Auth loading ─────────────────────────────────────────────
   if (!game.isAuthenticated) {
@@ -301,141 +303,9 @@ export function UncoverGame({
       );
     }
 
-    // Archive: simple sign-in prompt
-    if (isArchive) {
-      const dateStr = challengeDate?.toISOString().split('T')[0] ?? '';
-      return (
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
-          <div className='text-center'>
-            <h2 className='mb-2 text-2xl font-bold'>
-              Archive Game - {formattedDate}
-            </h2>
-            <p className='text-zinc-400 mb-4'>
-              Sign in to play past challenges
-            </p>
-          </div>
-          <button
-            onClick={() =>
-              signIn(undefined, { callbackUrl: `/game/archive/${dateStr}` })
-            }
-            className='rounded-xl bg-white px-6 py-3 font-medium text-zinc-900 hover:bg-zinc-100 transition-colors'
-          >
-            Sign In to Play
-          </button>
-        </div>
-      );
-    }
-
-    // Daily: full auth gate with provider buttons + teaser image
-    return (
-      <div className='flex h-full items-center justify-center gap-12 px-10'>
-        {/* Art column — teaser */}
-        <div className='flex flex-col items-center gap-4'>
-          <div className='relative h-[500px] w-[500px] overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
-            <TeaserImage />
-            {/* Lock overlay */}
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
-                <Lock className='h-7 w-7 text-zinc-400' />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sign-in card */}
-        <div className='w-[420px] space-y-6'>
-          <div>
-            <h2 className='text-4xl font-bold text-white'>Daily Uncover</h2>
-            <p className='mt-2 text-sm text-zinc-400'>
-              Guess the album from its cover art. 4 attempts. New puzzle daily.
-            </p>
-          </div>
-          <div className='space-y-3'>
-            <button
-              onClick={() => signIn('google', { callbackUrl: '/game/play' })}
-              className='flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
-            >
-              Continue with Google
-            </button>
-            <button
-              onClick={() => signIn('spotify', { callbackUrl: '/game/play' })}
-              className='flex w-full items-center justify-center gap-3 rounded-xl bg-[#1DB954] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#1ed760]'
-            >
-              Continue with Spotify
-            </button>
-            <button
-              onClick={() => signIn('email', { callbackUrl: '/game/play' })}
-              className='flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 px-5 py-3.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
-            >
-              Continue with Email
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Daily: Pre-game home state ───────────────────────────────
-  // Wait for puzzle query before showing home screen so we can skip it
-  // for users who already completed today's challenge.
-  if (isDaily && !hasStarted && !isInitializing && !game.isPuzzleLoading && !game.hasExistingResult) {
-    return (
-      <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
-        {/* Puzzle info */}
-        <div className='relative z-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-400'>
-          <span>PUZZLE #47</span>
-          <span className='text-zinc-600'>·</span>
-          <span className='text-orange-400'>5 DAY STREAK</span>
-        </div>
-
-        {/* Album art teaser — center stage */}
-        <div className='relative z-10 w-[300px]'>
-          <div className='overflow-hidden rounded-2xl border border-emerald-500/20 shadow-[0_0_80px_rgba(16,185,129,0.12)]'>
-            <TeaserImage />
-          </div>
-          <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-sm'>
-              <Lock className='h-6 w-6 text-zinc-300' />
-            </div>
-          </div>
-        </div>
-
-        {/* Hook line */}
-        <div className='relative z-10 text-center'>
-          <p className='text-3xl font-bold text-white drop-shadow-lg'>
-            Can you name this album?
-          </p>
-          <p className='mt-1.5 text-sm text-zinc-400'>
-            Guess the album from its cover art
-          </p>
-        </div>
-
-        {/* Start button — pill shaped */}
-        <button
-          onClick={() => setHasStarted(true)}
-          className='relative z-10 flex items-center gap-2.5 rounded-full bg-white px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:bg-zinc-100 hover:shadow-[0_0_50px_rgba(16,185,129,0.2)] focus:ring-2 focus:ring-white/50'
-        >
-          Start today&apos;s puzzle
-          <span aria-hidden>→</span>
-        </button>
-
-        {/* Inline stats */}
-        <div className='relative z-10 flex items-center gap-8 pt-2'>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-semibold text-white'>23</span>
-            <span className='text-xs text-zinc-500'>played</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-semibold text-white'>78%</span>
-            <span className='text-xs text-zinc-500'>win rate</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-semibold text-orange-400'>5</span>
-            <span className='text-xs text-zinc-500'>streak</span>
-          </div>
-        </div>
-      </div>
-    );
+    // Not authenticated — redirect to home screen which has the auth gate
+    router.replace(isArchive ? '/game' : '/game');
+    return null;
   }
 
   // ─── Initializing ─────────────────────────────────────────────
@@ -500,6 +370,7 @@ export function UncoverGame({
         game={game}
         challengeImageUrl={challengeImageUrl}
         mode={mode}
+        displayDate={displayDate}
         formattedDate={formattedDate}
         archiveUrl={archiveUrl}
         onDevReset={() => {
@@ -515,7 +386,7 @@ export function UncoverGame({
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
       {/* Art Column */}
       <div className='flex flex-col items-center gap-4'>
-        <p className='text-sm text-zinc-500'>{formattedDate}</p>
+        <DateNav displayDate={displayDate} formattedDate={formattedDate} />
         {challengeImageUrl && game.challengeId && (
           <Lens
             zoomFactor={2}

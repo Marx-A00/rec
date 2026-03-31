@@ -1,9 +1,20 @@
-import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
+
+import { DesktopHomeClient } from './DesktopHomeClient';
+
+export const metadata: Metadata = {
+  title: 'Uncover | Daily Album Challenge',
+  description:
+    'Guess the album from its cover art. 4 attempts. New puzzle daily.',
+};
 
 /**
- * /game redirects to /game/play.
- * The Play tab handles all game states (home, playing, game over).
+ * Desktop home/landing page for the Uncover game.
+ * Shows teaser image, play button, and archive link.
+ * Clicking Play navigates to /game/play where the game auto-starts.
+ *
+ * Path: /game
  */
 export default function GamePage() {
-  redirect('/game/play');
+  return <DesktopHomeClient />;
 }
