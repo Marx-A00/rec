@@ -107,7 +107,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
             'flex flex-col space-y-2',
             isExpanded
               ? 'items-stretch px-3 pt-4'
-              : 'items-center pt-4'
+              : 'flex-1 items-center justify-center'
           )}
         >
           {navigationItems.map(item => (
