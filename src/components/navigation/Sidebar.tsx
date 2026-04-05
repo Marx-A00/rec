@@ -3,7 +3,6 @@
 import React, { FC, useMemo, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -18,8 +17,6 @@ import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerC
 import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
 import NavigationItem from './NavigationItem';
 import HelpMenu from './HelpMenu';
 
@@ -94,7 +91,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
   return (
     <nav
       className={cn(
-        'fixed left-0 top-16 bottom-0 z-40 overflow-y-auto overflow-x-hidden',
+        'fixed left-0 top-16 bottom-0 z-40 overflow-y-scroll overflow-x-hidden scrollbar-hide',
         'bg-black border-r border-zinc-800',
         'flex flex-col',
         'transition-all duration-300 ease-in-out',
@@ -107,10 +104,10 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
       <TooltipProvider>
         <div
           className={cn(
-            'flex-1 flex flex-col space-y-2',
+            'flex flex-col space-y-2',
             isExpanded
               ? 'items-stretch px-3 pt-4'
-              : 'items-center justify-center'
+              : 'items-center pt-4'
           )}
         >
           {navigationItems.map(item => (
@@ -128,32 +125,17 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
         </div>
       </TooltipProvider>
 
-      {/* Expanded: User section */}
-      {isExpanded && user && (
-        <div className='border-t border-zinc-700 px-3 py-4 space-y-2'>
-          {/* User info */}
-          <Link
-            href={`/profile/${user.id}`}
-            onClick={closeSidebar}
-            className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-800 transition-colors'
-          >
-            <Avatar className='h-10 w-10'>
-              <AvatarImage
-                src={user.image || undefined}
-                alt={user.username || 'User'}
-              />
-              <AvatarFallback className='bg-zinc-800 text-white'>
-                {user.username?.charAt(0)?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className='flex-1 min-w-0'>
-              <p className='text-sm font-medium text-cosmic-latte truncate'>
-                {user.username}
-              </p>
-              <p className='text-xs text-zinc-400 truncate'>{user.email}</p>
-            </div>
-          </Link>
-
+      {/* User section - always rendered, animated in/out */}
+      {user && (
+        <div
+          className={cn(
+            'px-3 py-4 space-y-2',
+            'transition-all duration-300 ease-in-out',
+            isExpanded
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 -translate-y-2 invisible h-0 py-0 overflow-hidden'
+          )}
+        >
           {/* User menu items */}
           <TooltipProvider>
             {userMenuItems.map(item => (
@@ -179,7 +161,12 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
       )}
 
       {/* Help Menu at bottom */}
-      <div className={cn('pb-6', isExpanded ? 'px-3' : 'flex justify-center')}>
+      <div
+        className={cn(
+          'mt-auto pb-6 transition-all duration-300 ease-in-out',
+          isExpanded ? 'px-3 opacity-100' : 'flex justify-center'
+        )}
+      >
         <HelpMenu isExpanded={isExpanded} />
       </div>
     </nav>
