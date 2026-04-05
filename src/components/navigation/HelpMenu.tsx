@@ -7,7 +7,11 @@ import { useSession } from 'next-auth/react';
 
 import { useTourContext } from '@/contexts/TourContext';
 
-export default function HelpMenu() {
+interface HelpMenuProps {
+  isExpanded?: boolean;
+}
+
+export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { startTour } = useTourContext();
@@ -48,6 +52,45 @@ export default function HelpMenu() {
     startTour();
   };
 
+  // Expanded mode: render items inline with labels
+  if (isExpanded) {
+    return (
+      <div className='w-full space-y-1'>
+        <Link
+          href='/help'
+          className='flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors'
+        >
+          <HelpCircle className='h-5 w-5' />
+          <span>Help</span>
+        </Link>
+        <Link
+          href='/contact'
+          className='flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors'
+        >
+          <Mail className='h-5 w-5' />
+          <span>Contact</span>
+        </Link>
+        <Link
+          href='/about'
+          className='flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors'
+        >
+          <Info className='h-5 w-5' />
+          <span>About</span>
+        </Link>
+        {isAuthenticated && (
+          <button
+            onClick={handleRestartTour}
+            className='flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors w-full text-left'
+          >
+            <RotateCcw className='h-5 w-5' />
+            <span>Restart Tour</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Collapsed mode: existing dropdown behavior
   return (
     <div className='relative' ref={menuRef}>
       {/* Help Button */}

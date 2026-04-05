@@ -4,8 +4,10 @@
 import React, { Suspense } from 'react';
 
 import { useSplitMosaic } from '@/contexts/SplitMosaicContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
 import { panelDefinitions } from '@/lib/dashboard/panelDefinitions';
+import { cn } from '@/lib/utils';
 
 import SplitMosaic from '../mosaic/SplitMosaic';
 import MosaicErrorBoundary from '../mosaic/MosaicErrorBoundary';
@@ -49,10 +51,20 @@ interface MosaicContainerProps {
 }
 
 export default function MosaicContainer({
-  className = 'fixed top-16 bottom-0 left-20 right-0 overflow-hidden',
+  className,
 }: MosaicContainerProps) {
+  const { isExpanded } = useSidebar();
+
   return (
-    <div className={className}>
+    <div
+      className={
+        className ??
+        cn(
+          'fixed top-16 bottom-0 right-0 overflow-hidden transition-all duration-300',
+          isExpanded ? 'left-64' : 'left-20'
+        )
+      }
+    >
       <MosaicErrorBoundary
         onError={error => {
           console.error('Mosaic container error:', error);

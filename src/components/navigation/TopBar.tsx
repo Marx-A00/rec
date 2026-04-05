@@ -1,9 +1,10 @@
 'use client';
 
 import React, { FC } from 'react';
-import { Play, X, Trash2 } from 'lucide-react';
+import { Play, X, Trash2, Menu } from 'lucide-react';
 
 import { useHeader } from '@/contexts/HeaderContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsHomePage } from '@/hooks/useIsHomePage';
 import SimpleSearchBar from '@/components/ui/SimpleSearchBar';
 import { cn } from '@/lib/utils';
@@ -215,6 +216,7 @@ export const TopBar: FC<TopBarProps> = ({
 }) => {
   const { state } = useHeader();
   const { leftContent, centerContent, rightContent, isVisible } = state;
+  const { isExpanded, toggleSidebar } = useSidebar();
   const isHomePage = useIsHomePage();
 
   // Get edit mode state without conditionally calling hooks
@@ -242,8 +244,20 @@ export const TopBar: FC<TopBarProps> = ({
         role='banner'
       >
         <div className='flex items-center h-16 px-4'>
-          {/* Left Section - Avatar/Logo */}
+          {/* Left Section - Hamburger + Avatar */}
           <div className='flex items-center flex-shrink-0 w-48'>
+            <button
+              onClick={toggleSidebar}
+              className='p-2 mr-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors'
+              aria-label={isExpanded ? 'Close sidebar' : 'Open sidebar'}
+              aria-expanded={isExpanded}
+            >
+              {isExpanded ? (
+                <X className='h-5 w-5' />
+              ) : (
+                <Menu className='h-5 w-5' />
+              )}
+            </button>
             {leftContent || (showAvatar && <UserAvatar />)}
           </div>
 

@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/../auth';
 import Sidebar from '@/components/navigation/Sidebar';
 import TopBar from '@/components/navigation/TopBar';
+import MainContent from '@/components/navigation/MainContent';
 import { HeaderProvider } from '@/contexts/HeaderContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 import GlobalRecommendationDrawer from '@/components/GlobalRecommendationDrawer';
 import { RecommendationDrawerProvider } from '@/contexts/RecommendationDrawerContext';
 import ConditionalMosaicProvider from '@/components/dashboard/ConditionalMosaicProvider';
@@ -28,23 +30,18 @@ export default async function MainLayout({
     <RecommendationDrawerProvider>
       <ConditionalMosaicProvider>
         <HeaderProvider>
-          <div className='min-h-screen bg-black'>
-            {/* New modular navigation */}
-            <Sidebar />
-            <TopBar />
+          <SidebarProvider>
+            <div className='min-h-screen bg-black'>
+              <Sidebar />
+              <TopBar />
 
-            {/* Main Content */}
-            <div
-              className='transition-all duration-300 md:ml-16'
-              id='main-content'
-              role='main'
-            >
-              <div className='pt-4'>{children}</div>
+              {/* Main Content */}
+              <MainContent>{children}</MainContent>
+
+              {/* Global Recommendation Drawer */}
+              <GlobalRecommendationDrawer />
             </div>
-
-            {/* Global Recommendation Drawer */}
-            <GlobalRecommendationDrawer />
-          </div>
+          </SidebarProvider>
         </HeaderProvider>
       </ConditionalMosaicProvider>
     </RecommendationDrawerProvider>

@@ -10,6 +10,8 @@ import {
   ChartBar,
   MessageCircle,
   TrendingUp,
+  Drama,
+  Shield,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -148,6 +150,43 @@ export const getSocialNavigationItems = (): NavItem[] => [
       count: 3,
       variant: 'default',
     },
+    showWhen: ctx => ctx.isAuthenticated,
+  },
+];
+
+export const getSidebarUserItems = (): NavItem[] => [
+  {
+    id: 'sidebar-profile',
+    href: '/profile',
+    icon: User,
+    label: 'Your Profile',
+    tooltip: 'View your profile',
+    showWhen: ctx => ctx.isAuthenticated,
+  },
+  {
+    id: 'sidebar-uncover',
+    href: '/game',
+    icon: Drama,
+    label: 'Uncover',
+    tooltip: 'Play Uncover',
+    showWhen: ctx => ctx.isAuthenticated,
+  },
+  {
+    id: 'sidebar-admin',
+    href: '/admin',
+    icon: Shield,
+    label: 'Admin Panel',
+    tooltip: 'Admin Panel',
+    showWhen: ctx =>
+      ctx.isAuthenticated &&
+      (ctx.userRole === 'ADMIN' || ctx.userRole === 'OWNER'),
+  },
+  {
+    id: 'sidebar-settings',
+    href: '/settings',
+    icon: Settings,
+    label: 'Settings',
+    tooltip: 'Application settings',
     showWhen: ctx => ctx.isAuthenticated,
   },
 ];
