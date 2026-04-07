@@ -65,35 +65,38 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       <ItemIcon
         className={cn(isCollapsed ? 'w-6 h-6' : 'w-5 h-5', 'flex-shrink-0')}
       />
-      {!isCollapsed && (
-        <>
-          <span className='text-sm font-medium whitespace-nowrap'>
-            {item.label}
-          </span>
-          {item.badge && (
-            <span
-              className={cn(
-                'px-2 py-0.5 text-xs rounded-full',
-                item.badge.variant === 'danger' && 'bg-red-500/20 text-red-400',
-                item.badge.variant === 'warning' &&
-                  'bg-yellow-500/20 text-yellow-400',
-                (!item.badge.variant || item.badge.variant === 'default') &&
-                  'bg-zinc-700 text-zinc-300'
-              )}
-            >
-              {item.badge.count}
-            </span>
+      <span
+        className={cn(
+          'text-sm font-medium whitespace-nowrap overflow-hidden ease-in-out',
+          isCollapsed
+            ? 'max-w-0 opacity-0 transition-all duration-150'
+            : 'max-w-[150px] opacity-100 transition-all duration-300 delay-100'
+        )}
+      >
+        {item.label}
+      </span>
+      {!isCollapsed && item.badge && (
+        <span
+          className={cn(
+            'px-2 py-0.5 text-xs rounded-full',
+            item.badge.variant === 'danger' && 'bg-red-500/20 text-red-400',
+            item.badge.variant === 'warning' &&
+              'bg-yellow-500/20 text-yellow-400',
+            (!item.badge.variant || item.badge.variant === 'default') &&
+              'bg-zinc-700 text-zinc-300'
           )}
-          {hasChildren && (
-            <div className='ml-auto'>
-              {isExpanded ? (
-                <ChevronDown className='w-4 h-4' />
-              ) : (
-                <ChevronRight className='w-4 h-4' />
-              )}
-            </div>
+        >
+          {item.badge.count}
+        </span>
+      )}
+      {!isCollapsed && hasChildren && (
+        <div className='ml-auto'>
+          {isExpanded ? (
+            <ChevronDown className='w-4 h-4' />
+          ) : (
+            <ChevronRight className='w-4 h-4' />
           )}
-        </>
+        </div>
       )}
     </div>
   );
