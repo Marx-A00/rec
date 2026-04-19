@@ -18,7 +18,6 @@ import { usePathname } from 'next/navigation';
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
 import { useUserSettingsStore } from '@/stores/useUserSettingsStore';
-import { TourDebugControls } from '@/components/tour/TourDebugControls';
 import {
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
@@ -465,7 +464,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   return (
     <TourContext.Provider value={value}>
       {children}
-      <TourDebugControls />
 
       {/* Tour Completing Loading Overlay */}
       {isCompletingTour &&
