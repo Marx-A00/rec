@@ -8,7 +8,7 @@ export const ENRICHMENT_CHANNEL = 'enrichment:status';
 export interface EnrichmentStatusEvent {
   entityType: 'ALBUM' | 'ARTIST';
   entityId: string;
-  status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  status: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   timestamp: string;
   entityName?: string;
 }

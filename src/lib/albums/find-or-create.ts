@@ -16,6 +16,8 @@ import type { Album, Prisma, LlamaLogCategory } from '@prisma/client';
 
 import { getInitialQuality } from '@/lib/db';
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
+import { redis } from '@/lib/queue/redis';
+import { publishEnrichmentEvent } from '@/lib/queue/enrichment-events';
 import type {
   CheckAlbumEnrichmentJobData,
   CacheAlbumCoverArtJobData,
@@ -353,6 +355,14 @@ export async function runPostCreateSideEffects(
       await globalPrisma.album.update({
         where: { id: album.id },
         data: { enrichmentStatus: 'QUEUED' },
+      });
+
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ALBUM',
+        entityId: album.id,
+        status: 'QUEUED',
+        timestamp: new Date().toISOString(),
+        entityName: album.title,
       });
 
       console.log(

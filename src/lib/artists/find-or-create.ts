@@ -5,6 +5,8 @@ import chalk from 'chalk';
 import type { Artist } from '@prisma/client';
 
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
+import { redis } from '@/lib/queue/redis';
+import { publishEnrichmentEvent } from '@/lib/queue/enrichment-events';
 import type { CacheArtistImageJobData } from '@/lib/queue/jobs';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { prisma as globalPrisma } from '@/lib/prisma';
@@ -254,6 +256,14 @@ export async function runPostCreateSideEffects(
       await globalPrisma.artist.update({
         where: { id: artist.id },
         data: { enrichmentStatus: 'QUEUED' },
+      });
+
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ARTIST',
+        entityId: artist.id,
+        status: 'QUEUED',
+        timestamp: new Date().toISOString(),
+        entityName: artist.name,
       });
 
       console.log(

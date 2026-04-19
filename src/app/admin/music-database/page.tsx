@@ -210,6 +210,18 @@ function isEnrichmentStaleOnLoad(item: {
   );
 }
 
+/**
+ * Debug panel: tracks how long items have been IN_PROGRESS/QUEUED with a live timer.
+ * Controlled by NEXT_PUBLIC_ENRICHMENT_DEBUG env var.
+ */
+function EnrichmentDebugPanel() {
+  return (
+    <div className='mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500'>
+      empty for now
+    </div>
+  );
+}
+
 function getStatusIcon(status: string) {
   switch (status) {
     case 'COMPLETED':
@@ -477,10 +489,7 @@ export default function MusicDatabasePage() {
         };
 
         // Force refetch relevant queries
-        console.log('[SSE] Event received:', data.entityType, data.entityId, data.status, data.entityName);
         if (data.entityType === 'ALBUM') {
-          const albumQueries = queryClient.getQueryCache().findAll({ queryKey: ['SearchAlbumsAdmin'] });
-          console.log('[SSE] Found album queries to refetch:', albumQueries.length, albumQueries.map(q => q.queryKey));
           queryClient.refetchQueries({ queryKey: ['SearchAlbumsAdmin'] });
           queryClient.refetchQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
         } else if (data.entityType === 'ARTIST') {
@@ -1541,6 +1550,9 @@ export default function MusicDatabasePage() {
           </span>
           <span>{sseConnected ? 'Live updates connected' : 'Connecting to live updates...'}</span>
         </div>
+        {process.env.NEXT_PUBLIC_ENRICHMENT_DEBUG === 'true' && (
+          <EnrichmentDebugPanel />
+        )}
       </div>
 
       {/* Database Stats */}
