@@ -276,7 +276,7 @@ export default function AlbumModal({
     // Only poll if enrichment is in progress
     const shouldPoll =
       albumState.enrichmentStatus === EnrichmentStatus.InProgress ||
-      albumState.enrichmentStatus === EnrichmentStatus.Pending;
+      albumState.enrichmentStatus === EnrichmentStatus.Queued;
 
     console.log('[AlbumModal] Polling check:', {
       shouldPoll,
@@ -1003,12 +1003,12 @@ export default function AlbumModal({
                         }`}
                       >
                         {albumState.enrichmentStatus ||
-                          EnrichmentStatus.Pending}
+                          EnrichmentStatus.Unenriched}
                       </span>
                       {(albumState.enrichmentStatus ===
                         EnrichmentStatus.InProgress ||
                         albumState.enrichmentStatus ===
-                          EnrichmentStatus.Pending) && (
+                          EnrichmentStatus.Queued) && (
                         <Loader2 className='h-3 w-3 animate-spin text-amber-400' />
                       )}
                     </div>

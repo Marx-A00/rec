@@ -1186,7 +1186,8 @@ export enum EnrichmentStatus {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   InProgress = 'IN_PROGRESS',
-  Pending = 'PENDING',
+  Queued = 'QUEUED',
+  Unenriched = 'UNENRICHED',
 }
 
 export enum EnrichmentType {
@@ -6130,6 +6131,7 @@ export type SearchAlbumsAdminQuery = {
     dataQuality?: DataQuality | null;
     enrichmentStatus?: EnrichmentStatus | null;
     lastEnriched?: Date | null;
+    updatedAt: Date;
     needsEnrichment: boolean;
     trackCount?: number | null;
     label?: string | null;
@@ -6167,6 +6169,7 @@ export type SearchArtistsAdminQuery = {
     dataQuality?: DataQuality | null;
     enrichmentStatus?: EnrichmentStatus | null;
     lastEnriched?: Date | null;
+    updatedAt: Date;
     needsEnrichment: boolean;
     albumCount: number;
     trackCount: number;
@@ -13706,6 +13709,7 @@ export const SearchAlbumsAdminDocument = `
     dataQuality
     enrichmentStatus
     lastEnriched
+    updatedAt
     needsEnrichment
     trackCount
     label
@@ -13821,6 +13825,7 @@ export const SearchArtistsAdminDocument = `
     dataQuality
     enrichmentStatus
     lastEnriched
+    updatedAt
     needsEnrichment
     albumCount
     trackCount

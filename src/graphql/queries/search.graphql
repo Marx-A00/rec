@@ -150,6 +150,7 @@ query SearchAlbumsAdmin(
     dataQuality
     enrichmentStatus
     lastEnriched
+    updatedAt
     needsEnrichment
     trackCount
     label
@@ -195,6 +196,7 @@ query SearchArtistsAdmin(
     dataQuality
     enrichmentStatus
     lastEnriched
+    updatedAt
     needsEnrichment
     albumCount
     trackCount

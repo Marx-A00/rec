@@ -368,7 +368,7 @@ async function findOrCreateEnrichedAlbum(
     discogsId: discogsData.discogsId,
     source: 'DISCOGS',
     dataQuality: 'MEDIUM',
-    enrichmentStatus: 'PENDING',
+    enrichmentStatus: 'UNENRICHED',
   };
 
   // Enrich with MusicBrainz data if found
@@ -493,7 +493,7 @@ async function findOrCreateArtist(
     name: artistName,
     source: 'DISCOGS',
     dataQuality: 'MEDIUM',
-    enrichmentStatus: 'PENDING',
+    enrichmentStatus: 'UNENRICHED',
   };
 
   // Enrich with MusicBrainz data if available

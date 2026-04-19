@@ -275,7 +275,7 @@ const tasks: TaskConfig[] = [
         { id: string; title: string }[]
       >`
         SELECT id, title FROM albums 
-        WHERE enrichment_status = 'PENDING' AND source = 'DISCOGS'
+        WHERE enrichment_status = 'UNENRICHED' AND source = 'DISCOGS'
       `;
 
       if (pending.length === 0) {
@@ -300,7 +300,7 @@ const tasks: TaskConfig[] = [
       ctx.log(`Processing ${pending.length} albums...`);
       await ctx.prisma.$executeRaw`
         UPDATE albums SET enrichment_status = 'COMPLETED', data_quality = 'MEDIUM', updated_at = NOW()
-        WHERE enrichment_status = 'PENDING' AND source = 'DISCOGS'
+        WHERE enrichment_status = 'UNENRICHED' AND source = 'DISCOGS'
       `;
 
       return {
@@ -912,7 +912,7 @@ const tasks: TaskConfig[] = [
 
         await ctx.prisma.$executeRaw`
           UPDATE albums 
-          SET enrichment_status = 'PENDING', updated_at = NOW()
+          SET enrichment_status = 'UNENRICHED', updated_at = NOW()
           WHERE id = ANY(${batchIds}::uuid[])
         `;
 
@@ -929,7 +929,7 @@ const tasks: TaskConfig[] = [
         warnings: [
           'Albums will be processed at 1 request/second',
           'Monitor progress: pnpm queue:dev (Bull Board at localhost:3001)',
-          "Or query: SELECT COUNT(*) FROM albums WHERE enrichment_status = 'PENDING'",
+          "Or query: SELECT COUNT(*) FROM albums WHERE enrichment_status = 'UNENRICHED'",
         ],
       };
     },
@@ -982,7 +982,7 @@ const tasks: TaskConfig[] = [
       const ids = tracklessWithUsers.map(a => a.id);
       await ctx.prisma.$executeRaw`
         UPDATE albums 
-        SET enrichment_status = 'PENDING', updated_at = NOW()
+        SET enrichment_status = 'UNENRICHED', updated_at = NOW()
         WHERE id = ANY(${ids}::uuid[])
       `;
 

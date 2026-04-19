@@ -31,6 +31,7 @@ import {
   Eye,
   ExternalLink,
   Wrench,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -125,8 +126,9 @@ interface AlbumSearchResult {
   musicbrainzId: string | null;
   spotifyId: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   lastEnriched: string | null;
+  updatedAt: string;
   needsEnrichment: boolean;
   artists: Array<{
     artist: {
@@ -146,8 +148,9 @@ interface ArtistSearchResult {
   spotifyId: string | null;
   imageUrl: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   lastEnriched: string | null;
+  updatedAt: string;
   needsEnrichment: boolean;
   albumCount: number;
   trackCount: number;
@@ -188,6 +191,80 @@ interface DatabaseStats {
 }
 
 type SearchType = 'albums' | 'artists' | 'tracks';
+
+const ENRICHMENT_STALE_ON_LOAD_MS = 30 * 60 * 1000; // 30 minutes
+
+function isEnrichingStatus(status: string | null | undefined): boolean {
+  return status === 'QUEUED' || status === 'IN_PROGRESS';
+}
+
+/** Page-load staleness: if IN_PROGRESS/QUEUED for >30 min, something crashed before we opened the page */
+function isEnrichmentStaleOnLoad(item: {
+  enrichmentStatus?: string | null;
+  updatedAt?: unknown;
+}): boolean {
+  if (!isEnrichingStatus(item.enrichmentStatus)) return false;
+  return (
+    Date.now() - new Date(item.updatedAt as string).getTime() >
+    ENRICHMENT_STALE_ON_LOAD_MS
+  );
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'COMPLETED':
+    case 'SUCCESS':
+      return <CheckCircle className='h-4 w-4 text-green-500' />;
+    case 'IN_PROGRESS':
+      return <RefreshCcw className='h-4 w-4 text-yellow-500 animate-spin' />;
+    case 'QUEUED':
+      return <Clock className='h-4 w-4 text-yellow-400' />;
+    case 'FAILED':
+      return <AlertCircle className='h-4 w-4 text-red-500' />;
+    case 'UNENRICHED':
+      return <Clock className='h-4 w-4 text-blue-400' />;
+    case 'NO_DATA_AVAILABLE':
+      return <AlertCircle className='h-4 w-4 text-gray-400' />;
+    case 'SKIPPED':
+      return <Info className='h-4 w-4 text-zinc-500' />;
+    default:
+      return <Info className='h-4 w-4 text-zinc-400' />;
+  }
+}
+
+function EnrichmentStatusCell({
+  item,
+}: {
+  item: AlbumSearchResult | ArtistSearchResult;
+}) {
+  const stale = isEnrichmentStaleOnLoad(item);
+  const active = isEnrichingStatus(item.enrichmentStatus) && !stale;
+  const icon = stale ? (
+    <AlertCircle className='h-4 w-4 text-orange-400' />
+  ) : (
+    getStatusIcon(item.enrichmentStatus)
+  );
+  const label = stale
+    ? `STALE (${formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true })})`
+    : item.enrichmentStatus;
+
+  return (
+    <div className='flex items-center gap-1.5'>
+      {active && (
+        <span className='relative flex h-2 w-2'>
+          <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75' />
+          <span className='relative inline-flex rounded-full h-2 w-2 bg-yellow-500' />
+        </span>
+      )}
+      {icon}
+      <span
+        className={`text-xs ${stale ? 'text-orange-400' : active ? 'text-yellow-300' : 'text-zinc-300'}`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default function MusicDatabasePage() {
   // Get URL search params for direct navigation
@@ -233,6 +310,7 @@ export default function MusicDatabasePage() {
   const [previewingItems, setPreviewingItems] = useState<Set<string>>(
     new Set()
   );
+
   const [previewResults, setPreviewResults] = useState<
     Map<string, PreviewEnrichmentResult>
   >(new Map());
@@ -317,16 +395,6 @@ export default function MusicDatabasePage() {
     },
     {
       enabled: activeTab === 'albums',
-      refetchInterval: query => {
-        // Enable polling if any albums are pending or in progress
-        const albums = query.state.data?.searchAlbums || [];
-        const hasActiveEnrichment = albums.some(
-          (a: any) =>
-            a.enrichmentStatus === 'IN_PROGRESS' ||
-            a.enrichmentStatus === 'PENDING'
-        );
-        return hasActiveEnrichment ? 3000 : false; // Poll every 3 seconds
-      },
     }
   );
 
@@ -353,16 +421,6 @@ export default function MusicDatabasePage() {
     },
     {
       enabled: activeTab === 'artists',
-      refetchInterval: query => {
-        // Enable polling if any artists are pending or in progress
-        const artists = query.state.data?.searchArtists || [];
-        const hasActiveEnrichment = artists.some(
-          (a: any) =>
-            a.enrichmentStatus === 'IN_PROGRESS' ||
-            a.enrichmentStatus === 'PENDING'
-        );
-        return hasActiveEnrichment ? 3000 : false;
-      },
     }
   );
 
@@ -398,48 +456,70 @@ export default function MusicDatabasePage() {
   const displayArtists = artists.slice(0, itemsPerPage);
   const displayTracks = tracks.slice(0, itemsPerPage);
 
-  // Check if any items are currently being enriched
-  const hasInProgressAlbums = displayAlbums.some(
-    (album: any) => album.enrichmentStatus === 'IN_PROGRESS'
-  );
-  const hasInProgressArtists = displayArtists.some(
-    (artist: any) => artist.enrichmentStatus === 'IN_PROGRESS'
-  );
-
-  // Track enrichment completions and show toast notifications
+  // SSE: Real-time enrichment status updates via Server-Sent Events
+  const [sseConnected, setSseConnected] = React.useState(false);
   const previousStatusesRef = React.useRef<Map<string, string>>(new Map());
 
   React.useEffect(() => {
-    const currentItems =
-      activeTab === 'albums' ? displayAlbums : displayArtists;
+    const eventSource = new EventSource('/api/admin/enrichment/events');
 
-    currentItems.forEach((item: any) => {
-      const previousStatus = previousStatusesRef.current.get(item.id);
-      const currentStatus = item.enrichmentStatus;
+    eventSource.onopen = () => {
+      setSseConnected(true);
+    };
 
-      // Detect completion: was IN_PROGRESS, now is a terminal state
-      if (previousStatus === 'IN_PROGRESS' && currentStatus !== 'IN_PROGRESS') {
-        const itemName = item.title || item.name;
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as {
+          entityType: 'ALBUM' | 'ARTIST';
+          entityId: string;
+          status: string;
+          entityName?: string;
+        };
 
-        if (currentStatus === 'COMPLETED' || currentStatus === 'SUCCESS') {
-          toast.success(`${itemName} enriched successfully!`, {
-            description: 'New metadata and images have been loaded',
-          });
-        } else if (currentStatus === 'FAILED') {
-          toast.error(`Failed to enrich ${itemName}`, {
-            description: 'Check the enrichment logs for details',
-          });
-        } else if (currentStatus === 'NO_DATA_AVAILABLE') {
-          toast.info(`No additional data found for ${itemName}`, {
-            description: 'External sources did not have more information',
-          });
+        // Force refetch relevant queries
+        console.log('[SSE] Event received:', data.entityType, data.entityId, data.status, data.entityName);
+        if (data.entityType === 'ALBUM') {
+          const albumQueries = queryClient.getQueryCache().findAll({ queryKey: ['SearchAlbumsAdmin'] });
+          console.log('[SSE] Found album queries to refetch:', albumQueries.length, albumQueries.map(q => q.queryKey));
+          queryClient.refetchQueries({ queryKey: ['SearchAlbumsAdmin'] });
+          queryClient.refetchQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
+        } else if (data.entityType === 'ARTIST') {
+          queryClient.refetchQueries({ queryKey: ['SearchArtistsAdmin'] });
+          queryClient.refetchQueries({ queryKey: ['GetArtistDetails'] });
         }
-      }
+        queryClient.invalidateQueries({ queryKey: ['GetDatabaseStats'] });
 
-      // Update tracking
-      previousStatusesRef.current.set(item.id, currentStatus);
-    });
-  }, [displayAlbums, displayArtists, activeTab]);
+        // Toast on completion/failure transitions
+        const prev = previousStatusesRef.current.get(data.entityId);
+        if (prev === 'IN_PROGRESS' && data.status !== 'IN_PROGRESS') {
+          const name = data.entityName || 'Item';
+          if (data.status === 'COMPLETED') {
+            toast.success(`${name} enriched successfully!`, {
+              description: 'New metadata and images have been loaded',
+            });
+          } else if (data.status === 'FAILED') {
+            toast.error(`Failed to enrich ${name}`, {
+              description: 'Check the enrichment logs for details',
+            });
+          }
+        }
+
+        previousStatusesRef.current.set(data.entityId, data.status);
+      } catch (err) {
+        console.warn('Failed to parse SSE event:', err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      setSseConnected(false);
+      // EventSource auto-reconnects natively
+    };
+
+    return () => {
+      eventSource.close();
+      setSseConnected(false);
+    };
+  }, [queryClient]);
 
   // Loading state
   const loading = albumsLoading || artistsLoading || tracksLoading;
@@ -857,25 +937,6 @@ export default function MusicDatabasePage() {
     );
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-      case 'SUCCESS':
-        return <CheckCircle className='h-4 w-4 text-green-500' />;
-      case 'IN_PROGRESS':
-        return <RefreshCcw className='h-4 w-4 text-yellow-500 animate-spin' />;
-      case 'FAILED':
-        return <AlertCircle className='h-4 w-4 text-red-500' />;
-      case 'PENDING':
-        return <Clock className='h-4 w-4 text-blue-400' />;
-      case 'NO_DATA_AVAILABLE':
-        return <AlertCircle className='h-4 w-4 text-gray-400' />;
-      case 'SKIPPED':
-        return <Info className='h-4 w-4 text-zinc-500' />;
-      default:
-        return <Info className='h-4 w-4 text-zinc-400' />;
-    }
-  };
 
   const formatDuration = (ms: number | null) => {
     if (!ms) return '-';
@@ -939,12 +1000,6 @@ export default function MusicDatabasePage() {
       { id: album.id },
       {
         enabled: !!album.id,
-        // Poll while enrichment is pending or in progress
-        refetchInterval:
-          album.enrichmentStatus === 'PENDING' ||
-          album.enrichmentStatus === 'IN_PROGRESS'
-            ? 3000
-            : false,
       }
     );
 
@@ -1225,12 +1280,6 @@ export default function MusicDatabasePage() {
       { id: artist.id },
       {
         enabled: !!artist.id,
-        // Poll while enrichment is pending or in progress
-        refetchInterval:
-          artist.enrichmentStatus === 'PENDING' ||
-          artist.enrichmentStatus === 'IN_PROGRESS'
-            ? 3000
-            : false,
       }
     );
 
@@ -1483,85 +1532,40 @@ export default function MusicDatabasePage() {
         <p className='text-zinc-400 mt-1'>
           Search, manage, and enrich music metadata
         </p>
-        {(hasInProgressAlbums || hasInProgressArtists) && (
-          <div className='mt-3 flex items-center gap-2 text-sm text-yellow-400'>
-            <RefreshCcw className='h-4 w-4 animate-spin' />
-            <span>
-              Auto-refreshing every 3 seconds -{' '}
-              {hasInProgressAlbums &&
-                `${displayAlbums.filter((a: any) => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
-              {hasInProgressAlbums && hasInProgressArtists && ' and '}
-              {hasInProgressArtists &&
-                `${displayArtists.filter((a: any) => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}{' '}
-              currently enriching
-            </span>
-          </div>
-        )}
+        <div className={`mt-3 flex items-center gap-2 text-sm ${sseConnected ? 'text-green-400' : 'text-zinc-500'}`}>
+          <span className='relative flex h-2 w-2'>
+            {sseConnected && (
+              <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75' />
+            )}
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${sseConnected ? 'bg-green-500' : 'bg-zinc-500'}`} />
+          </span>
+          <span>{sseConnected ? 'Live updates connected' : 'Connecting to live updates...'}</span>
+        </div>
       </div>
 
       {/* Database Stats */}
       {stats && (
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-sm font-medium text-white'>
-                Total Albums
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {stats.totalAlbums.toLocaleString()}
-              </div>
-              <p className='text-xs text-zinc-500'>
-                {stats.albumsNeedingEnrichment} need enrichment
-              </p>
-            </CardContent>
-          </Card>
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-sm font-medium text-white'>
-                Total Artists
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {stats.totalArtists.toLocaleString()}
-              </div>
-              <p className='text-xs text-zinc-500'>
-                {stats.artistsNeedingEnrichment} need enrichment
-              </p>
-            </CardContent>
-          </Card>
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-sm font-medium text-white'>
-                Total Tracks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {stats.totalTracks.toLocaleString()}
-              </div>
-              <p className='text-xs text-zinc-500'>
-                {stats.recentlyEnriched} enriched today
-              </p>
-            </CardContent>
-          </Card>
-          <Card className='bg-zinc-900 border-zinc-800'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-sm font-medium text-white'>
-                Data Quality
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-white'>
-                {(stats.averageDataQuality * 100).toFixed(0)}%
-              </div>
-              <p className='text-xs text-zinc-500'>
-                {stats.failedEnrichments} failed enrichments
-              </p>
-            </CardContent>
-          </Card>
+        <div className='flex flex-wrap gap-4 mb-4 text-sm'>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-zinc-500'>Albums</span>
+            <span className='font-semibold text-white'>{stats.totalAlbums.toLocaleString()}</span>
+            <span className='text-zinc-600 text-xs'>({stats.albumsNeedingEnrichment} need enrichment)</span>
+          </div>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-zinc-500'>Artists</span>
+            <span className='font-semibold text-white'>{stats.totalArtists.toLocaleString()}</span>
+            <span className='text-zinc-600 text-xs'>({stats.artistsNeedingEnrichment} need enrichment)</span>
+          </div>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-zinc-500'>Tracks</span>
+            <span className='font-semibold text-white'>{stats.totalTracks.toLocaleString()}</span>
+            <span className='text-zinc-600 text-xs'>({stats.recentlyEnriched} enriched today)</span>
+          </div>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-zinc-500'>Quality</span>
+            <span className='font-semibold text-white'>{(stats.averageDataQuality * 100).toFixed(0)}%</span>
+            <span className='text-zinc-600 text-xs'>({stats.failedEnrichments} failed)</span>
+          </div>
         </div>
       )}
 
@@ -1650,7 +1654,8 @@ export default function MusicDatabasePage() {
                     <SelectItem value='all'>All Status</SelectItem>
                     <SelectItem value='COMPLETED'>Completed</SelectItem>
                     <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
-                    <SelectItem value='PENDING'>Pending</SelectItem>
+                    <SelectItem value='QUEUED'>Queued</SelectItem>
+                    <SelectItem value='UNENRICHED'>Unenriched</SelectItem>
                     <SelectItem value='FAILED'>Failed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1976,12 +1981,7 @@ export default function MusicDatabasePage() {
                           )}
                         </TableCell>
                         <TableCell className='whitespace-nowrap pl-4'>
-                          <div className='flex items-center gap-1.5'>
-                            {getStatusIcon(album.enrichmentStatus)}
-                            <span className='text-xs text-zinc-300'>
-                              {album.enrichmentStatus}
-                            </span>
-                          </div>
+                          <EnrichmentStatusCell item={album} />
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
                           <div className='flex items-center gap-2'>
@@ -2022,9 +2022,6 @@ export default function MusicDatabasePage() {
                                   <Button
                                     size='sm'
                                     variant='outline'
-                                    disabled={
-                                      album.enrichmentStatus === 'IN_PROGRESS'
-                                    }
                                     className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
                                   >
                                     <RefreshCcw className='h-3 w-3 mr-1' />
@@ -2035,16 +2032,6 @@ export default function MusicDatabasePage() {
                                 <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
                                   <DropdownMenuItem
                                     onClick={() =>
-                                      handleEnrichItem(album.id, 'album')
-                                    }
-                                    disabled={!album.needsEnrichment}
-                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                  >
-                                    <RefreshCcw className='h-3 w-3 mr-2' />
-                                    Enrich
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
                                       handleEnrichItem(
                                         album.id,
                                         'album',
@@ -2052,10 +2039,10 @@ export default function MusicDatabasePage() {
                                         true
                                       )
                                     }
-                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
                                   >
-                                    <Zap className='h-3 w-3 mr-2' />
-                                    Force Re-Enrich
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -2078,6 +2065,39 @@ export default function MusicDatabasePage() {
                                     )}
                                     Preview Enrichment
                                   </DropdownMenuItem>
+                                  {(album.enrichmentStatus === 'QUEUED' ||
+                                    album.enrichmentStatus ===
+                                      'IN_PROGRESS' ||
+                                    isEnrichmentStaleOnLoad(album)) && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleResetEnrichment(
+                                          album.id,
+                                          'album'
+                                        )
+                                      }
+                                      className='text-red-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    >
+                                      <XCircle className='h-3 w-3 mr-2' />
+                                      Cancel Enrichment
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isEnrichmentStaleOnLoad(album) && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleEnrichItem(
+                                          album.id,
+                                          'album',
+                                          EnrichmentPriority.High,
+                                          true
+                                        )
+                                      }
+                                      className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    >
+                                      <RefreshCcw className='h-3 w-3 mr-2' />
+                                      Retry Enrichment
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
                                     onClick={() =>
                                       window.open(
@@ -2241,12 +2261,7 @@ export default function MusicDatabasePage() {
                           )}
                         </TableCell>
                         <TableCell className='whitespace-nowrap pl-4'>
-                          <div className='flex items-center gap-1.5'>
-                            {getStatusIcon(artist.enrichmentStatus)}
-                            <span className='text-xs text-zinc-300'>
-                              {artist.enrichmentStatus}
-                            </span>
-                          </div>
+                          <EnrichmentStatusCell item={artist} />
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
                           <div className='flex items-center gap-1'>
@@ -2286,9 +2301,6 @@ export default function MusicDatabasePage() {
                                   <Button
                                     size='sm'
                                     variant='outline'
-                                    disabled={
-                                      artist.enrichmentStatus === 'IN_PROGRESS'
-                                    }
                                     className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
                                   >
                                     <RefreshCcw className='h-3 w-3 mr-1' />
@@ -2299,16 +2311,6 @@ export default function MusicDatabasePage() {
                                 <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
                                   <DropdownMenuItem
                                     onClick={() =>
-                                      handleEnrichItem(artist.id, 'artist')
-                                    }
-                                    disabled={!artist.needsEnrichment}
-                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                  >
-                                    <RefreshCcw className='h-3 w-3 mr-2' />
-                                    Enrich
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
                                       handleEnrichItem(
                                         artist.id,
                                         'artist',
@@ -2316,10 +2318,10 @@ export default function MusicDatabasePage() {
                                         true
                                       )
                                     }
-                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
                                   >
-                                    <Zap className='h-3 w-3 mr-2' />
-                                    Force Re-Enrich
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -2342,6 +2344,39 @@ export default function MusicDatabasePage() {
                                     )}
                                     Preview Enrichment
                                   </DropdownMenuItem>
+                                  {(artist.enrichmentStatus === 'QUEUED' ||
+                                    artist.enrichmentStatus ===
+                                      'IN_PROGRESS' ||
+                                    isEnrichmentStaleOnLoad(artist)) && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleResetEnrichment(
+                                          artist.id,
+                                          'artist'
+                                        )
+                                      }
+                                      className='text-red-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    >
+                                      <XCircle className='h-3 w-3 mr-2' />
+                                      Cancel Enrichment
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isEnrichmentStaleOnLoad(artist) && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleEnrichItem(
+                                          artist.id,
+                                          'artist',
+                                          EnrichmentPriority.High,
+                                          true
+                                        )
+                                      }
+                                      className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                    >
+                                      <RefreshCcw className='h-3 w-3 mr-2' />
+                                      Retry Enrichment
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
                                     onClick={() =>
                                       window.open(

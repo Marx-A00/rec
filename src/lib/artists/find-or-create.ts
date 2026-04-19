@@ -148,7 +148,7 @@ export async function findOrCreateArtist(
       cloudflareImageId: fields.cloudflareImageId ?? undefined,
       source: fields.source, // undefined → Prisma uses schema default (MUSICBRAINZ)
       dataQuality: fields.dataQuality ?? 'LOW',
-      enrichmentStatus: fields.enrichmentStatus ?? 'PENDING',
+      enrichmentStatus: fields.enrichmentStatus ?? 'UNENRICHED',
       lastEnriched: fields.lastEnriched ?? null,
       biography: fields.biography ?? undefined,
       genres: fields.genres ?? undefined,
@@ -249,6 +249,12 @@ export async function runPostCreateSideEffects(
           attempts: 3,
         }
       );
+
+      // Mark as QUEUED now that the job is in-flight
+      await globalPrisma.artist.update({
+        where: { id: artist.id },
+        data: { enrichmentStatus: 'QUEUED' },
+      });
 
       console.log(
         chalk.magenta(

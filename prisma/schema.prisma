@@ -249,7 +249,7 @@ model Artist {
   sourceUrl        String?                  @map("source_url")
   submittedBy      String?                  @map("submitted_by") @db.Uuid
   dataQuality      DataQuality?             @default(LOW) @map("data_quality")
-  enrichmentStatus EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
+  enrichmentStatus EnrichmentStatus?        @default(UNENRICHED) @map("enrichment_status")
   lastEnriched     DateTime?                @map("last_enriched")
   createdAt        DateTime                 @default(now()) @map("created_at")
   updatedAt        DateTime                 @updatedAt @map("updated_at")
@@ -290,7 +290,7 @@ model Album {
   sourceUrl             String?                  @map("source_url")
   submittedBy           String?                  @map("submitted_by") @db.Uuid
   dataQuality           DataQuality?             @default(LOW) @map("data_quality")
-  enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
+  enrichmentStatus      EnrichmentStatus?        @default(UNENRICHED) @map("enrichment_status")
   lastEnriched          DateTime?                @map("last_enriched")
   metadata              Json?                    // Sync tracking - see src/types/album-metadata.ts for structure
   gameStatus            AlbumGameStatus       @default(NONE) @map("game_status")
@@ -335,7 +335,7 @@ model Track {
   sourceUrl        String?                  @map("source_url")
   submittedBy      String?                  @map("submitted_by") @db.Uuid
   dataQuality      DataQuality              @default(LOW) @map("data_quality")
-  enrichmentStatus EnrichmentStatus         @default(PENDING) @map("enrichment_status")
+  enrichmentStatus EnrichmentStatus         @default(UNENRICHED) @map("enrichment_status")
   lastEnriched     DateTime?                @map("last_enriched")
   energy           Float?
   valence          Float?
@@ -489,7 +489,8 @@ enum DataQuality {
 }
 
 enum EnrichmentStatus {
-  PENDING
+  UNENRICHED
+  QUEUED
   IN_PROGRESS
   COMPLETED
   FAILED

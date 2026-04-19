@@ -1160,7 +1160,8 @@ export enum EnrichmentStatus {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   InProgress = 'IN_PROGRESS',
-  Pending = 'PENDING',
+  Queued = 'QUEUED',
+  Unenriched = 'UNENRICHED',
 }
 
 export enum EnrichmentType {

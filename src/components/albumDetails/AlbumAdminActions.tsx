@@ -209,7 +209,7 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
                         : 'text-zinc-400'
                 }`}
               >
-                {albumState.enrichmentStatus || EnrichmentStatus.Pending}
+                {albumState.enrichmentStatus || EnrichmentStatus.Unenriched}
               </span>
             </div>
             {albumState.dataQuality && (

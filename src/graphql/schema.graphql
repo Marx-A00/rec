@@ -716,7 +716,8 @@ enum DataQuality {
 }
 
 enum EnrichmentStatus {
-  PENDING
+  UNENRICHED
+  QUEUED
   IN_PROGRESS
   COMPLETED
   FAILED

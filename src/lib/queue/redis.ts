@@ -113,6 +113,21 @@ class RedisManager {
   }
 
   /**
+   * Create a Redis connection for pub/sub subscribers.
+   * Subscriber connections can't do normal commands, so they must be separate.
+   * No ping interval needed — subscription messages keep the connection alive.
+   */
+  public createSubscriberConnection(): Redis {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return this.getMockClient();
+    }
+
+    const redis = new Redis(this.config);
+    this.setupEventHandlers(redis);
+    return redis;
+  }
+
+  /**
    * Create a new Redis connection (for BullMQ which needs separate connections)
    * Returns a mock client during build time
    */
@@ -247,6 +262,10 @@ export const redis = redisManager.getClient();
 
 // Export connection creator for BullMQ
 export const createRedisConnection = () => redisManager.createConnection();
+
+// Export subscriber connection creator for pub/sub (SSE)
+export const createRedisSubscriber = () =>
+  redisManager.createSubscriberConnection();
 
 // Export types
 export type { Redis };

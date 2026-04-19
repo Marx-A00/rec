@@ -1127,7 +1127,8 @@ export const resolvers: Resolvers = {
         !parent.imageUrl ||
         !parent.cloudflareImageId ||
         parent.dataQuality === 'LOW' ||
-        parent.enrichmentStatus === 'PENDING' ||
+        parent.enrichmentStatus === 'UNENRICHED' ||
+        parent.enrichmentStatus === 'QUEUED' ||
         parent.enrichmentStatus === 'FAILED'
       );
     },
@@ -1176,7 +1177,8 @@ export const resolvers: Resolvers = {
         !parent.coverArtUrl ||
         !parent.cloudflareImageId ||
         parent.dataQuality === 'LOW' ||
-        parent.enrichmentStatus === 'PENDING' ||
+        parent.enrichmentStatus === 'UNENRICHED' ||
+        parent.enrichmentStatus === 'QUEUED' ||
         parent.enrichmentStatus === 'FAILED'
       );
     },

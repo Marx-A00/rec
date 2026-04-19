@@ -11,7 +11,7 @@ export interface QualityIdentifiers {
 
 export interface InitialQualityFields {
   dataQuality: 'LOW' | 'MEDIUM';
-  enrichmentStatus: 'PENDING';
+  enrichmentStatus: 'UNENRICHED';
   lastEnriched: null;
 }
 
@@ -21,7 +21,7 @@ export interface InitialQualityFields {
  * Rules:
  *   - Any authoritative ID present (musicbrainzId, discogsId, spotifyId) → MEDIUM
  *   - No authoritative IDs → LOW (needs enrichment)
- *   - enrichmentStatus always starts PENDING
+ *   - enrichmentStatus always starts UNENRICHED
  *   - lastEnriched always starts null
  */
 export function getInitialQuality(
@@ -36,7 +36,7 @@ export function getInitialQuality(
 
   return {
     dataQuality,
-    enrichmentStatus: 'PENDING',
+    enrichmentStatus: 'UNENRICHED',
     lastEnriched: null,
   };
 }

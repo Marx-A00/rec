@@ -349,6 +349,12 @@ export async function runPostCreateSideEffects(
         attempts: 3,
       });
 
+      // Mark as QUEUED now that the job is in-flight
+      await globalPrisma.album.update({
+        where: { id: album.id },
+        data: { enrichmentStatus: 'QUEUED' },
+      });
+
       console.log(
         chalk.cyan(
           `[ALBUM-HELPER] Queued CHECK_ALBUM_ENRICHMENT for "${album.title}" via ${caller}`

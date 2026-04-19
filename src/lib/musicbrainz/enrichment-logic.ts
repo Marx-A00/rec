@@ -19,7 +19,8 @@ export interface AlbumEnrichmentData {
   releaseDate: Date | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   enrichmentStatus:
-    | 'PENDING'
+    | 'UNENRICHED'
+    | 'QUEUED'
     | 'IN_PROGRESS'
     | 'COMPLETED'
     | 'FAILED'
@@ -50,7 +51,8 @@ export interface ArtistEnrichmentData {
   cloudflareImageId: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   enrichmentStatus:
-    | 'PENDING'
+    | 'UNENRICHED'
+    | 'QUEUED'
     | 'IN_PROGRESS'
     | 'COMPLETED'
     | 'FAILED'
@@ -86,7 +88,7 @@ export function shouldEnrichAlbum(
  * Synchronous enrichment check (original logic)
  */
 function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
-  // Skip if enrichment is currently in progress
+  // Skip if enrichment is already in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,
@@ -225,7 +227,7 @@ export function shouldEnrichArtist(
 function shouldEnrichArtistSync(
   artist: ArtistEnrichmentData
 ): EnrichmentDecision {
-  // Skip if enrichment is currently in progress
+  // Skip if enrichment is already in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,
@@ -334,7 +336,7 @@ async function shouldEnrichArtistAsync(
 export function analyzeAlbumEnrichmentNeed(
   album: AlbumEnrichmentData
 ): EnrichmentDecision {
-  // Skip if enrichment is currently in progress
+  // Skip if enrichment is already in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,
@@ -400,7 +402,7 @@ export function analyzeAlbumEnrichmentNeed(
 export function analyzeArtistEnrichmentNeed(
   artist: ArtistEnrichmentData
 ): EnrichmentDecision {
-  // Skip if enrichment is currently in progress
+  // Skip if enrichment is already in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,

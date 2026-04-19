@@ -162,7 +162,7 @@ export default function ArtistAdminActions({
                         : 'text-zinc-400'
                 }`}
               >
-                {artistState.enrichmentStatus || EnrichmentStatus.Pending}
+                {artistState.enrichmentStatus || EnrichmentStatus.Unenriched}
               </span>
             </div>
             {artistState.dataQuality && (

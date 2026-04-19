@@ -110,7 +110,8 @@ export async function addAlbumToCollection(
         for (const aa of albumArtists) {
           if (
             aa.artist.dataQuality === 'LOW' &&
-            aa.artist.enrichmentStatus === 'PENDING'
+            (aa.artist.enrichmentStatus === 'UNENRICHED' ||
+              aa.artist.enrichmentStatus === 'QUEUED')
           ) {
             createdArtists.push({ id: aa.artist.id, name: aa.artist.name });
           }

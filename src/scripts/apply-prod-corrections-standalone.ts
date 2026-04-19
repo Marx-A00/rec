@@ -237,7 +237,8 @@ async function applyCorrections() {
                     | 'HIGH'
                     | null,
                   enrichmentStatus: artist.enrichmentStatus as
-                    | 'PENDING'
+                    | 'UNENRICHED'
+                    | 'QUEUED'
                     | 'IN_PROGRESS'
                     | 'COMPLETED'
                     | 'FAILED'

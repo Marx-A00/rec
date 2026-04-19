@@ -44,7 +44,7 @@ async function fixListenLaterAlbums() {
             data: {
               musicbrainzId: album.id,
               title: album.title || 'Loading...',
-              enrichmentStatus: 'PENDING', // Reset enrichment status
+              enrichmentStatus: 'UNENRICHED', // Reset enrichment status
             },
           });
 

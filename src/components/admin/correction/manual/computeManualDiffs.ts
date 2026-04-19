@@ -204,7 +204,7 @@ export function computeManualPreview(
     userId: '',
     source: 'USER_SUBMITTED' as const,
     dataQuality: album.dataQuality ?? ('LOW' as const),
-    enrichmentStatus: 'PENDING' as const,
+    enrichmentStatus: 'UNENRICHED' as const,
     primaryType: album.releaseType,
     secondaryTypes: [],
     country: null,

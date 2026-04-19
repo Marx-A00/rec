@@ -1750,7 +1750,7 @@ export const queryResolvers: QueryResolvers = {
           where: {
             OR: [
               { dataQuality: 'LOW' },
-              { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+              { enrichmentStatus: { in: ['UNENRICHED', 'QUEUED', 'FAILED'] } },
               { musicbrainzId: null },
             ],
           },
@@ -1759,7 +1759,7 @@ export const queryResolvers: QueryResolvers = {
           where: {
             OR: [
               { dataQuality: 'LOW' },
-              { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+              { enrichmentStatus: { in: ['UNENRICHED', 'QUEUED', 'FAILED'] } },
               { musicbrainzId: null },
             ],
           },
@@ -1853,7 +1853,8 @@ export const queryResolvers: QueryResolvers = {
         })),
         needsEnrichment:
           album.dataQuality === 'LOW' ||
-          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'UNENRICHED' ||
+          album.enrichmentStatus === 'QUEUED' ||
           album.enrichmentStatus === 'FAILED' ||
           !album.musicbrainzId,
       }));
@@ -1910,7 +1911,7 @@ export const queryResolvers: QueryResolvers = {
         where.OR = where.OR || [];
         where.OR.push(
           { dataQuality: 'LOW' },
-          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+          { enrichmentStatus: { in: ['UNENRICHED', 'QUEUED', 'FAILED'] } },
           { musicbrainzId: null }
         );
       }
@@ -1951,7 +1952,8 @@ export const queryResolvers: QueryResolvers = {
         })),
         needsEnrichment:
           album.dataQuality === 'LOW' ||
-          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'UNENRICHED' ||
+          album.enrichmentStatus === 'QUEUED' ||
           album.enrichmentStatus === 'FAILED' ||
           !album.musicbrainzId,
       }));
@@ -2007,7 +2009,7 @@ export const queryResolvers: QueryResolvers = {
           { imageUrl: null },
           { cloudflareImageId: null },
           { dataQuality: 'LOW' },
-          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } }
+          { enrichmentStatus: { in: ['UNENRICHED', 'QUEUED', 'FAILED'] } }
         );
       }
 
@@ -2043,7 +2045,8 @@ export const queryResolvers: QueryResolvers = {
           !artist.imageUrl ||
           !artist.cloudflareImageId ||
           artist.dataQuality === 'LOW' ||
-          artist.enrichmentStatus === 'PENDING' ||
+          artist.enrichmentStatus === 'UNENRICHED' ||
+          artist.enrichmentStatus === 'QUEUED' ||
           artist.enrichmentStatus === 'FAILED',
       }));
     } catch (error) {

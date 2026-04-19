@@ -6,6 +6,8 @@ import { Job } from 'bullmq';
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
+import { redis } from '../redis';
+import { publishEnrichmentEvent } from '../enrichment-events';
 import { musicBrainzService } from '../../musicbrainz';
 import {
   shouldEnrichAlbum,
@@ -96,6 +98,12 @@ export async function handleCheckAlbumEnrichment(
     };
   }
 
+  // Touch updatedAt so the admin UI knows this item is still being actively processed
+  await prisma.album.update({
+    where: { id: data.albumId },
+    data: { updatedAt: new Date() },
+  });
+
   // Check if enrichment is needed - force flag bypasses all checks
   const needsEnrichment = data.force || shouldEnrichAlbum(album);
 
@@ -151,6 +159,22 @@ export async function handleCheckAlbumEnrichment(
     };
   } else {
     console.log(`⏭️ Album ${data.albumId} doesn't need enrichment, skipping`);
+
+    // Reset from QUEUED back to COMPLETED since enrichment was skipped
+    if (album.enrichmentStatus === 'QUEUED') {
+      await prisma.album.update({
+        where: { id: data.albumId },
+        data: { enrichmentStatus: 'COMPLETED' },
+      });
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ALBUM',
+        entityId: data.albumId,
+        status: 'COMPLETED',
+        timestamp: new Date().toISOString(),
+        entityName: album.title,
+      });
+    }
+
     return {
       albumId: data.albumId,
       action: 'skipped',
@@ -186,6 +210,12 @@ export async function handleCheckArtistEnrichment(
       reason: 'artist_not_found',
     };
   }
+
+  // Touch updatedAt so the admin UI knows this item is still being actively processed
+  await prisma.artist.update({
+    where: { id: data.artistId },
+    data: { updatedAt: new Date() },
+  });
 
   // Check if enrichment is needed - force flag bypasses all checks
   const needsEnrichment = data.force || shouldEnrichArtist(artist);
@@ -223,6 +253,22 @@ export async function handleCheckArtistEnrichment(
     };
   } else {
     console.log(`⏭️ Artist ${data.artistId} doesn't need enrichment, skipping`);
+
+    // Reset from QUEUED back to COMPLETED since enrichment was skipped
+    if (artist.enrichmentStatus === 'QUEUED') {
+      await prisma.artist.update({
+        where: { id: data.artistId },
+        data: { enrichmentStatus: 'COMPLETED' },
+      });
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ARTIST',
+        entityId: data.artistId,
+        status: 'COMPLETED',
+        timestamp: new Date().toISOString(),
+        entityName: artist.name,
+      });
+    }
+
     return {
       artistId: data.artistId,
       action: 'skipped',
@@ -383,6 +429,13 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
           where: { id: data.albumId },
           data: { enrichmentStatus: 'COMPLETED' },
         });
+        await publishEnrichmentEvent(redis, {
+          entityType: 'ALBUM',
+          entityId: data.albumId,
+          status: 'COMPLETED',
+          timestamp: new Date().toISOString(),
+          entityName: album.title,
+        });
       }
 
       // Log the skip with the reason
@@ -428,6 +481,13 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
   await prisma.album.update({
     where: { id: data.albumId },
     data: { enrichmentStatus: 'IN_PROGRESS' },
+  });
+  await publishEnrichmentEvent(redis, {
+    entityType: 'ALBUM',
+    entityId: data.albumId,
+    status: 'IN_PROGRESS',
+    timestamp: new Date().toISOString(),
+    entityName: album.title,
   });
 
   try {
@@ -913,6 +973,13 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
         lastEnriched: new Date(),
       },
     });
+    await publishEnrichmentEvent(redis, {
+      entityType: 'ALBUM',
+      entityId: data.albumId,
+      status: 'COMPLETED',
+      timestamp: new Date().toISOString(),
+      entityName: album.title,
+    });
 
     console.log(`✅ Album enrichment completed for ${data.albumId}`, {
       hadResult: !!enrichmentResult,
@@ -992,6 +1059,13 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
     await prisma.album.update({
       where: { id: data.albumId },
       data: { enrichmentStatus: 'FAILED' },
+    });
+    await publishEnrichmentEvent(redis, {
+      entityType: 'ALBUM',
+      entityId: data.albumId,
+      status: 'FAILED',
+      timestamp: new Date().toISOString(),
+      entityName: album.title,
     });
 
     // Log failed enrichment
@@ -1074,6 +1148,13 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           where: { id: data.artistId },
           data: { enrichmentStatus: 'COMPLETED' },
         });
+        await publishEnrichmentEvent(redis, {
+          entityType: 'ARTIST',
+          entityId: data.artistId,
+          status: 'COMPLETED',
+          timestamp: new Date().toISOString(),
+          entityName: artist.name,
+        });
       }
 
       // Log the skip with the reason
@@ -1118,6 +1199,13 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   await prisma.artist.update({
     where: { id: data.artistId },
     data: { enrichmentStatus: 'IN_PROGRESS' },
+  });
+  await publishEnrichmentEvent(redis, {
+    entityType: 'ARTIST',
+    entityId: data.artistId,
+    status: 'IN_PROGRESS',
+    timestamp: new Date().toISOString(),
+    entityName: artist.name,
   });
 
   try {
@@ -1272,6 +1360,13 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
         lastEnriched: new Date(),
       },
     });
+    await publishEnrichmentEvent(redis, {
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      status: 'COMPLETED',
+      timestamp: new Date().toISOString(),
+      entityName: artist.name,
+    });
 
     console.log(`✅ Artist enrichment completed for ${data.artistId}`, {
       hadResult: !!enrichmentResult.updateData,
@@ -1351,6 +1446,13 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
     await prisma.artist.update({
       where: { id: data.artistId },
       data: { enrichmentStatus: 'FAILED' },
+    });
+    await publishEnrichmentEvent(redis, {
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      status: 'FAILED',
+      timestamp: new Date().toISOString(),
+      entityName: artist.name,
     });
 
     // Log failed enrichment

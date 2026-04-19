@@ -11,6 +11,8 @@ import {
 } from '@/generated/graphql';
 import { graphqlLogger } from '@/lib/logger';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
+import { redis } from '@/lib/queue/redis';
+import { publishEnrichmentEvent } from '@/lib/queue/enrichment-events';
 import {
   previewAlbumEnrichment,
   previewArtistEnrichment,
@@ -689,7 +691,7 @@ export const mutationResolvers: MutationResolvers = {
           musicbrainzId: input.musicbrainzId,
           // Set initial enrichment data
           dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
-          enrichmentStatus: input.musicbrainzId ? 'COMPLETED' : 'PENDING',
+          enrichmentStatus: input.musicbrainzId ? 'COMPLETED' : 'UNENRICHED',
           lastEnriched: input.musicbrainzId ? new Date() : null,
         },
       });
@@ -1625,7 +1627,8 @@ export const mutationResolvers: MutationResolvers = {
             for (const aa of albumArtists) {
               if (
                 aa.artist.dataQuality === 'LOW' &&
-                aa.artist.enrichmentStatus === 'PENDING'
+                (aa.artist.enrichmentStatus === 'UNENRICHED' ||
+                  aa.artist.enrichmentStatus === 'QUEUED')
               ) {
                 createdArtists.push({ id: aa.artist.id, name: aa.artist.name });
               }
@@ -2103,16 +2106,21 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
-      // If force=true, reset status to PENDING first so enrichment check passes
-      if (force) {
-        await prisma.album.update({
-          where: { id },
-          data: {
-            enrichmentStatus: 'PENDING',
-            lastEnriched: null,
-          },
-        });
-      }
+      // Always reset status to QUEUED and clear lastEnriched — admin triggers always force
+      await prisma.album.update({
+        where: { id },
+        data: {
+          enrichmentStatus: 'QUEUED',
+          lastEnriched: null,
+        },
+      });
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ALBUM',
+        entityId: id,
+        status: 'QUEUED',
+        timestamp: new Date().toISOString(),
+        entityName: album.title,
+      });
 
       const queue = getMusicBrainzQueue();
       const jobPriority =
@@ -2122,7 +2130,7 @@ export const mutationResolvers: MutationResolvers = {
         albumId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
-        force,
+        force: true,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -2183,23 +2191,28 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
-      // If force=true, reset status to PENDING first so enrichment check passes
-      if (force) {
-        await prisma.artist.update({
-          where: { id },
-          data: {
-            enrichmentStatus: 'PENDING',
-            lastEnriched: null,
-          },
-        });
-      }
+      // Always reset status to QUEUED and clear lastEnriched — admin triggers always force
+      await prisma.artist.update({
+        where: { id },
+        data: {
+          enrichmentStatus: 'QUEUED',
+          lastEnriched: null,
+        },
+      });
+      await publishEnrichmentEvent(redis, {
+        entityType: 'ARTIST',
+        entityId: id,
+        status: 'QUEUED',
+        timestamp: new Date().toISOString(),
+        entityName: artist.name,
+      });
 
       const queue = getMusicBrainzQueue();
       const jobData: CheckArtistEnrichmentJobData = {
         artistId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
-        force,
+        force: true,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -2718,7 +2731,7 @@ export const mutationResolvers: MutationResolvers = {
       const album = await prisma.album.update({
         where: { id },
         data: {
-          enrichmentStatus: null,
+          enrichmentStatus: 'UNENRICHED',
           lastEnriched: null,
         },
       });
@@ -2734,7 +2747,7 @@ export const mutationResolvers: MutationResolvers = {
       const artist = await prisma.artist.update({
         where: { id },
         data: {
-          enrichmentStatus: null,
+          enrichmentStatus: 'UNENRICHED',
           lastEnriched: null,
         },
       });

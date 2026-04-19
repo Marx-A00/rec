@@ -393,9 +393,9 @@ export function EnrichmentLogTable({
     {
       enabled: !!(entityType || entityId),
       refetchInterval: query => {
-        // Poll while enrichment is pending or in progress (from parent prop)
+        // Poll while enrichment is actively queued or in progress (from parent prop)
         if (
-          enrichmentStatus === 'PENDING' ||
+          enrichmentStatus === 'QUEUED' ||
           enrichmentStatus === 'IN_PROGRESS'
         ) {
           return 3000;
