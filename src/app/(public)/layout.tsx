@@ -7,6 +7,7 @@ import { auth } from '@/../auth';
 import Sidebar from '@/components/navigation/Sidebar';
 import TopBar from '@/components/navigation/TopBar';
 import { HeaderProvider } from '@/contexts/HeaderContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 import { RecommendationDrawerProvider } from '@/contexts/RecommendationDrawerContext';
 import GlobalRecommendationDrawer from '@/components/GlobalRecommendationDrawer';
 
@@ -44,23 +45,25 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <RecommendationDrawerProvider>
       <HeaderProvider>
-        <div className='min-h-screen bg-black'>
-          {/* Same navigation as main app */}
-          <Sidebar />
-          <TopBar />
+        <SidebarProvider>
+          <div className='min-h-screen bg-black'>
+            {/* Same navigation as main app */}
+            <Sidebar />
+            <TopBar />
 
-          {/* Main Content */}
-          <div
-            className='transition-all duration-300 md:ml-16'
-            id='main-content'
-            role='main'
-          >
-            {children}
+            {/* Main Content */}
+            <div
+              className='transition-all duration-300 md:ml-16'
+              id='main-content'
+              role='main'
+            >
+              {children}
+            </div>
+
+            {/* Global Recommendation Drawer */}
+            <GlobalRecommendationDrawer />
           </div>
-
-          {/* Global Recommendation Drawer */}
-          <GlobalRecommendationDrawer />
-        </div>
+        </SidebarProvider>
       </HeaderProvider>
     </RecommendationDrawerProvider>
   );
