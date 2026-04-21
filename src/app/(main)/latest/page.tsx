@@ -93,7 +93,7 @@ const SORT_OPTIONS: SortOption[] = [
 type Album = GetLatestReleasesQuery['searchAlbums'][number];
 
 export default function LatestReleasesPage() {
-  const [sortValue, setSortValue] = useState('createdAt-desc');
+  const [sortValue, setSortValue] = useState('releaseDate-desc');
 
   const { data, isLoading, error } = useGetLatestReleasesQuery({
     limit: 200,

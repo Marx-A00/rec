@@ -33,7 +33,7 @@ async function getSpotifyTrending(): Promise<SpotifyTrendingData> {
   // Query Album table directly for Spotify-sourced albums
   const albums = await prisma.album.findMany({
     where: { source: { in: ['SPOTIFY', 'LISTENBRAINZ', 'MUSICBRAINZ'] } },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { releaseDate: 'desc' },
     take: 50,
     include: {
       artists: {
