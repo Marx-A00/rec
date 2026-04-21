@@ -1540,6 +1540,7 @@ export const queryResolvers: QueryResolvers = {
           if (activity.type === 'collection_add' && activity.collectionAlbum) {
             if (!settings.showCollections) return false;
             const collection = activity.collectionAlbum.collection;
+            if (!collection) return false;
             if (!collection.isPublic && collection.name !== 'My Collection')
               return false;
             const isListenLater = collection.name === 'Listen Later';
