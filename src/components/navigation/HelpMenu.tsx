@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { HelpCircle, Mail, Info, RotateCcw } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -13,15 +14,32 @@ interface HelpMenuProps {
 
 export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ left: number; bottom: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { startTour } = useTourContext();
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
 
-  // Close menu when clicking outside
+  // Compute dropdown position from button rect
+  const updateMenuPos = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({
+        left: rect.right + 8,
+        bottom: window.innerHeight - rect.bottom,
+      });
+    }
+  }, []);
+
+  // Close menu when clicking outside (handles both inline and portal dropdown)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedInButton = menuRef.current?.contains(target);
+      const clickedInDropdown = dropdownRef.current?.contains(target);
+      if (!clickedInButton && !clickedInDropdown) {
         setIsOpen(false);
       }
     };
@@ -90,12 +108,65 @@ export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
     );
   }
 
-  // Collapsed mode: existing dropdown behavior
+  // Collapsed mode: portal dropdown to escape sidebar overflow
+  const dropdown = isOpen && menuPos && createPortal(
+    <div
+      ref={dropdownRef}
+      className='fixed bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 min-w-[140px]'
+      style={{ left: menuPos.left, bottom: menuPos.bottom }}
+      role='menu'
+      aria-label='Help options'
+    >
+      <Link
+        href='/help'
+        onClick={() => setIsOpen(false)}
+        className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
+        role='menuitem'
+      >
+        <HelpCircle className='h-4 w-4 text-zinc-400' />
+        Help
+      </Link>
+      <Link
+        href='/contact'
+        onClick={() => setIsOpen(false)}
+        className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
+        role='menuitem'
+      >
+        <Mail className='h-4 w-4 text-zinc-400' />
+        Contact
+      </Link>
+      <Link
+        href='/about'
+        onClick={() => setIsOpen(false)}
+        className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
+        role='menuitem'
+      >
+        <Info className='h-4 w-4 text-zinc-400' />
+        About
+      </Link>
+      {isAuthenticated && (
+        <button
+          onClick={handleRestartTour}
+          className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full text-left transition-colors'
+          role='menuitem'
+        >
+          <RotateCcw className='h-4 w-4 text-zinc-400' />
+          Restart Tour
+        </button>
+      )}
+    </div>,
+    document.body
+  );
+
   return (
-    <div className='relative' ref={menuRef}>
+    <div ref={menuRef}>
       {/* Help Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={() => {
+          updateMenuPos();
+          setIsOpen(!isOpen);
+        }}
         className='group flex justify-center items-center transition-all p-2'
         aria-label='Help menu'
         aria-expanded={isOpen}
@@ -104,52 +175,7 @@ export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
         <HelpCircle className='w-6 h-6 text-zinc-500 group-hover:text-cosmic-latte transition-colors' />
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className='absolute bottom-full left-0 mb-2 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 min-w-[140px]'
-          role='menu'
-          aria-label='Help options'
-        >
-          <Link
-            href='/help'
-            onClick={() => setIsOpen(false)}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
-            role='menuitem'
-          >
-            <HelpCircle className='h-4 w-4 text-zinc-400' />
-            Help
-          </Link>
-          <Link
-            href='/contact'
-            onClick={() => setIsOpen(false)}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
-            role='menuitem'
-          >
-            <Mail className='h-4 w-4 text-zinc-400' />
-            Contact
-          </Link>
-          <Link
-            href='/about'
-            onClick={() => setIsOpen(false)}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
-            role='menuitem'
-          >
-            <Info className='h-4 w-4 text-zinc-400' />
-            About
-          </Link>
-          {isAuthenticated && (
-            <button
-              onClick={handleRestartTour}
-              className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full text-left transition-colors'
-              role='menuitem'
-            >
-              <RotateCcw className='h-4 w-4 text-zinc-400' />
-              Restart Tour
-            </button>
-          )}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }

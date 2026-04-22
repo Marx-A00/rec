@@ -48,10 +48,7 @@ export default function MobileCollectionCard({
             >
               {activity.actorName}
             </Link>
-            <span className='text-zinc-400'>
-              {' '}
-              added to {collectionName || 'collection'}
-            </span>
+            <span className='text-zinc-400'> collected</span>
           </p>
           <TimeAgo
             date={activity.createdAt}

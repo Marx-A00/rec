@@ -9,6 +9,7 @@ import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { SmokeBackground } from '@/components/ui/smoke-background';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
+import { getLossPhrase } from '@/lib/uncover/endgame-phrases';
 
 /**
  * Desktop home/landing screen for the Uncover game.
@@ -194,7 +195,7 @@ export function DesktopHomeClient() {
               )}
               {mySession?.won
                 ? `Solved in ${mySession.attemptCount} ${mySession.attemptCount === 1 ? 'attempt' : 'attempts'}`
-                : 'Better luck tomorrow'}
+                : getLossPhrase(new Date().toISOString().split('T')[0])}
             </span>
           </div>
         ) : (

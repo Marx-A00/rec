@@ -7,6 +7,7 @@ import { X, Calendar, Zap, Share2, ChevronLeft, ChevronRight, Archive } from 'lu
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
+import { getWinPhrase, getLossPhrase } from '@/lib/uncover/endgame-phrases';
 import { useSearchGameAlbumsQuery } from '@/generated/graphql';
 import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
@@ -131,11 +132,26 @@ function GameOver({
         {/* Result header */}
         <h2 className='pb-1 text-2xl font-bold text-white'>
           {won
-            ? 'You got it!'
-            : isDaily
-              ? 'Better luck tomorrow'
-              : 'Better luck next time'}
+            ? getWinPhrase(displayDate.toISOString().split('T')[0])
+            : getLossPhrase(isDaily ? displayDate.toISOString().split('T')[0] : undefined)}
         </h2>
+
+        {/* Album info */}
+        {(game.correctAlbumTitle || game.correctAlbumArtist) && (
+          <div className='pb-2'>
+            {game.correctAlbumTitle && (
+              <p className='text-sm font-semibold text-zinc-200'>
+                {game.correctAlbumTitle}
+              </p>
+            )}
+            {game.correctAlbumArtist && (
+              <p className='text-xs text-zinc-400'>
+                {game.correctAlbumArtist}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className='flex items-center gap-2 pb-5'>
           {won ? (
             <>

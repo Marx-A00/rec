@@ -130,6 +130,18 @@ const RATE_LIMIT_CONFIG = {
       10
     ), // 5 minutes
   },
+  // Admin endpoints (very generous — already behind auth + role check)
+  admin: {
+    windowMs: parseInt(process.env.ADMIN_RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
+    maxRequests: parseInt(
+      process.env.ADMIN_RATE_LIMIT_MAX_REQUESTS || '10000',
+      10
+    ), // 10,000 requests per window
+    blockDurationMs: parseInt(
+      process.env.ADMIN_RATE_LIMIT_BLOCK_DURATION_MS || '60000',
+      10
+    ), // 1 minute
+  },
 };
 
 // Define allowed origins for CORS
@@ -414,6 +426,9 @@ function getRateLimitConfig(pathname: string) {
   }
   if (pathname.startsWith('/api/auth/')) {
     return RATE_LIMIT_CONFIG.auth;
+  }
+  if (pathname.startsWith('/api/admin/')) {
+    return RATE_LIMIT_CONFIG.admin;
   }
   if (
     pathname.startsWith('/api/search') ||

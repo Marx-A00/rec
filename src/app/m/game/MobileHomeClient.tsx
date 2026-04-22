@@ -8,6 +8,7 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { TeaserImage } from '@/components/uncover/TeaserImage';
 import { SmokeBackground } from '@/components/ui/smoke-background';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
+import { getLossPhrase } from '@/lib/uncover/endgame-phrases';
 
 /**
  * Mobile home screen for Uncover game.
@@ -60,7 +61,7 @@ export function MobileHomeClient() {
               )}
               {mySession?.won
                 ? `Solved in ${mySession.attemptCount} ${mySession.attemptCount === 1 ? 'attempt' : 'attempts'}`
-                : 'Better luck tomorrow'}
+                : getLossPhrase(new Date().toISOString().split('T')[0])}
             </span>
           </div>
         ) : (

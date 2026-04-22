@@ -179,6 +179,20 @@ export function MobilePlayClient({
               ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
               : `You used all ${game.attemptCount} attempts.`}
           </p>
+          {(game.correctAlbumTitle || game.correctAlbumArtist) && (
+            <div className='mt-2'>
+              {game.correctAlbumTitle && (
+                <p className='text-sm font-semibold text-zinc-200'>
+                  {game.correctAlbumTitle}
+                </p>
+              )}
+              {game.correctAlbumArtist && (
+                <p className='text-xs text-zinc-400'>
+                  {game.correctAlbumArtist}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {challengeImageUrl && game.challengeId && (
