@@ -1931,6 +1931,15 @@ export const mutationResolvers: MutationResolvers = {
       throw new GraphQLError('Cannot follow yourself');
     }
 
+    // Block following deleted users
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { deletedAt: true },
+    });
+    if (!targetUser || targetUser.deletedAt) {
+      throw new GraphQLError('User not found');
+    }
+
     try {
       // Create the follow relationship, activity record, and update counts in a transaction
       const userFollow = await prisma.$transaction(async tx => {

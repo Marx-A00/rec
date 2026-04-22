@@ -46,8 +46,8 @@ export async function GET(
     }
 
     // Check if user exists
-    const targetUser = await prisma.user.findUnique({
-      where: { id: targetUserId },
+    const targetUser = await prisma.user.findFirst({
+      where: { id: targetUserId, deletedAt: null },
       select: {
         id: true,
         name: true,

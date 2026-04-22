@@ -45,8 +45,8 @@ export async function GET(
     }
 
     // Check if user exists
-    const targetUser = await prisma.user.findUnique({
-      where: { id: targetUserId },
+    const targetUser = await prisma.user.findFirst({
+      where: { id: targetUserId, deletedAt: null },
       select: { id: true, username: true },
     });
 
@@ -92,6 +92,7 @@ export async function GET(
       where: {
         followedId: targetUserId,
         createdAt: { gte: startDate },
+        follower: { deletedAt: null },
       },
       select: {
         createdAt: true,
@@ -110,6 +111,7 @@ export async function GET(
       where: {
         followedId: targetUserId,
         createdAt: { lt: startDate },
+        follower: { deletedAt: null },
       },
     });
 

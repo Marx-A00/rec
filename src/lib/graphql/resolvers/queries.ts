@@ -1519,9 +1519,9 @@ export const queryResolvers: QueryResolvers = {
     }
 
     try {
-      // Get users that the current user follows
+      // Get users that the current user follows (exclude soft-deleted)
       const followedUsers = await prisma.userFollow.findMany({
-        where: { followerId: user.id },
+        where: { followerId: user.id, followed: { deletedAt: null } },
         select: { followedId: true },
       });
 
@@ -1622,8 +1622,10 @@ export const queryResolvers: QueryResolvers = {
           break;
         }
 
-        // Apply privacy filters
+        // Apply privacy + soft-delete filters
         const visible = activities.filter(activity => {
+          // Hide activities involving deleted target users (e.g. "followed [deleted user]")
+          if (activity.targetUser?.deletedAt) return false;
           const settings = getSettings(activity.userId);
           if (!settings.showRecentActivity) return false;
           if (activity.type === 'collection_add' && activity.collectionAlbum) {
@@ -1755,9 +1757,9 @@ export const queryResolvers: QueryResolvers = {
     }
 
     try {
-      // Get users that the current user follows
+      // Get users that the current user follows (exclude soft-deleted)
       const followedUsers = await prisma.userFollow.findMany({
-        where: { followerId: user.id },
+        where: { followerId: user.id, followed: { deletedAt: null } },
         select: { followedId: true },
       });
 
