@@ -957,43 +957,131 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // User social queries
-  userFollowers: async (_, { userId, limit = 50, offset = 0 }, { prisma }) => {
+  userFollowers: async (
+    _,
+    { userId, cursor, limit = 20, search, sort = 'recent' },
+    { prisma, user }
+  ) => {
     try {
-      const followers = await prisma.user.findMany({
-        where: {
+      const where: Record<string, unknown> = {
+        followedId: userId,
+        follower: {
           deletedAt: null,
-          following: {
-            some: {
-              followedId: userId,
-            },
-          },
+          ...(search && {
+            username: { contains: search, mode: 'insensitive' },
+          }),
         },
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
+        ...(cursor && { id: { lt: cursor } }),
+      };
+
+      const follows = await prisma.userFollow.findMany({
+        where,
+        take: limit + 1,
+        orderBy:
+          sort === 'alphabetical'
+            ? { follower: { username: 'asc' } }
+            : { createdAt: 'desc' },
+        include: { follower: true },
       });
-      return followers;
+
+      const hasMore = follows.length > limit;
+      const edges = follows.slice(0, limit);
+      const nextCursor = hasMore ? edges[edges.length - 1].id : null;
+
+      // Batch check isFollowing for current user
+      const followerIds = edges.map(f => f.followerId);
+      const currentUserFollows = user
+        ? await prisma.userFollow.findMany({
+            where: {
+              followerId: user.id,
+              followedId: { in: followerIds },
+            },
+            select: { followedId: true },
+          })
+        : [];
+      const isFollowingSet = new Set(
+        currentUserFollows.map(f => f.followedId)
+      );
+
+      const users = edges.map(follow => ({
+        ...follow.follower,
+        followedAt: follow.createdAt,
+        isFollowing: isFollowingSet.has(follow.followerId),
+      }));
+
+      const total = await prisma.userFollow.count({
+        where: {
+          followedId: userId,
+          follower: { deletedAt: null },
+        },
+      });
+
+      return { users, cursor: nextCursor, hasMore, total };
     } catch (error) {
       throw new GraphQLError(`Failed to fetch user followers: ${error}`);
     }
   },
 
-  userFollowing: async (_, { userId, limit = 50, offset = 0 }, { prisma }) => {
+  userFollowing: async (
+    _,
+    { userId, cursor, limit = 20, search, sort = 'recent' },
+    { prisma, user }
+  ) => {
     try {
-      const following = await prisma.user.findMany({
-        where: {
+      const where: Record<string, unknown> = {
+        followerId: userId,
+        followed: {
           deletedAt: null,
-          followers: {
-            some: {
-              followerId: userId,
-            },
-          },
+          ...(search && {
+            username: { contains: search, mode: 'insensitive' },
+          }),
         },
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
+        ...(cursor && { id: { lt: cursor } }),
+      };
+
+      const follows = await prisma.userFollow.findMany({
+        where,
+        take: limit + 1,
+        orderBy:
+          sort === 'alphabetical'
+            ? { followed: { username: 'asc' } }
+            : { createdAt: 'desc' },
+        include: { followed: true },
       });
-      return following;
+
+      const hasMore = follows.length > limit;
+      const edges = follows.slice(0, limit);
+      const nextCursor = hasMore ? edges[edges.length - 1].id : null;
+
+      // Batch check isFollowing for current user
+      const followedIds = edges.map(f => f.followedId);
+      const currentUserFollows = user
+        ? await prisma.userFollow.findMany({
+            where: {
+              followerId: user.id,
+              followedId: { in: followedIds },
+            },
+            select: { followedId: true },
+          })
+        : [];
+      const isFollowingSet = new Set(
+        currentUserFollows.map(f => f.followedId)
+      );
+
+      const users = edges.map(follow => ({
+        ...follow.followed,
+        followedAt: follow.createdAt,
+        isFollowing: isFollowingSet.has(follow.followedId),
+      }));
+
+      const total = await prisma.userFollow.count({
+        where: {
+          followerId: userId,
+          followed: { deletedAt: null },
+        },
+      });
+
+      return { users, cursor: nextCursor, hasMore, total };
     } catch (error) {
       throw new GraphQLError(`Failed to fetch user following: ${error}`);
     }
@@ -1008,6 +1096,7 @@ export const queryResolvers: QueryResolvers = {
       // Get users that both the current user and target user follow
       const mutuals = await prisma.user.findMany({
         where: {
+          deletedAt: null,
           AND: [
             {
               followers: {
@@ -1102,7 +1191,7 @@ export const queryResolvers: QueryResolvers = {
         },
       });
 
-      if (!user) {
+      if (!user || user.deletedAt) {
         throw new GraphQLError('User not found');
       }
 
@@ -1679,10 +1768,11 @@ export const queryResolvers: QueryResolvers = {
         return [];
       }
 
-      // Get recent recommendations from followed users
+      // Get recent recommendations from followed users (exclude soft-deleted)
       const recommendations = await prisma.recommendation.findMany({
         where: {
           userId: { in: followedUserIds },
+          user: { deletedAt: null },
         },
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -1709,9 +1799,6 @@ export const queryResolvers: QueryResolvers = {
         },
       });
 
-      console.log(
-        `Found ${recommendations.length} recommendations from ${followedUserIds.length} followed users`
-      );
       return recommendations;
     } catch (error) {
       console.error('Error fetching following activity:', error);
@@ -4484,6 +4571,245 @@ export const queryResolvers: QueryResolvers = {
     } catch (error) {
       graphqlLogger.error('Failed to fetch archive puzzle:', { error, date });
       throw new GraphQLError(`Failed to fetch archive puzzle: ${error}`);
+    }
+  },
+
+  // =============================================
+  // Discovery queries
+  // =============================================
+
+  trendingUsers: async (_, { limit = 20, timeframe = '7d' }, { prisma, user }) => {
+    try {
+      const timeframeDays = timeframe === '30d' ? 30 : 7;
+      const now = new Date();
+      const startDate = new Date(now.getTime() - timeframeDays * 24 * 60 * 60 * 1000);
+      const midDate = new Date(now.getTime() - (timeframeDays / 2) * 24 * 60 * 60 * 1000);
+
+      const usersWithActivity = await prisma.user.findMany({
+        where: {
+          deletedAt: null,
+          ...(user && { id: { not: user.id } }),
+          OR: [
+            { followers: { some: { createdAt: { gte: startDate } } } },
+            { recommendations: { some: { createdAt: { gte: startDate } } } },
+          ],
+        },
+        include: {
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              recommendations: true,
+            },
+          },
+          followers: {
+            where: { createdAt: { gte: startDate } },
+            select: { createdAt: true },
+          },
+          recommendations: {
+            where: { createdAt: { gte: startDate } },
+            select: {
+              createdAt: true,
+              basisAlbumArtist: true,
+              recommendedAlbumArtist: true,
+              score: true,
+            },
+            take: 20,
+          },
+        },
+        take: limit * 3,
+      });
+
+      const scored = [];
+
+      for (const u of usersWithActivity) {
+        const recentFollowers = u.followers.length;
+        const firstHalf = u.followers.filter(
+          f => f.createdAt >= startDate && f.createdAt <= midDate
+        ).length;
+        const secondHalf = u.followers.filter(f => f.createdAt > midDate).length;
+
+        const followerGrowthRate =
+          firstHalf > 0
+            ? (secondHalf / Math.max(firstHalf, 1)) * 100
+            : secondHalf > 0
+              ? 200
+              : 0;
+
+        const recentRecs = u.recommendations.length;
+        const avgScore =
+          recentRecs > 0
+            ? u.recommendations.reduce((sum, r) => sum + r.score, 0) / recentRecs
+            : 0;
+
+        const recentActivityScore = recentRecs * 10 + avgScore * 2;
+
+        // Extract top artist names from recommendations
+        const artistCounts = new Map();
+        u.recommendations.forEach(rec => {
+          if (rec.basisAlbumArtist) {
+            artistCounts.set(rec.basisAlbumArtist, (artistCounts.get(rec.basisAlbumArtist) || 0) + 1);
+          }
+          if (rec.recommendedAlbumArtist) {
+            artistCounts.set(rec.recommendedAlbumArtist, (artistCounts.get(rec.recommendedAlbumArtist) || 0) + 1);
+          }
+        });
+        const topGenres = Array.from(artistCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([artist]) => artist);
+
+        const baseScore = Math.log(Math.max(u._count.followers, 1)) * 10;
+        const growthBonus = followerGrowthRate * 2;
+        const qualityBonus = avgScore * 5;
+        const trendingScore = baseScore + growthBonus + recentActivityScore + qualityBonus;
+
+        if (trendingScore > 20 || recentFollowers > 0 || recentRecs > 0) {
+          scored.push({
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            image: u.image,
+            bio: u.bio,
+            followersCount: u._count.followers,
+            followingCount: u._count.following,
+            recommendationsCount: u._count.recommendations,
+            followerGrowthRate: Math.round(followerGrowthRate),
+            recentActivityScore: Math.round(recentActivityScore),
+            trendingScore: Math.round(trendingScore),
+            recentActivity: {
+              newFollowers: recentFollowers,
+              newRecommendations: recentRecs,
+              timeframe,
+            },
+            topGenres,
+          });
+        }
+      }
+
+      scored.sort((a, b) => b.trendingScore - a.trendingScore);
+      const topUsers = scored.slice(0, limit);
+
+      return { users: topUsers, total: topUsers.length, timeframe };
+    } catch (error) {
+      console.error('Error fetching trending users:', error);
+      return { users: [], total: 0, timeframe };
+    }
+  },
+
+  newUsers: async (_, { limit = 20, maxDays = 30 }, { prisma, user }) => {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - maxDays);
+
+      const rawUsers = await prisma.user.findMany({
+        where: {
+          deletedAt: null,
+          ...(user && { id: { not: user.id } }),
+          OR: [
+            { recommendations: { some: { createdAt: { gte: cutoffDate } } } },
+            { followers: { some: { createdAt: { gte: cutoffDate } } } },
+            { following: { some: { createdAt: { gte: cutoffDate } } } },
+          ],
+        },
+        include: {
+          _count: {
+            select: { followers: true, following: true, recommendations: true },
+          },
+          recommendations: {
+            select: { createdAt: true },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+          },
+          followers: {
+            select: { createdAt: true },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+          },
+          following: {
+            select: { createdAt: true },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+          },
+        },
+        orderBy: [
+          { recommendations: { _count: 'desc' } },
+          { followers: { _count: 'desc' } },
+        ],
+        take: limit * 2,
+      });
+
+      const processed = [];
+
+      for (const u of rawUsers) {
+        const activityDates = [
+          ...(u.recommendations.length > 0 ? [u.recommendations[0].createdAt] : []),
+          ...(u.followers.length > 0 ? [u.followers[0].createdAt] : []),
+          ...(u.following.length > 0 ? [u.following[0].createdAt] : []),
+        ].filter(Boolean);
+
+        if (activityDates.length === 0) continue;
+
+        const earliestActivity = new Date(Math.min(...activityDates.map(d => d.getTime())));
+        const daysSinceJoined = Math.floor(
+          (Date.now() - earliestActivity.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysSinceJoined > maxDays) continue;
+
+        let activityLevel = 'new';
+        if (u._count.recommendations > 0 || u._count.followers > 2) {
+          activityLevel = 'getting_started';
+        }
+        if (u._count.recommendations > 3 && u._count.followers > 5) {
+          activityLevel = 'active';
+        }
+
+        processed.push({
+          id: u.id,
+          username: u.username,
+          email: u.email,
+          image: u.image,
+          bio: u.bio,
+          followersCount: u._count.followers,
+          followingCount: u._count.following,
+          recommendationsCount: u._count.recommendations,
+          joinedAt: earliestActivity,
+          daysSinceJoined,
+          hasRecommendations: u._count.recommendations > 0,
+          hasFollowers: u._count.followers > 0,
+          activityLevel,
+        });
+      }
+
+      const activityOrder = { active: 3, getting_started: 2, new: 1 };
+      processed.sort((a, b) => {
+        const diff = (activityOrder[b.activityLevel] || 0) - (activityOrder[a.activityLevel] || 0);
+        if (diff !== 0) return diff;
+        return a.daysSinceJoined - b.daysSinceJoined;
+      });
+
+      const result = processed.slice(0, limit);
+      return { users: result, total: result.length };
+    } catch (error) {
+      console.error('Error fetching new users:', error);
+      return { users: [], total: 0 };
+    }
+  },
+
+  browseNewUsers: async (_, { limit = 15 }, { prisma }) => {
+    try {
+      return await prisma.user.findMany({
+        where: {
+          deletedAt: null,
+          recommendationsCount: { gt: 0 },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+    } catch (error) {
+      console.error('Error fetching browse new users:', error);
+      return [];
     }
   },
 

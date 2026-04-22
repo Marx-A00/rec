@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 
+import {
+  useInfiniteGetUserFollowersQuery,
+  useInfiniteGetUserFollowingQuery,
+  type GetUserFollowersQuery,
+  type GetUserFollowingQuery,
+} from '@/generated/graphql';
 import UserListItem from './UserListItem';
 
 interface FollowersListProps {
@@ -31,55 +37,52 @@ export default function FollowersList({
     return () => clearTimeout(timer);
   }, [search]);
 
-  const fetchUsers = async ({ pageParam }: { pageParam?: string }) => {
-    const params = new URLSearchParams();
-    params.append('limit', '20');
-    params.append('sort', sort);
+  const variables = { userId, limit: 20, search: debouncedSearch || undefined, sort };
 
-    if (debouncedSearch) {
-      params.append('search', debouncedSearch);
+  const followersQuery = useInfiniteGetUserFollowersQuery(
+    variables,
+    {
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage: GetUserFollowersQuery) =>
+        lastPage.userFollowers?.cursor
+          ? { cursor: lastPage.userFollowers.cursor }
+          : undefined,
+      enabled: type === 'followers',
     }
+  );
 
-    if (pageParam) {
-      params.append('cursor', pageParam);
+  const followingQuery = useInfiniteGetUserFollowingQuery(
+    variables,
+    {
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage: GetUserFollowingQuery) =>
+        lastPage.userFollowing?.cursor
+          ? { cursor: lastPage.userFollowing.cursor }
+          : undefined,
+      enabled: type === 'following',
     }
+  );
 
-    const response = await fetch(`/api/users/${userId}/${type}?${params}`);
+  const query = type === 'followers' ? followersQuery : followingQuery;
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = query;
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${type}`);
-    }
-
-    return response.json();
-  };
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    isLoading,
-    error,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ['users', userId, type, debouncedSearch, sort],
-    queryFn: fetchUsers,
-    getNextPageParam: lastPage => lastPage.nextCursor,
-    initialPageParam: undefined,
-  });
-
-  // Flatten all pages into a single array
-  const users = data?.pages.flatMap(page => page[type]) || [];
+  // Extract users from paginated data
+  const users =
+    type === 'followers'
+      ? (data as InfiniteData<GetUserFollowersQuery> | undefined)?.pages.flatMap(
+          page => page.userFollowers.users
+        ) || []
+      : (data as InfiniteData<GetUserFollowingQuery> | undefined)?.pages.flatMap(
+          page => page.userFollowing.users
+        ) || [];
 
   // Handle follow status changes with optimistic updates
   const handleFollowChange = useCallback(
     (
-      targetUserId: string,
-      isFollowing: boolean,
-      newCounts: { followersCount: number; followingCount: number }
+      _targetUserId: string,
+      _isFollowing: boolean,
+      _newCounts: { followersCount: number; followingCount: number }
     ) => {
-      // Trigger a refetch to update the lists
       refetch();
     },
     [refetch]

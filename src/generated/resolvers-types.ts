@@ -1921,6 +1921,29 @@ export type MutationUpdateUserSettingsArgs = {
   theme?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type NewUser = {
+  __typename?: 'NewUser';
+  activityLevel: Scalars['String']['output'];
+  bio?: Maybe<Scalars['String']['output']>;
+  daysSinceJoined: Scalars['Int']['output'];
+  email?: Maybe<Scalars['String']['output']>;
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  hasFollowers: Scalars['Boolean']['output'];
+  hasRecommendations: Scalars['Boolean']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  joinedAt: Scalars['DateTime']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+};
+
+export type NewUsersResponse = {
+  __typename?: 'NewUsersResponse';
+  total: Scalars['Int']['output'];
+  users: Array<NewUser>;
+};
+
 export type OnboardingStatus = {
   __typename?: 'OnboardingStatus';
   hasCompletedTour: Scalars['Boolean']['output'];
@@ -2006,6 +2029,7 @@ export type Query = {
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
+  browseNewUsers: Array<User>;
   /** Admin: Get challenge history (past + today) in reverse chronological order */
   challengeHistory: Array<ChallengeHistoryEntry>;
   collection?: Maybe<Collection>;
@@ -2060,6 +2084,7 @@ export type Query = {
   myUncoverSessions: Array<UncoverSessionHistory>;
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
+  newUsers: NewUsersResponse;
   onboardingStatus: OnboardingStatus;
   /**
    * Preview a Deezer playlist's albums (read-only, no DB writes).
@@ -2093,6 +2118,7 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  trendingUsers: TrendingUsersResponse;
   /**
    * Get dates that have an Uncover challenge available.
    * Returns plain date strings (YYYY-MM-DD) for efficient calendar rendering.
@@ -2107,8 +2133,8 @@ export type Query = {
   uncoverSettings: UncoverSettings;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
-  userFollowers: Array<User>;
-  userFollowing: Array<User>;
+  userFollowers: UserConnection;
+  userFollowing: UserConnection;
   userStats: UserStats;
   userSuggestions: Array<User>;
   users: Array<User>;
@@ -2176,6 +2202,10 @@ export type QueryArtistRecommendationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
+export type QueryBrowseNewUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryChallengeHistoryArgs = {
@@ -2271,6 +2301,11 @@ export type QueryMyRecommendationsArgs = {
 export type QueryMyUncoverSessionsArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type QueryNewUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  maxDays?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryPreviewDeezerPlaylistArgs = {
@@ -2385,6 +2420,11 @@ export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type QueryTrendingUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  timeframe?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type QueryUncoverChallengeDatesArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
@@ -2399,14 +2439,18 @@ export type QueryUserCollectionsArgs = {
 };
 
 export type QueryUserFollowersArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
 };
 
 export type QueryUserFollowingArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
 };
 
@@ -3044,6 +3088,37 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+export type TrendingUser = {
+  __typename?: 'TrendingUser';
+  bio?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  followerGrowthRate: Scalars['Int']['output'];
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  recentActivity: TrendingUserActivity;
+  recentActivityScore: Scalars['Int']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  topGenres: Array<Scalars['String']['output']>;
+  trendingScore: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+};
+
+export type TrendingUserActivity = {
+  __typename?: 'TrendingUserActivity';
+  newFollowers: Scalars['Int']['output'];
+  newRecommendations: Scalars['Int']['output'];
+  timeframe: Scalars['String']['output'];
+};
+
+export type TrendingUsersResponse = {
+  __typename?: 'TrendingUsersResponse';
+  timeframe: Scalars['String']['output'];
+  total: Scalars['Int']['output'];
+  users: Array<TrendingUser>;
+};
+
 /**
  * Archive game statistics (separate from daily stats).
  * Archive games don't affect streaks.
@@ -3334,10 +3409,32 @@ export type User = {
   username?: Maybe<Scalars['String']['output']>;
 };
 
+export type UserConnection = {
+  __typename?: 'UserConnection';
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+  total: Scalars['Int']['output'];
+  users: Array<UserEdge>;
+};
+
 export type UserCount = {
   __typename?: 'UserCount';
   collections: Scalars['Int']['output'];
   recommendations: Scalars['Int']['output'];
+};
+
+export type UserEdge = {
+  __typename?: 'UserEdge';
+  bio?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  followedAt?: Maybe<Scalars['DateTime']['output']>;
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  isFollowing: Scalars['Boolean']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserFollow = {
@@ -3659,6 +3756,8 @@ export type ResolversTypes = ResolversObject<{
   ManualCorrectionApplyInput: ManualCorrectionApplyInput;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: ResolverTypeWrapper<{}>;
+  NewUser: ResolverTypeWrapper<NewUser>;
+  NewUsersResponse: ResolverTypeWrapper<NewUsersResponse>;
   OnboardingStatus: ResolverTypeWrapper<OnboardingStatus>;
   OtherAlbumInfo: ResolverTypeWrapper<OtherAlbumInfo>;
   PaginationInfo: ResolverTypeWrapper<PaginationInfo>;
@@ -3726,6 +3825,9 @@ export type ResolversTypes = ResolversObject<{
   TrackInput: TrackInput;
   TrackListSummary: ResolverTypeWrapper<TrackListSummary>;
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
+  TrendingUser: ResolverTypeWrapper<TrendingUser>;
+  TrendingUserActivity: ResolverTypeWrapper<TrendingUserActivity>;
+  TrendingUsersResponse: ResolverTypeWrapper<TrendingUsersResponse>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
   UncoverArchiveStats: ResolverTypeWrapper<UncoverArchiveStats>;
   UncoverChallengeStatEntry: ResolverTypeWrapper<UncoverChallengeStatEntry>;
@@ -3752,7 +3854,9 @@ export type ResolversTypes = ResolversObject<{
   UpdateTrackInput: UpdateTrackInput;
   UpdateUserRolePayload: ResolverTypeWrapper<UpdateUserRolePayload>;
   User: ResolverTypeWrapper<User>;
+  UserConnection: ResolverTypeWrapper<UserConnection>;
   UserCount: ResolverTypeWrapper<UserCount>;
+  UserEdge: ResolverTypeWrapper<UserEdge>;
   UserFollow: ResolverTypeWrapper<UserFollow>;
   UserRole: UserRole;
   UserSettings: ResolverTypeWrapper<UserSettings>;
@@ -3875,6 +3979,8 @@ export type ResolversParentTypes = ResolversObject<{
   ManualCorrectionApplyInput: ManualCorrectionApplyInput;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: {};
+  NewUser: NewUser;
+  NewUsersResponse: NewUsersResponse;
   OnboardingStatus: OnboardingStatus;
   OtherAlbumInfo: OtherAlbumInfo;
   PaginationInfo: PaginationInfo;
@@ -3931,6 +4037,9 @@ export type ResolversParentTypes = ResolversObject<{
   TrackInput: TrackInput;
   TrackListSummary: TrackListSummary;
   TrackSourceData: TrackSourceData;
+  TrendingUser: TrendingUser;
+  TrendingUserActivity: TrendingUserActivity;
+  TrendingUsersResponse: TrendingUsersResponse;
   UUID: Scalars['UUID']['output'];
   UncoverArchiveStats: UncoverArchiveStats;
   UncoverChallengeStatEntry: UncoverChallengeStatEntry;
@@ -3955,7 +4064,9 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateTrackInput: UpdateTrackInput;
   UpdateUserRolePayload: UpdateUserRolePayload;
   User: User;
+  UserConnection: UserConnection;
   UserCount: UserCount;
+  UserEdge: UserEdge;
   UserFollow: UserFollow;
   UserSettings: UserSettings;
   UserStats: UserStats;
@@ -6259,6 +6370,45 @@ export type MutationResolvers<
   >;
 }>;
 
+export type NewUserResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['NewUser'] = ResolversParentTypes['NewUser'],
+> = ResolversObject<{
+  activityLevel?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  daysSinceJoined?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  followersCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  followingCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  hasFollowers?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  hasRecommendations?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  joinedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  recommendationsCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type NewUsersResponseResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['NewUsersResponse'] = ResolversParentTypes['NewUsersResponse'],
+> = ResolversObject<{
+  total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  users?: Resolver<Array<ResolversTypes['NewUser']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type OnboardingStatusResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6465,6 +6615,12 @@ export type QueryResolvers<
       'artistId' | 'limit' | 'offset' | 'sort'
     >
   >;
+  browseNewUsers?: Resolver<
+    Array<ResolversTypes['User']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryBrowseNewUsersArgs, 'limit'>
+  >;
   challengeHistory?: Resolver<
     Array<ResolversTypes['ChallengeHistoryEntry']>,
     ParentType,
@@ -6618,6 +6774,12 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  newUsers?: Resolver<
+    ResolversTypes['NewUsersResponse'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryNewUsersArgs, 'limit' | 'maxDays'>
+  >;
   onboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
     ParentType,
@@ -6764,6 +6926,12 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryTrendingArtistsArgs, 'limit'>
   >;
+  trendingUsers?: Resolver<
+    ResolversTypes['TrendingUsersResponse'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryTrendingUsersArgs, 'limit' | 'timeframe'>
+  >;
   uncoverChallengeDates?: Resolver<
     Array<ResolversTypes['DateTime']>,
     ParentType,
@@ -6798,16 +6966,16 @@ export type QueryResolvers<
     RequireFields<QueryUserCollectionsArgs, 'userId'>
   >;
   userFollowers?: Resolver<
-    Array<ResolversTypes['User']>,
+    ResolversTypes['UserConnection'],
     ParentType,
     ContextType,
-    RequireFields<QueryUserFollowersArgs, 'limit' | 'offset' | 'userId'>
+    RequireFields<QueryUserFollowersArgs, 'limit' | 'sort' | 'userId'>
   >;
   userFollowing?: Resolver<
-    Array<ResolversTypes['User']>,
+    ResolversTypes['UserConnection'],
     ParentType,
     ContextType,
-    RequireFields<QueryUserFollowingArgs, 'limit' | 'offset' | 'userId'>
+    RequireFields<QueryUserFollowingArgs, 'limit' | 'sort' | 'userId'>
   >;
   userStats?: Resolver<
     ResolversTypes['UserStats'],
@@ -7694,6 +7862,69 @@ export type TrackSourceDataResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TrendingUserResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TrendingUser'] = ResolversParentTypes['TrendingUser'],
+> = ResolversObject<{
+  bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  followerGrowthRate?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  followersCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  followingCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  recentActivity?: Resolver<
+    ResolversTypes['TrendingUserActivity'],
+    ParentType,
+    ContextType
+  >;
+  recentActivityScore?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  recommendationsCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  topGenres?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  trendingScore?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type TrendingUserActivityResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TrendingUserActivity'] = ResolversParentTypes['TrendingUserActivity'],
+> = ResolversObject<{
+  newFollowers?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  newRecommendations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  timeframe?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type TrendingUsersResponseResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TrendingUsersResponse'] = ResolversParentTypes['TrendingUsersResponse'],
+> = ResolversObject<{
+  timeframe?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  users?: Resolver<
+    Array<ResolversTypes['TrendingUser']>,
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export interface UuidScalarConfig
   extends GraphQLScalarTypeConfig<ResolversTypes['UUID'], any> {
   name: 'UUID';
@@ -8161,6 +8392,18 @@ export type UserResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type UserConnectionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UserConnection'] = ResolversParentTypes['UserConnection'],
+> = ResolversObject<{
+  cursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  users?: Resolver<Array<ResolversTypes['UserEdge']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UserCountResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -8168,6 +8411,32 @@ export type UserCountResolvers<
 > = ResolversObject<{
   collections?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   recommendations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UserEdgeResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UserEdge'] = ResolversParentTypes['UserEdge'],
+> = ResolversObject<{
+  bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  followedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  followersCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  followingCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  isFollowing?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  recommendationsCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -8387,6 +8656,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   MBRecording?: MbRecordingResolvers<ContextType>;
   MBReleaseData?: MbReleaseDataResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  NewUser?: NewUserResolvers<ContextType>;
+  NewUsersResponse?: NewUsersResponseResolvers<ContextType>;
   OnboardingStatus?: OnboardingStatusResolvers<ContextType>;
   OtherAlbumInfo?: OtherAlbumInfoResolvers<ContextType>;
   PaginationInfo?: PaginationInfoResolvers<ContextType>;
@@ -8435,6 +8706,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackDiff?: TrackDiffResolvers<ContextType>;
   TrackListSummary?: TrackListSummaryResolvers<ContextType>;
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
+  TrendingUser?: TrendingUserResolvers<ContextType>;
+  TrendingUserActivity?: TrendingUserActivityResolvers<ContextType>;
+  TrendingUsersResponse?: TrendingUsersResponseResolvers<ContextType>;
   UUID?: GraphQLScalarType;
   UncoverArchiveStats?: UncoverArchiveStatsResolvers<ContextType>;
   UncoverChallengeStatEntry?: UncoverChallengeStatEntryResolvers<ContextType>;
@@ -8456,7 +8730,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   UpdateRecommendationPayload?: UpdateRecommendationPayloadResolvers<ContextType>;
   UpdateUserRolePayload?: UpdateUserRolePayloadResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
+  UserConnection?: UserConnectionResolvers<ContextType>;
   UserCount?: UserCountResolvers<ContextType>;
+  UserEdge?: UserEdgeResolvers<ContextType>;
   UserFollow?: UserFollowResolvers<ContextType>;
   UserSettings?: UserSettingsResolvers<ContextType>;
   UserStats?: UserStatsResolvers<ContextType>;

@@ -1,0 +1,31 @@
+query GetUserFollowing(
+  $userId: String!
+  $cursor: String
+  $limit: Int = 20
+  $search: String
+  $sort: String = "recent"
+) {
+  userFollowing(
+    userId: $userId
+    cursor: $cursor
+    limit: $limit
+    search: $search
+    sort: $sort
+  ) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      followedAt
+      isFollowing
+    }
+    cursor
+    hasMore
+    total
+  }
+}

@@ -20,8 +20,8 @@ export default async function MobileFollowingPage({
 
   const { userId } = paramsResult.data;
 
-  const userData = await prisma.user.findUnique({
-    where: { id: userId },
+  const userData = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
     select: {
       id: true,
       username: true,

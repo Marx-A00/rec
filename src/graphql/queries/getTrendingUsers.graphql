@@ -1,0 +1,25 @@
+query GetTrendingUsers($limit: Int = 20, $timeframe: String = "7d") {
+  trendingUsers(limit: $limit, timeframe: $timeframe) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      followerGrowthRate
+      recentActivityScore
+      trendingScore
+      recentActivity {
+        newFollowers
+        newRecommendations
+        timeframe
+      }
+      topGenres
+    }
+    total
+    timeframe
+  }
+}

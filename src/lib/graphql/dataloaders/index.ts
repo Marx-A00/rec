@@ -45,7 +45,7 @@ export function createTrackLoader(prisma: PrismaClient) {
 export function createUserLoader(prisma: PrismaClient) {
   return new DataLoader(async (userIds: readonly string[]) => {
     const users = await prisma.user.findMany({
-      where: { id: { in: [...userIds] } },
+      where: { id: { in: [...userIds] }, deletedAt: null },
     });
 
     const userMap = new Map(users.map(user => [user.id, user]));
@@ -166,6 +166,7 @@ export function createRecommendationsByAlbumLoader(prisma: PrismaClient) {
           { basisAlbumId: { in: [...albumIds] } },
           { recommendedAlbumId: { in: [...albumIds] } },
         ],
+        user: { deletedAt: null },
       },
       include: { user: true },
       orderBy: { createdAt: 'desc' },

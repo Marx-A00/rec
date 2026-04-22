@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 async function getNewUsers(limit: number = 15) {
   const users = await prisma.user.findMany({
+    where: { deletedAt: null },
     take: limit,
     select: {
       id: true,

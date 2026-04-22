@@ -1,0 +1,20 @@
+query GetNewUsers($limit: Int = 20, $maxDays: Int = 30) {
+  newUsers(limit: $limit, maxDays: $maxDays) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      joinedAt
+      daysSinceJoined
+      hasRecommendations
+      hasFollowers
+      activityLevel
+    }
+    total
+  }
+}

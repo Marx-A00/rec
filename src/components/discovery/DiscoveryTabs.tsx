@@ -5,13 +5,17 @@ import { TrendingUp, Users, UserPlus, Sparkles, SortAsc } from 'lucide-react';
 
 import UserListItem from '@/components/profile/UserListItem';
 import FollowSuggestions from '@/components/profile/FollowSuggestions';
+import {
+  useGetTrendingUsersQuery,
+  useGetNewUsersQuery,
+} from '@/generated/graphql';
 
 interface BaseUser {
   id: string;
-  username: string | null;
-  email: string | null;
-  image: string | null;
-  bio: string | null;
+  username?: string | null;
+  email?: string | null;
+  image?: string | null;
+  bio?: string | null;
   followersCount: number;
   followingCount: number;
   recommendationsCount: number;
@@ -30,11 +34,11 @@ interface TrendingUser extends BaseUser {
 }
 
 interface NewUser extends BaseUser {
-  joinedAt: string;
+  joinedAt: string | Date;
   daysSinceJoined: number;
   hasRecommendations: boolean;
   hasFollowers: boolean;
-  activityLevel: 'new' | 'getting_started' | 'active';
+  activityLevel: string;
 }
 
 type DiscoveryTab = 'all' | 'trending' | 'new' | 'suggested';
@@ -53,67 +57,36 @@ export default function DiscoveryTabs({
 }: DiscoveryTabsProps) {
   const [activeTab, setActiveTab] = useState<DiscoveryTab>('all');
   const [sortBy, setSortBy] = useState<SortOption>('followers');
-  const [isLoading, setIsLoading] = useState(false);
-  const [trendingUsers, setTrendingUsers] = useState<TrendingUser[]>([]);
-  const [newUsers, setNewUsers] = useState<NewUser[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch trending users
-  const fetchTrendingUsers = async () => {
-    if (trendingUsers.length > 0) return; // Only fetch once
+  const {
+    data: trendingData,
+    isLoading: trendingLoading,
+    error: trendingError,
+    refetch: refetchTrending,
+  } = useGetTrendingUsersQuery(
+    { limit: 20, timeframe: '7d' },
+    { enabled: activeTab === 'trending' }
+  );
 
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: newUsersData,
+    isLoading: newUsersLoading,
+    error: newUsersError,
+    refetch: refetchNew,
+  } = useGetNewUsersQuery(
+    { limit: 20, maxDays: 30 },
+    { enabled: activeTab === 'new' }
+  );
 
-    try {
-      const response = await fetch('/api/users/trending?limit=20&timeframe=7d');
-      if (!response.ok) {
-        throw new Error('Failed to fetch trending users');
-      }
+  const trendingUsers: TrendingUser[] = (trendingData?.trendingUsers?.users || []) as TrendingUser[];
+  const newUsers: NewUser[] = (newUsersData?.newUsers?.users || []) as NewUser[];
 
-      const data = await response.json();
-      setTrendingUsers(data.users || []);
-    } catch (err) {
-      console.error('Error fetching trending users:', err);
-      setError('Failed to load trending users');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch new users
-  const fetchNewUsers = async () => {
-    if (newUsers.length > 0) return; // Only fetch once
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/users/new?limit=20&max_days=30');
-      if (!response.ok) {
-        throw new Error('Failed to fetch new users');
-      }
-
-      const data = await response.json();
-      setNewUsers(data.users || []);
-    } catch (err) {
-      console.error('Error fetching new users:', err);
-      setError('Failed to load new users');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle tab change
-  const handleTabChange = (tab: DiscoveryTab) => {
-    setActiveTab(tab);
-
-    if (tab === 'trending') {
-      fetchTrendingUsers();
-    } else if (tab === 'new') {
-      fetchNewUsers();
-    }
-  };
+  const isLoading =
+    (activeTab === 'trending' && trendingLoading) ||
+    (activeTab === 'new' && newUsersLoading);
+  const error =
+    (activeTab === 'trending' && trendingError) ||
+    (activeTab === 'new' && newUsersError);
 
   // Sort users based on selected option
   const getSortedUsers = (users: BaseUser[]) => {
@@ -131,7 +104,6 @@ export default function DiscoveryTabs({
           (a.username || '').localeCompare(b.username || '')
         );
       case 'recent':
-        // For new users, sort by join date; for others, sort by followers as fallback
         if (activeTab === 'new') {
           return (sortedUsers as NewUser[]).sort(
             (a, b) => a.daysSinceJoined - b.daysSinceJoined
@@ -169,13 +141,13 @@ export default function DiscoveryTabs({
 
     if (activeTab === 'new' && 'daysSinceJoined' in user) {
       const newUser = user as NewUser;
-      const activityLabels = {
+      const activityLabels: Record<string, string> = {
         new: 'New to REC',
         getting_started: 'Getting Started',
         active: 'Active Member',
       };
       return {
-        badge: activityLabels[newUser.activityLevel],
+        badge: activityLabels[newUser.activityLevel] || 'New',
         subtitle: `Joined ${newUser.daysSinceJoined} days ago`,
         genres: [],
       };
@@ -239,7 +211,7 @@ export default function DiscoveryTabs({
             return (
               <button
                 key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-zinc-800 text-cosmic-latte border border-zinc-700'
@@ -316,13 +288,13 @@ export default function DiscoveryTabs({
             )}
 
             {/* Error State */}
-            {error && (
+            {!!error && (
               <div className='text-center py-12'>
-                <p className='text-red-400 mb-4'>{error}</p>
+                <p className='text-red-400 mb-4'>Failed to load users</p>
                 <button
                   onClick={() => {
-                    if (activeTab === 'trending') fetchTrendingUsers();
-                    if (activeTab === 'new') fetchNewUsers();
+                    if (activeTab === 'trending') refetchTrending();
+                    if (activeTab === 'new') refetchNew();
                   }}
                   className='px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors'
                 >

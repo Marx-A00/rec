@@ -1947,6 +1947,29 @@ export type MutationUpdateUserSettingsArgs = {
   theme?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type NewUser = {
+  __typename?: 'NewUser';
+  activityLevel: Scalars['String']['output'];
+  bio?: Maybe<Scalars['String']['output']>;
+  daysSinceJoined: Scalars['Int']['output'];
+  email?: Maybe<Scalars['String']['output']>;
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  hasFollowers: Scalars['Boolean']['output'];
+  hasRecommendations: Scalars['Boolean']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  joinedAt: Scalars['DateTime']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+};
+
+export type NewUsersResponse = {
+  __typename?: 'NewUsersResponse';
+  total: Scalars['Int']['output'];
+  users: Array<NewUser>;
+};
+
 export type OnboardingStatus = {
   __typename?: 'OnboardingStatus';
   hasCompletedTour: Scalars['Boolean']['output'];
@@ -2032,6 +2055,7 @@ export type Query = {
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
+  browseNewUsers: Array<User>;
   /** Admin: Get challenge history (past + today) in reverse chronological order */
   challengeHistory: Array<ChallengeHistoryEntry>;
   collection?: Maybe<Collection>;
@@ -2086,6 +2110,7 @@ export type Query = {
   myUncoverSessions: Array<UncoverSessionHistory>;
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
+  newUsers: NewUsersResponse;
   onboardingStatus: OnboardingStatus;
   /**
    * Preview a Deezer playlist's albums (read-only, no DB writes).
@@ -2119,6 +2144,7 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  trendingUsers: TrendingUsersResponse;
   /**
    * Get dates that have an Uncover challenge available.
    * Returns plain date strings (YYYY-MM-DD) for efficient calendar rendering.
@@ -2133,8 +2159,8 @@ export type Query = {
   uncoverSettings: UncoverSettings;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
-  userFollowers: Array<User>;
-  userFollowing: Array<User>;
+  userFollowers: UserConnection;
+  userFollowing: UserConnection;
   userStats: UserStats;
   userSuggestions: Array<User>;
   users: Array<User>;
@@ -2202,6 +2228,10 @@ export type QueryArtistRecommendationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
+export type QueryBrowseNewUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryChallengeHistoryArgs = {
@@ -2297,6 +2327,11 @@ export type QueryMyRecommendationsArgs = {
 export type QueryMyUncoverSessionsArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type QueryNewUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  maxDays?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryPreviewDeezerPlaylistArgs = {
@@ -2411,6 +2446,11 @@ export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type QueryTrendingUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  timeframe?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type QueryUncoverChallengeDatesArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
@@ -2425,14 +2465,18 @@ export type QueryUserCollectionsArgs = {
 };
 
 export type QueryUserFollowersArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
 };
 
 export type QueryUserFollowingArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
 };
 
@@ -3070,6 +3114,37 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+export type TrendingUser = {
+  __typename?: 'TrendingUser';
+  bio?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  followerGrowthRate: Scalars['Int']['output'];
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  recentActivity: TrendingUserActivity;
+  recentActivityScore: Scalars['Int']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  topGenres: Array<Scalars['String']['output']>;
+  trendingScore: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
+};
+
+export type TrendingUserActivity = {
+  __typename?: 'TrendingUserActivity';
+  newFollowers: Scalars['Int']['output'];
+  newRecommendations: Scalars['Int']['output'];
+  timeframe: Scalars['String']['output'];
+};
+
+export type TrendingUsersResponse = {
+  __typename?: 'TrendingUsersResponse';
+  timeframe: Scalars['String']['output'];
+  total: Scalars['Int']['output'];
+  users: Array<TrendingUser>;
+};
+
 /**
  * Archive game statistics (separate from daily stats).
  * Archive games don't affect streaks.
@@ -3360,10 +3435,32 @@ export type User = {
   username?: Maybe<Scalars['String']['output']>;
 };
 
+export type UserConnection = {
+  __typename?: 'UserConnection';
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+  total: Scalars['Int']['output'];
+  users: Array<UserEdge>;
+};
+
 export type UserCount = {
   __typename?: 'UserCount';
   collections: Scalars['Int']['output'];
   recommendations: Scalars['Int']['output'];
+};
+
+export type UserEdge = {
+  __typename?: 'UserEdge';
+  bio?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  followedAt?: Maybe<Scalars['DateTime']['output']>;
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  isFollowing: Scalars['Boolean']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserFollow = {
@@ -5332,6 +5429,26 @@ export type GetArtistDetailsQuery = {
   } | null;
 };
 
+export type GetBrowseNewUsersQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetBrowseNewUsersQuery = {
+  __typename?: 'Query';
+  browseNewUsers: Array<{
+    __typename?: 'User';
+    id: string;
+    username?: string | null;
+    email?: string | null;
+    image?: string | null;
+    bio?: string | null;
+    followersCount: number;
+    followingCount: number;
+    recommendationsCount: number;
+    createdAt: Date;
+  }>;
+};
+
 export type GetCollectionQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -5422,6 +5539,70 @@ export type GetMyCollectionsQuery = {
   }>;
 };
 
+export type GetNewUsersQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  maxDays?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetNewUsersQuery = {
+  __typename?: 'Query';
+  newUsers: {
+    __typename?: 'NewUsersResponse';
+    total: number;
+    users: Array<{
+      __typename?: 'NewUser';
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      image?: string | null;
+      bio?: string | null;
+      followersCount: number;
+      followingCount: number;
+      recommendationsCount: number;
+      joinedAt: Date;
+      daysSinceJoined: number;
+      hasRecommendations: boolean;
+      hasFollowers: boolean;
+      activityLevel: string;
+    }>;
+  };
+};
+
+export type GetTrendingUsersQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  timeframe?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type GetTrendingUsersQuery = {
+  __typename?: 'Query';
+  trendingUsers: {
+    __typename?: 'TrendingUsersResponse';
+    total: number;
+    timeframe: string;
+    users: Array<{
+      __typename?: 'TrendingUser';
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      image?: string | null;
+      bio?: string | null;
+      followersCount: number;
+      followingCount: number;
+      recommendationsCount: number;
+      followerGrowthRate: number;
+      recentActivityScore: number;
+      trendingScore: number;
+      topGenres: Array<string>;
+      recentActivity: {
+        __typename?: 'TrendingUserActivity';
+        newFollowers: number;
+        newRecommendations: number;
+        timeframe: string;
+      };
+    }>;
+  };
+};
+
 export type GetUserCollectionListQueryVariables = Exact<{
   userId: Scalars['String']['input'];
 }>;
@@ -5480,6 +5661,68 @@ export type GetUserCollectionsQuery = {
       }>;
     }>;
   } | null;
+};
+
+export type GetUserFollowersQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type GetUserFollowersQuery = {
+  __typename?: 'Query';
+  userFollowers: {
+    __typename?: 'UserConnection';
+    cursor?: string | null;
+    hasMore: boolean;
+    total: number;
+    users: Array<{
+      __typename?: 'UserEdge';
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      image?: string | null;
+      bio?: string | null;
+      followersCount: number;
+      followingCount: number;
+      recommendationsCount: number;
+      followedAt?: Date | null;
+      isFollowing: boolean;
+    }>;
+  };
+};
+
+export type GetUserFollowingQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type GetUserFollowingQuery = {
+  __typename?: 'Query';
+  userFollowing: {
+    __typename?: 'UserConnection';
+    cursor?: string | null;
+    hasMore: boolean;
+    total: number;
+    users: Array<{
+      __typename?: 'UserEdge';
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      image?: string | null;
+      bio?: string | null;
+      followersCount: number;
+      followingCount: number;
+      recommendationsCount: number;
+      followedAt?: Date | null;
+      isFollowing: boolean;
+    }>;
+  };
 };
 
 export type GetUserProfileQueryVariables = Exact<{
@@ -11638,6 +11881,100 @@ useInfiniteGetArtistDetailsQuery.getKey = (
   variables: GetArtistDetailsQueryVariables
 ) => ['GetArtistDetails.infinite', variables];
 
+export const GetBrowseNewUsersDocument = `
+    query GetBrowseNewUsers($limit: Int = 15) {
+  browseNewUsers(limit: $limit) {
+    id
+    username
+    email
+    image
+    bio
+    followersCount
+    followingCount
+    recommendationsCount
+    createdAt
+  }
+}
+    `;
+
+export const useGetBrowseNewUsersQuery = <
+  TData = GetBrowseNewUsersQuery,
+  TError = unknown,
+>(
+  variables?: GetBrowseNewUsersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetBrowseNewUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetBrowseNewUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetBrowseNewUsersQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetBrowseNewUsers']
+        : ['GetBrowseNewUsers', variables],
+    queryFn: fetcher<GetBrowseNewUsersQuery, GetBrowseNewUsersQueryVariables>(
+      GetBrowseNewUsersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetBrowseNewUsersQuery.getKey = (
+  variables?: GetBrowseNewUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetBrowseNewUsers']
+    : ['GetBrowseNewUsers', variables];
+
+export const useInfiniteGetBrowseNewUsersQuery = <
+  TData = InfiniteData<GetBrowseNewUsersQuery>,
+  TError = unknown,
+>(
+  variables: GetBrowseNewUsersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetBrowseNewUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetBrowseNewUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetBrowseNewUsersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetBrowseNewUsers.infinite']
+            : ['GetBrowseNewUsers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetBrowseNewUsersQuery, GetBrowseNewUsersQueryVariables>(
+            GetBrowseNewUsersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetBrowseNewUsersQuery.getKey = (
+  variables?: GetBrowseNewUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetBrowseNewUsers.infinite']
+    : ['GetBrowseNewUsers.infinite', variables];
+
 export const GetCollectionDocument = `
     query GetCollection($id: String!) {
   collection(id: $id) {
@@ -11944,6 +12281,198 @@ useInfiniteGetMyCollectionsQuery.getKey = (
     ? ['GetMyCollections.infinite']
     : ['GetMyCollections.infinite', variables];
 
+export const GetNewUsersDocument = `
+    query GetNewUsers($limit: Int = 20, $maxDays: Int = 30) {
+  newUsers(limit: $limit, maxDays: $maxDays) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      joinedAt
+      daysSinceJoined
+      hasRecommendations
+      hasFollowers
+      activityLevel
+    }
+    total
+  }
+}
+    `;
+
+export const useGetNewUsersQuery = <TData = GetNewUsersQuery, TError = unknown>(
+  variables?: GetNewUsersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetNewUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetNewUsersQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetNewUsersQuery, TError, TData>({
+    queryKey:
+      variables === undefined ? ['GetNewUsers'] : ['GetNewUsers', variables],
+    queryFn: fetcher<GetNewUsersQuery, GetNewUsersQueryVariables>(
+      GetNewUsersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetNewUsersQuery.getKey = (variables?: GetNewUsersQueryVariables) =>
+  variables === undefined ? ['GetNewUsers'] : ['GetNewUsers', variables];
+
+export const useInfiniteGetNewUsersQuery = <
+  TData = InfiniteData<GetNewUsersQuery>,
+  TError = unknown,
+>(
+  variables: GetNewUsersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetNewUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetNewUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetNewUsersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetNewUsers.infinite']
+            : ['GetNewUsers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetNewUsersQuery, GetNewUsersQueryVariables>(
+            GetNewUsersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetNewUsersQuery.getKey = (variables?: GetNewUsersQueryVariables) =>
+  variables === undefined
+    ? ['GetNewUsers.infinite']
+    : ['GetNewUsers.infinite', variables];
+
+export const GetTrendingUsersDocument = `
+    query GetTrendingUsers($limit: Int = 20, $timeframe: String = "7d") {
+  trendingUsers(limit: $limit, timeframe: $timeframe) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      followerGrowthRate
+      recentActivityScore
+      trendingScore
+      recentActivity {
+        newFollowers
+        newRecommendations
+        timeframe
+      }
+      topGenres
+    }
+    total
+    timeframe
+  }
+}
+    `;
+
+export const useGetTrendingUsersQuery = <
+  TData = GetTrendingUsersQuery,
+  TError = unknown,
+>(
+  variables?: GetTrendingUsersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTrendingUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTrendingUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetTrendingUsersQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetTrendingUsers']
+        : ['GetTrendingUsers', variables],
+    queryFn: fetcher<GetTrendingUsersQuery, GetTrendingUsersQueryVariables>(
+      GetTrendingUsersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetTrendingUsersQuery.getKey = (
+  variables?: GetTrendingUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTrendingUsers']
+    : ['GetTrendingUsers', variables];
+
+export const useInfiniteGetTrendingUsersQuery = <
+  TData = InfiniteData<GetTrendingUsersQuery>,
+  TError = unknown,
+>(
+  variables: GetTrendingUsersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetTrendingUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetTrendingUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetTrendingUsersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetTrendingUsers.infinite']
+            : ['GetTrendingUsers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetTrendingUsersQuery, GetTrendingUsersQueryVariables>(
+            GetTrendingUsersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetTrendingUsersQuery.getKey = (
+  variables?: GetTrendingUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTrendingUsers.infinite']
+    : ['GetTrendingUsers.infinite', variables];
+
 export const GetUserCollectionListDocument = `
     query GetUserCollectionList($userId: String!) {
   user(id: $userId) {
@@ -12131,6 +12660,194 @@ export const useInfiniteGetUserCollectionsQuery = <
 useInfiniteGetUserCollectionsQuery.getKey = (
   variables: GetUserCollectionsQueryVariables
 ) => ['GetUserCollections.infinite', variables];
+
+export const GetUserFollowersDocument = `
+    query GetUserFollowers($userId: String!, $cursor: String, $limit: Int = 20, $search: String, $sort: String = "recent") {
+  userFollowers(
+    userId: $userId
+    cursor: $cursor
+    limit: $limit
+    search: $search
+    sort: $sort
+  ) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      followedAt
+      isFollowing
+    }
+    cursor
+    hasMore
+    total
+  }
+}
+    `;
+
+export const useGetUserFollowersQuery = <
+  TData = GetUserFollowersQuery,
+  TError = unknown,
+>(
+  variables: GetUserFollowersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserFollowersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserFollowersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetUserFollowersQuery, TError, TData>({
+    queryKey: ['GetUserFollowers', variables],
+    queryFn: fetcher<GetUserFollowersQuery, GetUserFollowersQueryVariables>(
+      GetUserFollowersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetUserFollowersQuery.getKey = (
+  variables: GetUserFollowersQueryVariables
+) => ['GetUserFollowers', variables];
+
+export const useInfiniteGetUserFollowersQuery = <
+  TData = InfiniteData<GetUserFollowersQuery>,
+  TError = unknown,
+>(
+  variables: GetUserFollowersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserFollowersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserFollowersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserFollowersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetUserFollowers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetUserFollowersQuery, GetUserFollowersQueryVariables>(
+            GetUserFollowersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserFollowersQuery.getKey = (
+  variables: GetUserFollowersQueryVariables
+) => ['GetUserFollowers.infinite', variables];
+
+export const GetUserFollowingDocument = `
+    query GetUserFollowing($userId: String!, $cursor: String, $limit: Int = 20, $search: String, $sort: String = "recent") {
+  userFollowing(
+    userId: $userId
+    cursor: $cursor
+    limit: $limit
+    search: $search
+    sort: $sort
+  ) {
+    users {
+      id
+      username
+      email
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+      followedAt
+      isFollowing
+    }
+    cursor
+    hasMore
+    total
+  }
+}
+    `;
+
+export const useGetUserFollowingQuery = <
+  TData = GetUserFollowingQuery,
+  TError = unknown,
+>(
+  variables: GetUserFollowingQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserFollowingQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserFollowingQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetUserFollowingQuery, TError, TData>({
+    queryKey: ['GetUserFollowing', variables],
+    queryFn: fetcher<GetUserFollowingQuery, GetUserFollowingQueryVariables>(
+      GetUserFollowingDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetUserFollowingQuery.getKey = (
+  variables: GetUserFollowingQueryVariables
+) => ['GetUserFollowing', variables];
+
+export const useInfiniteGetUserFollowingQuery = <
+  TData = InfiniteData<GetUserFollowingQuery>,
+  TError = unknown,
+>(
+  variables: GetUserFollowingQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserFollowingQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserFollowingQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserFollowingQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetUserFollowing.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetUserFollowingQuery, GetUserFollowingQueryVariables>(
+            GetUserFollowingDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserFollowingQuery.getKey = (
+  variables: GetUserFollowingQueryVariables
+) => ['GetUserFollowing.infinite', variables];
 
 export const GetUserProfileDocument = `
     query GetUserProfile($userId: String!) {

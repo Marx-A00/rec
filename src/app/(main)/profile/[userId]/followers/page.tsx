@@ -25,8 +25,8 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
   const { userId } = paramsResult.data;
 
   // Fetch user data to display in header
-  const userData = await prisma.user.findUnique({
-    where: { id: userId },
+  const userData = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
     select: {
       id: true,
       username: true,

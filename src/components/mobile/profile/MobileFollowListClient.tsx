@@ -3,24 +3,30 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import FollowButton from '@/components/profile/FollowButton';
 import { cn } from '@/lib/utils';
+import {
+  useInfiniteGetUserFollowersQuery,
+  useInfiniteGetUserFollowingQuery,
+  type GetUserFollowersQuery,
+  type GetUserFollowingQuery,
+} from '@/generated/graphql';
 
 interface UserItem {
   id: string;
-  username: string | null;
-  email: string | null;
-  image: string | null;
-  bio: string | null;
+  username?: string | null;
+  email?: string | null;
+  image?: string | null;
+  bio?: string | null;
   followersCount: number;
   followingCount: number;
   recommendationsCount: number;
-  followedAt?: string;
+  followedAt?: string | Date | null;
   isFollowing?: boolean;
 }
 
@@ -35,8 +41,8 @@ interface MobileFollowListClientProps {
 export default function MobileFollowListClient({
   userId,
   username,
-  userImage,
-  count,
+  userImage: _userImage,
+  count: _count,
   type,
 }: MobileFollowListClientProps) {
   const router = useRouter();
@@ -61,59 +67,43 @@ export default function MobileFollowListClient({
     }
   }, [showSearch]);
 
-  interface FollowPage {
-    followers?: UserItem[];
-    following?: UserItem[];
-    hasMore: boolean;
-    nextCursor: string | null;
-    total: number;
-  }
+  const variables = { userId, limit: 20, search: debouncedSearch || undefined, sort: 'recent' };
 
-  const fetchUsers = async ({
-    pageParam,
-  }: {
-    pageParam: string | undefined;
-  }): Promise<FollowPage> => {
-    const params = new URLSearchParams();
-    params.append('limit', '20');
-    params.append('sort', 'recent');
-
-    if (debouncedSearch) {
-      params.append('search', debouncedSearch);
+  const followersQuery = useInfiniteGetUserFollowersQuery(
+    variables,
+    {
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage: GetUserFollowersQuery) =>
+        lastPage.userFollowers?.cursor
+          ? { cursor: lastPage.userFollowers.cursor }
+          : undefined,
+      enabled: type === 'followers',
     }
-    if (pageParam) {
-      params.append('cursor', pageParam);
+  );
+
+  const followingQuery = useInfiniteGetUserFollowingQuery(
+    variables,
+    {
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage: GetUserFollowingQuery) =>
+        lastPage.userFollowing?.cursor
+          ? { cursor: lastPage.userFollowing.cursor }
+          : undefined,
+      enabled: type === 'following',
     }
+  );
 
-    const response = await fetch(`/api/users/${userId}/${type}?${params}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${type}`);
-    }
-    return response.json() as Promise<FollowPage>;
-  };
+  const query = type === 'followers' ? followersQuery : followingQuery;
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = query;
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-    refetch,
-  } = useInfiniteQuery<
-    FollowPage,
-    Error,
-    InfiniteData<FollowPage>,
-    string[],
-    string | undefined
-  >({
-    queryKey: ['users', userId, type, debouncedSearch],
-    queryFn: fetchUsers,
-    getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined,
-  });
-
-  const users: UserItem[] = data?.pages.flatMap(page => page[type] ?? []) || [];
+  const users: UserItem[] =
+    type === 'followers'
+      ? (data as InfiniteData<GetUserFollowersQuery> | undefined)?.pages.flatMap(
+          page => page.userFollowers.users
+        ) || []
+      : (data as InfiniteData<GetUserFollowingQuery> | undefined)?.pages.flatMap(
+          page => page.userFollowing.users
+        ) || [];
 
   // Infinite scroll handler — listens on the mobile scroll container, not window
   const handleScroll = useCallback(() => {
@@ -234,7 +224,7 @@ export default function MobileFollowListClient({
         )}
 
         {/* Error State */}
-        {error && !isLoading && (
+        {!!error && !isLoading && (
           <div className='flex flex-col items-center justify-center py-16 text-center'>
             <p className='text-zinc-400 mb-4'>
               Failed to load {type}. Please try again.
@@ -250,6 +240,7 @@ export default function MobileFollowListClient({
 
         {/* Empty State */}
         {!isLoading && !error && users.length === 0 && (
+
           <div className='flex flex-col items-center justify-center py-16 text-center'>
             <p className='text-white font-medium mb-2'>
               {debouncedSearch

@@ -213,7 +213,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     },
   });
 
-  if (!userData) {
+  if (!userData || userData.deletedAt) {
     notFound();
   }
 

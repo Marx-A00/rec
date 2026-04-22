@@ -8,14 +8,14 @@ import FollowButton from '@/components/profile/FollowButton';
 interface UserListItemProps {
   user: {
     id: string;
-    username: string | null;
-    email: string | null;
-    image: string | null;
-    bio: string | null;
+    username?: string | null;
+    email?: string | null;
+    image?: string | null;
+    bio?: string | null;
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
-    followedAt?: string;
+    followedAt?: string | Date | null;
     isFollowing?: boolean;
   };
   currentUserId?: string;

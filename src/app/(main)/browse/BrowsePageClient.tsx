@@ -1,127 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Calendar, Users, Music, Star } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { Recommendation } from '@/types';
+import {
+  useGetBrowseNewUsersQuery,
+  useGetTopRecommendedArtistsQuery,
+  useGetTopRecommendedAlbumsQuery,
+} from '@/generated/graphql';
 
 interface User {
   id: string;
-  username: string | null;
-  email: string | null;
-  image: string | null;
-  bio: string | null;
+  username?: string | null;
+  email?: string | null;
+  image?: string | null;
+  bio?: string | null;
   followersCount: number;
   followingCount: number;
   recommendationsCount: number;
-  createdAt?: string;
-}
-
-interface TrendingArtist {
-  name: string;
-  imageUrl: string | null;
-  recommendationCount: number;
-  averageScore: number;
-  uniqueAlbumsCount: number;
-  latestRecommendationDate: string;
-  recentRecommendations: Array<{
-    id: string;
-    score: number;
-    albumTitle: string;
-    user: {
-      id: string;
-      username: string | null;
-      image: string | null;
-    };
-    createdAt: string;
-  }>;
-}
-
-interface TrendingAlbum {
-  albumId: string;
-  title: string;
-  artist: string;
-  imageUrl: string | null;
-  year: string | null;
-  recommendationCount: number;
-  averageScore: number;
-  latestRecommendationDate: string;
-  recentRecommendations: Array<{
-    id: string;
-    score: number;
-    user: {
-      id: string;
-      username: string | null;
-      image: string | null;
-    };
-    createdAt: string;
-  }>;
+  createdAt?: string | Date;
 }
 
 interface BrowsePageClientProps {
   initialUsers: User[];
-  initialRecommendations: Recommendation[];
 }
 
 export default function BrowsePageClient({
   initialUsers,
-  initialRecommendations: _initialRecommendations,
 }: BrowsePageClientProps) {
-  // State for API data
-  const [newUsers, setNewUsers] = useState<User[]>(initialUsers.slice(0, 10));
-  const [trendingArtists, setTrendingArtists] = useState<TrendingArtist[]>([]);
-  const [trendingAlbums, setTrendingAlbums] = useState<TrendingAlbum[]>([]);
-  const [loading, setLoading] = useState({
-    users: false,
-    artists: false,
-    albums: false,
-  });
+  const { data: newUsersData, isLoading: loadingUsers } =
+    useGetBrowseNewUsersQuery({ limit: 15 });
 
-  // Fetch data from our new APIs
-  useEffect(() => {
-    const fetchBrowseData = async () => {
-      try {
-        // Fetch new users
-        setLoading(prev => ({ ...prev, users: true }));
-        const usersResponse = await fetch('/api/browse/new-users?limit=15');
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          setNewUsers(usersData.users || []);
-        }
-        setLoading(prev => ({ ...prev, users: false }));
+  const { data: artistsData, isLoading: loadingArtists } =
+    useGetTopRecommendedArtistsQuery({ limit: 12 });
 
-        // Fetch trending artists
-        setLoading(prev => ({ ...prev, artists: true }));
-        const artistsResponse = await fetch(
-          '/api/browse/trending-artists?limit=12'
-        );
-        if (artistsResponse.ok) {
-          const artistsData = await artistsResponse.json();
-          setTrendingArtists(artistsData.artists || []);
-        }
-        setLoading(prev => ({ ...prev, artists: false }));
+  const { data: albumsData, isLoading: loadingAlbums } =
+    useGetTopRecommendedAlbumsQuery({ limit: 15 });
 
-        // Fetch trending albums
-        setLoading(prev => ({ ...prev, albums: true }));
-        const albumsResponse = await fetch(
-          '/api/browse/trending-albums?limit=15'
-        );
-        if (albumsResponse.ok) {
-          const albumsData = await albumsResponse.json();
-          setTrendingAlbums(albumsData.albums || []);
-        }
-        setLoading(prev => ({ ...prev, albums: false }));
-      } catch (error) {
-        console.error('Error fetching browse data:', error);
-        setLoading({ users: false, artists: false, albums: false });
-      }
-    };
-
-    fetchBrowseData();
-  }, []);
+  const newUsers: User[] = (newUsersData?.browseNewUsers as User[]) || initialUsers.slice(0, 10);
+  const trendingArtists = artistsData?.topRecommendedArtists || [];
+  const trendingAlbums = albumsData?.topRecommendedAlbums || [];
 
   return (
     <div className='space-y-8'>
@@ -145,9 +65,13 @@ export default function BrowsePageClient({
           icon={<Users className='w-5 h-5' />}
         >
           <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {newUsers.map(user => (
-              <UserCard key={user.id} user={user} />
-            ))}
+            {loadingUsers
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <ArtistCardSkeleton key={i} />
+                ))
+              : newUsers.map(user => (
+                  <UserCard key={user.id} user={user} />
+                ))}
           </div>
         </ContentRow>
 
@@ -158,12 +82,12 @@ export default function BrowsePageClient({
           icon={<Star className='w-5 h-5' />}
         >
           <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {loading.artists
+            {loadingArtists
               ? Array.from({ length: 8 }).map((_, i) => (
                   <ArtistCardSkeleton key={i} />
                 ))
-              : trendingArtists.map(artist => (
-                  <TrendingArtistCard key={artist.name} artist={artist} />
+              : trendingArtists.map(item => (
+                  <TrendingArtistCard key={item.artist.id} item={item} />
                 ))}
           </div>
         </ContentRow>
@@ -175,12 +99,12 @@ export default function BrowsePageClient({
           icon={<Music className='w-5 h-5' />}
         >
           <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {loading.albums
+            {loadingAlbums
               ? Array.from({ length: 8 }).map((_, i) => (
                   <AlbumCardSkeleton key={i} />
                 ))
-              : trendingAlbums.map(album => (
-                  <TrendingAlbumCard key={album.albumId} album={album} />
+              : trendingAlbums.map(item => (
+                  <TrendingAlbumCard key={item.album.id} item={item} />
                 ))}
           </div>
         </ContentRow>
@@ -278,17 +202,31 @@ function ArtistCardSkeleton() {
   );
 }
 
-// Trending Artist Card Component
-function TrendingArtistCard({ artist }: { artist: TrendingArtist }) {
+// Trending Artist Card Component (adapted for GraphQL shape)
+function TrendingArtistCard({
+  item,
+}: {
+  item: {
+    artist: {
+      id: string;
+      name: string;
+      imageUrl?: string | null;
+      cloudflareImageId?: string | null;
+    };
+    recommendationCount: number;
+    albumsInRecommendations: number;
+    averageScore: number;
+  };
+}) {
   return (
     <div className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-zinc-600 hover:bg-zinc-800/50 transition-all duration-200 group cursor-pointer'>
       <div className='text-center space-y-3'>
         <div className='relative w-16 h-16 mx-auto'>
-          {artist.imageUrl ? (
+          {item.artist.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={artist.imageUrl}
-              alt={artist.name}
+              src={item.artist.imageUrl}
+              alt={item.artist.name}
               className='w-full h-full rounded-full object-cover border-2 border-zinc-700 group-hover:border-cosmic-latte transition-colors'
             />
           ) : (
@@ -300,18 +238,18 @@ function TrendingArtistCard({ artist }: { artist: TrendingArtist }) {
 
         <div>
           <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-            {artist.name}
+            {item.artist.name}
           </h3>
           <p className='text-xs text-zinc-400 mt-1'>
-            {artist.recommendationCount} recommendations
+            {item.recommendationCount} recommendations
           </p>
           <p className='text-xs text-zinc-500'>
-            {artist.uniqueAlbumsCount} albums
+            {item.albumsInRecommendations} albums
           </p>
         </div>
 
         <div className='text-xs text-emeraled-green bg-emeraled-green/10 rounded px-2 py-1'>
-          ⭐ {artist.averageScore}/10
+          {item.averageScore.toFixed(1)}/10
         </div>
       </div>
     </div>
@@ -334,54 +272,60 @@ function AlbumCardSkeleton() {
   );
 }
 
-// Trending Album Card Component
-function TrendingAlbumCard({ album }: { album: TrendingAlbum }) {
+// Trending Album Card Component (adapted for GraphQL shape)
+function TrendingAlbumCard({
+  item,
+}: {
+  item: {
+    album: {
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        artist: {
+          id: string;
+          name: string;
+        };
+      }>;
+    };
+    recommendationCount: number;
+    averageScore: number;
+  };
+}) {
+  const artistName =
+    item.album.artists.map(a => a.artist.name).join(', ') || 'Unknown Artist';
+
   return (
     <div className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 hover:border-zinc-600 hover:bg-zinc-800/50 transition-all duration-200 group cursor-pointer'>
       <div className='space-y-3'>
         <div className='relative'>
           <AlbumImage
-            src={album.imageUrl}
-            alt={`${album.title} by ${album.artist}`}
+            src={item.album.coverArtUrl}
+            cloudflareImageId={item.album.cloudflareImageId}
+            alt={`${item.album.title} by ${artistName}`}
             width={144}
             height={144}
             className='w-full aspect-square rounded object-cover border border-zinc-700 group-hover:border-zinc-500 transition-colors'
           />
           <div className='absolute top-2 right-2 bg-black/60 rounded px-1.5 py-0.5'>
             <span className='text-xs text-emeraled-green font-medium'>
-              {album.averageScore}/10
+              {item.averageScore.toFixed(1)}/10
             </span>
           </div>
           <div className='absolute bottom-2 left-2 bg-black/60 rounded px-1.5 py-0.5'>
             <span className='text-xs text-white font-medium'>
-              {album.recommendationCount}x
+              {item.recommendationCount}x
             </span>
           </div>
         </div>
 
         <div className='space-y-1'>
           <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-            {album.title}
+            {item.album.title}
           </h3>
-          <p className='text-xs text-zinc-400 truncate'>{album.artist}</p>
-          {album.recentRecommendations[0] && (
-            <div className='flex items-center space-x-1'>
-              <div className='w-3 h-3 rounded-full bg-zinc-700'>
-                {album.recentRecommendations[0].user?.image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={album.recentRecommendations[0].user.image}
-                    alt={album.recentRecommendations[0].user.username || 'User'}
-                    className='w-full h-full rounded-full object-cover'
-                  />
-                )}
-              </div>
-              <p className='text-xs text-zinc-500 truncate'>
-                Recent by{' '}
-                {album.recentRecommendations[0].user?.username || 'Anonymous'}
-              </p>
-            </div>
-          )}
+          <p className='text-xs text-zinc-400 truncate'>{artistName}</p>
         </div>
       </div>
     </div>

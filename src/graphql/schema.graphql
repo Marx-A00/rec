@@ -365,6 +365,79 @@ type UserFollow {
 }
 
 # =============================================
+# USER CONNECTION & DISCOVERY TYPES
+# =============================================
+
+type UserConnection {
+  users: [UserEdge!]!
+  cursor: String
+  hasMore: Boolean!
+  total: Int!
+}
+
+type UserEdge {
+  id: String!
+  username: String
+  email: String
+  image: String
+  bio: String
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  followedAt: DateTime
+  isFollowing: Boolean!
+}
+
+type TrendingUser {
+  id: String!
+  username: String
+  email: String
+  image: String
+  bio: String
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  followerGrowthRate: Int!
+  recentActivityScore: Int!
+  trendingScore: Int!
+  recentActivity: TrendingUserActivity!
+  topGenres: [String!]!
+}
+
+type TrendingUserActivity {
+  newFollowers: Int!
+  newRecommendations: Int!
+  timeframe: String!
+}
+
+type TrendingUsersResponse {
+  users: [TrendingUser!]!
+  total: Int!
+  timeframe: String!
+}
+
+type NewUser {
+  id: String!
+  username: String
+  email: String
+  image: String
+  bio: String
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  joinedAt: DateTime!
+  daysSinceJoined: Int!
+  hasRecommendations: Boolean!
+  hasFollowers: Boolean!
+  activityLevel: String!
+}
+
+type NewUsersResponse {
+  users: [NewUser!]!
+  total: Int!
+}
+
+# =============================================
 # SEARCH & DISCOVERY TYPES
 # =============================================
 
@@ -2402,10 +2475,15 @@ type Query {
   socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
 
   # User social queries
-  userFollowers(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
-  userFollowing(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  userFollowers(userId: String!, cursor: String, limit: Int = 20, search: String, sort: String = "recent"): UserConnection!
+  userFollowing(userId: String!, cursor: String, limit: Int = 20, search: String, sort: String = "recent"): UserConnection!
   mutualConnections(userId: String!): [User!]!
   isFollowing(userId: String!): Boolean!
+
+  # Discovery queries
+  trendingUsers(limit: Int = 20, timeframe: String = "7d"): TrendingUsersResponse!
+  newUsers(limit: Int = 20, maxDays: Int = 30): NewUsersResponse!
+  browseNewUsers(limit: Int = 15): [User!]!
 
   # User status queries
   onboardingStatus: OnboardingStatus!

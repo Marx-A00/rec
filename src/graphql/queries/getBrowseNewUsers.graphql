@@ -1,0 +1,13 @@
+query GetBrowseNewUsers($limit: Int = 15) {
+  browseNewUsers(limit: $limit) {
+    id
+    username
+    email
+    image
+    bio
+    followersCount
+    followingCount
+    recommendationsCount
+    createdAt
+  }
+}

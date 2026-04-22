@@ -68,6 +68,7 @@ async function getSpotifyTrending(): Promise<SpotifyTrendingData> {
 // TODO: add Recent Recommendations Section
 async function getNewUsers(limit: number = 15) {
   const users = await prisma.user.findMany({
+    where: { deletedAt: null },
     take: limit,
     select: {
       id: true,

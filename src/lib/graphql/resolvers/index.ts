@@ -1045,6 +1045,7 @@ export const resolvers: Resolvers = {
         let users = [];
         if (searchUsers) {
           const userWhere = {
+            deletedAt: null,
             OR: [
               { username: { contains: query, mode: 'insensitive' as const } },
               { bio: { contains: query, mode: 'insensitive' as const } },

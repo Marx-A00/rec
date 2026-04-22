@@ -139,7 +139,7 @@ export default async function MobileProfilePage({ params }: ProfilePageProps) {
     },
   });
 
-  if (!userData) {
+  if (!userData || userData.deletedAt) {
     notFound();
   }
 
