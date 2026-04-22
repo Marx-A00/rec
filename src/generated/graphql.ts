@@ -13099,7 +13099,7 @@ useInfiniteAlbumsByJobIdQuery.getKey = (
 ) => ['AlbumsByJobId.infinite', variables];
 
 export const GetLatestReleasesDocument = `
-    query GetLatestReleases($source: String = "all", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
+    query GetLatestReleases($source: String = "all", $sortBy: String = "releaseDate", $sortOrder: String = "desc", $limit: Int = 200) {
   searchAlbums(
     source: $source
     sortBy: $sortBy

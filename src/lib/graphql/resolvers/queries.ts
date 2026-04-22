@@ -2013,7 +2013,7 @@ export const queryResolvers: QueryResolvers = {
       // Sorting
       const orderBy: any = {};
       if (sortBy === 'title') orderBy.title = sortOrder;
-      else if (sortBy === 'releaseDate') orderBy.releaseDate = sortOrder;
+      else if (sortBy === 'releaseDate') orderBy.releaseDate = { sort: sortOrder, nulls: 'last' };
       else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
       else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
       else if (sortBy === 'createdAt') orderBy.createdAt = sortOrder;

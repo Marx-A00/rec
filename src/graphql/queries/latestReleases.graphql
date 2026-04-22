@@ -1,7 +1,7 @@
 # Query for fetching latest releases (albums from all sync sources)
 query GetLatestReleases(
   $source: String = "all"
-  $sortBy: String = "createdAt"
+  $sortBy: String = "releaseDate"
   $sortOrder: String = "desc"
   $limit: Int = 200
 ) {

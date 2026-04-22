@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { auth } from '@/../auth';
 import { prisma } from '@/lib/prisma';
+import { getLatestReleases } from '@/lib/albums/latest-releases';
 
 import MobileBrowseClient from './MobileBrowseClient';
 
@@ -19,31 +20,7 @@ async function getNewUsers(limit: number = 15) {
     },
   });
 
-  // Sort by ID descending as proxy for creation order
   return users.sort((a, b) => b.id.localeCompare(a.id));
-}
-
-async function getLatestReleases(limit: number = 20) {
-  const albums = await prisma.album.findMany({
-    where: { source: 'SPOTIFY' },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-    include: {
-      artists: {
-        include: { artist: true },
-        orderBy: { position: 'asc' },
-      },
-    },
-  });
-
-  return albums.map(album => ({
-    id: album.id,
-    title: album.title,
-    coverArtUrl: album.coverArtUrl,
-    cloudflareImageId: album.cloudflareImageId,
-    releaseDate: album.releaseDate?.toISOString() || null,
-    artists: album.artists.map(aa => aa.artist.name).join(', '),
-  }));
 }
 
 export default async function MobileBrowsePage() {
@@ -53,9 +30,9 @@ export default async function MobileBrowsePage() {
     redirect('/m/auth/signin');
   }
 
-  const [newUsers, latestReleases] = await Promise.all([
+  const [newUsers, { releases: latestReleases }] = await Promise.all([
     getNewUsers(),
-    getLatestReleases(),
+    getLatestReleases(20),
   ]);
 
   return (
