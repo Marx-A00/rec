@@ -10,15 +10,17 @@ test.describe('Mobile Settings Page', () => {
 
     // Login first
     await page.goto('/m/auth/signin');
+    await page.waitForLoadState('networkidle');
+
     await page
       .locator('input[name="identifier"]')
       .fill('playwright_test_existing@example.com');
     await page.locator('input[name="password"]').fill('TestPassword123!');
     await page.locator('button[type="submit"]').click();
 
-    // Wait for navigation away from signin
+    // Wait for navigation away from signin (mobile uses router.push, can be slower in webkit)
     await page.waitForURL(url => !url.pathname.includes('/signin'), {
-      timeout: 10000,
+      timeout: 15000,
     });
 
     // Navigate to settings
