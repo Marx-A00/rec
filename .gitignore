@@ -9,6 +9,9 @@ rec-oauth-baea9878d047.json
 # Test outputs
 test-output/
 
+# Screenshots
+screenshots/
+
 # dependencies
 /node_modules
 /.pnp

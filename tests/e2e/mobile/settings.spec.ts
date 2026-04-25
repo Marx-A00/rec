@@ -215,10 +215,10 @@ test.describe('Mobile Settings Page', () => {
 
   test.describe('Account Section', () => {
     test('should display user statistics', async ({ page }) => {
-      // Check for stats labels
-      await expect(page.locator('text=Recs')).toBeVisible();
-      await expect(page.locator('text=Followers')).toBeVisible();
-      await expect(page.locator('text=Following')).toBeVisible();
+      // Check for stats labels (use exact text match to avoid ambiguity)
+      await expect(page.getByText('Recs', { exact: true })).toBeVisible();
+      await expect(page.getByText('Followers', { exact: true })).toBeVisible();
+      await expect(page.getByText('Following', { exact: true })).toBeVisible();
     });
 
     test('should display sign out button', async ({ page }) => {

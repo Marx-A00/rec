@@ -1,8 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
 
 /**
  * E2E tests for user registration
  * Tests the registration form at /register
+ *
+ * Note: The registration form only collects email + password.
+ * Username is set during the Complete Profile onboarding step.
  */
 
 // Generate a unique email for each test run
@@ -11,6 +14,18 @@ const generateTestEmail = () => {
   const randomString = Math.random().toString(36).substring(7);
   return `PLAYWRIGHT_TEST_${timestamp}_${randomString}@example.com`;
 };
+
+/**
+ * Fill a form field by typing character-by-character.
+ * Playwright's .fill() doesn't reliably trigger React's onChange in all browsers.
+ * pressSequentially simulates real keystrokes which always trigger React events.
+ */
+async function fillField(page: Page, selector: string, value: string) {
+  const locator = page.locator(selector);
+  await locator.click();
+  await locator.fill('');
+  await locator.pressSequentially(value, { delay: 20 });
+}
 
 test.describe('User Registration', () => {
   test.beforeEach(async ({ page }) => {
@@ -21,13 +36,15 @@ test.describe('User Registration', () => {
   test('should display registration form with all required fields', async ({
     page,
   }) => {
-    // Check page title (h1, not h2)
+    // Check page title
     await expect(page.locator('h1')).toContainText('Create your account');
 
-    // Check all form fields are present (no confirmPassword in this form)
-    await expect(page.locator('input[name="username"]')).toBeVisible();
+    // Registration form has email and password only (no username)
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
+
+    // Should NOT have a username field (username is set in Complete Profile)
+    await expect(page.locator('input[name="username"]')).not.toBeVisible();
 
     // Check submit button
     await expect(page.locator('button[type="submit"]')).toContainText(
@@ -36,75 +53,84 @@ test.describe('User Registration', () => {
 
     // Check sign in link
     await expect(page.locator('a[href="/signin"]')).toBeVisible();
+
+    // Check Google OAuth button
+    await expect(page.getByText('Sign up with Google')).toBeVisible();
   });
 
   test('should show validation errors for invalid email', async ({ page }) => {
     // Fill invalid email and blur
-    await page.locator('input[name="email"]').fill('invalid-email');
+    await fillField(page, 'input[name="email"]', 'invalid-email');
     await page.locator('input[name="password"]').click(); // Blur email field
 
     // Should show email validation error
-    const emailError = page.locator('#email-error, [role="alert"]').first();
+    const emailError = page.locator('#email-error');
     await expect(emailError).toBeVisible({ timeout: 3000 });
   });
 
   test('should show password strength indicator', async ({ page }) => {
     const passwordInput = page.locator('input[name="password"]');
 
-    // Test weak password - look for the strength indicator
-    await passwordInput.fill('weak');
-    await page.waitForTimeout(300);
+    // Click into the field and type to ensure React state updates
+    await passwordInput.click();
+    await passwordInput.pressSequentially('weak', { delay: 50 });
 
-    // Password strength component should be visible
+    // Password strength indicator should be visible
     const strengthIndicator = page.locator('#password-strength');
-    await expect(strengthIndicator).toBeVisible();
+    await expect(strengthIndicator).toBeVisible({ timeout: 3000 });
 
-    // Test stronger password
-    await passwordInput.fill('StrongPassword123!');
-    await page.waitForTimeout(300);
+    // Clear and type a stronger password
+    await passwordInput.fill('');
+    await passwordInput.pressSequentially('StrongPassword123!', { delay: 20 });
     await expect(strengthIndicator).toBeVisible();
   });
 
   test('should successfully register a new user', async ({ page }) => {
     const testEmail = generateTestEmail();
     const testPassword = 'TestPassword123!';
-    const testUsername = 'TestUser';
 
-    // Fill in the registration form
-    await page.locator('input[name="username"]').fill(testUsername);
-    await page.locator('input[name="email"]').fill(testEmail);
-    await page.locator('input[name="password"]').fill(testPassword);
+    // Fill in the registration form (email + password only)
+    await fillField(page, 'input[name="email"]', testEmail);
+    await fillField(page, 'input[name="password"]', testPassword);
+
+    // Wait for submit button to be enabled
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeEnabled({ timeout: 3000 });
 
     // Submit the form
-    await page.locator('button[type="submit"]').click();
+    await submitButton.click();
 
-    // Wait for loading state
-    await expect(page.locator('text=Creating your account...')).toBeVisible({
-      timeout: 5000,
+    // Wait for either redirect (success) or a rate limit error
+    const rateLimitError = page.locator('[role="alert"]').filter({
+      hasText: /too many requests/i,
     });
 
-    // Should either:
-    // 1. Show success page (AccountCreatedSuccess component)
-    // 2. Redirect to home page
-    // 3. Show an error (which we don't want)
+    const result = await Promise.race([
+      page
+        .waitForURL(
+          url =>
+            url.pathname.includes('/complete-profile') ||
+            url.pathname.includes('/home') ||
+            url.pathname === '/',
+          { timeout: 20000 }
+        )
+        .then(() => 'redirected' as const),
+      rateLimitError
+        .waitFor({ state: 'visible', timeout: 20000 })
+        .then(() => 'rate-limited' as const),
+    ]);
 
-    // Wait for either success or redirect
-    await Promise.race([
-      expect(page.locator('text=Welcome')).toBeVisible({ timeout: 15000 }),
-      page.waitForURL(/\/(home|home-mosaic)?$/, { timeout: 15000 }),
-    ]).catch(() => {
-      // If neither happens, check we're not stuck on error
-    });
+    // Skip if rate-limited — not a test failure
+    if (result === 'rate-limited') {
+      test.skip(true, 'Registration API rate-limited');
+      return;
+    }
 
     // Should NOT show error state
     const errorAlert = page
       .locator('[role="alert"]')
       .filter({ hasText: /failed|error/i });
-    await expect(errorAlert)
-      .not.toBeVisible()
-      .catch(() => {
-        // Error might be visible, test will report it
-      });
+    await expect(errorAlert).not.toBeVisible();
   });
 
   test('should show loading state while submitting', async ({ page }) => {
@@ -112,14 +138,17 @@ test.describe('User Registration', () => {
     const testPassword = 'TestPassword123!';
 
     // Fill in the registration form
-    await page.locator('input[name="username"]').fill('TestUser');
-    await page.locator('input[name="email"]').fill(testEmail);
-    await page.locator('input[name="password"]').fill(testPassword);
+    await fillField(page, 'input[name="email"]', testEmail);
+    await fillField(page, 'input[name="password"]', testPassword);
+
+    // Wait for submit button to be enabled
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeEnabled({ timeout: 3000 });
 
     // Click submit
-    await page.locator('button[type="submit"]').click();
+    await submitButton.click();
 
-    // Check for loading text to appear
+    // Check for loading text
     await expect(page.getByText('Creating your account...')).toBeVisible({
       timeout: 5000,
     });
@@ -128,32 +157,24 @@ test.describe('User Registration', () => {
   test('should navigate to sign in page when clicking sign in link', async ({
     page,
   }) => {
-    // Click the sign in link
     await page.locator('a[href="/signin"]').click();
-
-    // Should navigate to sign in page
     await expect(page).toHaveURL('/signin');
   });
 
-  test('should require username field', async ({ page }) => {
-    const testEmail = generateTestEmail();
-    const testPassword = 'TestPassword123!';
+  test('should disable submit button when fields are empty', async ({
+    page,
+  }) => {
+    // Submit button should be disabled with empty fields
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeDisabled();
 
-    // Fill in the form without username (leave it empty)
-    await page.locator('input[name="email"]').fill(testEmail);
-    await page.locator('input[name="password"]').fill(testPassword);
+    // Fill only email - still disabled
+    await fillField(page, 'input[name="email"]', 'test@example.com');
+    await expect(submitButton).toBeDisabled({ timeout: 2000 });
 
-    // Submit the form
-    await page.locator('button[type="submit"]').click();
-
-    // Wait for validation error
-    await page.waitForTimeout(1000);
-
-    // Form should show validation error for username (it's required now)
-    const usernameError = page
-      .locator('#username-error, [role="alert"]')
-      .first();
-    await expect(usernameError).toBeVisible({ timeout: 3000 });
+    // Fill password too - should become enabled
+    await fillField(page, 'input[name="password"]', 'TestPassword123!');
+    await expect(submitButton).toBeEnabled({ timeout: 3000 });
   });
 
   test('should show/hide password with toggle button', async ({ page }) => {
@@ -164,7 +185,7 @@ test.describe('User Registration', () => {
     await expect(passwordInput).toHaveAttribute('type', 'password');
 
     // Fill password
-    await passwordInput.fill('TestPassword123!');
+    await fillField(page, 'input[name="password"]', 'TestPassword123!');
 
     // Click toggle to show password
     await toggleButton.click();
@@ -178,13 +199,15 @@ test.describe('User Registration', () => {
   test('should clear server error when user starts typing', async ({
     page,
   }) => {
-    // Use a known existing email to trigger server error
-    // First, we need to trigger an error
-    await page.locator('input[name="email"]').fill('test@example.com');
-    await page.locator('input[name="password"]').fill('TestPassword123!');
-    await page.locator('button[type="submit"]').click();
+    // Submit with an email that may trigger a server error
+    await fillField(page, 'input[name="email"]', 'test@example.com');
+    await fillField(page, 'input[name="password"]', 'TestPassword123!');
 
-    // Wait for potential error (might not appear if email doesn't exist)
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeEnabled({ timeout: 3000 });
+    await submitButton.click();
+
+    // Wait for potential error
     await page.waitForTimeout(3000);
 
     // Check if error appeared
@@ -193,7 +216,7 @@ test.describe('User Registration', () => {
 
     if (hasError) {
       // Start typing in email field
-      await page.locator('input[name="email"]').fill('new');
+      await fillField(page, 'input[name="email"]', 'new');
 
       // Error should disappear
       await expect(errorAlert).not.toBeVisible({ timeout: 2000 });
@@ -205,27 +228,29 @@ test.describe('User Registration', () => {
 
   test('should handle registration with existing email', async ({ page }) => {
     // Use a test email that likely exists (from test setup)
-    const existingEmail = 'PLAYWRIGHT_TEST_existing@example.com';
+    const existingEmail = 'playwright_test_existing@example.com';
     const testPassword = 'TestPassword123!';
 
-    await page.locator('input[name="username"]').fill('DuplicateUser');
-    await page.locator('input[name="email"]').fill(existingEmail);
-    await page.locator('input[name="password"]').fill(testPassword);
+    await fillField(page, 'input[name="email"]', existingEmail);
+    await fillField(page, 'input[name="password"]', testPassword);
 
-    // Submit the form
-    await page.locator('button[type="submit"]').click();
+    // Wait for submit button to be enabled then click
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeEnabled({ timeout: 3000 });
+    await submitButton.click();
 
     // Wait for response
     await page.waitForTimeout(5000);
 
-    // Should show error OR success (depending on whether email actually exists)
-    // The test is checking the form handles the response properly
+    // Should show error OR redirect (depending on whether email exists)
     const pageContent = await page.content();
     const hasProcessed =
       pageContent.includes('already') ||
       pageContent.includes('Welcome') ||
       pageContent.includes('error') ||
-      page.url().includes('home');
+      pageContent.includes('complete-profile') ||
+      page.url().includes('home') ||
+      page.url().includes('complete-profile');
 
     expect(hasProcessed).toBeTruthy();
   });

@@ -50,22 +50,31 @@ async function globalSetup(config: FullConfig) {
         email: 'playwright_test_existing@example.com',
         username: '🎭 PLAYWRIGHT TEST - Existing User',
         hashedPassword: hashedPassword,
+        profileUpdatedAt: new Date(),
       },
       {
         email: 'playwright_test_duplicate@example.com',
         username: '🎭 PLAYWRIGHT TEST - Duplicate User',
         hashedPassword: hashedPassword,
+        profileUpdatedAt: new Date(),
       },
       {
         email: 'playwright_test_sample@example.com',
         username: '🎭 PLAYWRIGHT TEST - Sample User',
         hashedPassword: hashedPassword,
+        profileUpdatedAt: new Date(),
       },
     ];
 
     for (const userData of testUsers) {
-      await prisma.user.create({
+      const user = await prisma.user.create({
         data: userData,
+      });
+      // Create user settings with onboarding tour disabled to prevent tour overlays in tests
+      await prisma.userSettings.upsert({
+        where: { userId: user.id },
+        update: { showOnboardingTour: false },
+        create: { userId: user.id, showOnboardingTour: false },
       });
       console.log(`Created test user: ${userData.username}`);
     }
@@ -75,7 +84,7 @@ async function globalSetup(config: FullConfig) {
     const testUserCount = await prisma.user.count({
       where: {
         email: {
-          contains: 'PLAYWRIGHT_TEST',
+          contains: 'playwright_test',
         },
       },
     });

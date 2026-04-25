@@ -754,8 +754,8 @@ export async function middleware(request: NextRequest) {
   // NOTE: Auth checks removed from middleware - Prisma doesn't work in Edge runtime.
   // Pages and API routes handle their own authentication via useSession() or getServerSession().
 
-  // 1. Rate limiting for API routes
-  if (pathname.startsWith('/api/')) {
+  // 1. Rate limiting for API routes (skip if disabled, e.g. in E2E tests)
+  if (pathname.startsWith('/api/') && !process.env.DISABLE_RATE_LIMITING) {
     const rateLimitResult = checkRateLimit(request, pathname);
 
     if (!rateLimitResult.allowed) {

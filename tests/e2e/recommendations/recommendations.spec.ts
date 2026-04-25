@@ -526,9 +526,8 @@ test.describe('Recommendations - Create Page', () => {
     await page.goto('/recommend');
     await waitForPageReady(page);
 
-    const homeLink = page.locator('a:has-text("home")');
+    const homeLink = page.locator('a[href="/home-mosaic"]:has-text("home")');
     await expect(homeLink).toBeVisible({ timeout: 5000 });
-    await expect(homeLink).toHaveAttribute('href', '/home-mosaic');
   });
 
   test('should have album search on /recommend page', async ({ page }) => {
@@ -594,17 +593,7 @@ test.describe('Recommendations - Create Page', () => {
     await searchInput.fill('radiohead');
     await page.waitForTimeout(1000);
 
-    // Should show search results (might be in a dropdown or list)
-    const results = page.locator(
-      '[data-testid="search-result"], [role="option"], li:has-text("Radiohead")'
-    );
-    const hasResults = await results
-      .first()
-      .isVisible({ timeout: 10000 })
-      .catch(() => false);
-
-    // If no results visible, the search might work differently
-    // Just verify the input accepted the text
+    // Verify the input accepted the text
     await expect(searchInput).toHaveValue('radiohead');
   });
 });
