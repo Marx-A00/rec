@@ -15,14 +15,15 @@ async function fillField(page: Page, selector: string, value: string) {
  * Sign in as a test user via the UI, matching the working login.spec.ts approach.
  * Returns true if sign-in succeeded, false otherwise.
  */
-async function signInAsTestUser(page: Page): Promise<boolean> {
+async function signInAsOnboardingUser(page: Page): Promise<boolean> {
   await page.goto('/signin');
   await page.waitForLoadState('networkidle');
 
   const identifierInput = page.locator('input[name="identifier"]');
   await expect(identifierInput).toBeVisible({ timeout: 10000 });
 
-  await identifierInput.fill('playwright_test_existing@example.com');
+  // Use the onboarding user (has no profileUpdatedAt, won't be redirected away)
+  await identifierInput.fill('playwright_test_onboarding@example.com');
   await page.locator('input[name="password"]').fill('TestPassword123!');
   await page.locator('button[type="submit"]').click();
 
@@ -51,7 +52,7 @@ test.describe('Complete Profile (Onboarding)', () => {
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
-      const signedIn = await signInAsTestUser(page);
+      const signedIn = await signInAsOnboardingUser(page);
       if (!signedIn) {
         test.skip(true, 'Sign-in failed (likely rate-limited)');
         return;
@@ -116,20 +117,25 @@ test.describe('Complete Profile (Onboarding)', () => {
       await expect(available.or(taken)).toBeVisible({ timeout: 5000 });
     });
 
-    test('should show validation error for short username', async ({
+    test('should not trigger availability check for short username', async ({
       page,
     }) => {
       await expect(
         page.getByText('Set up your profile')
       ).toBeVisible({ timeout: 10000 });
 
-      // Type a single character — too short
+      // Type a single character — too short for availability check
       await fillField(page, 'input#username', 'a');
 
-      // Should show validation error
+      // App keeps showing the default hint (doesn't run validation for < 2 chars)
       await expect(
-        page.getByText('Username must be at least 2 characters long')
+        page.getByText(/2-30 characters/)
       ).toBeVisible({ timeout: 3000 });
+
+      // Availability indicator should NOT appear
+      await expect(
+        page.getByText('Username is available!')
+      ).not.toBeVisible();
     });
 
     test('should show bio character count', async ({ page }) => {

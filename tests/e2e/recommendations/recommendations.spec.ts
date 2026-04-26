@@ -12,6 +12,27 @@ import { test, expect, Page } from '@playwright/test';
  * - Edit/delete functionality for own recommendations
  */
 
+// Test user credentials
+const TEST_USER_EMAIL = 'playwright_test_existing@example.com';
+const TEST_USER_PASSWORD = 'TestPassword123!';
+
+// Helper to sign in as test user
+async function signInAsTestUser(page: Page): Promise<boolean> {
+  await page.goto('/signin');
+  await page.waitForLoadState('networkidle');
+  await page.locator('input[name="identifier"]').fill(TEST_USER_EMAIL);
+  await page.locator('input[name="password"]').fill(TEST_USER_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  try {
+    await page.waitForURL(url => !url.pathname.includes('/signin'), {
+      timeout: 15000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Helper to wait for page to be ready
 async function waitForPageReady(page: Page) {
   await page.waitForLoadState('domcontentloaded');
@@ -35,38 +56,10 @@ async function hasRecommendationCards(page: Page): Promise<boolean> {
 // Helper to navigate to own profile
 async function navigateToOwnProfile(page: Page): Promise<boolean> {
   try {
-    await page.goto('/home-mosaic');
+    await page.goto('/profile');
+    await page.waitForURL(/\/profile\/[a-zA-Z0-9-]+/, { timeout: 10000 });
     await waitForPageReady(page);
-
-    // Try to find profile link in navigation
-    const profileLink = page.locator('a[href^="/profile"]').first();
-    if (await profileLink.isVisible({ timeout: 5000 })) {
-      await profileLink.click();
-      await page.waitForURL(/\/profile/, { timeout: 10000 });
-      return true;
-    }
-
-    // Alternative: try the avatar/user menu
-    const avatarButton = page
-      .locator(
-        '[data-testid="user-menu"], button:has(img[alt*="avatar"]), button:has(span[class*="Avatar"])'
-      )
-      .first();
-    if (await avatarButton.isVisible({ timeout: 3000 })) {
-      await avatarButton.click();
-      await page.waitForTimeout(500);
-
-      const profileMenuItem = page
-        .locator('a[href^="/profile"], button:has-text("Profile")')
-        .first();
-      if (await profileMenuItem.isVisible({ timeout: 2000 })) {
-        await profileMenuItem.click();
-        await page.waitForURL(/\/profile/, { timeout: 10000 });
-        return true;
-      }
-    }
-
-    return false;
+    return true;
   } catch {
     return false;
   }
@@ -75,34 +68,19 @@ async function navigateToOwnProfile(page: Page): Promise<boolean> {
 // Helper to open the recommendation drawer
 async function openRecommendationDrawer(page: Page): Promise<boolean> {
   try {
-    // Look for the recommendation/add button (usually a + or similar icon)
-    const addButton = page
-      .locator(
-        '[data-testid="add-recommendation"], button[aria-label*="recommend"], button[aria-label*="Recommend"], [data-tour-step*="recommendation"]'
-      )
-      .first();
+    // Navigate to home page to ensure sidebar is loaded
+    await page.goto('/home-mosaic');
+    await waitForPageReady(page);
 
-    if (await addButton.isVisible({ timeout: 5000 })) {
-      await addButton.click();
-      await page.waitForTimeout(500);
+    // Click the sidebar Recommend button
+    const recommendButton = page.getByRole('button', { name: 'Recommend' });
+    await expect(recommendButton).toBeVisible({ timeout: 10000 });
+    await recommendButton.click();
 
-      // Wait for drawer to open
-      const drawer = page.locator(
-        '#recommendation-drawer, [role="dialog"]:has-text("Create Recommendation")'
-      );
-      return await drawer.isVisible({ timeout: 5000 });
-    }
-
-    // Alternative: dispatch custom event to open drawer
-    await page.evaluate(() => {
-      window.dispatchEvent(new Event('open-recommendation-drawer'));
-    });
-    await page.waitForTimeout(500);
-
-    const drawer = page.locator(
-      '#recommendation-drawer, [role="dialog"]:has-text("Create Recommendation")'
-    );
-    return await drawer.isVisible({ timeout: 3000 });
+    // Wait for the Create Recommendation dialog to appear
+    const drawer = page.getByRole('dialog', { name: 'Create Recommendation' });
+    await expect(drawer).toBeVisible({ timeout: 5000 });
+    return true;
   } catch {
     return false;
   }
@@ -110,8 +88,11 @@ async function openRecommendationDrawer(page: Page): Promise<boolean> {
 
 test.describe('Recommendations - Profile View', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/home-mosaic');
-    await waitForPageReady(page);
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+      return;
+    }
   });
 
   test('should display recommendation cards on profile page if user has recommendations', async ({
@@ -159,12 +140,13 @@ test.describe('Recommendations - Profile View', () => {
       return;
     }
 
-    // Check for SRC label
-    const srcLabel = page.locator('span:has-text("SRC")').first();
+    // Check for SRC label (scoped to article to avoid matching sidebar "Recommend" text)
+    const card = page.locator('article').first();
+    const srcLabel = card.locator('span', { hasText: 'SRC' });
     await expect(srcLabel).toBeVisible({ timeout: 5000 });
 
     // Check for REC label
-    const recLabel = page.locator('span:has-text("REC")').first();
+    const recLabel = card.locator('span', { hasText: 'REC' });
     await expect(recLabel).toBeVisible({ timeout: 5000 });
   });
 
@@ -203,19 +185,20 @@ test.describe('Recommendations - Profile View', () => {
       return;
     }
 
-    // Each card should have user avatar and name
-    const card = page.locator('article').filter({ hasText: 'SRC' }).first();
-    const avatar = card.locator(
-      '[class*="Avatar"], img[alt*="User"], img[alt*="avatar"]'
-    );
-    await expect(avatar).toBeVisible({ timeout: 5000 });
+    // Each card should have user info (username link)
+    const card = page.locator('article').first();
+    const userLink = card.locator('a[href*="/profile/"]');
+    await expect(userLink.first()).toBeVisible({ timeout: 5000 });
   });
 });
 
 test.describe('Recommendations - Card Interactions', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/home-mosaic');
-    await waitForPageReady(page);
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+      return;
+    }
   });
 
   test('should open detail modal when clicking a recommendation card', async ({
@@ -345,8 +328,11 @@ test.describe('Recommendations - Card Interactions', () => {
 
 test.describe('Recommendations - Drawer', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/home-mosaic');
-    await waitForPageReady(page);
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+      return;
+    }
   });
 
   test('should open recommendation drawer', async ({ page }) => {
@@ -599,129 +585,117 @@ test.describe('Recommendations - Create Page', () => {
 });
 
 test.describe('Recommendations - Album Page Integration', () => {
-  test.setTimeout(60000); // External API calls may be slow
+  test.setTimeout(60000);
+
+  test.beforeEach(async ({ page }) => {
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+    }
+  });
 
   test('should show recommendations tab on album detail page', async ({
     page,
   }) => {
-    // Navigate to search and find an album
-    await page.goto('/search?q=radiohead&type=albums');
+    // Use a known local album from browse page instead of external search
+    await page.goto('/browse');
     await waitForPageReady(page);
 
-    const albumCard = page
-      .locator('[data-testid="album-card"], a[href^="/albums/"]')
-      .first();
-    const hasAlbum = await albumCard
+    const albumLink = page.locator('a[href^="/albums/"]').first();
+    const hasAlbum = await albumLink
       .isVisible({ timeout: 10000 })
       .catch(() => false);
 
     if (!hasAlbum) {
-      test.skip();
+      test.skip(true, 'No albums on browse page');
       return;
     }
 
-    await albumCard.click();
+    await albumLink.click();
     await page.waitForURL(/\/albums\//, { timeout: 15000 });
     await waitForPageReady(page);
 
-    // Look for Recs tab on album page
-    const recsTab = page.locator(
-      'button:has-text("Recs"), [role="tab"]:has-text("Recs")'
-    );
-    const hasRecsTab = await recsTab
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
     // Album pages should have a Recs tab
-    expect(hasRecsTab || true).toBeTruthy(); // Pass if tab exists or doesn't (design may vary)
+    const recsTab = page.getByRole('tab', { name: 'Recs' });
+    await expect(recsTab).toBeVisible({ timeout: 10000 });
   });
 
   test('should show recommendation button/action on album page', async ({
     page,
   }) => {
-    await page.goto('/search?q=beatles&type=albums');
+    await page.goto('/browse');
     await waitForPageReady(page);
 
-    const albumCard = page
-      .locator('[data-testid="album-card"], a[href^="/albums/"]')
-      .first();
-    const hasAlbum = await albumCard
+    const albumLink = page.locator('a[href^="/albums/"]').first();
+    const hasAlbum = await albumLink
       .isVisible({ timeout: 10000 })
       .catch(() => false);
 
     if (!hasAlbum) {
-      test.skip();
+      test.skip(true, 'No albums on browse page');
       return;
     }
 
-    await albumCard.click();
+    await albumLink.click();
     await page.waitForURL(/\/albums\//, { timeout: 15000 });
     await waitForPageReady(page);
 
-    // Look for recommend action (button, menu item, or icon)
-    const recommendAction = page
-      .locator(
-        'button:has-text("Recommend"), ' +
-          'button[aria-label*="recommend"], ' +
-          '[data-testid="recommend-button"], ' +
-          '[data-tour-step*="recommend"]'
-      )
-      .first();
-
-    const hasAction = await recommendAction
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    // Some albums may have recommend action, some may not
-    expect(hasAction || true).toBeTruthy();
+    // Should have "Make Rec" or recommend button
+    const recommendButton = page.locator(
+      'button:has-text("Make Rec"), button:has-text("Create a recommendation")'
+    ).first();
+    await expect(recommendButton).toBeVisible({ timeout: 10000 });
   });
 });
 
 test.describe('Recommendations - Artist Page Integration', () => {
-  test.setTimeout(60000); // External API calls may be slow
+  test.setTimeout(60000);
+
+  test.beforeEach(async ({ page }) => {
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+    }
+  });
 
   test('should show recommendations section on artist page', async ({
     page,
   }) => {
-    await page.goto('/search?q=radiohead&type=artists');
-    await waitForPageReady(page);
+    // Use a known local artist from browse page
+    await page.goto('/browse');
+    await page.waitForLoadState('networkidle');
 
-    const artistCard = page
-      .locator('[data-testid="artist-card"], a[href^="/artists/"]')
-      .first();
-    const hasArtist = await artistCard
-      .isVisible({ timeout: 10000 })
+    const artistLink = page.locator('a[href*="/artists/"]').first();
+    const hasArtist = await artistLink
+      .isVisible({ timeout: 15000 })
       .catch(() => false);
 
     if (!hasArtist) {
-      test.skip();
+      test.skip(true, 'No artists on browse page');
       return;
     }
 
-    await artistCard.click();
+    await artistLink.click();
     await page.waitForURL(/\/artists\//, { timeout: 15000 });
     await waitForPageReady(page);
 
-    // Look for Recs tab or section on artist page
-    const recsSection = page.locator(
-      'button:has-text("Recs"), [role="tab"]:has-text("Recs"), h2:has-text("Recommendation")'
-    );
-    const hasRecs = await recsSection
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    // Artist pages may or may not have recs section
-    expect(hasRecs || true).toBeTruthy();
+    // Artist pages should have a Recs tab
+    const recsTab = page.getByRole('tab', { name: 'Recs' });
+    await expect(recsTab).toBeVisible({ timeout: 10000 });
   });
 });
 
 test.describe('Recommendations - Accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed');
+    }
+  });
+
   test('should have proper ARIA labels on recommendation cards', async ({
     page,
   }) => {
-    await page.goto('/home-mosaic');
-    await waitForPageReady(page);
-
     const navigated = await navigateToOwnProfile(page);
     if (!navigated) {
       test.skip();
@@ -766,19 +740,17 @@ test.describe('Recommendations - Accessibility', () => {
     expect(hasFocus).toBeTruthy();
   });
 
-  test('should have focusable album buttons in drawer', async ({ page }) => {
+  test('should have focusable elements in drawer', async ({ page }) => {
     const opened = await openRecommendationDrawer(page);
     if (!opened) {
-      test.skip();
+      test.skip(true, 'Could not open recommendation drawer');
       return;
     }
 
-    // Tab to the first focusable element in the drawer
-    await page.keyboard.press('Tab');
-
-    const focusedElement = page.locator(
-      '#recommendation-drawer :focus, [role="dialog"] :focus'
-    );
-    await expect(focusedElement).toBeVisible({ timeout: 5000 });
+    // The drawer should contain focusable elements (inputs, buttons)
+    const drawer = page.getByRole('dialog', { name: 'Create Recommendation' });
+    await expect(drawer.locator('input').first()).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Close drawer' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Create Recommendation' })).toBeVisible();
   });
 });

@@ -1,19 +1,33 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-test.describe('Search Functionality', () => {
-  // Login before each test
-  test.beforeEach(async ({ page }) => {
-    // Login with test user
-    await page.goto('/signin');
-    await page.waitForLoadState('networkidle');
-    await page
-      .locator('input[name="identifier"]')
-      .fill('playwright_test_existing@example.com');
-    await page.locator('input[name="password"]').fill('TestPassword123!');
-    await page.locator('button[type="submit"]').click();
+const TEST_USER_EMAIL = 'playwright_test_existing@example.com';
+const TEST_USER_PASSWORD = 'TestPassword123!';
+
+async function signInAsTestUser(page: Page): Promise<boolean> {
+  await page.goto('/signin');
+  await page.waitForLoadState('networkidle');
+  await page.locator('input[name="identifier"]').fill(TEST_USER_EMAIL);
+  await page.locator('input[name="password"]').fill(TEST_USER_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  try {
     await page.waitForURL(url => !url.pathname.includes('/signin'), {
       timeout: 15000,
     });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+test.describe('Search Functionality', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    const signedIn = await signInAsTestUser(page);
+    if (!signedIn) {
+      test.skip(true, 'Sign-in failed (likely rate-limited)');
+      return;
+    }
   });
 
   test.describe('Search Bar', () => {
@@ -23,92 +37,73 @@ test.describe('Search Functionality', () => {
       await page.waitForSelector('header[role="banner"]', { timeout: 20000 });
       // Wait a bit for React hydration
       await page.waitForTimeout(500);
-      // Wait for search bar
-      await page.waitForSelector('#main-search-bar', { timeout: 10000 });
+      // Wait for search bar (CommandInput uses dynamic Radix IDs, so match by placeholder)
+      await page.waitForSelector(
+        'input[placeholder="Search albums, artists, and labels..."]',
+        { timeout: 10000 }
+      );
     }
 
     test('should display search bar in header', async ({ page }) => {
-      // Navigate to collections page (simpler, definitely has search bar)
       await page.goto('/collections');
-
-      try {
-        await waitForSearchBar(page);
-        const searchInput = page.locator('#main-search-bar');
-        await expect(searchInput).toBeVisible();
-      } catch {
-        // Search bar might not be on this page in mobile view, skip
-        test.skip();
-      }
+      await waitForSearchBar(page);
+      const searchInput = page.locator('input[placeholder="Search albums, artists, and labels..."]');
+      await expect(searchInput).toBeVisible();
     });
 
     test('should have search type dropdown with options', async ({ page }) => {
       await page.goto('/collections');
+      await waitForSearchBar(page);
 
-      try {
-        await waitForSearchBar(page);
+      // Click the search type dropdown
+      const dropdown = page.locator('button[role="combobox"]').first();
+      await expect(dropdown).toBeVisible({ timeout: 10000 });
+      await dropdown.click();
 
-        // Click the search type dropdown
-        const dropdown = page.locator('button[role="combobox"]').first();
-        await expect(dropdown).toBeVisible({ timeout: 10000 });
-        await dropdown.click();
-
-        // Check dropdown options
-        await expect(
-          page.getByRole('option', { name: 'Albums' })
-        ).toBeVisible();
-        await expect(
-          page.getByRole('option', { name: 'Artists' })
-        ).toBeVisible();
-        await expect(
-          page.getByRole('option', { name: 'Tracks' })
-        ).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Users' })).toBeVisible();
-      } catch {
-        test.skip();
-      }
+      // Check dropdown options
+      await expect(
+        page.getByRole('option', { name: 'Albums' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('option', { name: 'Artists' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('option', { name: 'Tracks' })
+      ).toBeVisible();
+      await expect(page.getByRole('option', { name: 'Users' })).toBeVisible();
     });
 
     test('should navigate to search page on Enter', async ({ page }) => {
       await page.goto('/collections');
+      await waitForSearchBar(page);
 
-      try {
-        await waitForSearchBar(page);
+      const searchInput = page.locator('input[placeholder="Search albums, artists, and labels..."]');
+      await searchInput.fill('radiohead');
+      await searchInput.press('Enter');
 
-        const searchInput = page.locator('#main-search-bar');
-        await searchInput.fill('radiohead');
-        await searchInput.press('Enter');
-
-        // Should navigate to search page with query param
-        await expect(page).toHaveURL(/\/search\?q=radiohead/, {
-          timeout: 15000,
-        });
-      } catch {
-        test.skip();
-      }
+      // Should navigate to search page with query param
+      await expect(page).toHaveURL(/\/search\?q=radiohead/, {
+        timeout: 15000,
+      });
     });
 
     test('should include search type in URL', async ({ page }) => {
       await page.goto('/collections');
+      await waitForSearchBar(page);
 
-      try {
-        await waitForSearchBar(page);
+      // Select Artists from dropdown
+      const dropdown = page.locator('button[role="combobox"]').first();
+      await dropdown.click();
+      await page.getByRole('option', { name: 'Artists' }).click();
 
-        // Select Artists from dropdown
-        const dropdown = page.locator('button[role="combobox"]').first();
-        await dropdown.click();
-        await page.getByRole('option', { name: 'Artists' }).click();
+      const searchInput = page.locator('input[placeholder="Search albums, artists, and labels..."]');
+      await searchInput.fill('beatles');
+      await searchInput.press('Enter');
 
-        const searchInput = page.locator('#main-search-bar');
-        await searchInput.fill('beatles');
-        await searchInput.press('Enter');
-
-        // Should include type=artists in URL
-        await expect(page).toHaveURL(/\/search\?q=beatles&type=artists/, {
-          timeout: 15000,
-        });
-      } catch {
-        test.skip();
-      }
+      // Should include type=artists in URL
+      await expect(page).toHaveURL(/\/search\?q=beatles&type=artists/, {
+        timeout: 15000,
+      });
     });
   });
 
@@ -388,35 +383,34 @@ test.describe('Search Functionality', () => {
       async function waitForSearchBar() {
         await page.waitForSelector('header[role="banner"]', { timeout: 20000 });
         await page.waitForTimeout(500);
-        await page.waitForSelector('#main-search-bar', { timeout: 10000 });
+        await page.waitForSelector(
+          'input[placeholder="Search albums, artists, and labels..."]',
+          { timeout: 10000 }
+        );
       }
 
-      try {
-        await waitForSearchBar();
+      await waitForSearchBar();
 
-        // Select Artists type
-        const dropdown = page.locator('button[role="combobox"]').first();
-        await dropdown.click();
-        await page.getByRole('option', { name: 'Artists' }).click();
+      // Select Artists type
+      const dropdown = page.locator('button[role="combobox"]').first();
+      await dropdown.click();
+      await page.getByRole('option', { name: 'Artists' }).click();
 
-        // Do a search
-        const searchInput = page.locator('#main-search-bar');
-        await searchInput.fill('test');
-        await searchInput.press('Enter');
+      // Do a search
+      const searchInput = page.locator('input[placeholder="Search albums, artists, and labels..."]');
+      await searchInput.fill('test');
+      await searchInput.press('Enter');
 
-        // Wait for navigation
-        await expect(page).toHaveURL(/\/search/, { timeout: 15000 });
+      // Wait for navigation
+      await expect(page).toHaveURL(/\/search/, { timeout: 15000 });
 
-        // Navigate to a different page
-        await page.goto('/collections');
-        await waitForSearchBar();
+      // Navigate to a different page
+      await page.goto('/collections');
+      await waitForSearchBar();
 
-        // Dropdown should still show Artists
-        const dropdownAfter = page.locator('button[role="combobox"]').first();
-        await expect(dropdownAfter).toContainText('Artists');
-      } catch {
-        test.skip();
-      }
+      // Dropdown should still show Artists
+      const dropdownAfter = page.locator('button[role="combobox"]').first();
+      await expect(dropdownAfter).toContainText('Artists');
     });
   });
 });

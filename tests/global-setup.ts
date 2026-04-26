@@ -45,7 +45,12 @@ async function globalSetup(config: FullConfig) {
     const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
 
     // Emails must be lowercase - auth.ts does email.toLowerCase() when looking up users
-    const testUsers = [
+    const testUsers: Array<{
+      email: string;
+      username: string;
+      hashedPassword: string;
+      profileUpdatedAt?: Date;
+    }> = [
       {
         email: 'playwright_test_existing@example.com',
         username: '🎭 PLAYWRIGHT TEST - Existing User',
@@ -63,6 +68,12 @@ async function globalSetup(config: FullConfig) {
         username: '🎭 PLAYWRIGHT TEST - Sample User',
         hashedPassword: hashedPassword,
         profileUpdatedAt: new Date(),
+      },
+      {
+        // User without profileUpdatedAt — used by complete-profile tests
+        email: 'playwright_test_onboarding@example.com',
+        username: '🎭 PLAYWRIGHT TEST - Onboarding User',
+        hashedPassword: hashedPassword,
       },
     ];
 
@@ -91,6 +102,83 @@ async function globalSetup(config: FullConfig) {
 
     console.log('Total users in database:', userCount);
     console.log('Test users created:', testUserCount);
+
+    // --- Seed test recommendation data ---
+    // Get the "existing" test user for the recommendation
+    const existingUser = await prisma.user.findFirst({
+      where: { email: 'playwright_test_existing@example.com' },
+    });
+
+    if (existingUser) {
+      // Clean up any previous test albums/artists/recommendations
+      await prisma.recommendation.deleteMany({
+        where: { userId: existingUser.id },
+      });
+      await prisma.albumArtist.deleteMany({
+        where: {
+          album: { title: { startsWith: '🎭 TEST ALBUM' } },
+        },
+      });
+      await prisma.album.deleteMany({
+        where: { title: { startsWith: '🎭 TEST ALBUM' } },
+      });
+      await prisma.artist.deleteMany({
+        where: { name: '🎭 TEST ARTIST' },
+      });
+
+      // Create a test artist
+      const testArtist = await prisma.artist.create({
+        data: {
+          name: '🎭 TEST ARTIST',
+          source: 'USER_SUBMITTED',
+        },
+      });
+
+      // Create two test albums (source + recommended)
+      const srcAlbum = await prisma.album.create({
+        data: {
+          title: '🎭 TEST ALBUM - Source',
+          releaseDate: new Date('2020-01-01'),
+          source: 'USER_SUBMITTED',
+          coverArtUrl: 'https://placehold.co/300x300/1a1a2e/ffffff?text=SRC',
+          artists: {
+            create: {
+              artistId: testArtist.id,
+              role: 'primary',
+              position: 0,
+            },
+          },
+        },
+      });
+
+      const recAlbum = await prisma.album.create({
+        data: {
+          title: '🎭 TEST ALBUM - Recommended',
+          releaseDate: new Date('2021-06-15'),
+          source: 'USER_SUBMITTED',
+          coverArtUrl: 'https://placehold.co/300x300/2e1a2e/ffffff?text=REC',
+          artists: {
+            create: {
+              artistId: testArtist.id,
+              role: 'primary',
+              position: 0,
+            },
+          },
+        },
+      });
+
+      // Create the recommendation
+      await prisma.recommendation.create({
+        data: {
+          userId: existingUser.id,
+          basisAlbumId: srcAlbum.id,
+          recommendedAlbumId: recAlbum.id,
+          score: 85,
+        },
+      });
+
+      console.log('Created test recommendation: Source → Recommended (score: 85)');
+    }
 
     console.log('✅ Test users ready in dev database');
   } catch (error) {

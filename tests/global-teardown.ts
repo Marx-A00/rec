@@ -103,6 +103,19 @@ async function globalTeardown(config: FullConfig) {
       },
     });
 
+    // Clean up test albums and artists (not cascade-deleted with users)
+    await prisma.albumArtist.deleteMany({
+      where: {
+        album: { title: { startsWith: '🎭 TEST ALBUM' } },
+      },
+    });
+    await prisma.album.deleteMany({
+      where: { title: { startsWith: '🎭 TEST ALBUM' } },
+    });
+    await prisma.artist.deleteMany({
+      where: { name: '🎭 TEST ARTIST' },
+    });
+
     console.log(`✅ Cleaned up ${deleted.count} test users and their data`);
   } catch (error) {
     console.error('Error during test cleanup:', error);
