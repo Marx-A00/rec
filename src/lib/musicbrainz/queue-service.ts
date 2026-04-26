@@ -7,13 +7,8 @@
 import { QueueEvents, Worker } from 'bullmq';
 import chalk from 'chalk';
 
-import {
-  getMusicBrainzQueue,
-  processMusicBrainzJob,
-  JOB_TYPES,
-  PRIORITY_TIERS,
-  type PriorityTier,
-} from '../queue';
+import { getMusicBrainzQueue } from '../queue/musicbrainz-queue';
+import { JOB_TYPES, PRIORITY_TIERS, type PriorityTier } from '../queue/jobs';
 import { createRedisConnection } from '../queue/redis';
 
 import type {
@@ -657,6 +652,7 @@ export class QueuedMusicBrainzService {
 
     try {
       console.log('Starting MusicBrainz queue worker...');
+      const { processMusicBrainzJob } = await import('../queue/processors');
       this.worker = this.queue.createWorker(processMusicBrainzJob);
       this.isWorkerRunning = true;
       console.log('MusicBrainz queue worker started');

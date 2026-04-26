@@ -39,8 +39,5 @@ export {
   destroyMusicBrainzQueue,
 } from './musicbrainz-queue';
 
-// Job processor
-export { processMusicBrainzJob } from './processors';
-
 // Re-export BullMQ types for convenience
 export type { Queue, Worker, Job, JobsOptions } from 'bullmq';

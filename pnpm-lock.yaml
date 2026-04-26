@@ -330,6 +330,9 @@ importers:
       eslint-plugin-prettier:
         specifier: ^5.4.1
         version: 5.5.4(eslint-config-prettier@10.1.8(eslint@9.38.0(jiti@1.21.7)))(eslint@9.38.0(jiti@1.21.7))(prettier@3.6.2)
+      fallow:
+        specifier: ^2.52.0
+        version: 2.52.0
       happy-dom:
         specifier: ^20.1.0
         version: 20.1.0
@@ -1627,6 +1630,46 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@fallow-cli/darwin-arm64@2.52.0':
+    resolution: {integrity: sha512-pvWp2jn+LPfPqfKQOEd4PwC69Rb0g4gv95j38v6gkT8xXMEzrjgzZpijYojVPuWDeMYRSG1+01njghL72qJi+A==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@fallow-cli/darwin-x64@2.52.0':
+    resolution: {integrity: sha512-Vo2xLC2EPcv+JervfbsP/Mzlhekjo1w3uMtryY+pULztHbH960srJscr8TFwRnoCYXdZjRtO2CXdZZ/7tuDbHA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@fallow-cli/linux-arm64-gnu@2.52.0':
+    resolution: {integrity: sha512-AIBLQqlq7hlCFeLj+LyFNhXPNiyfSKl8HrAtj8azfCW+9h4IR0vXi6apRvbHE9/VCoHlMlZpDE/6528qUpTUNg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@fallow-cli/linux-arm64-musl@2.52.0':
+    resolution: {integrity: sha512-x1a3LCFf+E9irw5Lkj1pT9GHRa6LfYg+w6SLqE8deZei6frtanqAeGKyD5d+24LzHF+TqlySlSQxnbBTMbl8AA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@fallow-cli/linux-x64-gnu@2.52.0':
+    resolution: {integrity: sha512-JBezH1wC4CWrsnpkA5fdXwvbf6JIUKvZ9o9N855PVIwnmObj34KY+CvLZnlst4LassTAZk7NWy650OaJaiNWGg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@fallow-cli/linux-x64-musl@2.52.0':
+    resolution: {integrity: sha512-hv9Utb8oea+QJ526L7dl8qWexLYLwNsNLkSB8Ywb8+8q1oHXH3ORccEcxXEud/hjzHUHbjPcgqL36/CvLP02Xw==}
+    cpu: [x64]
+    os: [linux]
+
+  '@fallow-cli/win32-arm64-msvc@2.52.0':
+    resolution: {integrity: sha512-uYT1WXu9lMIpBYfHqNNiULvTg+YgGxeCgfvMrRTO36LVrRXzdnKn5xeuYXx7CwjbQb9Zsu4PzHB++KC9ocGKiQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@fallow-cli/win32-x64-msvc@2.52.0':
+    resolution: {integrity: sha512-qJ2v+En5PLZidrsaapYUPuOUY2b1ZzbNlUbDg5Ly0Th8I2TaUpB8ZgKPWa3t+ISBfjbylmhrk1eLj0JFVEaEqw==}
+    cpu: [x64]
+    os: [win32]
 
   '@fastify/busboy@3.2.0':
     resolution: {integrity: sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA==}
@@ -4662,6 +4705,11 @@ packages:
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
+
+  fallow@2.52.0:
+    resolution: {integrity: sha512-yZNFqRODW42mnGKYz6RosZR2CNhNwdYkXKIGBARKWNMRGwn9E9jonXFZDB+czjPL6rDnthNRheIJpRhDvzAaUw==}
+    engines: {node: '>=16'}
+    hasBin: true
 
   fast-check@3.23.2:
     resolution: {integrity: sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==}
@@ -8863,6 +8911,30 @@ snapshots:
       '@eslint/core': 0.16.0
       levn: 0.4.1
 
+  '@fallow-cli/darwin-arm64@2.52.0':
+    optional: true
+
+  '@fallow-cli/darwin-x64@2.52.0':
+    optional: true
+
+  '@fallow-cli/linux-arm64-gnu@2.52.0':
+    optional: true
+
+  '@fallow-cli/linux-arm64-musl@2.52.0':
+    optional: true
+
+  '@fallow-cli/linux-x64-gnu@2.52.0':
+    optional: true
+
+  '@fallow-cli/linux-x64-musl@2.52.0':
+    optional: true
+
+  '@fallow-cli/win32-arm64-msvc@2.52.0':
+    optional: true
+
+  '@fallow-cli/win32-x64-msvc@2.52.0':
+    optional: true
+
   '@fastify/busboy@3.2.0': {}
 
   '@floating-ui/core@1.7.3':
@@ -12420,6 +12492,19 @@ snapshots:
   exsolve@1.0.7: {}
 
   extend@3.0.2: {}
+
+  fallow@2.52.0:
+    dependencies:
+      detect-libc: 2.1.2
+    optionalDependencies:
+      '@fallow-cli/darwin-arm64': 2.52.0
+      '@fallow-cli/darwin-x64': 2.52.0
+      '@fallow-cli/linux-arm64-gnu': 2.52.0
+      '@fallow-cli/linux-arm64-musl': 2.52.0
+      '@fallow-cli/linux-x64-gnu': 2.52.0
+      '@fallow-cli/linux-x64-musl': 2.52.0
+      '@fallow-cli/win32-arm64-msvc': 2.52.0
+      '@fallow-cli/win32-x64-msvc': 2.52.0
 
   fast-check@3.23.2:
     dependencies:

@@ -4,7 +4,8 @@
 import { prisma } from '@/lib/prisma';
 
 import { getSchedulerEnabled } from '../../config/app-config';
-import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
+import { musicBrainzService } from '../../musicbrainz/musicbrainz-service';
+import { hasIdProperty } from '../../musicbrainz/mbid-verifier';
 import type {
   MusicBrainzSearchArtistsJobData,
   MusicBrainzSearchReleasesJobData,

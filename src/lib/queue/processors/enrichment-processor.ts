@@ -8,7 +8,7 @@ import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { redis } from '../redis';
 import { publishEnrichmentEvent } from '../enrichment-events';
-import { musicBrainzService } from '../../musicbrainz';
+import { musicBrainzService } from '../../musicbrainz/musicbrainz-service';
 import {
   shouldEnrichAlbum,
   shouldEnrichArtist,

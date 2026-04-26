@@ -22,7 +22,7 @@ import type { ArtistCorrectionPreview } from '@/generated/graphql';
 import {
   createDefaultArtistSelections,
   type UIArtistFieldSelections,
-} from '@/components/admin/correction/artist/apply/ArtistApplyView';
+} from '@/components/admin/correction/artist/apply/types';
 
 import type { CorrectionSource } from './useCorrectionStore';
 
@@ -197,7 +197,7 @@ export type ArtistCorrectionStore = ArtistCorrectionState &
   ArtistCorrectionActions;
 
 // Re-export UIArtistFieldSelections for convenience
-export type { UIArtistFieldSelections } from '@/components/admin/correction/artist/apply/ArtistApplyView';
+export type { UIArtistFieldSelections } from '@/components/admin/correction/artist/apply/types';
 
 // Re-export CorrectionSource for components that only import from this store
 export type { CorrectionSource } from './useCorrectionStore';
