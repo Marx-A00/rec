@@ -116,6 +116,9 @@ node_modules/
 .claude/skills/
 .plan
 
+# Fallow cache
+.fallow/
+
 # Design files
 /designs/
 
