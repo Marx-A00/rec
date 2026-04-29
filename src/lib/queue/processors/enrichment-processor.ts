@@ -3,6 +3,7 @@
 
 import { Job } from 'bullmq';
 
+import { type DataQuality } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
@@ -55,6 +56,14 @@ interface FieldChange {
 interface EnrichmentUpdateResult {
   updateData: Record<string, unknown> | null;
   fieldChanges: FieldChange[];
+}
+
+// Result of enriching album metadata from a release group
+interface ReleaseGroupEnrichResult {
+  mbData: MusicBrainzReleaseGroupData | null;
+  updateData: Record<string, unknown> | null;
+  fieldChanges: FieldChange[];
+  fieldsEnriched: string[];
 }
 
 // Helper to format field values for display
@@ -379,6 +388,530 @@ export async function handleCheckTrackEnrichment(
 }
 
 // ============================================================================
+// Album Enrichment Shared Helpers
+// ============================================================================
+
+/**
+ * Fetch release-group metadata from MusicBrainz and update album in database.
+ * Shared by direct MBID lookup, search match, and edition match paths.
+ */
+async function enrichAlbumMetadataFromRG(
+  album: Parameters<typeof updateAlbumFromMusicBrainz>[0],
+  releaseGroupId: string,
+  includes: string[]
+): Promise<ReleaseGroupEnrichResult> {
+  const mbData = (await musicBrainzService.getReleaseGroup(
+    releaseGroupId,
+    includes
+  )) as MusicBrainzReleaseGroupData;
+
+  if (!mbData) {
+    return {
+      mbData: null,
+      updateData: null,
+      fieldChanges: [],
+      fieldsEnriched: [],
+    };
+  }
+
+  const updateResult = await updateAlbumFromMusicBrainz(album, mbData);
+
+  const fieldsEnriched: string[] = [];
+  if (mbData.title) fieldsEnriched.push('title');
+  if (mbData['first-release-date']) fieldsEnriched.push('releaseDate');
+  if (mbData['artist-credit']) fieldsEnriched.push('artists');
+  if (mbData.tags && mbData.tags.length > 0) fieldsEnriched.push('genres');
+
+  return {
+    mbData,
+    updateData: updateResult.updateData,
+    fieldChanges: updateResult.fieldChanges,
+    fieldsEnriched,
+  };
+}
+
+/**
+ * Fetch tracks from a MusicBrainz release and process them for an album.
+ * Shared by all album enrichment paths that need to add/update tracks.
+ * Returns true if tracks were successfully processed.
+ */
+async function fetchAndProcessTracks(
+  albumId: string,
+  releaseId: string,
+  albumTitle: string,
+  jobContext: {
+    jobId: string;
+    parentJobId: string | null;
+    rootJobId: string | null;
+    source?: CheckAlbumEnrichmentJobData['source'];
+  }
+): Promise<boolean> {
+  try {
+    const releaseWithTracks = await musicBrainzService.getRelease(
+      releaseId,
+      ['recordings', 'artist-credits', 'isrcs', 'url-rels']
+    );
+
+    if (releaseWithTracks?.media) {
+      const totalTracks = releaseWithTracks.media.reduce(
+        (sum: number, medium: { tracks?: unknown[] }) =>
+          sum + (medium.tracks?.length || 0),
+        0
+      );
+      console.log(`✅ Fetched ${totalTracks} tracks for "${albumTitle}"`);
+
+      await processMusicBrainzTracksForAlbum(
+        albumId,
+        releaseWithTracks,
+        jobContext
+      );
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn(
+      `⚠️ Failed to fetch tracks for album "${albumTitle}":`,
+      error
+    );
+    return false;
+  }
+}
+
+// Result of the MusicBrainz search-and-enrich flow
+interface SearchEnrichResult {
+  enrichmentResult: Record<string, unknown> | null;
+  newDataQuality: DataQuality | null;
+  fieldChanges: FieldChange[];
+  fieldsEnriched: string[];
+  apiCalls: number;
+}
+
+/**
+ * Search MusicBrainz for an album and enrich it if a match is found.
+ * Handles edition/version albums (Deluxe, Anniversary, etc.) with a multi-step
+ * search strategy: full title -> release search -> base title -> specific edition.
+ */
+async function searchAndEnrichFromMusicBrainz(
+  album: Parameters<typeof enrichAlbumMetadataFromRG>[0] & { id: string },
+  artistName: string,
+  jobContext: {
+    jobId: string;
+    parentJobId: string | null;
+    rootJobId: string | null;
+    source?: CheckAlbumEnrichmentJobData['source'];
+  }
+): Promise<SearchEnrichResult> {
+  let enrichmentResult: Record<string, unknown> | null = null;
+  let newDataQuality: DataQuality | null = null;
+  const fieldChanges: FieldChange[] = [];
+  const fieldsEnriched: string[] = [];
+  let apiCalls = 0;
+
+  // Analyze the title for edition/version indicators
+  const titleAnalysis = analyzeTitle(album.title);
+  if (titleAnalysis.isEditionOrVersion) {
+    console.log(
+      `📀 Edition detected: "${album.title}" (keywords: ${titleAnalysis.detectedKeywords.join(', ')})`
+    );
+    console.log(`   Base title: "${titleAnalysis.baseTitle}"`);
+  }
+
+  // Step 1: Try full title search on release-groups (current behavior)
+  apiCalls++;
+  const searchQuery = buildAlbumSearchQuery(album);
+  const searchResults = await musicBrainzService.searchReleaseGroups(
+    searchQuery,
+    5
+  );
+
+  let bestMatch = null;
+  if (searchResults && searchResults.length > 0) {
+    console.log(
+      `🔍 Found ${searchResults.length} release-group results for "${album.title}"`
+    );
+    console.log(
+      `📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map((ac: { name: string }) => ac.name).join(', ')} (score: ${searchResults[0].score})`
+    );
+
+    bestMatch = findBestAlbumMatch(album, searchResults);
+    console.log(
+      `🎯 Best release-group match: ${
+        bestMatch
+          ? `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
+          : 'None found'
+      }`
+    );
+  }
+
+  // Step 2: If edition detected AND no good release-group match, try release search
+  let releaseMatch = null;
+  if (!bestMatch && titleAnalysis.isEditionOrVersion) {
+    console.log(
+      `🔍 No release-group match, trying direct release search for edition...`
+    );
+    apiCalls++;
+    const releaseQuery = buildReleaseSearchQuery(album.title, artistName);
+    const releaseResults = await musicBrainzService.searchReleases(
+      releaseQuery,
+      5
+    );
+
+    if (releaseResults && releaseResults.length > 0) {
+      console.log(
+        `📀 Found ${releaseResults.length} release results for "${album.title}"`
+      );
+      // Find best match based on title similarity
+      for (const release of releaseResults) {
+        const titleSimilarity = calculateStringSimilarity(
+          album.title.toLowerCase(),
+          release.title.toLowerCase()
+        );
+        if (titleSimilarity > 0.8) {
+          releaseMatch = release;
+          console.log(
+            `🎯 Found release match: "${release.title}" (${(titleSimilarity * 100).toFixed(1)}% similar)`
+          );
+          break;
+        }
+      }
+    }
+  }
+
+  // Step 3: If still no match AND edition detected, search with base title
+  if (!bestMatch && !releaseMatch && titleAnalysis.isEditionOrVersion) {
+    console.log(
+      `🔍 Trying base title search: "${titleAnalysis.baseTitle}"`
+    );
+    apiCalls++;
+    // Build query with base title
+    const baseAlbum = { ...album, title: titleAnalysis.baseTitle };
+    const baseQuery = buildAlbumSearchQuery(baseAlbum);
+    const baseResults = await musicBrainzService.searchReleaseGroups(
+      baseQuery,
+      5
+    );
+
+    if (baseResults && baseResults.length > 0) {
+      const baseMatch = findBestAlbumMatch(baseAlbum, baseResults);
+      if (baseMatch && baseMatch.score > 0.8) {
+        console.log(
+          `🎯 Found base title match: "${baseMatch.result.title}" (${(baseMatch.score * 100).toFixed(1)}%)`
+        );
+
+        // Step 4: Get all releases under this release-group and find the specific edition
+        apiCalls++;
+        const releases = await musicBrainzService.getReleaseGroupReleases(
+          baseMatch.result.id,
+          50
+        );
+        console.log(
+          `📀 Found ${releases.length} releases under "${baseMatch.result.title}"`
+        );
+
+        const specificRelease = findBestReleaseMatch(
+          releases,
+          album.title
+        );
+        if (specificRelease) {
+          console.log(
+            `✅ Found specific edition: "${specificRelease.release.title}" (${(specificRelease.score * 100).toFixed(1)}% match)`
+          );
+          releaseMatch = {
+            id: specificRelease.release.id,
+            title: specificRelease.release.title,
+            releaseGroup: { id: baseMatch.result.id },
+          };
+        } else {
+          console.log(
+            `⚠️ No specific edition found, using first official release`
+          );
+          // Use base match, tracks will come from first release
+          bestMatch = baseMatch;
+        }
+      }
+    }
+  }
+
+  // Process the match we found (either release-group or specific release)
+  if (bestMatch && bestMatch.score > 0.8) {
+    apiCalls++;
+    const rgResult = await enrichAlbumMetadataFromRG(
+      album,
+      bestMatch.result.id,
+      ['artists', 'tags', 'releases']
+    );
+    if (rgResult.updateData) {
+      enrichmentResult = rgResult.updateData;
+      fieldChanges.push(...rgResult.fieldChanges);
+      fieldsEnriched.push(...rgResult.fieldsEnriched);
+      newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
+    }
+    // Fetch tracks from primary release
+    if (rgResult.mbData?.releases?.[0]) {
+      apiCalls++;
+      const tracksProcessed = await fetchAndProcessTracks(
+        album.id,
+        rgResult.mbData.releases[0].id,
+        album.title,
+        jobContext
+      );
+      if (tracksProcessed) fieldsEnriched.push('tracks');
+    }
+  } else if (releaseMatch) {
+    // We found a specific release (edition), fetch its data
+    console.log(
+      `🎵 Fetching tracks from specific release: "${releaseMatch.title}"`
+    );
+    apiCalls++;
+    const releaseWithTracks = await musicBrainzService.getRelease(
+      releaseMatch.id,
+      [
+        'recordings',
+        'artist-credits',
+        'isrcs',
+        'url-rels',
+        'release-groups',
+      ]
+    );
+
+    if (releaseWithTracks) {
+      // Update album with release-group data if available
+      if (releaseMatch.releaseGroup?.id) {
+        apiCalls++;
+        const rgResult = await enrichAlbumMetadataFromRG(
+          album,
+          releaseMatch.releaseGroup.id,
+          ['artists', 'tags']
+        );
+        if (rgResult.updateData) {
+          enrichmentResult = rgResult.updateData;
+          fieldChanges.push(...rgResult.fieldChanges);
+          fieldsEnriched.push(...rgResult.fieldsEnriched);
+          newDataQuality = 'MEDIUM'; // Edition match is medium confidence
+        }
+      }
+
+      // Process tracks from the specific release
+      if (releaseWithTracks.media) {
+        const totalTracks = releaseWithTracks.media.reduce(
+          (sum: number, medium: { tracks?: unknown[] }) =>
+            sum + (medium.tracks?.length || 0),
+          0
+        );
+        console.log(
+          `✅ Fetched ${totalTracks} tracks from edition "${releaseMatch.title}"`
+        );
+
+        fieldsEnriched.push('tracks');
+        await processMusicBrainzTracksForAlbum(
+          album.id,
+          releaseWithTracks,
+          jobContext
+        );
+      }
+    }
+  }
+
+  return { enrichmentResult, newDataQuality, fieldChanges, fieldsEnriched, apiCalls };
+}
+
+// Result of Spotify track fallback
+interface SpotifyFallbackResult {
+  tracksCreated: number;
+  sourcesUsed: string[];
+  fieldsEnriched: string[];
+}
+
+/**
+ * Try fetching tracks from Spotify as a fallback when MusicBrainz has no tracks.
+ * Only runs if the album has a Spotify ID.
+ */
+async function trySpotifyTrackFallback(
+  album: {
+    id: string;
+    title: string;
+    spotifyId: string;
+    artists: Array<{ artist: { id: string; spotifyId: string | null } }>;
+  },
+  jobContext: {
+    jobId: string | undefined;
+    parentJobId: string | null;
+    rootJobId: string | null;
+  }
+): Promise<SpotifyFallbackResult> {
+  console.log(
+    `📀 No MusicBrainz tracks found for "${album.title}", trying Spotify fallback...`
+  );
+
+  const { fetchSpotifyAlbumTracks, processSpotifyTracks } = await import(
+    '../../spotify/mappers'
+  );
+
+  const spotifyTracks = await fetchSpotifyAlbumTracks(album.spotifyId);
+
+  if (spotifyTracks.length === 0) {
+    console.log(`⚠️ No tracks available from Spotify for "${album.title}"`);
+    return { tracksCreated: 0, sourcesUsed: [], fieldsEnriched: [] };
+  }
+
+  console.log(
+    `🎵 Found ${spotifyTracks.length} tracks from Spotify for "${album.title}"`
+  );
+
+  // Build artist ID map from album artists
+  const artistIdMap = new Map<string, string>();
+  for (const albumArtist of album.artists) {
+    if (albumArtist.artist.spotifyId) {
+      artistIdMap.set(albumArtist.artist.spotifyId, albumArtist.artist.id);
+    }
+  }
+
+  const result = await processSpotifyTracks(
+    spotifyTracks,
+    album.id,
+    artistIdMap,
+    {
+      parentJobId: jobContext.jobId || null,
+      rootJobId: jobContext.rootJobId,
+    }
+  );
+
+  if (result.tracksCreated > 0) {
+    console.log(
+      `✅ Created ${result.tracksCreated} tracks from Spotify fallback for "${album.title}"`
+    );
+    return {
+      tracksCreated: result.tracksCreated,
+      sourcesUsed: ['SPOTIFY'],
+      fieldsEnriched: ['tracks'],
+    };
+  }
+
+  console.warn(
+    `⚠️ Spotify returned tracks but none were created for "${album.title}"`
+  );
+  return { tracksCreated: 0, sourcesUsed: [], fieldsEnriched: [] };
+}
+
+/**
+ * Finalize album enrichment: update DB status, log results, queue cover art caching.
+ */
+async function finalizeAlbumEnrichment(ctx: {
+  albumId: string;
+  albumTitle: string;
+  artistName: string;
+  enrichmentResult: Record<string, unknown> | null;
+  newDataQuality: DataQuality;
+  dataQualityBefore: DataQuality;
+  fieldsEnriched: string[];
+  sourcesAttempted: string[];
+  allFieldChanges: FieldChange[];
+  apiCallCount: number;
+  startTime: number;
+  rootJobId: string | undefined;
+  jobId: string | undefined;
+  parentJobId: string | null;
+  source: string | undefined;
+  llamaLogger: ReturnType<typeof createLlamaLogger>;
+}) {
+  // Determine final status
+  let finalStatus: 'SUCCESS' | 'NO_DATA_AVAILABLE' | 'PARTIAL_SUCCESS' =
+    'SUCCESS';
+  if (ctx.fieldsEnriched.length === 0 && ctx.sourcesAttempted.length > 0) {
+    finalStatus = 'NO_DATA_AVAILABLE';
+  } else if (
+    ctx.fieldsEnriched.length > 0 &&
+    ctx.fieldsEnriched.length < 3 &&
+    ctx.sourcesAttempted.length > 1
+  ) {
+    finalStatus = 'PARTIAL_SUCCESS';
+  }
+
+  // Update enrichment status
+  await prisma.album.update({
+    where: { id: ctx.albumId },
+    data: {
+      enrichmentStatus: 'COMPLETED',
+      dataQuality: ctx.newDataQuality,
+      lastEnriched: new Date(),
+    },
+  });
+  await publishEnrichmentEvent(redis, {
+    entityType: 'ALBUM',
+    entityId: ctx.albumId,
+    status: 'COMPLETED',
+    timestamp: new Date().toISOString(),
+    entityName: ctx.albumTitle,
+  });
+
+  console.log(`✅ Album enrichment completed for ${ctx.albumId}`, {
+    hadResult: !!ctx.enrichmentResult,
+    dataQuality: ctx.newDataQuality,
+  });
+
+  // Log successful enrichment
+  await ctx.llamaLogger.logEnrichment({
+    entityType: 'ALBUM',
+    entityId: ctx.albumId,
+    operation: JOB_TYPES.ENRICH_ALBUM,
+    category: 'ENRICHED',
+    sources: ctx.sourcesAttempted,
+    status: finalStatus,
+    fieldsEnriched: ctx.fieldsEnriched,
+    dataQualityBefore: ctx.dataQualityBefore,
+    dataQualityAfter: ctx.newDataQuality,
+    durationMs: Date.now() - ctx.startTime,
+    apiCallCount: ctx.apiCallCount,
+    metadata: {
+      albumTitle: ctx.albumTitle,
+      artistName: ctx.artistName,
+      hadMusicBrainzData: !!ctx.enrichmentResult,
+      fieldChanges: ctx.allFieldChanges.map(fc => ({
+        field: fc.field,
+        before: formatFieldValue(fc.before),
+        after: formatFieldValue(fc.after),
+      })),
+    },
+    jobId: ctx.jobId,
+    parentJobId: ctx.parentJobId,
+    isRootJob: !ctx.parentJobId,
+    triggeredBy: ctx.source || 'manual',
+  });
+
+  // Queue album cover art caching to Cloudflare (non-blocking)
+  const enrichedAlbum = await prisma.album.findUnique({
+    where: { id: ctx.albumId },
+    select: { coverArtUrl: true, cloudflareImageId: true },
+  });
+
+  if (enrichedAlbum?.coverArtUrl && !enrichedAlbum.cloudflareImageId) {
+    try {
+      const queue = await import('../musicbrainz-queue').then(m =>
+        m.getMusicBrainzQueue()
+      );
+      const cacheJobData: CacheAlbumCoverArtJobData = {
+        albumId: ctx.albumId,
+        requestId: `enrich-cache-album-${ctx.albumId}`,
+        parentJobId: ctx.rootJobId,
+      };
+
+      await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheJobData, {
+        priority: 5,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+      });
+
+      console.log(`📤 Queued album cover art caching for ${ctx.albumId}`);
+    } catch (cacheError) {
+      console.warn(
+        `Failed to queue album cover art caching for ${ctx.albumId}:`,
+        cacheError
+      );
+    }
+  }
+}
+
+// ============================================================================
 // Album Enrichment Handler
 // ============================================================================
 
@@ -499,66 +1032,32 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       try {
         sourcesAttempted.push('MUSICBRAINZ');
         apiCallCount++;
-        const mbData = (await musicBrainzService.getReleaseGroup(
+        const rgResult = await enrichAlbumMetadataFromRG(
+          album,
           album.musicbrainzId,
           ['artists', 'releases', 'tags']
-        )) as MusicBrainzReleaseGroupData;
-        if (mbData) {
-          const updateResult = await updateAlbumFromMusicBrainz(album, mbData);
-          enrichmentResult = updateResult.updateData;
-          allFieldChanges.push(...updateResult.fieldChanges);
+        );
+        if (rgResult.updateData) {
+          enrichmentResult = rgResult.updateData;
+          allFieldChanges.push(...rgResult.fieldChanges);
+          fieldsEnriched.push(...rgResult.fieldsEnriched);
           newDataQuality = 'HIGH';
-
-          // Track which fields were enriched
-          if (mbData.title) fieldsEnriched.push('title');
-          if (mbData['first-release-date']) fieldsEnriched.push('releaseDate');
-          if (mbData['artist-credit']) fieldsEnriched.push('artists');
-          if (mbData.tags && mbData.tags.length > 0)
-            fieldsEnriched.push('genres');
-
-          // Fetch tracks for albums that already have MusicBrainz IDs
-          if (mbData.releases && mbData.releases.length > 0) {
-            try {
-              const primaryRelease = mbData.releases[0];
-              console.log(
-                `🎵 Fetching tracks for existing MB album: ${primaryRelease.title}`
-              );
-
-              apiCallCount++;
-              const releaseWithTracks = await musicBrainzService.getRelease(
-                primaryRelease.id,
-                ['recordings', 'artist-credits', 'isrcs', 'url-rels']
-              );
-
-              if (releaseWithTracks?.media) {
-                const totalTracks = releaseWithTracks.media.reduce(
-                  (sum: number, medium: { tracks?: unknown[] }) =>
-                    sum + (medium.tracks?.length || 0),
-                  0
-                );
-                console.log(
-                  `✅ Fetched ${totalTracks} tracks for existing album "${album.title}"!`
-                );
-
-                fieldsEnriched.push('tracks');
-                await processMusicBrainzTracksForAlbum(
-                  album.id,
-                  releaseWithTracks,
-                  {
-                    jobId: job.id || `enrich-album-${Date.now()}`,
-                    parentJobId: data.parentJobId || null,
-                    rootJobId: data.parentJobId || job.id || null,
-                    source: data.source,
-                  }
-                );
-              }
-            } catch (error) {
-              console.warn(
-                `⚠️ Failed to fetch tracks for existing album "${album.title}":`,
-                error
-              );
+        }
+        // Fetch tracks from primary release
+        if (rgResult.mbData?.releases?.[0]) {
+          apiCallCount++;
+          const tracksProcessed = await fetchAndProcessTracks(
+            album.id,
+            rgResult.mbData.releases[0].id,
+            album.title,
+            {
+              jobId: job.id || `enrich-album-${Date.now()}`,
+              parentJobId: data.parentJobId || null,
+              rootJobId: data.parentJobId || job.id || null,
+              source: data.source,
             }
-          }
+          );
+          if (tracksProcessed) fieldsEnriched.push('tracks');
         }
       } catch (mbError) {
         console.warn(
@@ -571,272 +1070,25 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
     // If no MusicBrainz ID or lookup failed, try searching
     // Enhanced flow: handles edition/version albums (Deluxe, Anniversary, etc.)
     if (!enrichmentResult && album.title) {
+      if (!sourcesAttempted.includes('MUSICBRAINZ')) {
+        sourcesAttempted.push('MUSICBRAINZ');
+      }
       try {
-        if (!sourcesAttempted.includes('MUSICBRAINZ')) {
-          sourcesAttempted.push('MUSICBRAINZ');
-        }
-
-        // Analyze the title for edition/version indicators
-        const titleAnalysis = analyzeTitle(album.title);
-        if (titleAnalysis.isEditionOrVersion) {
-          console.log(
-            `📀 Edition detected: "${album.title}" (keywords: ${titleAnalysis.detectedKeywords.join(', ')})`
-          );
-          console.log(`   Base title: "${titleAnalysis.baseTitle}"`);
-        }
-
-        // Step 1: Try full title search on release-groups (current behavior)
-        apiCallCount++;
-        const searchQuery = buildAlbumSearchQuery(album);
-        const searchResults = await musicBrainzService.searchReleaseGroups(
-          searchQuery,
-          5
+        const searchResult = await searchAndEnrichFromMusicBrainz(
+          album,
+          artistName,
+          {
+            jobId: job.id || `enrich-album-${Date.now()}`,
+            parentJobId: data.parentJobId || null,
+            rootJobId: data.parentJobId || job.id || null,
+            source: data.source,
+          }
         );
-
-        let bestMatch = null;
-        if (searchResults && searchResults.length > 0) {
-          console.log(
-            `🔍 Found ${searchResults.length} release-group results for "${album.title}"`
-          );
-          console.log(
-            `📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map((ac: { name: string }) => ac.name).join(', ')} (score: ${searchResults[0].score})`
-          );
-
-          bestMatch = findBestAlbumMatch(album, searchResults);
-          console.log(
-            `🎯 Best release-group match: ${
-              bestMatch
-                ? `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
-                : 'None found'
-            }`
-          );
-        }
-
-        // Step 2: If edition detected AND no good release-group match, try release search
-        let releaseMatch = null;
-        if (!bestMatch && titleAnalysis.isEditionOrVersion) {
-          console.log(
-            `🔍 No release-group match, trying direct release search for edition...`
-          );
-          apiCallCount++;
-          const releaseQuery = buildReleaseSearchQuery(album.title, artistName);
-          const releaseResults = await musicBrainzService.searchReleases(
-            releaseQuery,
-            5
-          );
-
-          if (releaseResults && releaseResults.length > 0) {
-            console.log(
-              `📀 Found ${releaseResults.length} release results for "${album.title}"`
-            );
-            // Find best match based on title similarity
-            for (const release of releaseResults) {
-              const titleSimilarity = calculateStringSimilarity(
-                album.title.toLowerCase(),
-                release.title.toLowerCase()
-              );
-              if (titleSimilarity > 0.8) {
-                releaseMatch = release;
-                console.log(
-                  `🎯 Found release match: "${release.title}" (${(titleSimilarity * 100).toFixed(1)}% similar)`
-                );
-                break;
-              }
-            }
-          }
-        }
-
-        // Step 3: If still no match AND edition detected, search with base title
-        let baseMatch = null;
-        if (!bestMatch && !releaseMatch && titleAnalysis.isEditionOrVersion) {
-          console.log(
-            `🔍 Trying base title search: "${titleAnalysis.baseTitle}"`
-          );
-          apiCallCount++;
-          // Build query with base title
-          const baseAlbum = { ...album, title: titleAnalysis.baseTitle };
-          const baseQuery = buildAlbumSearchQuery(baseAlbum);
-          const baseResults = await musicBrainzService.searchReleaseGroups(
-            baseQuery,
-            5
-          );
-
-          if (baseResults && baseResults.length > 0) {
-            baseMatch = findBestAlbumMatch(baseAlbum, baseResults);
-            if (baseMatch && baseMatch.score > 0.8) {
-              console.log(
-                `🎯 Found base title match: "${baseMatch.result.title}" (${(baseMatch.score * 100).toFixed(1)}%)`
-              );
-
-              // Step 4: Get all releases under this release-group and find the specific edition
-              apiCallCount++;
-              const releases = await musicBrainzService.getReleaseGroupReleases(
-                baseMatch.result.id,
-                50
-              );
-              console.log(
-                `📀 Found ${releases.length} releases under "${baseMatch.result.title}"`
-              );
-
-              const specificRelease = findBestReleaseMatch(
-                releases,
-                album.title
-              );
-              if (specificRelease) {
-                console.log(
-                  `✅ Found specific edition: "${specificRelease.release.title}" (${(specificRelease.score * 100).toFixed(1)}% match)`
-                );
-                releaseMatch = {
-                  id: specificRelease.release.id,
-                  title: specificRelease.release.title,
-                  releaseGroup: { id: baseMatch.result.id },
-                };
-              } else {
-                console.log(
-                  `⚠️ No specific edition found, using first official release`
-                );
-                // Use base match, tracks will come from first release
-                bestMatch = baseMatch;
-              }
-            }
-          }
-        }
-
-        // Process the match we found (either release-group or specific release)
-        if (bestMatch && bestMatch.score > 0.8) {
-          apiCallCount++;
-          const mbData = (await musicBrainzService.getReleaseGroup(
-            bestMatch.result.id,
-            ['artists', 'tags', 'releases']
-          )) as MusicBrainzReleaseGroupData;
-          if (mbData) {
-            const updateResult = await updateAlbumFromMusicBrainz(
-              album,
-              mbData
-            );
-            enrichmentResult = updateResult.updateData;
-            allFieldChanges.push(...updateResult.fieldChanges);
-            newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
-
-            if (mbData.title) fieldsEnriched.push('title');
-            if (mbData['first-release-date'])
-              fieldsEnriched.push('releaseDate');
-            if (mbData['artist-credit']) fieldsEnriched.push('artists');
-            if (mbData.tags && mbData.tags.length > 0)
-              fieldsEnriched.push('genres');
-
-            // Fetch tracks for this album
-            if (mbData.releases && mbData.releases.length > 0) {
-              try {
-                const primaryRelease = mbData.releases[0];
-                console.log(
-                  `🎵 Fetching tracks for release: ${primaryRelease.title}`
-                );
-
-                apiCallCount++;
-                const releaseWithTracks = await musicBrainzService.getRelease(
-                  primaryRelease.id,
-                  ['recordings', 'artist-credits', 'isrcs', 'url-rels']
-                );
-
-                if (releaseWithTracks?.media) {
-                  const totalTracks = releaseWithTracks.media.reduce(
-                    (sum: number, medium: { tracks?: unknown[] }) =>
-                      sum + (medium.tracks?.length || 0),
-                    0
-                  );
-                  console.log(
-                    `✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`
-                  );
-
-                  fieldsEnriched.push('tracks');
-                  await processMusicBrainzTracksForAlbum(
-                    album.id,
-                    releaseWithTracks,
-                    {
-                      jobId: job.id || `enrich-album-${Date.now()}`,
-                      parentJobId: data.parentJobId || null,
-                      rootJobId: data.parentJobId || job.id || null,
-                      source: data.source,
-                    }
-                  );
-                }
-              } catch (error) {
-                console.warn(
-                  `⚠️ Failed to fetch tracks for album "${album.title}":`,
-                  error
-                );
-              }
-            }
-          }
-        } else if (releaseMatch) {
-          // We found a specific release (edition), fetch its data
-          console.log(
-            `🎵 Fetching tracks from specific release: "${releaseMatch.title}"`
-          );
-          apiCallCount++;
-          const releaseWithTracks = await musicBrainzService.getRelease(
-            releaseMatch.id,
-            [
-              'recordings',
-              'artist-credits',
-              'isrcs',
-              'url-rels',
-              'release-groups',
-            ]
-          );
-
-          if (releaseWithTracks) {
-            // Update album with release-group data if available
-            if (releaseMatch.releaseGroup?.id) {
-              apiCallCount++;
-              const mbData = (await musicBrainzService.getReleaseGroup(
-                releaseMatch.releaseGroup.id,
-                ['artists', 'tags']
-              )) as MusicBrainzReleaseGroupData;
-              if (mbData) {
-                const updateResult = await updateAlbumFromMusicBrainz(
-                  album,
-                  mbData
-                );
-                enrichmentResult = updateResult.updateData;
-                allFieldChanges.push(...updateResult.fieldChanges);
-                newDataQuality = 'MEDIUM'; // Edition match is medium confidence
-
-                if (mbData.title) fieldsEnriched.push('title');
-                if (mbData['first-release-date'])
-                  fieldsEnriched.push('releaseDate');
-                if (mbData['artist-credit']) fieldsEnriched.push('artists');
-                if (mbData.tags && mbData.tags.length > 0)
-                  fieldsEnriched.push('genres');
-              }
-            }
-
-            // Process tracks from the specific release
-            if (releaseWithTracks.media) {
-              const totalTracks = releaseWithTracks.media.reduce(
-                (sum: number, medium: { tracks?: unknown[] }) =>
-                  sum + (medium.tracks?.length || 0),
-                0
-              );
-              console.log(
-                `✅ Fetched ${totalTracks} tracks from edition "${releaseMatch.title}"`
-              );
-
-              fieldsEnriched.push('tracks');
-              await processMusicBrainzTracksForAlbum(
-                album.id,
-                releaseWithTracks,
-                {
-                  jobId: job.id || `enrich-album-${Date.now()}`,
-                  parentJobId: data.parentJobId || null,
-                  rootJobId: data.parentJobId || job.id || null,
-                  source: data.source,
-                }
-              );
-            }
-          }
-        }
+        if (searchResult.enrichmentResult) enrichmentResult = searchResult.enrichmentResult;
+        if (searchResult.newDataQuality) newDataQuality = searchResult.newDataQuality;
+        allFieldChanges.push(...searchResult.fieldChanges);
+        fieldsEnriched.push(...searchResult.fieldsEnriched);
+        apiCallCount += searchResult.apiCalls;
       } catch (searchError) {
         console.warn(
           `MusicBrainz search failed for album ${data.albumId}:`,
@@ -845,103 +1097,53 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       }
     }
 
-    // ========================================================================
     // Spotify Track Fallback
-    // If MusicBrainz search failed to find tracks and album has a Spotify ID,
-    // fetch tracks from Spotify as a fallback (lower quality but better than nothing)
-    // ========================================================================
     const hasTracksEnriched = fieldsEnriched.includes('tracks');
     if (!hasTracksEnriched && album.spotifyId) {
-      console.log(
-        `📀 No MusicBrainz tracks found for "${album.title}", trying Spotify fallback...`
-      );
-
       try {
-        // Import the Spotify track fetcher
-        const { fetchSpotifyAlbumTracks, processSpotifyTracks } = await import(
-          '../../spotify/mappers'
+        const fallback = await trySpotifyTrackFallback(
+          album as typeof album & { spotifyId: string },
+          {
+            jobId: job.id,
+            parentJobId: data.parentJobId || null,
+            rootJobId: data.parentJobId || job.id || null,
+          }
         );
+        fieldsEnriched.push(...fallback.fieldsEnriched);
+        sourcesAttempted.push(...fallback.sourcesUsed);
 
-        // Fetch tracks from Spotify API
-        const spotifyTracks = await fetchSpotifyAlbumTracks(album.spotifyId);
-
-        if (spotifyTracks.length > 0) {
-          console.log(
-            `🎵 Found ${spotifyTracks.length} tracks from Spotify for "${album.title}"`
-          );
-
-          // Build artist ID map from album artists
-          const artistIdMap = new Map<string, string>();
-          for (const albumArtist of album.artists) {
-            if (albumArtist.artist.spotifyId) {
-              artistIdMap.set(
-                albumArtist.artist.spotifyId,
-                albumArtist.artist.id
-              );
-            }
+        if (fallback.tracksCreated > 0) {
+          if (newDataQuality === 'LOW') {
+            newDataQuality = 'MEDIUM';
           }
 
-          // Process and create tracks
-          const result = await processSpotifyTracks(
-            spotifyTracks,
-            album.id,
-            artistIdMap,
-            {
-              parentJobId: job.id || null,
-              rootJobId: data.parentJobId || job.id || null,
-            }
-          );
-
-          if (result.tracksCreated > 0) {
-            fieldsEnriched.push('tracks');
-            sourcesAttempted.push('SPOTIFY');
-
-            // Set data quality to MEDIUM (better than LOW, but not as good as MusicBrainz HIGH)
-            if (newDataQuality === 'LOW') {
-              newDataQuality = 'MEDIUM';
-            }
-
-            console.log(
-              `✅ Created ${result.tracksCreated} tracks from Spotify fallback for "${album.title}"`
-            );
-
-            // Log the Spotify fallback as a separate operation with same jobId
-            // This links the two log entries together
-            await llamaLogger.logEnrichment({
-              entityType: 'ALBUM',
-              entityId: album.id,
-              operation: 'SPOTIFY_TRACK_FALLBACK',
-              category: 'ENRICHED',
-              sources: ['SPOTIFY'],
-              status: 'SUCCESS',
-              reason:
-                'Created tracks from Spotify after MusicBrainz search failed',
-              fieldsEnriched: ['tracks'],
-              dataQualityBefore,
-              dataQualityAfter: newDataQuality,
-              durationMs: Date.now() - startTime,
-              apiCallCount: apiCallCount + 1,
-              metadata: {
-                albumTitle: album.title,
-                artistName,
-                tracksCreated: result.tracksCreated,
-                fallbackReason: 'No MusicBrainz match found',
-                spotifyId: album.spotifyId,
-              },
-              jobId: job.id,
-              parentJobId: data.parentJobId || null,
-              isRootJob: false, // Fallback is always child of album enrichment
-              triggeredBy: data.source || 'manual',
-            });
-          } else {
-            console.warn(
-              `⚠️ Spotify returned tracks but none were created for "${album.title}"`
-            );
-          }
-        } else {
-          console.log(
-            `⚠️ No tracks available from Spotify for "${album.title}"`
-          );
+          // Log the Spotify fallback as a separate operation
+          await llamaLogger.logEnrichment({
+            entityType: 'ALBUM',
+            entityId: album.id,
+            operation: 'SPOTIFY_TRACK_FALLBACK',
+            category: 'ENRICHED',
+            sources: ['SPOTIFY'],
+            status: 'SUCCESS',
+            reason:
+              'Created tracks from Spotify after MusicBrainz search failed',
+            fieldsEnriched: ['tracks'],
+            dataQualityBefore,
+            dataQualityAfter: newDataQuality,
+            durationMs: Date.now() - startTime,
+            apiCallCount: apiCallCount + 1,
+            metadata: {
+              albumTitle: album.title,
+              artistName,
+              tracksCreated: fallback.tracksCreated,
+              fallbackReason: 'No MusicBrainz match found',
+              spotifyId: album.spotifyId,
+            },
+            jobId: job.id,
+            parentJobId: data.parentJobId || null,
+            isRootJob: false,
+            triggeredBy: data.source || 'manual',
+          });
         }
       } catch (spotifyError) {
         console.warn(
@@ -951,101 +1153,25 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       }
     }
 
-    // Determine final status
-    let finalStatus: 'SUCCESS' | 'NO_DATA_AVAILABLE' | 'PARTIAL_SUCCESS' =
-      'SUCCESS';
-    if (fieldsEnriched.length === 0 && sourcesAttempted.length > 0) {
-      finalStatus = 'NO_DATA_AVAILABLE';
-    } else if (
-      fieldsEnriched.length > 0 &&
-      fieldsEnriched.length < 3 &&
-      sourcesAttempted.length > 1
-    ) {
-      finalStatus = 'PARTIAL_SUCCESS';
-    }
-
-    // Update enrichment status
-    await prisma.album.update({
-      where: { id: data.albumId },
-      data: {
-        enrichmentStatus: 'COMPLETED',
-        dataQuality: newDataQuality,
-        lastEnriched: new Date(),
-      },
-    });
-    await publishEnrichmentEvent(redis, {
-      entityType: 'ALBUM',
-      entityId: data.albumId,
-      status: 'COMPLETED',
-      timestamp: new Date().toISOString(),
-      entityName: album.title,
-    });
-
-    console.log(`✅ Album enrichment completed for ${data.albumId}`, {
-      hadResult: !!enrichmentResult,
-      dataQuality: newDataQuality,
-    });
-
-    // Log successful enrichment
-    await llamaLogger.logEnrichment({
-      entityType: 'ALBUM',
-      entityId: album.id,
-      operation: JOB_TYPES.ENRICH_ALBUM,
-      category: 'ENRICHED',
-      sources: sourcesAttempted,
-      status: finalStatus,
-      fieldsEnriched,
+    // Finalize: update DB, log, queue cover art caching
+    await finalizeAlbumEnrichment({
+      albumId: data.albumId,
+      albumTitle: album.title,
+      artistName,
+      enrichmentResult,
+      newDataQuality,
       dataQualityBefore,
-      dataQualityAfter: newDataQuality,
-      durationMs: Date.now() - startTime,
+      fieldsEnriched,
+      sourcesAttempted,
+      allFieldChanges,
       apiCallCount,
-      metadata: {
-        albumTitle: album.title,
-        artistName,
-        hadMusicBrainzData: !!enrichmentResult,
-        fieldChanges: allFieldChanges.map(fc => ({
-          field: fc.field,
-          before: formatFieldValue(fc.before),
-          after: formatFieldValue(fc.after),
-        })),
-      },
+      startTime,
+      rootJobId,
       jobId: job.id,
       parentJobId: data.parentJobId || null,
-      isRootJob: !data.parentJobId,
-      triggeredBy: data.source || 'manual',
+      source: data.source,
+      llamaLogger,
     });
-
-    // Queue album cover art caching to Cloudflare (non-blocking)
-    const enrichedAlbum = await prisma.album.findUnique({
-      where: { id: data.albumId },
-      select: { coverArtUrl: true, cloudflareImageId: true },
-    });
-
-    if (enrichedAlbum?.coverArtUrl && !enrichedAlbum.cloudflareImageId) {
-      try {
-        const queue = await import('../musicbrainz-queue').then(m =>
-          m.getMusicBrainzQueue()
-        );
-        const cacheJobData: CacheAlbumCoverArtJobData = {
-          albumId: data.albumId,
-          requestId: `enrich-cache-album-${data.albumId}`,
-          parentJobId: rootJobId,
-        };
-
-        await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheJobData, {
-          priority: 5,
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 2000 },
-        });
-
-        console.log(`📤 Queued album cover art caching for ${data.albumId}`);
-      } catch (cacheError) {
-        console.warn(
-          `Failed to queue album cover art caching for ${data.albumId}:`,
-          cacheError
-        );
-      }
-    }
 
     return {
       albumId: data.albumId,

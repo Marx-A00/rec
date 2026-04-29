@@ -25,7 +25,6 @@ import {
   Info,
   ChevronDown,
   ChevronRight,
-  Disc,
   Hash,
   Loader2,
   Eye,
@@ -45,7 +44,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { ClearableInput } from '@/components/ui/ClearableInput';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -82,9 +80,6 @@ import {
   useSearchArtistsAdminQuery,
   useSearchTracksAdminQuery,
   useGetDatabaseStatsQuery,
-  useGetAlbumDetailsAdminQuery,
-  useGetArtistDetailsQuery,
-  EnrichmentEntityType,
   useResetAlbumEnrichmentMutation,
   useResetArtistEnrichmentMutation,
   useUpdateAlbumDataQualityMutation,
@@ -110,13 +105,9 @@ import {
 } from '@/components/ui/tooltip';
 import { CorrectionModal } from '@/components/admin/correction/CorrectionModal';
 import { ArtistCorrectionModal } from '@/components/admin/correction/artist/ArtistCorrectionModal';
-import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
-import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
 import { MusicDatabaseTableSkeleton } from '@/components/admin/MusicDatabaseTableSkeleton';
-import {
-  AlbumExpandedSkeleton,
-  ArtistExpandedSkeleton,
-} from '@/components/admin/MusicDatabaseExpandedSkeleton';
+import { AlbumExpandedContent } from '@/components/admin/music-database/AlbumExpandedContent';
+import { ArtistExpandedContent } from '@/components/admin/music-database/ArtistExpandedContent';
 
 interface AlbumSearchResult {
   id: string;
@@ -1001,538 +992,6 @@ export default function MusicDatabasePage() {
     );
   };
 
-  // Component for expanded album details
-  const AlbumExpandedContent = ({ album }: { album: AlbumSearchResult }) => {
-    const [tracksExpanded, setTracksExpanded] = useState(false);
-
-    const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
-      { id: album.id },
-      {
-        enabled: !!album.id,
-      }
-    );
-
-    const albumDetails = data?.album;
-
-    if (isLoading) {
-      return <AlbumExpandedSkeleton />;
-    }
-
-    if (error || !albumDetails) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          Failed to load album details
-        </div>
-      );
-    }
-
-    return (
-      <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
-        {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Database ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {albumDetails.id}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              MusicBrainz ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {albumDetails.musicbrainzId || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Spotify ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {album.spotifyId ? (
-                <a
-                  href={`https://open.spotify.com/album/${album.spotifyId}`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-green-400 hover:text-green-300 hover:underline'
-                >
-                  {album.spotifyId}
-                </a>
-              ) : (
-                'N/A'
-              )}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Discogs ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {albumDetails.discogsId || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Release Date
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.releaseDate
-                ? formatDateOnly(albumDetails.releaseDate)
-                : 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>Label</div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.label || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>Genres</div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.genres && albumDetails.genres.length > 0 ? (
-                <div className='flex flex-wrap gap-1'>
-                  {albumDetails.genres.map((genre: string) => (
-                    <Badge
-                      key={genre}
-                      variant='secondary'
-                      className='text-xs bg-zinc-700 text-zinc-300'
-                    >
-                      {genre}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                'N/A'
-              )}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>Barcode</div>
-            <div className='text-sm text-zinc-300 font-mono'>
-              {albumDetails.barcode || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Last Enriched
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.lastEnriched
-                ? formatDistanceToNow(new Date(albumDetails.lastEnriched), {
-                    addSuffix: true,
-                  })
-                : 'Never'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Track Count
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {albumDetails.tracks?.length || 0} tracks
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Image Status
-            </div>
-            <div className='text-sm text-zinc-300 flex items-center gap-2'>
-              <span>
-                {albumDetails.coverArtUrl && albumDetails.cloudflareImageId
-                  ? '✓ Has images'
-                  : '✗ Missing images'}
-              </span>
-              {(albumDetails.coverArtUrl || albumDetails.cloudflareImageId) && (
-                <button
-                  className='text-zinc-500 hover:text-zinc-200 transition-colors'
-                  onClick={() =>
-                    setImagePreview({
-                      url: albumDetails.coverArtUrl || '',
-                      cloudflareId: albumDetails.cloudflareImageId,
-                      title: albumDetails.title,
-                    })
-                  }
-                  title='View image'
-                >
-                  <Eye className='h-3.5 w-3.5' />
-                </button>
-              )}
-            </div>
-            {albumDetails.coverArtUrl && (
-              <div
-                className='mt-1 text-xs text-zinc-500 truncate max-w-xs'
-                title={albumDetails.coverArtUrl}
-              >
-                {albumDetails.coverArtUrl}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Delete Button */}
-        <div className='flex justify-end pt-4 border-t border-zinc-700'>
-          <Button
-            onClick={() => {
-              setAlbumToDelete({
-                id: albumDetails.id,
-                title: albumDetails.title,
-              });
-              setDeleteModalOpen(true);
-            }}
-            variant='destructive'
-            size='sm'
-            className='gap-2'
-          >
-            <svg
-              className='h-4 w-4'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-              />
-            </svg>
-            Delete Album
-          </Button>
-        </div>
-
-        {/* Tracks Section */}
-        {albumDetails.tracks && albumDetails.tracks.length > 0 && (
-          <div>
-            <button
-              onClick={() => setTracksExpanded(!tracksExpanded)}
-              className='text-sm font-semibold text-white mb-2 flex items-center gap-2 hover:text-zinc-300 transition-colors w-full'
-            >
-              {tracksExpanded ? (
-                <ChevronDown className='h-4 w-4' />
-              ) : (
-                <ChevronRight className='h-4 w-4' />
-              )}
-              <Disc className='h-4 w-4' />
-              Tracks ({albumDetails.tracks.length})
-            </button>
-            {tracksExpanded && (
-              <div className='space-y-1 max-h-60 overflow-y-auto custom-scrollbar'>
-                {albumDetails.tracks.map((track: any) => (
-                  <div
-                    key={track.id}
-                    className='flex items-center justify-between p-2 bg-zinc-900/50 rounded text-xs'
-                  >
-                    <div className='flex items-center gap-3 flex-1'>
-                      <span className='text-zinc-500 w-8'>
-                        {track.discNumber > 1 && `${track.discNumber}-`}
-                        {track.trackNumber}
-                      </span>
-                      <span className='text-zinc-300'>{track.title}</span>
-                    </div>
-                    <div className='flex items-center gap-4'>
-                      {track.isrc && (
-                        <span className='text-zinc-500 font-mono'>
-                          {track.isrc}
-                        </span>
-                      )}
-                      <span className='text-zinc-400'>
-                        {formatDuration(track.durationMs)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {(!albumDetails.tracks || albumDetails.tracks.length === 0) && (
-          <div className='text-center py-4 text-zinc-500 text-sm'>
-            <Music className='h-8 w-8 mx-auto mb-2 opacity-50' />
-            No tracks available
-          </div>
-        )}
-
-        {/* Preview Enrichment Results */}
-        {previewResults.has(album.id) && (
-          <EnrichmentPreviewResults
-            result={previewResults.get(album.id)!}
-            onClose={() => clearPreviewResult(album.id)}
-            entityType='album'
-          />
-        )}
-
-        {/* Enrichment Logs Section */}
-        <div className='border-t border-zinc-700 pt-4'>
-          <EnrichmentLogTable
-            entityType={EnrichmentEntityType.Album}
-            entityId={album.id}
-            limit={10}
-            enrichmentStatus={album.enrichmentStatus}
-            onReset={() => handleResetEnrichment(album.id, 'album')}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  // Component for expanded artist details
-  const ArtistExpandedContent = ({
-    artist,
-  }: {
-    artist: ArtistSearchResult;
-  }) => {
-    const { data, isLoading, error } = useGetArtistDetailsQuery(
-      { id: artist.id },
-      {
-        enabled: !!artist.id,
-      }
-    );
-
-    const artistDetails = data?.artist;
-
-    if (isLoading) {
-      return <ArtistExpandedSkeleton />;
-    }
-
-    if (error || !artistDetails) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          Failed to load artist details
-        </div>
-      );
-    }
-
-    return (
-      <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
-        {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Database ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {artistDetails.id}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              MusicBrainz ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {artistDetails.musicbrainzId || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Spotify ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {artist.spotifyId ? (
-                <a
-                  href={`https://open.spotify.com/artist/${artist.spotifyId}`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-green-400 hover:text-green-300 hover:underline'
-                >
-                  {artist.spotifyId}
-                </a>
-              ) : (
-                'N/A'
-              )}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Discogs ID
-            </div>
-            <div className='text-sm text-zinc-300 font-mono text-xs'>
-              {artistDetails.discogsId || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>Country</div>
-            <div className='text-sm text-zinc-300'>
-              {artistDetails.countryCode || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Formed Year
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {artistDetails.formedYear || 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Listeners (Last.fm)
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {artistDetails.listeners
-                ? artistDetails.listeners.toLocaleString()
-                : 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Last Enriched
-            </div>
-            <div className='text-sm text-zinc-300'>
-              {artistDetails.lastEnriched
-                ? formatDistanceToNow(new Date(artistDetails.lastEnriched), {
-                    addSuffix: true,
-                  })
-                : 'Never'}
-            </div>
-          </div>
-          <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Image Status
-            </div>
-            <div className='text-sm text-zinc-300 flex items-center gap-2'>
-              <span>
-                {artistDetails.imageUrl && artistDetails.cloudflareImageId
-                  ? '✓ Has images'
-                  : '✗ Missing images'}
-              </span>
-              {(artistDetails.imageUrl || artistDetails.cloudflareImageId) && (
-                <button
-                  className='text-zinc-500 hover:text-zinc-200 transition-colors'
-                  onClick={() =>
-                    setImagePreview({
-                      url: artistDetails.imageUrl || '',
-                      cloudflareId: artistDetails.cloudflareImageId,
-                      title: artistDetails.name,
-                    })
-                  }
-                  title='View image'
-                >
-                  <Eye className='h-3.5 w-3.5' />
-                </button>
-              )}
-            </div>
-            {artistDetails.imageUrl && (
-              <div
-                className='mt-1 text-xs text-zinc-500 truncate max-w-xs'
-                title={artistDetails.imageUrl}
-              >
-                {artistDetails.imageUrl}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Delete Artist Button */}
-        <div className='flex justify-end pt-2 border-t border-zinc-700'>
-          <Button
-            onClick={() => {
-              setArtistToDelete({
-                id: artistDetails.id,
-                name: artistDetails.name,
-              });
-              setDeleteArtistModalOpen(true);
-            }}
-            variant='destructive'
-            size='sm'
-            className='gap-2'
-          >
-            <svg
-              className='h-4 w-4'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-              />
-            </svg>
-            Delete Artist
-          </Button>
-        </div>
-
-        {/* Albums Section */}
-        {artistDetails.albums && artistDetails.albums.length > 0 && (
-          <div>
-            <div className='text-sm font-semibold text-white mb-2 flex items-center gap-2'>
-              <Disc className='h-4 w-4' />
-              Albums ({artistDetails.albums.length})
-            </div>
-            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto'>
-              {artistDetails.albums.map((album: any) => (
-                <div
-                  key={album.id}
-                  className='flex items-center gap-2 p-2 bg-zinc-900/50 rounded text-xs cursor-pointer hover:bg-zinc-800/50 transition-colors'
-                  onClick={() => {
-                    // Switch to albums tab and navigate to this album
-                    setActiveTab('albums');
-                    // Use the existing URL navigation pattern
-                    window.history.pushState(
-                      {},
-                      '',
-                      `/admin/music-database?id=${album.id}&type=albums`
-                    );
-                    // Trigger the scroll-to-row logic by updating the search params
-                    window.location.href = `/admin/music-database?id=${album.id}&type=albums`;
-                  }}
-                >
-                  {album.coverArtUrl && (
-                    <img
-                      src={album.coverArtUrl}
-                      alt={album.title}
-                      className='h-10 w-10 rounded'
-                    />
-                  )}
-                  <div className='flex-1 min-w-0'>
-                    <div className='text-zinc-300 truncate'>{album.title}</div>
-                    <div className='text-zinc-500 text-xs'>
-                      {album.releaseDate
-                        ? new Date(album.releaseDate).getFullYear()
-                        : 'Unknown'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(!artistDetails.albums || artistDetails.albums.length === 0) && (
-          <div className='text-center py-4 text-zinc-500 text-sm'>
-            <Music className='h-8 w-8 mx-auto mb-2 opacity-50' />
-            No albums available
-          </div>
-        )}
-
-        {/* Preview Enrichment Results */}
-        {previewResults.has(artist.id) && (
-          <EnrichmentPreviewResults
-            result={previewResults.get(artist.id)!}
-            onClose={() => clearPreviewResult(artist.id)}
-            entityType='artist'
-          />
-        )}
-
-        {/* Enrichment Logs Section */}
-        <div className='border-t border-zinc-700 pt-4'>
-          <EnrichmentLogTable
-            entityType={EnrichmentEntityType.Artist}
-            entityId={artist.id}
-            limit={10}
-            enrichmentStatus={artist.enrichmentStatus}
-            onReset={() => handleResetEnrichment(artist.id, 'artist')}
-          />
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className='p-8'>
       {/* Header */}
@@ -2134,7 +1593,17 @@ export default function MusicDatabasePage() {
                           className='hover:bg-transparent'
                         >
                           <TableCell colSpan={8} className='p-0 border-none'>
-                            <AlbumExpandedContent album={album} />
+                            <AlbumExpandedContent
+                              album={album}
+                              previewResult={previewResults.get(album.id)}
+                              onClearPreview={clearPreviewResult}
+                              onResetEnrichment={handleResetEnrichment}
+                              onDeleteAlbum={(id, title) => {
+                                setAlbumToDelete({ id, title });
+                                setDeleteModalOpen(true);
+                              }}
+                              onImagePreview={setImagePreview}
+                            />
                           </TableCell>
                         </TableRow>
                       )}
@@ -2413,7 +1882,21 @@ export default function MusicDatabasePage() {
                           className='hover:bg-transparent'
                         >
                           <TableCell colSpan={9} className='p-0 border-none'>
-                            <ArtistExpandedContent artist={artist} />
+                            <ArtistExpandedContent
+                              artist={artist}
+                              previewResult={previewResults.get(artist.id)}
+                              onClearPreview={clearPreviewResult}
+                              onResetEnrichment={handleResetEnrichment}
+                              onDeleteArtist={(id, name) => {
+                                setArtistToDelete({ id, name });
+                                setDeleteArtistModalOpen(true);
+                              }}
+                              onImagePreview={setImagePreview}
+                              onNavigateToAlbum={(albumId) => {
+                                setActiveTab('albums');
+                                window.location.href = `/admin/music-database?id=${albumId}&type=albums`;
+                              }}
+                            />
                           </TableCell>
                         </TableRow>
                       )}

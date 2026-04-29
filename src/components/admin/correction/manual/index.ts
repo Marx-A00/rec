@@ -7,6 +7,7 @@ export { ReleaseTypeSelect } from './ReleaseTypeSelect';
 
 // Container components
 export { ManualEditView } from './ManualEditView';
+export { ManualPreviewApplyStep } from './ManualPreviewApplyStep';
 export { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Types

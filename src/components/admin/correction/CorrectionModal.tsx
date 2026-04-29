@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, Pencil, Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -10,9 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import {
   getCorrectionStore,
   clearCorrectionStoreCache,
@@ -34,8 +32,13 @@ import {
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
 
-import { ModalSkeleton } from './shared';
+import {
+  ModalSkeleton,
+  AppliedSuccessState,
+  EmptyStepPlaceholder,
+} from './shared';
 import { StepIndicator } from './StepIndicator';
+import { CorrectionFooter } from './CorrectionFooter';
 import {
   CurrentDataView,
   type CurrentDataViewAlbum,
@@ -45,19 +48,17 @@ import { SearchView } from './search';
 import { PreviewView } from './preview';
 import {
   ApplyView,
-  calculateHasSelections,
   toGraphQLSelections,
   type UIFieldSelections,
 } from './apply';
 import {
   ManualEditView,
+  ManualPreviewApplyStep,
   UnsavedChangesDialog,
-  computeManualPreview,
   hasUnsavedChanges,
   createInitialEditState,
-  type ManualEditFieldState,
 } from './manual';
-import { FieldComparisonList } from './preview/FieldComparisonList';
+
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct (required - parent should conditionally render) */
@@ -125,15 +126,34 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
   const enrichMutation = useTriggerAlbumEnrichmentMutation();
 
   const albumData = data?.album;
+
+  // Shared mutation success handler: show applied state, invalidate queries, auto-close
+  const handleMutationSuccess = (toastMessage: string) => {
+    store.getState().setShowAppliedState(true);
+    showToast(toastMessage, 'success');
+    queryClient.invalidateQueries({ queryKey: ['album', albumId] });
+    queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
+    queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
+    setTimeout(() => {
+      clearCorrectionStoreCache(albumId);
+      onClose();
+    }, 1500);
+  };
+
+  const handleMutationError = (error: unknown) => {
+    showToast(
+      error instanceof Error ? error.message : 'Failed to apply correction',
+      'error'
+    );
+  };
+
   // Apply mutation (search mode)
   const applyMutation = useApplyCorrectionMutation({
     onSuccess: response => {
       if (response.correctionApply.success) {
-        // Show "Applied!" state
-        store.getState().setShowAppliedState(true);
-
-        // Build toast message from changes
         const changes = response.correctionApply.changes;
+        let message = 'Correction applied successfully';
+
         if (changes) {
           const fieldCount =
             changes.metadata.length + changes.externalIds.length;
@@ -150,87 +170,43 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             parts.push(`${trackCount} track${trackCount !== 1 ? 's' : ''}`);
           }
 
-          let message = `Updated: ${parts.join(', ')}`;
+          message = `Updated: ${parts.join(', ')}`;
 
-          // Add data quality change if applicable
           if (changes.dataQualityBefore !== changes.dataQualityAfter) {
             message += ` • Data quality: ${changes.dataQualityBefore} → ${changes.dataQualityAfter}`;
           }
-
-          showToast(message, 'success');
-
-          // Queue enrichment if requested
-          if (shouldEnrich && albumId) {
-            enrichMutation.mutate(
-              {
-                id: albumId,
-                priority: EnrichmentPriority.High,
-              },
-              {
-                onSuccess: () => {
-                  showToast('Enrichment queued', 'success');
-                },
-                onError: error => {
-                  console.error('Failed to queue enrichment:', error);
-                  // Don't show toast - correction already succeeded
-                },
-              }
-            );
-          }
-        } else {
-          showToast('Correction applied successfully', 'success');
         }
 
-        // Invalidate album queries so table updates immediately
-        queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-        queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
-        queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
+        handleMutationSuccess(message);
 
-        // Auto-close modal after 1.5s
-        setTimeout(() => {
-          if (albumId) clearCorrectionStoreCache(albumId);
-          onClose();
-        }, 1500);
+        // Queue enrichment if requested
+        if (shouldEnrich && albumId) {
+          enrichMutation.mutate(
+            { id: albumId, priority: EnrichmentPriority.High },
+            {
+              onSuccess: () => showToast('Enrichment queued', 'success'),
+              onError: err =>
+                console.error('Failed to queue enrichment:', err),
+            }
+          );
+        }
       } else {
-        // Show error toast
         const errorMsg =
           response.correctionApply.message ?? 'Failed to apply correction';
         showToast(errorMsg, 'error');
       }
     },
-    onError: error => {
-      showToast(
-        error instanceof Error ? error.message : 'Failed to apply correction',
-        'error'
-      );
-    },
+    onError: handleMutationError,
   });
 
   // Manual apply mutation
   const manualApplyMutation = useManualCorrectionApplyMutation({
     onSuccess: response => {
       if (response.manualCorrectionApply.success) {
-        // Show "Applied!" state
-        store.getState().setShowAppliedState(true);
-
-        // Build toast message
         const changedCount = manualPreviewData?.summary.changedFields ?? 0;
-        showToast(
-          `Updated ${changedCount} field${changedCount !== 1 ? 's' : ''}`,
-          'success'
+        handleMutationSuccess(
+          `Updated ${changedCount} field${changedCount !== 1 ? 's' : ''}`
         );
-
-        // Invalidate album queries so table updates immediately
-        queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-        queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
-        queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
-
-        // Auto-close modal after 1.5s
-        setTimeout(() => {
-          clearCorrectionStoreCache(albumId);
-          // Manual edit state cleared by store reset
-          onClose();
-        }, 1500);
       } else {
         const errorMsg =
           response.manualCorrectionApply.message ??
@@ -238,12 +214,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
         showToast(errorMsg, 'error');
       }
     },
-    onError: error => {
-      showToast(
-        error instanceof Error ? error.message : 'Failed to apply correction',
-        'error'
-      );
-    },
+    onError: handleMutationError,
   });
 
   // Keyboard shortcuts
@@ -506,9 +477,10 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
 
           {/* Error state */}
           {hasError && !isLoading && (
-            <div className='flex items-center justify-center h-[300px] border border-dashed border-destructive/30 rounded-lg'>
-              <p className='text-destructive'>Failed to load album data</p>
-            </div>
+            <EmptyStepPlaceholder
+              message='Failed to load album data'
+              variant='error'
+            />
           )}
 
           {/* Step 0: Current Data */}
@@ -518,9 +490,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             </div>
           )}
           {step === 0 && !isLoading && !hasError && !album && (
-            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-              <p className='text-muted-foreground'>No album data available</p>
-            </div>
+            <EmptyStepPlaceholder message='No album data available' />
           )}
 
           {/* Step 1: Search (search mode) */}
@@ -560,14 +530,10 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             !isLoading &&
             !hasError &&
             !selectedMbid && (
-              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-                <div className='text-center'>
-                  <p className='text-zinc-500'>No result selected.</p>
-                  <p className='text-sm text-zinc-600 mt-1'>
-                    Please go back and select a search result.
-                  </p>
-                </div>
-              </div>
+              <EmptyStepPlaceholder
+                message='No result selected.'
+                subtitle='Please go back and select a search result.'
+              />
             )}
 
           {/* Step 2: Combined Preview+Apply (manual mode) */}
@@ -576,102 +542,23 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             !isLoading &&
             !hasError &&
             manualPreviewData && (
-              <>
-                {showAppliedState ? (
-                  // Success state - show "Applied!" with checkmark
-                  <div className='flex flex-col items-center justify-center h-[300px]'>
-                    <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
-                    <p className='text-2xl font-semibold text-green-400'>
-                      Applied!
-                    </p>
-                  </div>
-                ) : (
-                  // Combined preview + apply view
-                  <div className='space-y-6'>
-                    {/* Preview section */}
-                    <div className='border border-zinc-800 rounded-lg p-6 bg-zinc-900/50'>
-                      <h3 className='text-lg font-semibold text-zinc-100 mb-4'>
-                        Preview Changes
-                      </h3>
-                      <p className='text-sm text-zinc-400 mb-4'>
-                        Review the changes before applying them to the album.
-                      </p>
-
-                      {/* Field diffs */}
-                      {manualPreviewData.fieldDiffs.length > 0 ? (
-                        <FieldComparisonList
-                          fieldDiffs={manualPreviewData.fieldDiffs}
-                          artistDiff={manualPreviewData.artistDiff}
-                        />
-                      ) : (
-                        <p className='text-zinc-500 text-sm'>
-                          No field changes detected.
-                        </p>
-                      )}
-
-                      {/* Artist changes */}
-                      {manualPreviewData.artistDiff.changeType !==
-                        'UNCHANGED' && (
-                        <div className='mt-4 p-3 bg-zinc-800/50 rounded-md'>
-                          <p className='text-sm font-medium text-zinc-300 mb-2'>
-                            Artists
-                          </p>
-                          <div className='flex gap-4 text-sm'>
-                            <div className='flex-1'>
-                              <p className='text-zinc-500 text-xs mb-1'>
-                                Current
-                              </p>
-                              <p className='text-zinc-300'>
-                                {manualPreviewData.artistDiff.currentDisplay}
-                              </p>
-                            </div>
-                            <div className='flex-1'>
-                              <p className='text-zinc-500 text-xs mb-1'>New</p>
-                              <p className='text-green-400'>
-                                {manualPreviewData.artistDiff.sourceDisplay}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Apply section */}
-                    <div className='flex justify-between gap-3 pt-4 border-t border-zinc-800'>
-                      <Button
-                        variant='outline'
-                        onClick={() => store.getState().setStep(1)}
-                        className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                      >
-                        Back to Edit
-                      </Button>
-                      <Button
-                        onClick={handleManualApply}
-                        disabled={manualApplyMutation.isPending}
-                        className='bg-blue-600 hover:bg-blue-700 text-white'
-                      >
-                        {manualApplyMutation.isPending
-                          ? 'Applying...'
-                          : 'Apply Changes'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
+              <ManualPreviewApplyStep
+                previewData={manualPreviewData}
+                showAppliedState={showAppliedState}
+                isPending={manualApplyMutation.isPending}
+                onBackToEdit={() => store.getState().setStep(1)}
+                onApply={handleManualApply}
+              />
             )}
           {step === 2 &&
             isManualEditMode &&
             !isLoading &&
             !hasError &&
             !manualPreviewData && (
-              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-                <div className='text-center'>
-                  <p className='text-zinc-500'>No preview data available.</p>
-                  <p className='text-sm text-zinc-600 mt-1'>
-                    Please go back and make some edits first.
-                  </p>
-                </div>
-              </div>
+              <EmptyStepPlaceholder
+                message='No preview data available.'
+                subtitle='Please go back and make some edits first.'
+              />
             )}
 
           {/* Step 3: Apply (search mode only) */}
@@ -683,13 +570,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             previewData && (
               <>
                 {showAppliedState ? (
-                  // Success state - show "Applied!" with checkmark
-                  <div className='flex flex-col items-center justify-center h-[300px]'>
-                    <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
-                    <p className='text-2xl font-semibold text-green-400'>
-                      Applied!
-                    </p>
-                  </div>
+                  <AppliedSuccessState />
                 ) : (
                   // Normal apply view
                   <ApplyView
@@ -708,106 +589,32 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             !isLoading &&
             !hasError &&
             (!albumId || !previewData) && (
-              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-                <div className='text-center'>
-                  <p className='text-zinc-500'>Preview data not available.</p>
-                  <p className='text-sm text-zinc-600 mt-1'>
-                    Please go back and load the preview first.
-                  </p>
-                </div>
-              </div>
+              <EmptyStepPlaceholder
+                message='Preview data not available.'
+                subtitle='Please go back and load the preview first.'
+              />
             )}
         </div>
 
-        <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 flex-shrink-0'>
-          <div className='flex w-full justify-between'>
-            <Button variant='outline' onClick={handleClose}>
-              Cancel
-            </Button>
-            <div className='flex gap-2'>
-              {/* Back button - show on steps 1+ (except manual edit apply step) */}
-              {!isFirstStep &&
-                !(isManualEditMode && step === 2) &&
-                !showAppliedState && (
-                  <Button
-                    variant='outline'
-                    onClick={() => store.getState().prevStep()}
-                  >
-                    Back
-                  </Button>
-                )}
-              {/* Next button - only on step 0 (handled by action buttons now) or step 2 in search mode */}
-              {!isManualEditMode &&
-                step !== 0 &&
-                step !== 2 &&
-                step < maxStepVal && (
-                  <Button
-                    variant='primary'
-                    onClick={() => store.getState().nextStep()}
-                  >
-                    Next
-                  </Button>
-                )}
-              {!isManualEditMode &&
-                step === 2 &&
-                previewData &&
-                !showAppliedState && (
-                  <Button variant='primary' onClick={handleApplyClick}>
-                    Review & Apply
-                  </Button>
-                )}
-              {!isManualEditMode &&
-                step === 3 &&
-                previewData &&
-                !showAppliedState && (
-                  <Button
-                    variant='success'
-                    onClick={() => {
-                      if (!applySelections) return;
-                      handleApply(applySelections, shouldEnrich);
-                    }}
-                    className='text-white'
-                    disabled={
-                      !applySelections ||
-                      !calculateHasSelections(applySelections, previewData) ||
-                      applyMutation.isPending
-                    }
-                  >
-                    {applyMutation.isPending ? (
-                      <>
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        Applying...
-                      </>
-                    ) : (
-                      'Confirm & Apply'
-                    )}
-                  </Button>
-                )}
-              {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
-              {!showAppliedState && step === 0 && album && (
-                <>
-                  <Button
-                    size='sm'
-                    onClick={handleEnterSearch}
-                    className='bg-red-600 hover:bg-red-700 text-white'
-                  >
-                    <Search className='w-3.5 h-3.5 mr-1.5' />
-                    Search
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={handleEnterManualEdit}
-                    className='border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                  >
-                    <Pencil className='w-3.5 h-3.5 mr-1.5' />
-                    Edit Manually
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </DialogFooter>
+        <CorrectionFooter
+          step={step}
+          maxStep={maxStepVal}
+          isFirstStep={isFirstStep}
+          isManualEditMode={isManualEditMode}
+          showAppliedState={showAppliedState}
+          hasAlbum={!!album}
+          previewData={previewData}
+          applySelections={applySelections}
+          shouldEnrich={shouldEnrich}
+          isApplyPending={applyMutation.isPending}
+          onClose={handleClose}
+          onBack={() => store.getState().prevStep()}
+          onNext={() => store.getState().nextStep()}
+          onApplyClick={handleApplyClick}
+          onConfirmApply={handleApply}
+          onEnterSearch={handleEnterSearch}
+          onEnterManualEdit={handleEnterManualEdit}
+        />
 
         {/* Toast notification */}
         <Toast
