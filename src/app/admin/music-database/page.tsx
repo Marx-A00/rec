@@ -1,10 +1,9 @@
 // src/app/admin/music-database/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDateOnly } from '@/lib/date-utils';
-import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Search,
@@ -74,7 +73,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useDebounce } from '@/lib/hooks/useDebounce';
 import {
   useSearchAlbumsAdminQuery,
   useSearchArtistsAdminQuery,
@@ -84,6 +82,7 @@ import {
   DataQuality,
 } from '@/generated/graphql';
 import { useMusicDatabaseActions } from '@/hooks/admin/useMusicDatabaseActions';
+import { useMusicDatabaseFilters } from '@/hooks/admin/useMusicDatabaseFilters';
 import { getImageUrl } from '@/lib/cloudflare-images';
 import {
   Tooltip,
@@ -247,30 +246,37 @@ function EnrichmentStatusCell({
 }
 
 export default function MusicDatabasePage() {
-  // Get URL search params for direct navigation
-  const searchParams = useSearchParams();
-  const targetId = searchParams.get('id');
-  const targetType = searchParams.get('type') as SearchType | null; // 'albums' or 'artists'
-
-  // Get query client for invalidating queries after mutations
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<SearchType>(
-    targetType || 'albums'
-  );
-  const [searchQuery, setSearchQuery] = useState('');
-  const [idSearch, setIdSearch] = useState('');
+  // Filters hook - search, sort, pagination, tabs, row expansion
+  const {
+    targetId,
+    hasProcessedTargetId,
+    searchQuery,
+    setSearchQuery,
+    idSearch,
+    setIdSearch,
+    debouncedSearchQuery,
+    filters,
+    setFilters,
+    sourceFilter,
+    setSourceFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+    page,
+    itemsPerPage,
+    skip,
+    handlePageChange,
+    activeTab,
+    handleTabChange,
+    expandedRows,
+    setExpandedRows,
+    toggleExpanded,
+  } = useMusicDatabaseFilters();
+
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState({
-    dataQuality: 'all',
-    enrichmentStatus: 'all',
-    needsEnrichment: false,
-  });
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 50;
   const [imagePreview, setImagePreview] = useState<{
     url: string;
     cloudflareId?: string | null;
@@ -285,22 +291,6 @@ export default function MusicDatabasePage() {
   const [correctionArtist, setCorrectionArtist] =
     useState<ArtistSearchResult | null>(null);
 
-  // Ref to track if we've processed the URL target (prevents re-render cascade)
-  const hasProcessedTargetId = useRef(false);
-
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
-
-  // Auto-search target row from URL parameter (INITIAL LOAD ONLY)
-  // This only runs on initial page load from a deep link, not during in-session browsing
-  useEffect(() => {
-    if (!targetId || hasProcessedTargetId.current) return;
-    // Don't set hasProcessedTargetId here - let the auto-expand effect do it after data loads
-    setIdSearch(targetId);
-  }, [targetId]);
-
-  // Calculate skip for pagination
-  const skip = (page - 1) * itemsPerPage;
-
   // Fetch database stats
   const {
     data: statsData,
@@ -309,8 +299,6 @@ export default function MusicDatabasePage() {
   } = useGetDatabaseStatsQuery();
 
   // Search albums with React Query
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
-
   const {
     data: albumsData,
     isLoading: albumsLoading,
@@ -605,29 +593,6 @@ export default function MusicDatabasePage() {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const toggleExpanded = (id: string) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    setExpandedRows(new Set()); // Clear expanded rows when changing pages
-  };
-
-  const handleTabChange = (newTab: SearchType) => {
-    setActiveTab(newTab);
-    setPage(1); // Reset to page 1 when switching tabs
-    setExpandedRows(new Set()); // Clear expanded rows
   };
 
   // Pagination component
@@ -1551,7 +1516,6 @@ export default function MusicDatabasePage() {
                               }}
                               onImagePreview={setImagePreview}
                               onNavigateToAlbum={(albumId) => {
-                                setActiveTab('albums');
                                 window.location.href = `/admin/music-database?id=${albumId}&type=albums`;
                               }}
                             />
