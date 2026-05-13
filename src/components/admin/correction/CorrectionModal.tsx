@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 import {
   Dialog,
@@ -23,14 +22,11 @@ import {
 import {
   useGetAlbumDetailsAdminQuery,
   DataQuality,
-  useApplyCorrectionMutation,
-  useManualCorrectionApplyMutation,
-  useTriggerAlbumEnrichmentMutation,
-  EnrichmentPriority,
   CorrectionSource,
 } from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
+import { useCorrectionMutations } from './hooks/useCorrectionMutations';
 
 import {
   ModalSkeleton,
@@ -89,9 +85,6 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
   // Toast state
   const { toast, showToast, hideToast } = useToast();
 
-  // Query client for cache invalidation
-  const queryClient = useQueryClient();
-
   // Initialize Zustand store for this album
   const store = getCorrectionStore(albumId);
 
@@ -122,100 +115,15 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
     { enabled: true }
   );
 
-  // Enrichment mutation for re-enriching after correction
-  const enrichMutation = useTriggerAlbumEnrichmentMutation();
+  // Mutations (extracted to hook)
+  const { applyMutation, manualApplyMutation } = useCorrectionMutations({
+    albumId,
+    store,
+    showToast,
+    onClose,
+  });
 
   const albumData = data?.album;
-
-  // Shared mutation success handler: show applied state, invalidate queries, auto-close
-  const handleMutationSuccess = (toastMessage: string) => {
-    store.getState().setShowAppliedState(true);
-    showToast(toastMessage, 'success');
-    queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-    queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
-    queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
-    setTimeout(() => {
-      clearCorrectionStoreCache(albumId);
-      onClose();
-    }, 1500);
-  };
-
-  const handleMutationError = (error: unknown) => {
-    showToast(
-      error instanceof Error ? error.message : 'Failed to apply correction',
-      'error'
-    );
-  };
-
-  // Apply mutation (search mode)
-  const applyMutation = useApplyCorrectionMutation({
-    onSuccess: response => {
-      if (response.correctionApply.success) {
-        const changes = response.correctionApply.changes;
-        let message = 'Correction applied successfully';
-
-        if (changes) {
-          const fieldCount =
-            changes.metadata.length + changes.externalIds.length;
-          const trackCount =
-            changes.tracks.added +
-            changes.tracks.modified +
-            changes.tracks.removed;
-
-          const parts = [];
-          if (fieldCount > 0) {
-            parts.push(`${fieldCount} field${fieldCount !== 1 ? 's' : ''}`);
-          }
-          if (trackCount > 0) {
-            parts.push(`${trackCount} track${trackCount !== 1 ? 's' : ''}`);
-          }
-
-          message = `Updated: ${parts.join(', ')}`;
-
-          if (changes.dataQualityBefore !== changes.dataQualityAfter) {
-            message += ` • Data quality: ${changes.dataQualityBefore} → ${changes.dataQualityAfter}`;
-          }
-        }
-
-        handleMutationSuccess(message);
-
-        // Queue enrichment if requested
-        if (shouldEnrich && albumId) {
-          enrichMutation.mutate(
-            { id: albumId, priority: EnrichmentPriority.High },
-            {
-              onSuccess: () => showToast('Enrichment queued', 'success'),
-              onError: err =>
-                console.error('Failed to queue enrichment:', err),
-            }
-          );
-        }
-      } else {
-        const errorMsg =
-          response.correctionApply.message ?? 'Failed to apply correction';
-        showToast(errorMsg, 'error');
-      }
-    },
-    onError: handleMutationError,
-  });
-
-  // Manual apply mutation
-  const manualApplyMutation = useManualCorrectionApplyMutation({
-    onSuccess: response => {
-      if (response.manualCorrectionApply.success) {
-        const changedCount = manualPreviewData?.summary.changedFields ?? 0;
-        handleMutationSuccess(
-          `Updated ${changedCount} field${changedCount !== 1 ? 's' : ''}`
-        );
-      } else {
-        const errorMsg =
-          response.manualCorrectionApply.message ??
-          'Failed to apply correction';
-        showToast(errorMsg, 'error');
-      }
-    },
-    onError: handleMutationError,
-  });
 
   // Keyboard shortcuts
   useEffect(() => {

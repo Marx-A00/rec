@@ -15,8 +15,8 @@ import type { PreviewEnrichmentResult } from '@/generated/graphql';
 interface ArtistSearchResult {
   id: string;
   name: string;
-  spotifyId: string | null;
-  enrichmentStatus: string;
+  spotifyId?: string | null;
+  enrichmentStatus?: string | null;
 }
 
 interface ImagePreview {

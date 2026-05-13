@@ -23,8 +23,8 @@ import type { PreviewEnrichmentResult } from '@/generated/graphql';
 interface AlbumSearchResult {
   id: string;
   title: string;
-  spotifyId: string | null;
-  enrichmentStatus: string;
+  spotifyId?: string | null;
+  enrichmentStatus?: string | null;
 }
 
 interface ImagePreview {

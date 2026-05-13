@@ -80,22 +80,10 @@ import {
   useSearchArtistsAdminQuery,
   useSearchTracksAdminQuery,
   useGetDatabaseStatsQuery,
-  useResetAlbumEnrichmentMutation,
-  useResetArtistEnrichmentMutation,
-  useUpdateAlbumDataQualityMutation,
-  useUpdateArtistDataQualityMutation,
-  useTriggerAlbumEnrichmentMutation,
-  useTriggerArtistEnrichmentMutation,
-  useBatchEnrichmentMutation,
-  useDeleteAlbumMutation,
-  useDeleteArtistMutation,
-  usePreviewAlbumEnrichmentMutation,
-  usePreviewArtistEnrichmentMutation,
-  PreviewEnrichmentResult,
-  EnrichmentType,
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
+import { useMusicDatabaseActions } from '@/hooks/admin/useMusicDatabaseActions';
 import { getImageUrl } from '@/lib/cloudflare-images';
 import {
   Tooltip,
@@ -112,73 +100,62 @@ import { ArtistExpandedContent } from '@/components/admin/music-database/ArtistE
 interface AlbumSearchResult {
   id: string;
   title: string;
-  releaseDate: string | null;
-  coverArtUrl: string | null;
-  musicbrainzId: string | null;
-  spotifyId: string | null;
-  dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
-  lastEnriched: string | null;
-  updatedAt: string;
-  needsEnrichment: boolean;
+  releaseDate?: string | Date | null;
+  coverArtUrl?: string | null;
+  musicbrainzId?: string | null;
+  spotifyId?: string | null;
+  dataQuality?: string | null;
+  enrichmentStatus?: string | null;
+  lastEnriched?: string | Date | null;
+  updatedAt?: string | Date | unknown;
+  needsEnrichment?: boolean;
   artists: Array<{
     artist: {
       id: string;
       name: string;
     };
-    role: string;
+    role?: string | null;
   }>;
-  trackCount: number;
-  label: string | null;
+  trackCount?: number | null;
+  label?: string | null;
 }
 
 interface ArtistSearchResult {
   id: string;
   name: string;
-  musicbrainzId: string | null;
-  spotifyId: string | null;
-  imageUrl: string | null;
-  dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
-  lastEnriched: string | null;
-  updatedAt: string;
-  needsEnrichment: boolean;
-  albumCount: number;
-  trackCount: number;
-  formedYear: number | null;
-  countryCode: string | null;
+  musicbrainzId?: string | null;
+  spotifyId?: string | null;
+  imageUrl?: string | null;
+  dataQuality?: string | null;
+  enrichmentStatus?: string | null;
+  lastEnriched?: string | Date | null;
+  updatedAt?: string | Date | unknown;
+  needsEnrichment?: boolean;
+  albumCount?: number;
+  trackCount?: number;
+  formedYear?: number | null;
+  countryCode?: string | null;
 }
 
 interface TrackSearchResult {
   id: string;
   title: string;
-  trackNumber: number;
-  discNumber: number;
-  durationMs: number | null;
-  isrc: string | null;
-  album: {
+  trackNumber?: number;
+  discNumber?: number;
+  durationMs?: number | null;
+  isrc?: string | null;
+  album?: {
     id: string;
     title: string;
-    coverArtUrl: string | null;
-  };
+    coverArtUrl?: string | null;
+  } | null;
   artists: Array<{
     artist: {
       id: string;
       name: string;
     };
-    role: string;
+    role?: string | null;
   }>;
-}
-
-interface DatabaseStats {
-  totalAlbums: number;
-  totalArtists: number;
-  totalTracks: number;
-  albumsNeedingEnrichment: number;
-  artistsNeedingEnrichment: number;
-  recentlyEnriched: number;
-  failedEnrichments: number;
-  averageDataQuality: number;
 }
 
 type SearchType = 'albums' | 'artists' | 'tracks';
@@ -245,10 +222,10 @@ function EnrichmentStatusCell({
   const icon = stale ? (
     <AlertCircle className='h-4 w-4 text-orange-400' />
   ) : (
-    getStatusIcon(item.enrichmentStatus)
+    getStatusIcon(item.enrichmentStatus ?? '')
   );
   const label = stale
-    ? `STALE (${formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true })})`
+    ? `STALE (${formatDistanceToNow(new Date(item.updatedAt as string), { addSuffix: true })})`
     : item.enrichmentStatus;
 
   return (
@@ -294,29 +271,11 @@ export default function MusicDatabasePage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const itemsPerPage = 50;
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [albumToDelete, setAlbumToDelete] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-  const [artistToDelete, setArtistToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<{
     url: string;
     cloudflareId?: string | null;
     title: string;
   } | null>(null);
-  const [enrichingItems, setEnrichingItems] = useState<Set<string>>(new Set());
-  const [previewingItems, setPreviewingItems] = useState<Set<string>>(
-    new Set()
-  );
-
-  const [previewResults, setPreviewResults] = useState<
-    Map<string, PreviewEnrichmentResult>
-  >(new Map());
 
   // Correction modal state
   const [correctionAlbum, setCorrectionAlbum] =
@@ -348,29 +307,6 @@ export default function MusicDatabasePage() {
     isLoading: statsLoading,
     error: statsError,
   } = useGetDatabaseStatsQuery();
-
-  // Enrichment trigger mutations
-  const triggerAlbumEnrichmentMutation = useTriggerAlbumEnrichmentMutation();
-  const triggerArtistEnrichmentMutation = useTriggerArtistEnrichmentMutation();
-
-  // Reset enrichment mutations
-  const resetAlbumMutation = useResetAlbumEnrichmentMutation();
-  const resetArtistMutation = useResetArtistEnrichmentMutation();
-
-  // Data quality mutations
-  const updateAlbumQualityMutation = useUpdateAlbumDataQualityMutation();
-  const updateArtistQualityMutation = useUpdateArtistDataQualityMutation();
-
-  // Batch enrichment mutation
-  const batchEnrichmentMutation = useBatchEnrichmentMutation();
-
-  // Delete mutations
-  const deleteAlbumMutation = useDeleteAlbumMutation();
-  const deleteArtistMutation = useDeleteArtistMutation();
-
-  // Preview enrichment mutations
-  const previewAlbumEnrichmentMutation = usePreviewAlbumEnrichmentMutation();
-  const previewArtistEnrichmentMutation = usePreviewArtistEnrichmentMutation();
 
   // Search albums with React Query
   const [sourceFilter, setSourceFilter] = useState<string>('all');
@@ -538,7 +474,7 @@ export default function MusicDatabasePage() {
 
     // Check if the target ID is in the loaded data
     const allItems = [...albums, ...artists];
-    const targetExists = allItems.some((item: any) => item.id === targetId);
+    const targetExists = allItems.some(item => item.id === targetId);
 
     // Only proceed if data is loaded and target exists
     if (targetExists && !albumsLoading && !artistsLoading) {
@@ -588,325 +524,49 @@ export default function MusicDatabasePage() {
     }
   }, [targetId, albums, artists, expandedRows, albumsLoading, artistsLoading]);
 
-  const handleDeleteAlbum = async () => {
-    if (!albumToDelete) return;
-
-    try {
-      const result = await deleteAlbumMutation.mutateAsync({
-        id: albumToDelete.id,
-      });
-
-      if (result.deleteAlbum?.success) {
-        toast.success(`Successfully deleted "${albumToDelete.title}"`);
-
-        // Collapse the row and refetch data
-        setExpandedRows(prev => {
-          const next = new Set(prev);
-          next.delete(albumToDelete.id);
-          return next;
-        });
-
-        setDeleteModalOpen(false);
-        setAlbumToDelete(null);
-        refetchAlbums();
-      } else {
-        throw new Error(
-          result.deleteAlbum?.message || 'Failed to delete album'
-        );
-      }
-    } catch (error) {
-      console.error('Delete error:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete album';
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDeleteArtist = async () => {
-    if (!artistToDelete) return;
-
-    try {
-      const result = await deleteArtistMutation.mutateAsync({
-        id: artistToDelete.id,
-      });
-
-      if (result.deleteArtist?.success) {
-        toast.success(`Successfully deleted "${artistToDelete.name}"`);
-
-        // Collapse the row and refetch data
-        setExpandedRows(prev => {
-          const next = new Set(prev);
-          next.delete(artistToDelete.id);
-          return next;
-        });
-
-        setDeleteArtistModalOpen(false);
-        setArtistToDelete(null);
-        refetchArtists();
-      } else {
-        throw new Error(
-          result.deleteArtist?.message || 'Failed to delete artist'
-        );
-      }
-    } catch (error) {
-      console.error('Delete artist error:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete artist';
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleEnrichItem = async (
-    itemId: string,
-    type: 'album' | 'artist',
-    priority: EnrichmentPriority = EnrichmentPriority.Medium,
-    force: boolean = false
-  ) => {
-    // Add item to enriching set to show loading state
-    setEnrichingItems(prev => new Set(prev).add(itemId));
-
-    try {
-      if (type === 'album') {
-        const result = await triggerAlbumEnrichmentMutation.mutateAsync({
-          id: itemId,
-          priority,
-          force,
-        });
-
-        if (result.triggerAlbumEnrichment.success) {
-          toast.success(
-            force
-              ? `Force re-enrichment job queued for album`
-              : `Enrichment job queued for album`
-          );
-          // Invalidate all related queries to ensure UI updates immediately
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] }),
-            queryClient.invalidateQueries({
-              queryKey: ['GetAlbumDetailsAdmin'],
-            }),
-            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
-          ]);
-        } else {
-          throw new Error(
-            result.triggerAlbumEnrichment.message ||
-              'Failed to queue enrichment'
-          );
-        }
-      } else {
-        const result = await triggerArtistEnrichmentMutation.mutateAsync({
-          id: itemId,
-          priority,
-          force,
-        });
-
-        if (result.triggerArtistEnrichment.success) {
-          toast.success(
-            force
-              ? `Force re-enrichment job queued for artist`
-              : `Enrichment job queued for artist`
-          );
-          // Invalidate all related queries to ensure UI updates immediately
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['SearchArtistsAdmin'] }),
-            queryClient.invalidateQueries({ queryKey: ['GetArtistDetails'] }),
-            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
-          ]);
-        } else {
-          throw new Error(
-            result.triggerArtistEnrichment.message ||
-              'Failed to queue enrichment'
-          );
-        }
-      }
-    } catch (error) {
-      toast.error(`Failed to queue enrichment: ${error}`);
-    } finally {
-      // Remove item from enriching set to hide loading state
-      setEnrichingItems(prev => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      });
-    }
-  };
-
-  const handlePreviewEnrichment = async (
-    itemId: string,
-    type: 'album' | 'artist'
-  ) => {
-    // Add item to previewing set to show loading state
-    setPreviewingItems(prev => new Set(prev).add(itemId));
-
-    try {
-      if (type === 'album') {
-        const result = await previewAlbumEnrichmentMutation.mutateAsync({
-          id: itemId,
-        });
-
-        setPreviewResults(prev => {
-          const next = new Map(prev);
-          next.set(itemId, result.previewAlbumEnrichment);
-          return next;
-        });
-
-        toast.success('Preview enrichment completed');
-
-        // Invalidate enrichment logs to show the new PREVIEW log entry
-        await queryClient.invalidateQueries({
-          queryKey: ['GetLlamaLogs'],
-        });
-      } else {
-        const result = await previewArtistEnrichmentMutation.mutateAsync({
-          id: itemId,
-        });
-
-        setPreviewResults(prev => {
-          const next = new Map(prev);
-          next.set(itemId, result.previewArtistEnrichment);
-          return next;
-        });
-
-        toast.success('Preview enrichment completed');
-
-        // Invalidate enrichment logs to show the new PREVIEW log entry
-        await queryClient.invalidateQueries({
-          queryKey: ['GetLlamaLogs'],
-        });
-      }
-    } catch (error) {
-      toast.error(`Preview enrichment failed: ${error}`);
-    } finally {
-      setPreviewingItems(prev => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      });
-    }
-  };
-
-  const clearPreviewResult = (itemId: string) => {
-    setPreviewResults(prev => {
-      const next = new Map(prev);
-      next.delete(itemId);
-      return next;
-    });
-  };
-
-  const handleResetEnrichment = async (
-    itemId: string,
-    type: 'album' | 'artist'
-  ) => {
-    try {
-      if (type === 'album') {
-        await resetAlbumMutation.mutateAsync({ id: itemId });
-        toast.success('Album enrichment status reset');
-        refetchAlbums();
-      } else {
-        await resetArtistMutation.mutateAsync({ id: itemId });
-        toast.success('Artist enrichment status reset');
-        refetchArtists();
-      }
-    } catch (error) {
-      toast.error(`Failed to reset enrichment: ${error}`);
-    }
-  };
-
-  const handleUpdateDataQuality = async (
-    itemId: string,
-    type: 'album' | 'artist',
-    dataQuality: DataQuality
-  ) => {
-    if (!itemId) {
-      toast.error('No item ID provided');
-      return;
-    }
-
-    try {
-      if (type === 'album') {
-        await updateAlbumQualityMutation.mutateAsync({
-          id: itemId,
-          dataQuality,
-        });
-        toast.success(`Album data quality updated to ${dataQuality}`);
-        refetchAlbums();
-      } else {
-        await updateArtistQualityMutation.mutateAsync({
-          id: itemId,
-          dataQuality,
-        });
-        toast.success(`Artist data quality updated to ${dataQuality}`);
-        refetchArtists();
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to update data quality: ${(error as Error).message || String(error)}`
-      );
-    }
-  };
-
-  const handleBatchEnrichment = async () => {
-    if (selectedItems.size === 0) {
-      toast.error('No items selected');
-      return;
-    }
-
-    const itemsArray = Array.from(selectedItems);
-    const enrichmentType =
-      activeTab === 'albums'
-        ? EnrichmentType.Album
-        : activeTab === 'artists'
-          ? EnrichmentType.Artist
-          : null;
-
-    if (!enrichmentType) {
-      toast.error('Batch enrichment not available for tracks');
-      return;
-    }
-
-    try {
-      const result = await batchEnrichmentMutation.mutateAsync({
-        ids: itemsArray,
-        type: enrichmentType,
-        priority: EnrichmentPriority.Medium,
-      });
-
-      if (result.batchEnrichment?.success) {
-        toast.success(
-          `${result.batchEnrichment.jobsQueued} enrichment jobs queued`
-        );
-        setSelectedItems(new Set());
-        // Invalidate queries to refresh the list
-        if (activeTab === 'albums') {
-          await queryClient.invalidateQueries({
-            queryKey: ['SearchAlbumsAdmin'],
-          });
-        } else if (activeTab === 'artists') {
-          await queryClient.invalidateQueries({
-            queryKey: ['SearchArtistsAdmin'],
-          });
-        }
-      } else {
-        throw new Error(
-          result.batchEnrichment?.message || 'Failed to queue batch enrichment'
-        );
-      }
-    } catch (error) {
-      toast.error(`Failed to queue batch enrichment: ${error}`);
-    }
-  };
+  // Actions hook - handles all mutations, delete state, enrichment state
+  const {
+    enrichingItems,
+    previewingItems,
+    previewResults,
+    deleteModalOpen,
+    setDeleteModalOpen,
+    albumToDelete,
+    deleteArtistModalOpen,
+    setDeleteArtistModalOpen,
+    artistToDelete,
+    deleteAlbumPending,
+    deleteArtistPending,
+    handleDeleteAlbum,
+    handleDeleteArtist,
+    handleEnrichItem,
+    handlePreviewEnrichment,
+    clearPreviewResult,
+    handleResetEnrichment,
+    handleUpdateDataQuality,
+    handleBatchEnrichment,
+    openDeleteAlbumModal,
+    openDeleteArtistModal,
+  } = useMusicDatabaseActions({
+    activeTab,
+    refetchAlbums,
+    refetchArtists,
+    setExpandedRows,
+    selectedItems,
+    setSelectedItems,
+  });
 
   const handleSelectAll = () => {
     const currentResults = getCurrentResults();
     if (selectedItems.size === currentResults.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(currentResults.map((item: any) => item.id)));
+      setSelectedItems(new Set(currentResults.map(item => item.id)));
     }
   };
 
   const getQualityBadge = (
-    quality: string,
+    quality: string | null | undefined,
     itemId: string,
     type: 'album' | 'artist'
   ) => {
@@ -918,7 +578,7 @@ export default function MusicDatabasePage() {
 
     return (
       <Select
-        value={quality}
+        value={quality ?? undefined}
         onValueChange={value =>
           handleUpdateDataQuality(itemId, type, value as DataQuality)
         }
@@ -938,7 +598,7 @@ export default function MusicDatabasePage() {
   };
 
 
-  const formatDuration = (ms: number | null) => {
+  const formatDuration = (ms: number | null | undefined) => {
     if (!ms) return '-';
     // Convert milliseconds to total seconds
     const totalSeconds = Math.floor(ms / 1000);
@@ -1348,7 +1008,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayAlbums.map((album: any) => (
+                  {displayAlbums.map((album) => (
                     <React.Fragment key={album.id}>
                       <TableRow
                         id={`row-${album.id}`}
@@ -1599,8 +1259,7 @@ export default function MusicDatabasePage() {
                               onClearPreview={clearPreviewResult}
                               onResetEnrichment={handleResetEnrichment}
                               onDeleteAlbum={(id, title) => {
-                                setAlbumToDelete({ id, title });
-                                setDeleteModalOpen(true);
+                                openDeleteAlbumModal(id, title);
                               }}
                               onImagePreview={setImagePreview}
                             />
@@ -1668,7 +1327,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayArtists.map((artist: any) => (
+                  {displayArtists.map((artist) => (
                     <React.Fragment key={artist.id}>
                       <TableRow
                         id={`row-${artist.id}`}
@@ -1888,8 +1547,7 @@ export default function MusicDatabasePage() {
                               onClearPreview={clearPreviewResult}
                               onResetEnrichment={handleResetEnrichment}
                               onDeleteArtist={(id, name) => {
-                                setArtistToDelete({ id, name });
-                                setDeleteArtistModalOpen(true);
+                                openDeleteArtistModal(id, name);
                               }}
                               onImagePreview={setImagePreview}
                               onNavigateToAlbum={(albumId) => {
@@ -1933,7 +1591,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayTracks.map((track: any) => (
+                  {displayTracks.map((track) => (
                     <TableRow
                       key={track.id}
                       className='border-b border-zinc-800 hover:bg-transparent'
@@ -1946,14 +1604,14 @@ export default function MusicDatabasePage() {
                       <TableCell className='text-zinc-300'>
                         {track.artists
                           .slice(0, 2)
-                          .map((a: any) => a.artist.name)
+                          .map((a) => a.artist.name)
                           .join(', ')}
                         {track.artists.length > 2 &&
                           ` +${track.artists.length - 2}`}
                       </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-2'>
-                          {track.album.coverArtUrl && (
+                          {track.album?.coverArtUrl && (
                             <img
                               src={track.album.coverArtUrl}
                               alt={track.album.title}
@@ -1961,12 +1619,12 @@ export default function MusicDatabasePage() {
                             />
                           )}
                           <span className='text-sm text-zinc-300'>
-                            {track.album.title}
+                            {track.album?.title}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className='text-zinc-300'>
-                        {track.discNumber > 1 && `${track.discNumber}-`}
+                        {(track.discNumber ?? 1) > 1 && `${track.discNumber}-`}
                         {track.trackNumber}
                       </TableCell>
                       <TableCell className='text-zinc-300'>
@@ -2095,10 +1753,7 @@ export default function MusicDatabasePage() {
           <DialogFooter>
             <Button
               variant='outline'
-              onClick={() => {
-                setDeleteModalOpen(false);
-                setAlbumToDelete(null);
-              }}
+              onClick={() => setDeleteModalOpen(false)}
               className='border-zinc-700 text-white hover:bg-zinc-800'
             >
               Cancel
@@ -2173,11 +1828,8 @@ export default function MusicDatabasePage() {
           <DialogFooter>
             <Button
               variant='outline'
-              onClick={() => {
-                setDeleteArtistModalOpen(false);
-                setArtistToDelete(null);
-              }}
-              disabled={deleteArtistMutation.isPending}
+              onClick={() => setDeleteArtistModalOpen(false)}
+              disabled={deleteArtistPending}
               className='border-zinc-700 text-white hover:bg-zinc-800'
             >
               Cancel
@@ -2185,10 +1837,10 @@ export default function MusicDatabasePage() {
             <Button
               variant='destructive'
               onClick={handleDeleteArtist}
-              disabled={deleteArtistMutation.isPending}
+              disabled={deleteArtistPending}
               className='gap-2'
             >
-              {deleteArtistMutation.isPending ? (
+              {deleteArtistPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
               ) : (
                 <svg
@@ -2205,7 +1857,7 @@ export default function MusicDatabasePage() {
                   />
                 </svg>
               )}
-              {deleteArtistMutation.isPending
+              {deleteArtistPending
                 ? 'Deleting...'
                 : 'Delete Permanently'}
             </Button>
