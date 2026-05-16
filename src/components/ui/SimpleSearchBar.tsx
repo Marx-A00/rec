@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSearchStore, SearchType } from '@/stores/useSearchStore';
+import ContextualHint from '@/components/ui/ContextualHint';
 
 export interface SimpleSearchBarProps {
   placeholder?: string;
@@ -116,23 +117,30 @@ export default function SimpleSearchBar({
         </div>
 
         {/* Search Input */}
-        <Command
-          className='border-0 shadow-none bg-transparent flex-1'
-          shouldFilter={false}
+        <ContextualHint
+          id='search-bar'
+          title='Search'
+          description='Find albums, artists, tracks, and users across the platform.'
+          side='bottom'
         >
-          <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
-            <CommandInput
-              id='main-search-bar'
-              data-tour-step='main-search'
-              placeholder={placeholder}
-              value={query}
-              onValueChange={handleValueChange}
-              onKeyDown={handleKeyDown}
-              onClear={handleClear}
-              className='h-9 text-white placeholder:text-zinc-400'
-            />
-          </div>
-        </Command>
+          <Command
+            className='border-0 shadow-none bg-transparent flex-1'
+            shouldFilter={false}
+          >
+            <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
+              <CommandInput
+                id='main-search-bar'
+                data-tour-step='main-search'
+                placeholder={placeholder}
+                value={query}
+                onValueChange={handleValueChange}
+                onKeyDown={handleKeyDown}
+                onClear={handleClear}
+                className='h-9 text-white placeholder:text-zinc-400'
+              />
+            </div>
+          </Command>
+        </ContextualHint>
       </div>
     </div>
   );

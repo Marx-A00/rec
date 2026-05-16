@@ -17,6 +17,7 @@ import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerC
 import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
+
 import NavigationItem from './NavigationItem';
 import HelpMenu from './HelpMenu';
 
@@ -117,9 +118,6 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
               context={navigationContext}
               isCollapsed={!isExpanded}
               onItemClick={isExpanded ? () => closeSidebar() : undefined}
-              data-tour-step={
-                item.id === 'recommend' ? 'create-recommendation' : undefined
-              }
             />
           ))}
         </div>

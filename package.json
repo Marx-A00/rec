@@ -114,7 +114,6 @@
     "diff": "^8.0.3",
     "disconnect": "^1.2.2",
     "dotenv": "^16.5.0",
-    "driver.js": "^1.4.0",
     "express": "^5.1.0",
     "fastest-levenshtein": "^1.0.16",
     "framer-motion": "^12.23.14",

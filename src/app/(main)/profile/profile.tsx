@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Lock, Pencil, Settings, UserCog } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,8 @@ import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
 import PluhButton from '@/components/ui/PluhButton';
 import { useNavigation } from '@/hooks/useNavigation';
+import ContextualHint from '@/components/ui/ContextualHint';
 import { CollectionAlbum } from '@/types/collection';
-import { useQueryClient } from '@tanstack/react-query';
-
 import {
   RecommendationFieldsFragment,
   useGetUserProfileQuery,
@@ -318,12 +318,20 @@ export default function ProfileClient({
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
                 <div>
                   <div className='flex items-center gap-3 mb-2'>
-                    <h1
-                      data-tour-step='profile-header'
-                      className='text-4xl font-bold text-cosmic-latte'
+                    <ContextualHint
+                      id='profile-welcome'
+                      title='Your Profile'
+                      description='This is your musical identity! See your recs, collections, followers, and music stats all in one place.'
+                      side='bottom'
+                      align='start'
                     >
-                      {displayUsername}
-                    </h1>
+                      <h1
+                        data-tour-step='profile-header'
+                        className='text-4xl font-bold text-cosmic-latte'
+                      >
+                        {displayUsername}
+                      </h1>
+                    </ContextualHint>
                     <AdminBadge role={user.role} />
                   </div>
                 </div>
@@ -333,7 +341,6 @@ export default function ProfileClient({
                       <Button
                         variant='ghost'
                         size='sm'
-                        data-tour-step='profile-settings'
                         onClick={e => {
                           e.stopPropagation();
                           setShowSettings(!showSettings);

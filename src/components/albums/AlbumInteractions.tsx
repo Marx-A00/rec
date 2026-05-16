@@ -13,6 +13,7 @@ import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerC
 import { useAlbumState } from '@/hooks/useAlbumState';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
+import ContextualHint from '@/components/ui/ContextualHint';
 import { graphqlClient } from '@/lib/graphql-client';
 import {
   GetArtistByMusicBrainzIdDocument,
@@ -159,45 +160,52 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
       )}
 
       {/* Action Buttons */}
-      <div
-        data-tour-step='album-interactions'
-        className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'
+      <ContextualHint
+        id='album-interactions'
+        title='Quick Actions'
+        description='Create a rec from this album, add it to your collection, or share it with friends.'
+        side='bottom'
       >
-        <Button
-          variant='primary'
-          size='lg'
-          onClick={handleMakeRecommendation}
-          className='gap-2'
-          aria-label='Create a recommendation for this album'
+        <div
+          data-tour-step='album-interactions'
+          className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'
         >
-          <Heart className='h-4 w-4' />
-          Make Rec
-        </Button>
+          <Button
+            variant='primary'
+            size='lg'
+            onClick={handleMakeRecommendation}
+            className='gap-2'
+            aria-label='Create a recommendation for this album'
+          >
+            <Heart className='h-4 w-4' />
+            Make Rec
+          </Button>
 
-        <CollectionPopover album={album} size='lg' variant='default' />
+          <CollectionPopover album={album} size='lg' variant='default' />
 
-        <Button
-          variant='outline'
-          size='lg'
-          onClick={handleShare}
-          className='gap-2'
-          aria-label='Share this album'
-        >
-          <Share2 className='h-4 w-4' />
-          Share
-        </Button>
+          <Button
+            variant='outline'
+            size='lg'
+            onClick={handleShare}
+            className='gap-2'
+            aria-label='Share this album'
+          >
+            <Share2 className='h-4 w-4' />
+            Share
+          </Button>
 
-        <Button
-          variant='ghost'
-          size='lg'
-          onClick={handleMoreActions}
-          className='gap-2'
-          aria-label='More actions for this album'
-        >
-          <MoreHorizontal className='h-4 w-4' />
-          More
-        </Button>
-      </div>
+          <Button
+            variant='ghost'
+            size='lg'
+            onClick={handleMoreActions}
+            className='gap-2'
+            aria-label='More actions for this album'
+          >
+            <MoreHorizontal className='h-4 w-4' />
+            More
+          </Button>
+        </div>
+      </ContextualHint>
 
       {/* Toast Notification */}
       <Toast

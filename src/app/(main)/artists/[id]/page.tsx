@@ -11,6 +11,7 @@ import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
 import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
+import ContextualHint from '@/components/ui/ContextualHint';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -63,7 +64,6 @@ export default async function ArtistDetailsPage({
       {/* Artist Header */}
       <div
         id='artist-page-header'
-        data-tour-step='artist-header'
         className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'
       >
         {/* Artist Image */}
@@ -186,17 +186,25 @@ export default async function ArtistDetailsPage({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent
-          value='discography'
-          data-tour-step='artist-discography'
-          className='focus:outline-none outline-none'
+        <ContextualHint
+          id='artist-discography'
+          title='Artist Discography'
+          description="Explore this artist's albums. Click any album to see details, tracklists, and community recommendations."
+          side='top'
+          align='start'
         >
-          <DiscographyTab
-            artistId={artist.id}
-            artistName={artist.name}
-            source={artist.source}
-          />
-        </TabsContent>
+          <TabsContent
+            value='discography'
+            data-tour-step='artist-discography'
+            className='focus:outline-none outline-none'
+          >
+            <DiscographyTab
+              artistId={artist.id}
+              artistName={artist.name}
+              source={artist.source}
+            />
+          </TabsContent>
+        </ContextualHint>
 
         <TabsContent
           value='recommendations'

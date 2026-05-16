@@ -19,7 +19,6 @@ interface NavigationItemProps {
   context?: NavigationContext;
   depth?: number;
   onItemClick?: (item: NavItem) => void;
-  'data-tour-step'?: string;
 }
 
 export const NavigationItem: FC<NavigationItemProps> = ({
@@ -28,7 +27,6 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   context,
   depth = 0,
   onItemClick,
-  'data-tour-step': dataTourStep,
 }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -50,7 +48,6 @@ export const NavigationItem: FC<NavigationItemProps> = ({
 
   const itemContent = (
     <div
-      data-tour-step={dataTourStep}
       className={cn(
         'transition-all duration-200',
         isCollapsed
@@ -107,7 +104,6 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       onClick={handleClick}
       className='block'
       id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
-      data-tour-step={dataTourStep}
     >
       {itemContent}
     </Link>
@@ -116,7 +112,6 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       onClick={handleClick}
       className='w-full text-left'
       id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
-      data-tour-step={dataTourStep}
     >
       {itemContent}
     </button>

@@ -43,7 +43,6 @@ export const UserAvatar: FC<UserAvatarProps> = ({
   return (
     <Link
       href={`/profile/${user.id}`}
-      data-tour-step='profile-nav'
       className='relative flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800 transition-colors'
     >
       <Avatar className='h-8 w-8'>

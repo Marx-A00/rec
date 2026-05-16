@@ -24,7 +24,6 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
-  const [isStartingTour, _setIsStartingTour] = useState(false);
   const { showToast } = useToast();
 
   const userId = session?.user?.id || '';
@@ -150,11 +149,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRestartTour = async () => {
-    // TODO: Wire up to Driver.js tour restart via TourContext
-    showToast('Tour feature temporarily disabled', 'error');
-  };
-
   if (isLoadingUser) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
@@ -251,8 +245,6 @@ export default function SettingsPage() {
           <AccountTab
             user={user}
             isLoading={isLoading}
-            isStartingTour={isStartingTour}
-            onRestartTour={handleRestartTour}
             onDeleteAccount={handleDeleteAccount}
           />
         </Tabs>

@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/drawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
-import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 import DualAlbumSearch, { AlbumSearchRef } from './DualAlbumSearch';
 import CreateRecommendationForm from './CreateRecommendationForm';
@@ -144,16 +143,6 @@ export default function RecommendationDrawer({
   // Ref to access AlbumSearch methods
   const albumSearchRef = useRef<AlbumSearchRef>(null);
 
-  // Get tour mode from context
-  const { isTourMode } = useRecommendationDrawerContext();
-
-  // Log isOpen changes to debug
-  useEffect(() => {
-    console.log(
-      `🔄 RecommendationDrawer: isOpen=${isOpen}, isTourMode=${isTourMode}`
-    );
-  }, [isOpen, isTourMode]);
-
   // Reset state when drawer closes, or set prefilled album when drawer opens
   useEffect(() => {
     if (!isOpen) {
@@ -169,17 +158,10 @@ export default function RecommendationDrawer({
     }
   }, [isOpen, prefilledAlbum]);
 
-  // Handle escape key to close drawer (disabled during tour)
+  // Handle escape key to close drawer
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        // Don't close drawer during tour - ESC should do nothing
-        if (isTourMode) {
-          event.preventDefault();
-          event.stopPropagation();
-          console.log('🛡️ ESC blocked during tour mode');
-          return;
-        }
         onClose();
       }
     };
@@ -191,51 +173,10 @@ export default function RecommendationDrawer({
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose, isTourMode]);
+  }, [isOpen, onClose]);
 
-  // Handle demo recommendation filling for tour
-  useEffect(() => {
-    const handleDemoFill = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { sourceAlbum, recommendedAlbum, similarityRating } =
-        customEvent.detail;
-
-      if (sourceAlbum) {
-        setSelectedBasisAlbum(sourceAlbum);
-      }
-      if (recommendedAlbum) {
-        setSelectedRecommendedAlbum(recommendedAlbum);
-      }
-      if (similarityRating) {
-        setSimilarityRating(similarityRating);
-      }
-
-      // Switch to viewing mode (not searching)
-      setIsSearchingForBasis(false);
-    };
-
-    window.addEventListener('fill-demo-recommendation', handleDemoFill);
-
-    return () => {
-      window.removeEventListener('fill-demo-recommendation', handleDemoFill);
-    };
-  }, []);
-
-  // Modified close handler that respects tour state
   const handleDrawerClose = (open: boolean) => {
-    console.log(
-      `🚪 handleDrawerClose called: open=${open}, isTourMode=${isTourMode}`
-    );
-
-    // Don't close the drawer if tour is active and trying to keep it open
-    if (!open && isTourMode) {
-      console.log('✋ Preventing drawer close during tour');
-      return; // Prevent closing during tour
-    }
-
-    // Normal close behavior
     if (!open) {
-      console.log('❌ Closing drawer (not in tour mode)');
       onClose();
     }
   };
@@ -279,8 +220,8 @@ export default function RecommendationDrawer({
       open={isOpen}
       onOpenChange={handleDrawerClose}
       handleOnly={true}
-      modal={!isTourMode}
-      dismissible={!isTourMode}
+      modal={true}
+      dismissible={true}
     >
       <DrawerContent
         id='recommendation-drawer'
@@ -320,16 +261,10 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Turntables Layout - Responsive */}
-            <div
-              data-tour-step='recommendation-interface-wrapper'
-              className='relative'
-            >
+            <div className='relative'>
               <div className={`${layoutConfig.turntableClasses} mb-4`}>
                 {/* Left Turntable */}
-                <div
-                  className='flex flex-col items-center'
-                  data-tour-step='left-turntable-test'
-                >
+                <div className='flex flex-col items-center'>
                   <Turntable
                     album={selectedBasisAlbum}
                     title='SOURCE'
@@ -373,7 +308,6 @@ export default function RecommendationDrawer({
                   recommendedAlbum={selectedRecommendedAlbum}
                   score={similarityRating}
                   onSuccess={handleSuccess}
-                  isTourMode={isTourMode}
                 />
               </div>
             </div>

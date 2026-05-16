@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import 'driver.js/dist/driver.css';
-import '@/styles/driver-custom.css';
 import { Toaster } from 'sonner';
 
 import { auth } from '@/../auth';

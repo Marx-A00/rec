@@ -11,6 +11,7 @@ import {
   TopRecommendedAlbums,
   TopRecommendedArtists,
 } from '@/components/browse';
+import ContextualHint from '@/components/ui/ContextualHint';
 
 // Force dynamic rendering - don't prerender at build time
 export const dynamic = 'force-dynamic';
@@ -48,19 +49,27 @@ export default async function BrowsePage() {
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       {/* Page Header */}
-      <div
-        id='browse-page-header'
-        data-tour-step='browse-header'
-        className='mb-16'
+      <ContextualHint
+        id='browse-welcome'
+        title='Discover Music'
+        description='Browse trending albums, discover new artists, and explore recommendations from the community.'
+        side='bottom'
+        align='start'
       >
-        <h1 className='text-4xl font-bold text-white mb-4'>
-          Discover Music & Community
-        </h1>
-        <p className='text-zinc-400 text-lg max-w-3xl leading-relaxed'>
-          Explore new music, connect with fellow music lovers, and discover your
-          next favorite album
-        </p>
-      </div>
+        <div
+          id='browse-page-header'
+          data-tour-step='browse-header'
+          className='mb-16'
+        >
+          <h1 className='text-4xl font-bold text-white mb-4'>
+            Discover Music & Community
+          </h1>
+          <p className='text-zinc-400 text-lg max-w-3xl leading-relaxed'>
+            Explore new music, connect with fellow music lovers, and discover
+            your next favorite album
+          </p>
+        </div>
+      </ContextualHint>
 
       {/* Content Sections */}
       <div className='space-y-16'>

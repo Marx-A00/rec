@@ -11,6 +11,7 @@ import AlbumRecommendationsTab from '@/components/albumDetails/tabs/AlbumRecomme
 import { getAlbumDetails } from '@/lib/api/albums';
 import { albumParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
+import ContextualHint from '@/components/ui/ContextualHint';
 
 interface AlbumDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -81,10 +82,7 @@ export default async function AlbumDetailsPage({
         {/* Album Info */}
         <div className='lg:col-span-2 space-y-6'>
           <div>
-            <h1
-              data-tour-step='album-header'
-              className='text-4xl font-bold mb-2 text-white'
-            >
+            <h1 className='text-4xl font-bold mb-2 text-white'>
               {album.title}
             </h1>
             <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>
@@ -150,13 +148,20 @@ export default async function AlbumDetailsPage({
           >
             Tracklist
           </TabsTrigger>
-          <TabsTrigger
-            value='recommendations'
-            data-tour-step='album-recs-tab'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
+          <ContextualHint
+            id='album-recs-tab'
+            title='Album Recommendations'
+            description='See what the community recommends based on this album — both as a source and as a recommendation.'
+            side='bottom'
           >
-            Recs
-          </TabsTrigger>
+            <TabsTrigger
+              value='recommendations'
+              data-tour-step='album-recs-tab'
+              className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
+            >
+              Recs
+            </TabsTrigger>
+          </ContextualHint>
         </TabsList>
 
         <TabsContent value='tracklist' className='mt-6'>

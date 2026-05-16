@@ -1,9 +1,10 @@
 'use client';
 
-import { Loader2, Play, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, RotateCcw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
+import { useHintStore } from '@/stores/useHintStore';
 
 interface UserData {
   recommendationsCount: number;
@@ -14,18 +15,16 @@ interface UserData {
 interface AccountTabProps {
   user: UserData;
   isLoading: boolean;
-  isStartingTour: boolean;
-  onRestartTour: () => Promise<void>;
   onDeleteAccount: () => Promise<void>;
 }
 
 export default function AccountTab({
   user,
   isLoading,
-  isStartingTour,
-  onRestartTour,
   onDeleteAccount,
 }: AccountTabProps) {
+  const resetHints = useHintStore(state => state.resetHints);
+
   return (
     <TabsContent value='account' className='p-6 space-y-6'>
       <div className='space-y-6'>
@@ -56,23 +55,19 @@ export default function AccountTab({
             </div>
           </div>
 
-          <div className='bg-blue-900/20 border border-blue-700 rounded-lg p-4'>
-            <h4 className='text-blue-400 font-medium mb-2'>App Tutorial</h4>
+          <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
+            <h4 className='text-white font-medium mb-2'>Help Hints</h4>
             <p className='text-zinc-400 text-sm mb-4'>
-              Restart the interactive tour to learn about all features and how
-              to use the app effectively.
+              Reset the contextual hints that appear on your first visit to key
+              pages. This will show them all again.
             </p>
             <Button
-              onClick={onRestartTour}
-              disabled={isStartingTour}
-              className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700'
+              onClick={resetHints}
+              variant='outline'
+              className='flex items-center gap-2'
             >
-              {isStartingTour ? (
-                <Loader2 className='w-4 h-4 animate-spin' />
-              ) : (
-                <Play className='w-4 h-4' />
-              )}
-              {isStartingTour ? 'Starting Tour...' : 'Restart App Tour'}
+              <RotateCcw className='w-4 h-4' />
+              Reset Help Hints
             </Button>
           </div>
 
