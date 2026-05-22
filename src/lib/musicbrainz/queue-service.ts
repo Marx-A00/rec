@@ -639,6 +639,8 @@ export class QueuedMusicBrainzService {
   /**
    * Ensure the worker is running (auto-start if needed)
    */
+  private workerStartPromise: Promise<void> | null = null;
+
   private async ensureWorkerRunning(): Promise<void> {
     if (this.isWorkerRunning) {
       return;
@@ -650,16 +652,24 @@ export class QueuedMusicBrainzService {
       return;
     }
 
-    try {
-      console.log('Starting MusicBrainz queue worker...');
-      const { processMusicBrainzJob } = await import('../queue/processors');
-      this.worker = this.queue.createWorker(processMusicBrainzJob);
-      this.isWorkerRunning = true;
-      console.log('MusicBrainz queue worker started');
-    } catch (error) {
-      console.error('Failed to start MusicBrainz worker:', error);
-      throw error;
+    // Guard against concurrent calls — reuse the in-flight promise
+    if (!this.workerStartPromise) {
+      this.workerStartPromise = (async () => {
+        try {
+          console.log('Starting MusicBrainz queue worker...');
+          const { processMusicBrainzJob } = await import('../queue/processors');
+          this.worker = this.queue.createWorker(processMusicBrainzJob);
+          this.isWorkerRunning = true;
+          console.log('MusicBrainz queue worker started');
+        } catch (error) {
+          this.workerStartPromise = null;
+          console.error('Failed to start MusicBrainz worker:', error);
+          throw error;
+        }
+      })();
     }
+
+    return this.workerStartPromise;
   }
 
   /**

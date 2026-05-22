@@ -26,13 +26,13 @@ export default function HelpPage() {
         type='single'
         collapsible
         defaultValue='what-is-rec'
-        className='space-y-2'
+        className='w-full'
       >
         <AccordionItem
           value='what-is-rec'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             What is Rec?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -54,33 +54,108 @@ export default function HelpPage() {
 
         <AccordionItem
           value='what-do-i-do'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             What do I do here?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
-            <p className='mb-3'>
-              You recommend albums to people. That&apos;s it.
+            <p className='mb-4'>
+              The main thing to do is make recommendations. But here&apos;s an
+              exhaustive list of things you can do:
             </p>
-            <p className='mb-3'>
-              Pick an album you love, then pick another album you think fans of
-              the first one would dig. Rate how similar they are, and your
-              recommendation goes live for everyone to discover.
-            </p>
-            <p>
-              Along the way you can browse what others are recommending, build
-              collections of albums you want to remember, and find new music
-              through the community.
-            </p>
+            <ul className='space-y-3'>
+              <li>
+                <a
+                  href='#make-recommendation'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Make a recommendation
+                </a>{' '}
+                — pair two albums together for the community
+              </li>
+              <li>
+                <a
+                  href='#artist-album-pages'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  See if specific artists have user recommendations
+                </a>{' '}
+                — check artist pages for community recs
+              </li>
+              <li>
+                <a
+                  href='#artist-album-pages'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  See if specific albums have user recommendations
+                </a>{' '}
+                — check album pages for community recs
+              </li>
+              <li>
+                <a
+                  href='#discover-music'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Follow your friends
+                </a>{' '}
+                — keep up with what they&apos;re recommending
+              </li>
+              <li>
+                <a
+                  href='#collections'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Add albums to your collection
+                </a>{' '}
+                — organize albums into personal lists
+              </li>
+              <li>
+                <a
+                  href='#collections'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Add albums to Listen Later
+                </a>{' '}
+                — save albums you want to check out
+              </li>
+              <li>
+                <a
+                  href='#discover-music'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Catch up on your friends&apos; recent activity
+                </a>{' '}
+                — see recs and collections from people you follow
+              </li>
+              <li>
+                <a
+                  href='#discover-music'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Browse latest releases
+                </a>{' '}
+                — discover new albums as they drop
+              </li>
+              <li>
+                <a
+                  href='#discover-music'
+                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
+                >
+                  Play Uncover
+                </a>{' '}
+                — a game where you guess albums from blurred artwork
+              </li>
+            </ul>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem
           value='make-recommendation'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          id='make-recommendation'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             How do I make a recommendation?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -122,9 +197,9 @@ export default function HelpPage() {
 
         <AccordionItem
           value='similarity-rating'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             How does the similarity rating work?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -157,9 +232,10 @@ export default function HelpPage() {
 
         <AccordionItem
           value='discover-music'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          id='discover-music'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             How do I discover new music?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -190,9 +266,10 @@ export default function HelpPage() {
 
         <AccordionItem
           value='collections'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          id='collections'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             What are collections?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -219,9 +296,10 @@ export default function HelpPage() {
 
         <AccordionItem
           value='artist-album-pages'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          id='artist-album-pages'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             How do I explore artist and album pages?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -246,9 +324,9 @@ export default function HelpPage() {
 
         <AccordionItem
           value='customize-profile'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             How do I customize my profile?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
@@ -271,9 +349,9 @@ export default function HelpPage() {
 
         <AccordionItem
           value='contextual-hints'
-          className='border border-zinc-800 rounded-lg bg-zinc-900/50 px-4'
+          className='border-zinc-800'
         >
-          <AccordionTrigger className='text-white text-base font-medium hover:no-underline'>
+          <AccordionTrigger className='text-white text-base font-medium'>
             What are the tips that pop up on pages?
           </AccordionTrigger>
           <AccordionContent className='text-zinc-300 leading-relaxed'>
