@@ -4,6 +4,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export type SearchType = 'albums' | 'artists' | 'tracks' | 'users';
 
 interface SearchState {
+  // Current search query
+  query: string;
+  setQuery: (query: string) => void;
+
   // User's preferred search type (persisted)
   preferredSearchType: SearchType;
   setPreferredSearchType: (type: SearchType) => void;
@@ -17,6 +21,10 @@ interface SearchState {
 export const useSearchStore = create<SearchState>()(
   persist(
     set => ({
+      // Current query
+      query: '',
+      setQuery: (query: string) => set({ query }),
+
       // Default to albums
       preferredSearchType: 'albums',
       setPreferredSearchType: type => set({ preferredSearchType: type }),
@@ -33,8 +41,12 @@ export const useSearchStore = create<SearchState>()(
       clearRecentSearches: () => set({ recentSearches: [] }),
     }),
     {
-      name: 'search-preferences', // localStorage key
+      name: 'search-preferences',
       storage: createJSONStorage(() => localStorage),
+      partialize: state => ({
+        preferredSearchType: state.preferredSearchType,
+        recentSearches: state.recentSearches,
+      }),
     }
   )
 );

@@ -25,10 +25,11 @@ export default function SimpleSearchBar({
   className = '',
   minQueryLength = 2,
 }: SimpleSearchBarProps) {
-  const [query, setQuery] = useState('');
   const router = useRouter();
 
-  // Use Zustand store for search type persistence
+  // Use Zustand store for query and search type persistence
+  const query = useSearchStore(state => state.query);
+  const setQuery = useSearchStore(state => state.setQuery);
   const preferredSearchType = useSearchStore(
     state => state.preferredSearchType
   );
@@ -41,15 +42,10 @@ export default function SimpleSearchBar({
   // TODO: Re-add 'all' when we figure out the "ALL" search
   const [searchType, setSearchType] = useState<SearchType>(preferredSearchType);
 
-  // Handle search input changes
-  const handleValueChange = useCallback((value: string) => {
-    setQuery(value);
-  }, []);
-
   // Handle clear button click
   const handleClear = useCallback(() => {
     setQuery('');
-  }, []);
+  }, [setQuery]);
 
   // Handle Enter key to navigate to search page with type parameter
   const handleKeyDown = useCallback(
@@ -133,7 +129,7 @@ export default function SimpleSearchBar({
                 data-tour-step='main-search'
                 placeholder={placeholder}
                 value={query}
-                onValueChange={handleValueChange}
+                onValueChange={setQuery}
                 onKeyDown={handleKeyDown}
                 onClear={handleClear}
                 className='h-9 text-white placeholder:text-zinc-400'
