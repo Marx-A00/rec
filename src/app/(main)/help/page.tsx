@@ -64,89 +64,114 @@ export default function HelpPage() {
               The main thing to do is make recommendations. But here&apos;s an
               exhaustive list of things you can do:
             </p>
-            <ul className='space-y-3'>
-              <li>
-                <a
-                  href='#make-recommendation'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+            <Accordion type='single' collapsible className='w-full pl-4 border-l border-zinc-800'>
+              <AccordionItem value='do-make-rec' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Make a recommendation
-                </a>{' '}
-                — pair two albums together for the community
-              </li>
-              <li>
-                <a
-                  href='#artist-album-pages'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm mb-3'>
+                    Pair two albums together for the community.
+                  </p>
+                  <video
+                    src='/help/rec-create-rec-demo.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-artist-recs' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   See if specific artists have user recommendations
-                </a>{' '}
-                — check artist pages for community recs
-              </li>
-              <li>
-                <a
-                  href='#artist-album-pages'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Check artist pages for community recs.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-album-recs' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   See if specific albums have user recommendations
-                </a>{' '}
-                — check album pages for community recs
-              </li>
-              <li>
-                <a
-                  href='#discover-music'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Check album pages for community recs.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-follow' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Follow your friends
-                </a>{' '}
-                — keep up with what they&apos;re recommending
-              </li>
-              <li>
-                <a
-                  href='#collections'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Keep up with what they&apos;re recommending.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-collection' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Add albums to your collection
-                </a>{' '}
-                — organize albums into personal lists
-              </li>
-              <li>
-                <a
-                  href='#collections'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Organize albums into personal lists.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-listen-later' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Add albums to Listen Later
-                </a>{' '}
-                — save albums you want to check out
-              </li>
-              <li>
-                <a
-                  href='#discover-music'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Save albums you want to check out.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-activity' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Catch up on your friends&apos; recent activity
-                </a>{' '}
-                — see recs and collections from people you follow
-              </li>
-              <li>
-                <a
-                  href='#discover-music'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    See recs and collections from people you follow.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-browse' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Browse latest releases
-                </a>{' '}
-                — discover new albums as they drop
-              </li>
-              <li>
-                <a
-                  href='#discover-music'
-                  className='text-emerald-400 hover:text-emerald-300 hover:underline'
-                >
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    Discover new albums as they drop.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value='do-uncover' className='border-zinc-800'>
+                <AccordionTrigger className='text-zinc-300 text-sm'>
                   Play Uncover
-                </a>{' '}
-                — a game where you guess albums from blurred artwork
-              </li>
-            </ul>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className='text-zinc-400 text-sm'>
+                    A game where you guess albums from blurred artwork.
+                  </p>
+                  {/* TODO: video demo */}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </AccordionContent>
         </AccordionItem>
 
