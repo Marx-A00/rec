@@ -31,6 +31,7 @@ screenshots/
 !/public/*.ico
 !/public/*.png
 !/public/sounds/
+!/public/uncover/
 
 
 # next.js
