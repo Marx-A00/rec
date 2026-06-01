@@ -48,6 +48,7 @@
     "migrate:resume": "tsx scripts/migrate-discogs-to-musicbrainz.ts --resume",
     "migrate:fix-counts": "tsx src/scripts/fix-user-counts.ts",
     "import:d1-lookup": "tsx scripts/import-d1-lookup.ts",
+    "upload:help-media": "tsx scripts/upload-help-media.ts",
     "db:cleanup": "tsx src/scripts/db-cleanup/index.ts",
     "db:cleanup:dry": "tsx src/scripts/db-cleanup/index.ts --dry-run",
     "db:cleanup:interactive": "tsx src/scripts/db-cleanup/index.ts --interactive",

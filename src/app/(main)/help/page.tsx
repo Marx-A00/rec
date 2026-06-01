@@ -10,6 +10,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
+// Help demo videos are served from Cloudflare R2 (not bundled in the build —
+// Railway deploys from the git tree, which excludes these large MP4s).
+const HELP_MEDIA = 'https://pub-e2d6541cace049fa82644e200d4070cd.r2.dev/help';
+
 export default function HelpPage() {
   return (
     <div className='container mx-auto px-4 py-8 max-w-3xl'>
@@ -76,7 +80,7 @@ export default function HelpPage() {
                     Pair two albums together for the community.
                   </p>
                   <video
-                    src='/help/recommend-album-real.mp4'
+                    src={`${HELP_MEDIA}/recommend-album-real.mp4`}
                     autoPlay
                     loop
                     muted
@@ -94,7 +98,7 @@ export default function HelpPage() {
                     Check artist pages for community recs.
                   </p>
                   <video
-                    src='/help/rec-artists-recommendations.mp4'
+                    src={`${HELP_MEDIA}/rec-artists-recommendations.mp4`}
                     autoPlay
                     loop
                     muted
@@ -112,7 +116,7 @@ export default function HelpPage() {
                     Check album pages for community recs.
                   </p>
                   <video
-                    src='/help/rec-albums-recommendations.mp4'
+                    src={`${HELP_MEDIA}/rec-albums-recommendations.mp4`}
                     autoPlay
                     loop
                     muted
@@ -130,7 +134,7 @@ export default function HelpPage() {
                     Keep up with what they&apos;re recommending.
                   </p>
                   <video
-                    src='/help/rec-following-friends.mp4'
+                    src={`${HELP_MEDIA}/rec-following-friends.mp4`}
                     autoPlay
                     loop
                     muted
@@ -148,7 +152,7 @@ export default function HelpPage() {
                     Organize albums into personal lists.
                   </p>
                   <video
-                    src='/help/add-album-to-collection-fixed-hopeful.mp4'
+                    src={`${HELP_MEDIA}/add-album-to-collection-fixed-hopeful.mp4`}
                     autoPlay
                     loop
                     muted
@@ -166,7 +170,7 @@ export default function HelpPage() {
                     Save albums you want to check out.
                   </p>
                   <video
-                    src='/help/add-album-to-listen-later.mp4'
+                    src={`${HELP_MEDIA}/add-album-to-listen-later.mp4`}
                     autoPlay
                     loop
                     muted
@@ -195,7 +199,7 @@ export default function HelpPage() {
                     Discover new albums as they drop.
                   </p>
                   <video
-                    src='/help/browse-latest-releases.mp4'
+                    src={`${HELP_MEDIA}/browse-latest-releases.mp4`}
                     autoPlay
                     loop
                     muted
