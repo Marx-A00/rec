@@ -1,10 +1,9 @@
 'use client';
 
-import { Loader2, Trash2, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
-import { useHintStore } from '@/stores/useHintStore';
 
 interface UserData {
   recommendationsCount: number;
@@ -23,8 +22,6 @@ export default function AccountTab({
   isLoading,
   onDeleteAccount,
 }: AccountTabProps) {
-  const resetHints = useHintStore(state => state.resetHints);
-
   return (
     <TabsContent value='account' className='p-6 space-y-6'>
       <div className='space-y-6'>
@@ -53,22 +50,6 @@ export default function AccountTab({
                 <div className='text-zinc-400 text-sm'>Following</div>
               </div>
             </div>
-          </div>
-
-          <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
-            <h4 className='text-white font-medium mb-2'>Help Hints</h4>
-            <p className='text-zinc-400 text-sm mb-4'>
-              Reset the contextual hints that appear on your first visit to key
-              pages. This will show them all again.
-            </p>
-            <Button
-              onClick={resetHints}
-              variant='outline'
-              className='flex items-center gap-2'
-            >
-              <RotateCcw className='w-4 h-4' />
-              Reset Help Hints
-            </Button>
           </div>
 
           <div className='bg-red-900/20 border border-red-700 rounded-lg p-4'>

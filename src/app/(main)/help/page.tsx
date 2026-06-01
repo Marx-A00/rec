@@ -1,4 +1,6 @@
-import { HelpCircle } from 'lucide-react';
+import { Fragment } from 'react';
+import Image from 'next/image';
+import { ChevronRight, HelpCircle } from 'lucide-react';
 
 import BackButton from '@/components/ui/BackButton';
 import {
@@ -74,7 +76,7 @@ export default function HelpPage() {
                     Pair two albums together for the community.
                   </p>
                   <video
-                    src='/help/rec-create-rec-demo.mp4'
+                    src='/help/recommend-album-real.mp4'
                     autoPlay
                     loop
                     muted
@@ -88,10 +90,17 @@ export default function HelpPage() {
                   See if specific artists have user recommendations
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Check artist pages for community recs.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/rec-artists-recommendations.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-album-recs' className='border-zinc-800'>
@@ -99,10 +108,17 @@ export default function HelpPage() {
                   See if specific albums have user recommendations
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Check album pages for community recs.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/rec-albums-recommendations.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-follow' className='border-zinc-800'>
@@ -110,10 +126,17 @@ export default function HelpPage() {
                   Follow your friends
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Keep up with what they&apos;re recommending.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/rec-following-friends.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-collection' className='border-zinc-800'>
@@ -121,10 +144,17 @@ export default function HelpPage() {
                   Add albums to your collection
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Organize albums into personal lists.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/add-album-to-collection-fixed-hopeful.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-listen-later' className='border-zinc-800'>
@@ -132,10 +162,17 @@ export default function HelpPage() {
                   Add albums to Listen Later
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Save albums you want to check out.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/add-album-to-listen-later.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-activity' className='border-zinc-800'>
@@ -154,10 +191,17 @@ export default function HelpPage() {
                   Browse latest releases
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     Discover new albums as they drop.
                   </p>
-                  {/* TODO: video demo */}
+                  <video
+                    src='/help/browse-latest-releases.mp4'
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className='w-full rounded-lg border border-zinc-800'
+                  />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value='do-uncover' className='border-zinc-800'>
@@ -165,10 +209,44 @@ export default function HelpPage() {
                   Play Uncover
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className='text-zinc-400 text-sm'>
+                  <p className='text-zinc-400 text-sm mb-3'>
                     A game where you guess albums from blurred artwork.
                   </p>
-                  {/* TODO: video demo */}
+                  <div className='flex items-center gap-1'>
+                    {[1, 2, 3, 4, 5].map((stage, i) => (
+                      <Fragment key={stage}>
+                        <Image
+                          src={`/uncover/help-modal/homogenic-stage${stage}.png`}
+                          alt={`Reveal stage ${stage}`}
+                          width={758}
+                          height={758}
+                          className='aspect-square min-w-0 flex-1 rounded-md border border-zinc-800'
+                        />
+                        {i < 4 && (
+                          <ChevronRight className='h-4 w-4 shrink-0 text-zinc-600' />
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+                  <p className='mt-2 text-center text-xs text-zinc-500'>
+                    The cover unblurs with each wrong guess.
+                  </p>
+                  <ul className='mt-3 space-y-2 text-sm text-zinc-300'>
+                    <li className='flex gap-2'>
+                      <span className='font-semibold text-emerald-400'>1.</span>
+                      You get 4 attempts to name the album.
+                    </li>
+                    <li className='flex gap-2'>
+                      <span className='font-semibold text-emerald-400'>2.</span>
+                      The cover starts fully blurred and unblurs a little more
+                      with each miss.
+                    </li>
+                    <li className='flex gap-2'>
+                      <span className='font-semibold text-emerald-400'>3.</span>
+                      Solve it in as few attempts as possible. A new puzzle drops
+                      every day.
+                    </li>
+                  </ul>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

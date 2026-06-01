@@ -1,13 +1,31 @@
 'use client';
 
+import { Fragment } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Archive, Check, Eye, Lock, Play, X } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Eye,
+  HelpCircle,
+  Lock,
+  Play,
+  X,
+} from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 
 import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { SmokeBackground } from '@/components/ui/smoke-background';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { getLossPhrase } from '@/lib/uncover/endgame-phrases';
 
@@ -242,13 +260,59 @@ export function DesktopHomeClient() {
           </span>
         </Link>
 
-        <Link
-          href='/game/archive'
-          className='flex items-center gap-2 px-6 py-2.5 text-sm text-zinc-400 transition-colors hover:text-zinc-200'
-        >
-          <Archive className='h-4 w-4' />
-          Archive
-        </Link>
+        <Dialog>
+          <DialogTrigger className='flex items-center gap-2 px-6 py-2.5 text-sm text-zinc-400 transition-colors hover:text-zinc-200'>
+            <HelpCircle className='h-4 w-4' />
+            How to play
+          </DialogTrigger>
+          <DialogContent className='border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-2xl'>
+            <DialogHeader>
+              <DialogTitle className='text-2xl text-white'>
+                How to play
+              </DialogTitle>
+              <DialogDescription className='text-base text-zinc-400'>
+                Guess the daily album from its cover art.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <div className='flex items-center gap-1'>
+                {[1, 2, 3, 4, 5].map((stage, i) => (
+                  <Fragment key={stage}>
+                    <Image
+                      src={`/uncover/help-modal/homogenic-stage${stage}.png`}
+                      alt={`Reveal stage ${stage}`}
+                      width={758}
+                      height={758}
+                      className='aspect-square min-w-0 flex-1 rounded-md border border-zinc-800'
+                    />
+                    {i < 4 && (
+                      <ChevronRight className='h-4 w-4 shrink-0 text-zinc-600' />
+                    )}
+                  </Fragment>
+                ))}
+              </div>
+              <p className='mt-2 text-center text-sm text-zinc-500'>
+                The cover unblurs with each wrong guess.
+              </p>
+            </div>
+            <ul className='space-y-3 text-base text-zinc-300'>
+              <li className='flex gap-3'>
+                <span className='font-semibold text-emerald-400'>1.</span>
+                You get 4 attempts to name the album.
+              </li>
+              <li className='flex gap-3'>
+                <span className='font-semibold text-emerald-400'>2.</span>
+                The cover starts fully blurred and unblurs a little more with
+                each miss.
+              </li>
+              <li className='flex gap-3'>
+                <span className='font-semibold text-emerald-400'>3.</span>
+                Solve it in as few attempts as possible. A new puzzle drops
+                every day.
+              </li>
+            </ul>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
