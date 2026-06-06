@@ -71,7 +71,7 @@ interface AlbumCardProps {
 
 function AlbumCard({ cover, priority = false }: AlbumCardProps) {
   const inner = (
-    <div className='relative h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 overflow-hidden rounded-xl shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl border border-zinc-800/50 bg-zinc-900'>
+    <div className='relative h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 overflow-hidden rounded-xl shadow-xl transition-all duration-300 group-hover/card:-translate-y-2 group-hover/card:scale-105 group-hover/card:shadow-2xl group-hover/card:ring-2 group-focus-visible/card:ring-2 ring-cosmic-latte/70 border border-zinc-800/50 bg-zinc-900'>
       <AlbumImage
         src={cover.src}
         cloudflareImageId={cover.cloudflareImageId}
@@ -92,14 +92,14 @@ function AlbumCard({ cover, priority = false }: AlbumCardProps) {
       <Link
         href={cover.href}
         aria-label={cover.alt}
-        className='relative group block cursor-pointer outline-none transition-transform duration-150 active:scale-95 rounded-xl ring-cosmic-latte/70 group-hover:ring-2 hover:ring-2 focus-visible:ring-2'
+        className='relative group/card block cursor-pointer outline-none rounded-xl'
       >
         {inner}
       </Link>
     );
   }
 
-  return <div className='relative group'>{inner}</div>;
+  return <div className='relative group/card'>{inner}</div>;
 }
 
 interface HeroMarqueeProps {
