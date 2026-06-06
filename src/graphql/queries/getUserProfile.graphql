@@ -12,6 +12,9 @@ query GetUserProfile($userId: String!) {
     isFollowing
     settings {
       profileVisibility
+      showArcadeButton
+      arcadeButtonColor
+      arcadeButtonSound
     }
   }
 }

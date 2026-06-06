@@ -1,0 +1,38 @@
+# Landing page marquee gallery — admin curation + public fetch
+
+query MarqueeAlbums {
+  marqueeAlbums {
+    id
+    sortOrder
+    createdAt
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      releaseDate
+      musicbrainzId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+mutation AddAlbumToMarquee($albumId: UUID, $albumData: AlbumInput) {
+  addAlbumToMarquee(albumId: $albumId, albumData: $albumData) {
+    success
+    message
+    error
+    marqueeAlbum {
+      id
+    }
+  }
+}
+
+mutation RemoveMarqueeAlbum($id: UUID!) {
+  removeMarqueeAlbum(id: $id)
+}

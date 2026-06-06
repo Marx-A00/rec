@@ -6,6 +6,7 @@ import { queryKeys } from '@/lib/queries';
 interface UpdateProfileRequest {
   username: string;
   bio: string;
+  image?: string | null;
 }
 
 interface UpdateProfileResponse {
@@ -15,7 +16,12 @@ interface UpdateProfileResponse {
 }
 
 function normalizeProfileInput(p: UpdateProfileRequest) {
-  return { username: p.username.trim(), bio: p.bio.trim() };
+  const input: { username: string; bio: string; image?: string | null } = {
+    username: p.username.trim(),
+    bio: p.bio.trim(),
+  };
+  if (p.image !== undefined) input.image = p.image;
+  return input;
 }
 
 interface UseUpdateUserProfileMutationOptions {

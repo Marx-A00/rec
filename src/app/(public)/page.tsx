@@ -1,20 +1,19 @@
 // src/app/(public)/page.tsx
 import Link from 'next/link';
-import Image from 'next/image';
 
-import { Marquee } from '@/components/ui/marquee';
 import { Button } from '@/components/ui/button';
 import { RecentRecs } from '@/components/landing/RecentRecs';
+import { HeroMarquee } from '@/components/landing/HeroMarquee';
+import { getMarqueeCovers } from '@/lib/marquee';
+
+// Revalidate the server-rendered marquee covers every 5 minutes (ISR).
+export const revalidate = 300;
 
 // Album cover data for the marquee
 const albumCovers = [
   {
     src: '/landing/Charli_XCX_-_Brat_(album_cover).png',
     alt: 'Charli XCX - Brat',
-  },
-  {
-    src: '/demo-albums/discovery-daft-punk.jpg',
-    alt: 'Daft Punk - Discovery',
   },
   {
     src: '/demo-albums/RAM-daft-punk.jpeg',
@@ -24,50 +23,268 @@ const albumCovers = [
     src: '/landing/reflections-hannah-diamond.webp',
     alt: 'Hannah Diamond - Reflections',
   },
+  {
+    src: '/landing/nevermind-nirvana.jpg',
+    alt: 'Nirvana - Nevermind',
+  },
+  {
+    src: '/landing/sgt-peppers-the-beatles.jpg',
+    alt: "The Beatles - Sgt. Pepper's Lonely Hearts Club Band",
+  },
+  {
+    src: '/landing/melodrama-lorde.jpg',
+    alt: 'Lorde - Melodrama',
+  },
+  {
+    src: '/landing/sour-olivia-rodrigo.jpg',
+    alt: 'Olivia Rodrigo - SOUR',
+  },
+  {
+    src: '/landing/black-parade-mcr.jpg',
+    alt: 'My Chemical Romance - The Black Parade',
+  },
+  {
+    src: '/landing/is-this-it-the-strokes.jpg',
+    alt: 'The Strokes - Is This It',
+  },
+  {
+    src: '/landing/stankonia-outkast.jpg',
+    alt: 'OutKast - Stankonia',
+  },
+  {
+    src: '/landing/boy-2hollis.jpg',
+    alt: '2hollis - boy',
+  },
+  {
+    src: '/landing/caught-in-the-echo-foo-fighters.jpg',
+    alt: 'Foo Fighters - Caught in the Echo',
+  },
+  {
+    src: '/landing/live-in-london-st-vincent.jpg',
+    alt: 'St. Vincent - Live in London',
+  },
+  {
+    src: '/landing/spiderr-bladee.jpg',
+    alt: 'Bladee - SPIDERR',
+  },
+  {
+    src: '/landing/lil-wayne-tha-carter-ii.jpg',
+    alt: 'Lil Wayne - Tha Carter II',
+  },
+  {
+    src: '/landing/britney-spears-blackout.jpg',
+    alt: 'Britney Spears - Blackout',
+  },
+  {
+    src: '/landing/gym-class-heroes-as-cruel-as-school-children.jpg',
+    alt: 'Gym Class Heroes - As Cruel as School Children',
+  },
+  {
+    src: '/landing/aqua-aquarium.jpg',
+    alt: 'Aqua - Aquarium',
+  },
+  {
+    src: '/landing/rihanna-loud.jpg',
+    alt: 'Rihanna - Loud',
+  },
+  {
+    src: '/landing/ashanti-ashanti.jpg',
+    alt: 'Ashanti - Ashanti',
+  },
+  {
+    src: '/landing/twenty-one-pilots-blurryface.jpg',
+    alt: 'twenty one pilots - Blurryface',
+  },
+  {
+    src: '/landing/talking-heads-remain-in-light.jpg',
+    alt: 'Talking Heads - Remain in Light',
+  },
+  {
+    src: '/landing/ariana-grande-thank-u-next.jpg',
+    alt: 'Ariana Grande - thank u, next',
+  },
+  {
+    src: '/landing/evanescence-fallen.jpg',
+    alt: 'Evanescence - Fallen',
+  },
+  {
+    src: '/landing/wiz-khalifa-rolling-papers.jpg',
+    alt: 'Wiz Khalifa - Rolling Papers',
+  },
+  {
+    src: '/landing/slayer-reign-in-blood.jpg',
+    alt: 'Slayer - Reign in Blood',
+  },
+  {
+    src: '/landing/nine-inch-nails-the-downward-spiral.jpg',
+    alt: 'Nine Inch Nails - The Downward Spiral',
+  },
+  {
+    src: '/landing/the-white-stripes-elephant.jpg',
+    alt: 'The White Stripes - Elephant',
+  },
+  {
+    src: '/landing/pitbull-pitbull-starring-in-rebelution.jpg',
+    alt: 'Pitbull - Pitbull Starring In Rebelution',
+  },
+  {
+    src: '/landing/jayz-blueprint-2-1.jpg',
+    alt: 'JAY-Z - Blueprint 2.1',
+  },
+  {
+    src: '/landing/playboi-carti-die-lit.jpg',
+    alt: 'Playboi Carti - Die Lit',
+  },
+  {
+    src: '/landing/three-days-grace-one-x.jpg',
+    alt: 'Three Days Grace - One-X',
+  },
+  {
+    src: '/landing/kings-of-leon-only-by-the-night.jpg',
+    alt: 'Kings of Leon - Only by the Night',
+  },
+  {
+    src: '/landing/dj-shadow-endtroducing.jpg',
+    alt: 'DJ Shadow - Endtroducing.....',
+  },
+  {
+    src: '/landing/system-of-a-down-mezmerize.jpg',
+    alt: 'System of a Down - Mezmerize',
+  },
+  {
+    src: '/landing/drake-nothing-was-the-same.jpg',
+    alt: 'Drake - Nothing Was the Same',
+  },
+  {
+    src: '/landing/wutang-clan-enter-the-wutang-36-chambers.jpg',
+    alt: 'Wu-Tang Clan - Enter the Wu-Tang (36 Chambers)',
+  },
+  {
+    src: '/landing/lil-uzi-vert-luv-is-rage-2.jpg',
+    alt: 'Lil Uzi Vert - Luv Is Rage 2',
+  },
+  {
+    src: '/landing/fka-twigs-lp1.jpg',
+    alt: 'FKA twigs - LP1',
+  },
+  {
+    src: '/landing/fall-out-boy-from-under-the-cork-tree.jpg',
+    alt: 'Fall Out Boy - From Under the Cork Tree',
+  },
+  {
+    src: '/landing/dr-dre-2001.jpg',
+    alt: 'Dr. Dre - 2001',
+  },
+  {
+    src: '/landing/coolio-gangstas-paradise.jpg',
+    alt: "Coolio - Gangsta's Paradise",
+  },
+  {
+    src: '/landing/red-hot-chili-peppers-by-the-way.jpg',
+    alt: 'Red Hot Chili Peppers - By the Way',
+  },
+  {
+    src: '/landing/mark-ronson-version.jpg',
+    alt: 'Mark Ronson - Version',
+  },
+  {
+    src: '/landing/paramore-paramore.jpg',
+    alt: 'Paramore - Paramore',
+  },
+  {
+    src: '/landing/depeche-mode-playing-the-angel.jpg',
+    alt: 'Depeche Mode - Playing the Angel',
+  },
+  {
+    src: '/landing/rage-against-the-machine-rage-against-the-machine.jpg',
+    alt: 'Rage Against the Machine - Rage Against the Machine',
+  },
+  {
+    src: '/landing/carly-rae-jepsen-kiss.jpg',
+    alt: 'Carly Rae Jepsen - Kiss',
+  },
+  {
+    src: '/landing/the-game-the-documentary.jpg',
+    alt: 'The Game - The Documentary',
+  },
+  {
+    src: '/landing/led-zeppelin-led-zeppelin-iv.jpg',
+    alt: 'Led Zeppelin - Led Zeppelin IV',
+  },
+  {
+    src: '/landing/coldplay-ghost-stories.jpg',
+    alt: 'Coldplay - Ghost Stories',
+  },
+  {
+    src: '/landing/bjork-homogenic.jpg',
+    alt: 'Björk - Homogenic',
+  },
+  {
+    src: '/landing/justin-timberlake-justified.jpg',
+    alt: 'Justin Timberlake - Justified',
+  },
+  {
+    src: '/landing/p-nk-funhouse.jpg',
+    alt: 'P!nk - Funhouse',
+  },
+  {
+    src: '/landing/linkin-park-hybrid-theory.jpg',
+    alt: 'Linkin Park - Hybrid Theory',
+  },
+  {
+    src: '/landing/the-weeknd-beauty-behind-the-madness.jpg',
+    alt: 'The Weeknd - Beauty Behind The Madness',
+  },
+  {
+    src: '/landing/playboi-carti-music.jpg',
+    alt: 'Playboi Carti - MUSIC',
+  },
+  {
+    src: '/landing/the-rolling-stones-sticky-fingers.jpg',
+    alt: 'The Rolling Stones - Sticky Fingers',
+  },
+  {
+    src: '/landing/jack-u-skrillex-and-diplo-present-jack-u.jpg',
+    alt: 'Jack Ü - Skrillex and Diplo Present Jack Ü',
+  },
+  {
+    src: '/landing/alicia-keys-the-element-of-freedom.jpg',
+    alt: 'Alicia Keys - The Element of Freedom',
+  },
+  {
+    src: '/landing/mgmt-oracular-spectacular.jpg',
+    alt: 'MGMT - Oracular Spectacular',
+  },
+  {
+    src: '/landing/katy-perry-teenage-dream.jpg',
+    alt: 'Katy Perry - Teenage Dream',
+  },
+  {
+    src: '/landing/project-pat-mista-dont-play-everythangs-workin.jpg',
+    alt: "Project Pat - Mista Don't Play: Everythangs Workin",
+  },
+  {
+    src: '/landing/rihanna-talk-that-talk.jpg',
+    alt: 'Rihanna - Talk That Talk',
+  },
+  {
+    src: '/landing/eminem-the-marshall-mathers-lp.jpg',
+    alt: 'Eminem - The Marshall Mathers LP',
+  },
+  {
+    src: '/landing/weird-al-yankovic-straight-outta-lynwood.jpg',
+    alt: 'Weird Al Yankovic - Straight Outta Lynwood',
+  },
+  {
+    src: '/landing/maroon-5-songs-about-jane.jpg',
+    alt: 'Maroon 5 - Songs About Jane',
+  },
 ];
 
-// Generate covers with unique keys for each column
-const generateCovers = (columnId: string) => {
-  return [...albumCovers, ...albumCovers].map((cover, idx) => ({
-    ...cover,
-    key: `${columnId}-${idx}`,
-  }));
-};
-
-interface AlbumCardProps {
-  src: string;
-  alt: string;
-  priority?: boolean;
-}
-
-function AlbumCard({ src, alt, priority = false }: AlbumCardProps) {
-  return (
-    <div className='relative group'>
-      <div className='relative h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 overflow-hidden rounded-xl shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl border border-zinc-800/50'>
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          unoptimized
-          priority={priority}
-          className='object-cover'
-          sizes='(max-width: 640px) 128px, (max-width: 768px) 160px, 176px'
-        />
-        {/* Glossy overlay */}
-        <div className='absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/30 pointer-events-none' />
-      </div>
-    </div>
-  );
-}
-
-function HeroSection() {
-  const column1 = generateCovers('col1');
-  const column2 = generateCovers('col2');
-  const column3 = generateCovers('col3');
-  const column4 = generateCovers('col4');
-  const column5 = generateCovers('col5');
-  const mobileCovers = generateCovers('mobile');
-
+async function HeroSection() {
+  const dbCovers = await getMarqueeCovers();
+  // Use curated DB covers (clickable) when present, else the static set.
+  const covers = dbCovers.length > 0 ? dbCovers : albumCovers;
   return (
     <section className='relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black'>
       {/* Subtle gradient overlay */}
@@ -117,133 +334,8 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Right side - 3D Tilted Vertical Marquee */}
-        <div className='hidden lg:flex flex-1 relative h-[calc(100vh-4rem)] w-full items-center justify-center'>
-          {/* Gradient overlays for smooth fade on all edges - OUTSIDE the overflow container */}
-          <div className='pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black via-black/80 to-transparent z-10' />
-          <div className='pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black via-black/80 to-transparent z-10' />
-          <div className='pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-black via-black/80 to-transparent z-10' />
-          <div className='pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-black via-black/80 to-transparent z-10' />
-
-          {/* Inner container with overflow hidden and perspective */}
-          <div className='absolute inset-0 overflow-hidden [perspective:1200px]'>
-            {/* 3D tilted container - pushed inward to avoid edge clipping */}
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <div
-                className='flex flex-row items-center gap-4'
-                style={{
-                  transform:
-                    'translateX(50px) translateZ(-100px) rotateX(20deg) rotateY(-10deg) rotateZ(20deg)',
-                }}
-              >
-                {/* Column 1 */}
-                <Marquee
-                  vertical
-                  pauseOnHover
-                  className='h-[700px] [--duration:30s] [--gap:1rem]'
-                >
-                  {column1.map((album, idx) => (
-                    <AlbumCard
-                      key={album.key}
-                      src={album.src}
-                      alt={album.alt}
-                      priority={idx < 2}
-                    />
-                  ))}
-                </Marquee>
-
-                {/* Column 2 - reverse */}
-                <Marquee
-                  vertical
-                  reverse
-                  pauseOnHover
-                  className='h-[700px] [--duration:35s] [--gap:1rem]'
-                >
-                  {column2.map(album => (
-                    <AlbumCard
-                      key={album.key}
-                      src={album.src}
-                      alt={album.alt}
-                    />
-                  ))}
-                </Marquee>
-
-                {/* Column 3 */}
-                <Marquee
-                  vertical
-                  pauseOnHover
-                  className='h-[700px] [--duration:28s] [--gap:1rem]'
-                >
-                  {column3.map(album => (
-                    <AlbumCard
-                      key={album.key}
-                      src={album.src}
-                      alt={album.alt}
-                    />
-                  ))}
-                </Marquee>
-
-                {/* Column 4 - reverse */}
-                <Marquee
-                  vertical
-                  reverse
-                  pauseOnHover
-                  className='h-[700px] [--duration:32s] [--gap:1rem]'
-                >
-                  {column4.map(album => (
-                    <AlbumCard
-                      key={album.key}
-                      src={album.src}
-                      alt={album.alt}
-                    />
-                  ))}
-                </Marquee>
-
-                {/* Column 5 */}
-                <Marquee
-                  vertical
-                  pauseOnHover
-                  className='h-[700px] [--duration:34s] [--gap:1rem]'
-                >
-                  {column5.map(album => (
-                    <AlbumCard
-                      key={album.key}
-                      src={album.src}
-                      alt={album.alt}
-                    />
-                  ))}
-                </Marquee>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile marquee - horizontal at bottom */}
-      <div className='lg:hidden absolute bottom-0 left-0 right-0 overflow-hidden pb-4'>
-        <div className='relative'>
-          <Marquee pauseOnHover className='[--duration:25s] [--gap:0.75rem]'>
-            {mobileCovers.slice(0, 8).map((album, idx) => (
-              <div
-                key={album.key}
-                className='relative h-24 w-24 overflow-hidden rounded-lg shadow-lg'
-              >
-                <Image
-                  src={album.src}
-                  alt={album.alt}
-                  fill
-                  unoptimized
-                  priority={idx < 2}
-                  className='object-cover'
-                  sizes='96px'
-                />
-              </div>
-            ))}
-          </Marquee>
-          {/* Gradient overlays for smooth fade */}
-          <div className='pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-black' />
-          <div className='pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-black' />
-        </div>
+        {/* Right side + mobile marquee (DB-backed, clickable covers) */}
+        <HeroMarquee covers={covers} />
       </div>
     </section>
   );

@@ -134,6 +134,15 @@ export type AddAlbumToPoolResult = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Result of adding an album to the marquee */
+export type AddToMarqueeResult = {
+  __typename?: 'AddToMarqueeResult';
+  error?: Maybe<Scalars['String']['output']>;
+  marqueeAlbum?: Maybe<MarqueeAlbumEntry>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -1546,6 +1555,15 @@ export type ManualCorrectionApplyInput = {
   title: Scalars['String']['input'];
 };
 
+/** Marquee album entry for the landing page gallery */
+export type MarqueeAlbumEntry = {
+  __typename?: 'MarqueeAlbumEntry';
+  album: Album;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  sortOrder: Scalars['Int']['output'];
+};
+
 /** Selection state for metadata fields. */
 export type MetadataSelectionsInput = {
   /** Barcode / UPC */
@@ -1572,6 +1590,8 @@ export type Mutation = {
    * Provides proper provenance chain for LlamaLog tracking.
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
+  /** Admin: Add an album (local or external) to the landing page marquee */
+  addAlbumToMarquee: AddToMarqueeResult;
   /**
    * Admin: Add an album to the game pool.
    * Provide albumId for an existing album, or albumData for an external album (will be created first).
@@ -1622,6 +1642,8 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   /** Admin: Remove an album from the curated challenge list */
   removeCuratedChallenge: Scalars['Boolean']['output'];
+  /** Admin: Remove an album from the landing page marquee */
+  removeMarqueeAlbum: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1686,6 +1708,11 @@ export type MutationAddAlbumToCollectionArgs = {
 
 export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
+};
+
+export type MutationAddAlbumToMarqueeArgs = {
+  albumData?: InputMaybe<AlbumInput>;
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationAddAlbumToPoolArgs = {
@@ -1802,6 +1829,10 @@ export type MutationRemoveAlbumFromCollectionArgs = {
 };
 
 export type MutationRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationRemoveMarqueeAlbumArgs = {
   id: Scalars['UUID']['input'];
 };
 
@@ -1937,8 +1968,11 @@ export type MutationUpdateUserRoleArgs = {
 };
 
 export type MutationUpdateUserSettingsArgs = {
+  arcadeButtonColor?: InputMaybe<Scalars['String']['input']>;
+  arcadeButtonSound?: InputMaybe<Scalars['String']['input']>;
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showArcadeButton?: InputMaybe<Scalars['Boolean']['input']>;
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2093,6 +2127,8 @@ export type Query = {
   jobHistory: Array<JobRecord>;
   llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
+  /** Albums curated for the landing page marquee gallery (public) */
+  marqueeAlbums: Array<MarqueeAlbumEntry>;
   mutualConnections: Array<User>;
   /**
    * Get user's archive stats (separate from daily stats).
@@ -3480,6 +3516,8 @@ export enum UserRole {
 
 export type UserSettings = {
   __typename?: 'UserSettings';
+  arcadeButtonColor: Scalars['String']['output'];
+  arcadeButtonSound: Scalars['String']['output'];
   autoplayPreviews: Scalars['Boolean']['output'];
   createdAt: Scalars['DateTime']['output'];
   dashboardLayout?: Maybe<Scalars['JSON']['output']>;
@@ -3490,6 +3528,7 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showArcadeButton: Scalars['Boolean']['output'];
   showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
   showListenLaterInFeed: Scalars['Boolean']['output'];
@@ -3812,6 +3851,9 @@ export type UpdateUserSettingsMutationVariables = Exact<{
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
+  showArcadeButton?: InputMaybe<Scalars['Boolean']['input']>;
+  arcadeButtonColor?: InputMaybe<Scalars['String']['input']>;
+  arcadeButtonSound?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 export type UpdateUserSettingsMutation = {
@@ -3833,6 +3875,9 @@ export type UpdateUserSettingsMutation = {
     followAlerts: boolean;
     defaultCollectionView: string;
     autoplayPreviews: boolean;
+    showArcadeButton: boolean;
+    arcadeButtonColor: string;
+    arcadeButtonSound: string;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -5746,6 +5791,9 @@ export type GetUserProfileQuery = {
     settings?: {
       __typename?: 'UserSettings';
       profileVisibility: string;
+      showArcadeButton: boolean;
+      arcadeButtonColor: string;
+      arcadeButtonSound: string;
     } | null;
   } | null;
 };
@@ -5894,6 +5942,56 @@ export type GetLlamaLogChainQuery = {
   };
 };
 
+export type MarqueeAlbumsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MarqueeAlbumsQuery = {
+  __typename?: 'Query';
+  marqueeAlbums: Array<{
+    __typename?: 'MarqueeAlbumEntry';
+    id: string;
+    sortOrder: number;
+    createdAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      musicbrainzId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type AddAlbumToMarqueeMutationVariables = Exact<{
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  albumData?: InputMaybe<AlbumInput>;
+}>;
+
+export type AddAlbumToMarqueeMutation = {
+  __typename?: 'Mutation';
+  addAlbumToMarquee: {
+    __typename?: 'AddToMarqueeResult';
+    success: boolean;
+    message?: string | null;
+    error?: string | null;
+    marqueeAlbum?: { __typename?: 'MarqueeAlbumEntry'; id: string } | null;
+  };
+};
+
+export type RemoveMarqueeAlbumMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type RemoveMarqueeAlbumMutation = {
+  __typename?: 'Mutation';
+  removeMarqueeAlbum: boolean;
+};
+
 export type GetMySettingsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetMySettingsQuery = {
@@ -5915,6 +6013,9 @@ export type GetMySettingsQuery = {
     followAlerts: boolean;
     defaultCollectionView: string;
     autoplayPreviews: boolean;
+    showArcadeButton: boolean;
+    arcadeButtonColor: string;
+    arcadeButtonSound: string;
     createdAt: Date;
     updatedAt: Date;
   } | null;
@@ -7778,7 +7879,7 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const UpdateUserSettingsDocument = `
-    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean) {
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean, $showArcadeButton: Boolean, $arcadeButtonColor: String, $arcadeButtonSound: String) {
   updateUserSettings(
     theme: $theme
     language: $language
@@ -7788,6 +7889,9 @@ export const UpdateUserSettingsDocument = `
     showListenLaterInFeed: $showListenLaterInFeed
     showCollectionAddsInFeed: $showCollectionAddsInFeed
     showOnboardingTour: $showOnboardingTour
+    showArcadeButton: $showArcadeButton
+    arcadeButtonColor: $arcadeButtonColor
+    arcadeButtonSound: $arcadeButtonSound
   ) {
     id
     userId
@@ -7804,6 +7908,9 @@ export const UpdateUserSettingsDocument = `
     followAlerts
     defaultCollectionView
     autoplayPreviews
+    showArcadeButton
+    arcadeButtonColor
+    arcadeButtonSound
     createdAt
     updatedAt
   }
@@ -12864,6 +12971,9 @@ export const GetUserProfileDocument = `
     isFollowing
     settings {
       profileVisibility
+      showArcadeButton
+      arcadeButtonColor
+      arcadeButtonSound
     }
   }
 }
@@ -13349,6 +13459,177 @@ useInfiniteGetLlamaLogChainQuery.getKey = (
   variables: GetLlamaLogChainQueryVariables
 ) => ['GetLlamaLogChain.infinite', variables];
 
+export const MarqueeAlbumsDocument = `
+    query MarqueeAlbums {
+  marqueeAlbums {
+    id
+    sortOrder
+    createdAt
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      releaseDate
+      musicbrainzId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useMarqueeAlbumsQuery = <
+  TData = MarqueeAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: MarqueeAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MarqueeAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<MarqueeAlbumsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<MarqueeAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MarqueeAlbums']
+        : ['MarqueeAlbums', variables],
+    queryFn: fetcher<MarqueeAlbumsQuery, MarqueeAlbumsQueryVariables>(
+      MarqueeAlbumsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMarqueeAlbumsQuery.getKey = (variables?: MarqueeAlbumsQueryVariables) =>
+  variables === undefined ? ['MarqueeAlbums'] : ['MarqueeAlbums', variables];
+
+export const useInfiniteMarqueeAlbumsQuery = <
+  TData = InfiniteData<MarqueeAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: MarqueeAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MarqueeAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MarqueeAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MarqueeAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MarqueeAlbums.infinite']
+            : ['MarqueeAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MarqueeAlbumsQuery, MarqueeAlbumsQueryVariables>(
+            MarqueeAlbumsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMarqueeAlbumsQuery.getKey = (
+  variables?: MarqueeAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['MarqueeAlbums.infinite']
+    : ['MarqueeAlbums.infinite', variables];
+
+export const AddAlbumToMarqueeDocument = `
+    mutation AddAlbumToMarquee($albumId: UUID, $albumData: AlbumInput) {
+  addAlbumToMarquee(albumId: $albumId, albumData: $albumData) {
+    success
+    message
+    error
+    marqueeAlbum {
+      id
+    }
+  }
+}
+    `;
+
+export const useAddAlbumToMarqueeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddAlbumToMarqueeMutation,
+    TError,
+    AddAlbumToMarqueeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumToMarqueeMutation,
+    TError,
+    AddAlbumToMarqueeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbumToMarquee'],
+    mutationFn: (variables?: AddAlbumToMarqueeMutationVariables) =>
+      fetcher<AddAlbumToMarqueeMutation, AddAlbumToMarqueeMutationVariables>(
+        AddAlbumToMarqueeDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddAlbumToMarqueeMutation.getKey = () => ['AddAlbumToMarquee'];
+
+export const RemoveMarqueeAlbumDocument = `
+    mutation RemoveMarqueeAlbum($id: UUID!) {
+  removeMarqueeAlbum(id: $id)
+}
+    `;
+
+export const useRemoveMarqueeAlbumMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RemoveMarqueeAlbumMutation,
+    TError,
+    RemoveMarqueeAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RemoveMarqueeAlbumMutation,
+    TError,
+    RemoveMarqueeAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RemoveMarqueeAlbum'],
+    mutationFn: (variables?: RemoveMarqueeAlbumMutationVariables) =>
+      fetcher<RemoveMarqueeAlbumMutation, RemoveMarqueeAlbumMutationVariables>(
+        RemoveMarqueeAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useRemoveMarqueeAlbumMutation.getKey = () => ['RemoveMarqueeAlbum'];
+
 export const GetMySettingsDocument = `
     query GetMySettings {
   mySettings {
@@ -13367,6 +13648,9 @@ export const GetMySettingsDocument = `
     followAlerts
     defaultCollectionView
     autoplayPreviews
+    showArcadeButton
+    arcadeButtonColor
+    arcadeButtonSound
     createdAt
     updatedAt
   }

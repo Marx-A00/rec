@@ -85,6 +85,9 @@ model UserSettings {
   followAlerts          Boolean  @default(true)
   defaultCollectionView String   @default("grid")
   autoplayPreviews      Boolean  @default(false)
+  showArcadeButton      Boolean  @default(true)
+  arcadeButtonColor     String   @default("#CC4B24")
+  arcadeButtonSound     String   @default("pluh")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -306,6 +309,7 @@ model Album {
   uncoverGuesses     UncoverGuess[]
 
   curatedChallenges CuratedChallenge[]
+  marqueeAlbums     MarqueeAlbum[]
   @@index([title])
   @@index([releaseDate])
   @@index([musicbrainzId])
@@ -751,6 +755,20 @@ model CuratedChallenge {
   @@index([pinnedDate])
   @@index([albumId])
   @@map("curated_challenges")
+}
+
+/// Admin-curated albums shown in the landing page marquee gallery
+model MarqueeAlbum {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  albumId   String   @unique @map("album_id") @db.Uuid
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([albumId])
+  @@index([sortOrder])
+  @@map("marquee_albums")
 }
 
 

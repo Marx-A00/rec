@@ -14,7 +14,7 @@ import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import ProfileImageLightbox from '@/components/ui/ProfileImageLightbox';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
-import PluhButton from '@/components/ui/PluhButton';
+import ArcadeButton from '@/components/ui/ArcadeButton';
 import { useNavigation } from '@/hooks/useNavigation';
 import ContextualHint from '@/components/ui/ContextualHint';
 import { CollectionAlbum } from '@/types/collection';
@@ -31,6 +31,7 @@ interface ProfileClientProps {
   listenLater: CollectionAlbum[];
   recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
+  isAuthenticated?: boolean;
   showCollections?: boolean;
   isFollowingUser?: boolean;
   isPrivateProfile?: boolean;
@@ -42,6 +43,7 @@ export default function ProfileClient({
   listenLater,
   recommendations,
   isOwnProfile,
+  isAuthenticated = false,
   showCollections = true,
   isFollowingUser = false,
   isPrivateProfile = false,
@@ -398,6 +400,7 @@ export default function ProfileClient({
                       )}
                     </div>
                   ) : (
+                    isAuthenticated &&
                     user.id && (
                       <FollowButton
                         userId={user.id}
@@ -456,12 +459,13 @@ export default function ProfileClient({
               {/* Collection Section */}
               {/* TODO: add in DnD grid with varying sizes or whatever */}
 
-              {/* Pluh Button - shown on admin/owner profiles, visible to everyone */}
-              {(user.role === 'ADMIN' || user.role === 'OWNER') && (
-                <section className='border-t border-zinc-800 pt-8 flex justify-center'>
-                  <PluhButton />
-                </section>
-              )}
+              {/* Arcade Button - shown on admin/owner profiles, visible to everyone */}
+              {(user.role === 'ADMIN' || user.role === 'OWNER') &&
+                user.settings?.showArcadeButton !== false && (
+                  <section className='border-t border-zinc-800 pt-8 flex justify-center'>
+                    <ArcadeButton color={user.settings?.arcadeButtonColor} />
+                  </section>
+                )}
 
               {/* Listen Later Section */}
               {showCollections && (
@@ -615,7 +619,7 @@ export default function ProfileClient({
                         <RecommendationCard
                           key={recommendation.id}
                           recommendation={recommendation}
-                          currentUserId={user.id}
+                          currentUserId={isOwnProfile ? user.id : undefined}
                           onAlbumClick={(albumId, _albumType) =>
                             navigateToAlbum(albumId)
                           }

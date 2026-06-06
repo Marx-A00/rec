@@ -7,6 +7,9 @@ mutation UpdateUserSettings(
   $showListenLaterInFeed: Boolean
   $showCollectionAddsInFeed: Boolean
   $showOnboardingTour: Boolean
+  $showArcadeButton: Boolean
+  $arcadeButtonColor: String
+  $arcadeButtonSound: String
 ) {
   updateUserSettings(
     theme: $theme
@@ -17,6 +20,9 @@ mutation UpdateUserSettings(
     showListenLaterInFeed: $showListenLaterInFeed
     showCollectionAddsInFeed: $showCollectionAddsInFeed
     showOnboardingTour: $showOnboardingTour
+    showArcadeButton: $showArcadeButton
+    arcadeButtonColor: $arcadeButtonColor
+    arcadeButtonSound: $arcadeButtonSound
   ) {
     id
     userId
@@ -33,6 +39,9 @@ mutation UpdateUserSettings(
     followAlerts
     defaultCollectionView
     autoplayPreviews
+    showArcadeButton
+    arcadeButtonColor
+    arcadeButtonSound
     createdAt
     updatedAt
   }

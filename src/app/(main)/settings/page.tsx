@@ -12,6 +12,7 @@ import {
   useGetUserProfileQuery,
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
+import { uploadAvatar } from '@/lib/upload-avatar';
 import BackButton from '@/components/ui/BackButton';
 
 import ProfileTab from './components/ProfileTab';
@@ -44,6 +45,14 @@ export default function SettingsPage() {
     bio: '',
   });
 
+  // Deferred avatar state — captured on select, uploaded on save
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const [avatarCleared, setAvatarCleared] = useState(false);
+  const [avatarResetKey, setAvatarResetKey] = useState(0);
+
+  // Arcade button toggle (admin only) — instant-save
+  const [showArcadeButton, setShowArcadeButton] = useState(true);
+
   // Preferences state
   const [preferences, setPreferences] = useState({
     profileVisibility: 'public',
@@ -62,13 +71,26 @@ export default function SettingsPage() {
         username: userData.user.username || '',
         bio: userData.user.bio || '',
       });
+      setShowArcadeButton(userData.user.settings?.showArcadeButton ?? true);
     }
   }, [userData]);
 
   // Dirty state detection for profile
   const hasProfileChanges =
     profileForm.username !== (userData?.user?.username || '') ||
-    profileForm.bio !== (userData?.user?.bio || '');
+    profileForm.bio !== (userData?.user?.bio || '') ||
+    avatarBlob !== null ||
+    avatarCleared;
+
+  const handleAvatarSelect = (blob: Blob) => {
+    setAvatarBlob(blob);
+    setAvatarCleared(false);
+  };
+
+  const handleAvatarClear = () => {
+    setAvatarBlob(null);
+    setAvatarCleared(true);
+  };
 
   // Dirty state detection for preferences/privacy
   const _hasPreferencesChanges = false; // TODO: implement when we load actual settings
@@ -79,6 +101,9 @@ export default function SettingsPage() {
       username: userData?.user?.username || '',
       bio: userData?.user?.bio || '',
     });
+    setAvatarBlob(null);
+    setAvatarCleared(false);
+    setAvatarResetKey(k => k + 1);
   };
 
   // Redirect if not authenticated
@@ -97,15 +122,42 @@ export default function SettingsPage() {
   const handleProfileSave = async () => {
     try {
       setIsLoading(true);
+
+      let image: string | null | undefined;
+      if (avatarBlob) {
+        image = await uploadAvatar(avatarBlob);
+      } else if (avatarCleared) {
+        image = '';
+      }
+
       await updateProfileMutation.mutateAsync({
         username: profileForm.username.trim(),
         bio: profileForm.bio.trim(),
+        ...(image !== undefined ? { image } : {}),
       });
+
+      setAvatarBlob(null);
+      setAvatarCleared(false);
+      setAvatarResetKey(k => k + 1);
       showToast('Profile updated successfully', 'success');
     } catch {
       showToast('Failed to update profile', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleToggleArcadeButton = async (value: boolean) => {
+    setShowArcadeButton(value);
+    try {
+      await updateSettingsMutation.mutateAsync({ showArcadeButton: value });
+      showToast(
+        value ? 'Arcade button enabled' : 'Arcade button hidden',
+        'success'
+      );
+    } catch {
+      setShowArcadeButton(!value);
+      showToast('Failed to update arcade button', 'error');
     }
   };
 
@@ -231,6 +283,13 @@ export default function SettingsPage() {
             hasChanges={hasProfileChanges}
             onSave={handleProfileSave}
             onDiscard={handleDiscardProfileChanges}
+            isAdmin={user.role === 'ADMIN' || user.role === 'OWNER'}
+            showArcadeButton={showArcadeButton}
+            onToggleArcadeButton={handleToggleArcadeButton}
+            isArcadePending={updateSettingsMutation.isPending}
+            avatarResetKey={avatarResetKey}
+            onAvatarSelect={handleAvatarSelect}
+            onAvatarClear={handleAvatarClear}
           />
 
           <PreferencesTab

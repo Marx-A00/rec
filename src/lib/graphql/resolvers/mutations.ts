@@ -2447,6 +2447,9 @@ export const mutationResolvers: MutationResolvers = {
       showListenLaterInFeed,
       showCollectionAddsInFeed,
       showOnboardingTour,
+      showArcadeButton,
+      arcadeButtonColor,
+      arcadeButtonSound,
     } = args;
 
     try {
@@ -2465,6 +2468,12 @@ export const mutationResolvers: MutationResolvers = {
         updateData.showCollectionAddsInFeed = showCollectionAddsInFeed;
       if (showOnboardingTour !== undefined)
         updateData.showOnboardingTour = showOnboardingTour;
+      if (showArcadeButton !== undefined)
+        updateData.showArcadeButton = showArcadeButton;
+      if (arcadeButtonColor !== undefined)
+        updateData.arcadeButtonColor = arcadeButtonColor;
+      if (arcadeButtonSound !== undefined)
+        updateData.arcadeButtonSound = arcadeButtonSound;
 
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
@@ -2479,6 +2488,9 @@ export const mutationResolvers: MutationResolvers = {
           showListenLaterInFeed: showListenLaterInFeed ?? true,
           showCollectionAddsInFeed: showCollectionAddsInFeed ?? true,
           showOnboardingTour: showOnboardingTour ?? true,
+          showArcadeButton: showArcadeButton ?? true,
+          arcadeButtonColor: arcadeButtonColor ?? '#CC4B24',
+          arcadeButtonSound: arcadeButtonSound ?? 'pluh',
           emailNotifications: true,
           recommendationAlerts: true,
           followAlerts: true,
@@ -3474,6 +3486,209 @@ export const mutationResolvers: MutationResolvers = {
     } catch (error) {
       graphqlLogger.error('Failed to remove curated challenge:', { error, id });
       throw new GraphQLError(`Failed to remove curated challenge: ${error}`);
+    }
+  },
+
+  // Marquee mutations (Admin)
+  addAlbumToMarquee: async (
+    _: unknown,
+    {
+      albumId,
+      albumData,
+    }: {
+      albumId?: string;
+      albumData?: {
+        title: string;
+        releaseDate?: string;
+        albumType?: string;
+        totalTracks?: number;
+        coverImageUrl?: string;
+        musicbrainzId?: string;
+        spotifyId?: string;
+        artists?: Array<{
+          artistName?: string | null;
+          artistId?: string | null;
+          role?: string | null;
+        }>;
+      };
+    },
+    { prisma, user }
+  ) => {
+    if (!user?.id) {
+      return {
+        success: false,
+        message: null,
+        error: 'Authentication required',
+        marqueeAlbum: null,
+      };
+    }
+
+    if (!user.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+      return {
+        success: false,
+        message: null,
+        error: 'Admin access required',
+        marqueeAlbum: null,
+      };
+    }
+
+    if ((!albumId && !albumData) || (albumId && albumData)) {
+      return {
+        success: false,
+        message: null,
+        error: 'Provide either albumId or albumData, not both',
+        marqueeAlbum: null,
+      };
+    }
+
+    try {
+      let targetAlbumId = albumId!;
+      let created = false;
+
+      if (albumData) {
+        const { findOrCreateAlbum } = await import('@/lib/albums');
+
+        const primaryArtist = albumData.artists?.[0];
+        const releaseDate = albumData.releaseDate
+          ? new Date(albumData.releaseDate)
+          : null;
+
+        const result = await findOrCreateAlbum({
+          db: prisma,
+          identity: {
+            title: albumData.title,
+            musicbrainzId: albumData.musicbrainzId ?? undefined,
+            spotifyId: albumData.spotifyId ?? undefined,
+            primaryArtistName: primaryArtist?.artistName ?? undefined,
+            releaseYear: releaseDate?.getFullYear() ?? undefined,
+          },
+          fields: {
+            releaseDate,
+            releaseType: albumData.albumType || 'ALBUM',
+            trackCount: albumData.totalTracks ?? undefined,
+            coverArtUrl: albumData.coverImageUrl ?? undefined,
+          },
+          artists: (albumData.artists || [])
+            .filter((a: { artistName?: string | null }) => a.artistName)
+            .map(
+              (
+                a: {
+                  artistName?: string | null;
+                  artistId?: string | null;
+                  role?: string | null;
+                },
+                i: number
+              ) => ({
+                name: a.artistName!,
+                role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+                position: i,
+              })
+            ),
+          enrichment: 'queue-check',
+          queueCheckOptions: {
+            source: 'manual' as const,
+            priority: 'medium' as const,
+          },
+          caller: 'addAlbumToMarquee',
+        });
+
+        targetAlbumId = result.album.id;
+        created = result.created;
+
+        // Block until cover art is cached so the marquee shows a real image.
+        if (result.album.coverArtUrl && !result.album.cloudflareImageId) {
+          const queue = getMusicBrainzQueue();
+          const queueEvents = queue.getQueueEvents();
+
+          const cacheJob = await queue.addJob(
+            JOB_TYPES.CACHE_ALBUM_COVER_ART,
+            {
+              albumId: targetAlbumId,
+              requestId: `marquee-cache-${targetAlbumId}`,
+            },
+            { priority: 1, attempts: 3 }
+          );
+
+          await cacheJob.waitUntilFinished(queueEvents, 30_000);
+        }
+      }
+
+      // Reject duplicates
+      const existing = await prisma.marqueeAlbum.findUnique({
+        where: { albumId: targetAlbumId },
+      });
+      if (existing) {
+        return {
+          success: false,
+          message: null,
+          error: 'Album is already in the marquee',
+          marqueeAlbum: null,
+        };
+      }
+
+      // Append to the end of the marquee
+      const last = await prisma.marqueeAlbum.findFirst({
+        orderBy: { sortOrder: 'desc' },
+        select: { sortOrder: true },
+      });
+      const nextSortOrder = (last?.sortOrder ?? -1) + 1;
+
+      const entry = await prisma.marqueeAlbum.create({
+        data: { albumId: targetAlbumId, sortOrder: nextSortOrder },
+        include: {
+          album: {
+            include: { artists: { include: { artist: true } } },
+          },
+        },
+      });
+
+      graphqlLogger.info('Added album to marquee:', {
+        albumId: targetAlbumId,
+        created,
+      });
+
+      return {
+        success: true,
+        message: `"${entry.album.title}" ${created ? 'created and ' : ''}added to marquee`,
+        error: null,
+        marqueeAlbum: entry,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to add album to marquee:', {
+        error,
+        albumId: albumId || 'external',
+      });
+      return {
+        success: false,
+        message: null,
+        error: `Failed to add album to marquee: ${error}`,
+        marqueeAlbum: null,
+      };
+    }
+  },
+
+  removeMarqueeAlbum: async (
+    _,
+    { id }: { id: string },
+    { prisma, user }
+  ) => {
+    try {
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      const entry = await prisma.marqueeAlbum.findUnique({ where: { id } });
+      if (!entry) {
+        throw new GraphQLError('Marquee album entry not found');
+      }
+
+      await prisma.marqueeAlbum.delete({ where: { id } });
+
+      graphqlLogger.info('Removed album from marquee:', { id });
+      return true;
+    } catch (error) {
+      graphqlLogger.error('Failed to remove marquee album:', { error, id });
+      throw new GraphQLError(`Failed to remove marquee album: ${error}`);
     }
   },
 

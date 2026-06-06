@@ -16,6 +16,9 @@ query GetMySettings {
     followAlerts
     defaultCollectionView
     autoplayPreviews
+    showArcadeButton
+    arcadeButtonColor
+    arcadeButtonSound
     createdAt
     updatedAt
   }

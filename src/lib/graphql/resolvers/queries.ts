@@ -3873,6 +3873,28 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  marqueeAlbums: async (_, __, { prisma }) => {
+    try {
+      const entries = await prisma.marqueeAlbum.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: { artist: true },
+              },
+            },
+          },
+        },
+      });
+
+      return entries;
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch marquee albums:', { error });
+      throw new GraphQLError(`Failed to fetch marquee albums: ${error}`);
+    }
+  },
+
   curatedChallengeCount: async (_, __, { prisma, user }) => {
     try {
       // Admin check

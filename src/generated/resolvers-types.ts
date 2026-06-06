@@ -108,6 +108,15 @@ export type AddAlbumToPoolResult = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Result of adding an album to the marquee */
+export type AddToMarqueeResult = {
+  __typename?: 'AddToMarqueeResult';
+  error?: Maybe<Scalars['String']['output']>;
+  marqueeAlbum?: Maybe<MarqueeAlbumEntry>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -1520,6 +1529,15 @@ export type ManualCorrectionApplyInput = {
   title: Scalars['String']['input'];
 };
 
+/** Marquee album entry for the landing page gallery */
+export type MarqueeAlbumEntry = {
+  __typename?: 'MarqueeAlbumEntry';
+  album: Album;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  sortOrder: Scalars['Int']['output'];
+};
+
 /** Selection state for metadata fields. */
 export type MetadataSelectionsInput = {
   /** Barcode / UPC */
@@ -1546,6 +1564,8 @@ export type Mutation = {
    * Provides proper provenance chain for LlamaLog tracking.
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
+  /** Admin: Add an album (local or external) to the landing page marquee */
+  addAlbumToMarquee: AddToMarqueeResult;
   /**
    * Admin: Add an album to the game pool.
    * Provide albumId for an existing album, or albumData for an external album (will be created first).
@@ -1596,6 +1616,8 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   /** Admin: Remove an album from the curated challenge list */
   removeCuratedChallenge: Scalars['Boolean']['output'];
+  /** Admin: Remove an album from the landing page marquee */
+  removeMarqueeAlbum: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1660,6 +1682,11 @@ export type MutationAddAlbumToCollectionArgs = {
 
 export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
+};
+
+export type MutationAddAlbumToMarqueeArgs = {
+  albumData?: InputMaybe<AlbumInput>;
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type MutationAddAlbumToPoolArgs = {
@@ -1776,6 +1803,10 @@ export type MutationRemoveAlbumFromCollectionArgs = {
 };
 
 export type MutationRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationRemoveMarqueeAlbumArgs = {
   id: Scalars['UUID']['input'];
 };
 
@@ -1911,8 +1942,11 @@ export type MutationUpdateUserRoleArgs = {
 };
 
 export type MutationUpdateUserSettingsArgs = {
+  arcadeButtonColor?: InputMaybe<Scalars['String']['input']>;
+  arcadeButtonSound?: InputMaybe<Scalars['String']['input']>;
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showArcadeButton?: InputMaybe<Scalars['Boolean']['input']>;
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2067,6 +2101,8 @@ export type Query = {
   jobHistory: Array<JobRecord>;
   llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
+  /** Albums curated for the landing page marquee gallery (public) */
+  marqueeAlbums: Array<MarqueeAlbumEntry>;
   mutualConnections: Array<User>;
   /**
    * Get user's archive stats (separate from daily stats).
@@ -3454,6 +3490,8 @@ export enum UserRole {
 
 export type UserSettings = {
   __typename?: 'UserSettings';
+  arcadeButtonColor: Scalars['String']['output'];
+  arcadeButtonSound: Scalars['String']['output'];
   autoplayPreviews: Scalars['Boolean']['output'];
   createdAt: Scalars['DateTime']['output'];
   dashboardLayout?: Maybe<Scalars['JSON']['output']>;
@@ -3464,6 +3502,7 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showArcadeButton: Scalars['Boolean']['output'];
   showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
   showListenLaterInFeed: Scalars['Boolean']['output'];
@@ -3628,6 +3667,7 @@ export type ResolversTypes = ResolversObject<{
   AddAlbumToCollectionPayload: ResolverTypeWrapper<AddAlbumToCollectionPayload>;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
   AddAlbumToPoolResult: ResolverTypeWrapper<AddAlbumToPoolResult>;
+  AddToMarqueeResult: ResolverTypeWrapper<AddToMarqueeResult>;
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumGameStatus: AlbumGameStatus;
@@ -3754,6 +3794,7 @@ export type ResolversTypes = ResolversObject<{
   MBRecording: ResolverTypeWrapper<MbRecording>;
   MBReleaseData: ResolverTypeWrapper<MbReleaseData>;
   ManualCorrectionApplyInput: ManualCorrectionApplyInput;
+  MarqueeAlbumEntry: ResolverTypeWrapper<MarqueeAlbumEntry>;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: ResolverTypeWrapper<{}>;
   NewUser: ResolverTypeWrapper<NewUser>;
@@ -3873,6 +3914,7 @@ export type ResolversParentTypes = ResolversObject<{
   AddAlbumToCollectionPayload: AddAlbumToCollectionPayload;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
   AddAlbumToPoolResult: AddAlbumToPoolResult;
+  AddToMarqueeResult: AddToMarqueeResult;
   AdminUpdateUserSettingsPayload: AdminUpdateUserSettingsPayload;
   Album: Album;
   AlbumInput: AlbumInput;
@@ -3977,6 +4019,7 @@ export type ResolversParentTypes = ResolversObject<{
   MBRecording: MbRecording;
   MBReleaseData: MbReleaseData;
   ManualCorrectionApplyInput: ManualCorrectionApplyInput;
+  MarqueeAlbumEntry: MarqueeAlbumEntry;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: {};
   NewUser: NewUser;
@@ -4163,6 +4206,22 @@ export type AddAlbumToPoolResultResolvers<
     ContextType
   >;
   error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AddToMarqueeResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['AddToMarqueeResult'] = ResolversParentTypes['AddToMarqueeResult'],
+> = ResolversObject<{
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  marqueeAlbum?: Resolver<
+    Maybe<ResolversTypes['MarqueeAlbumEntry']>,
+    ParentType,
+    ContextType
+  >;
   message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -5978,6 +6037,18 @@ export type MbReleaseDataResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type MarqueeAlbumEntryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['MarqueeAlbumEntry'] = ResolversParentTypes['MarqueeAlbumEntry'],
+> = ResolversObject<{
+  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  sortOrder?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type MutationResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6000,6 +6071,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationAddAlbumToCollectionWithCreateArgs, 'input'>
+  >;
+  addAlbumToMarquee?: Resolver<
+    ResolversTypes['AddToMarqueeResult'],
+    ParentType,
+    ContextType,
+    Partial<MutationAddAlbumToMarqueeArgs>
   >;
   addAlbumToPool?: Resolver<
     ResolversTypes['AddAlbumToPoolResult'],
@@ -6168,6 +6245,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationRemoveCuratedChallengeArgs, 'id'>
+  >;
+  removeMarqueeAlbum?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationRemoveMarqueeAlbumArgs, 'id'>
   >;
   reorderCollectionAlbums?: Resolver<
     ResolversTypes['ReorderCollectionAlbumsPayload'],
@@ -6730,6 +6813,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     Partial<QueryLlamaLogsArgs>
+  >;
+  marqueeAlbums?: Resolver<
+    Array<ResolversTypes['MarqueeAlbumEntry']>,
+    ParentType,
+    ContextType
   >;
   mutualConnections?: Resolver<
     Array<ResolversTypes['User']>,
@@ -8457,6 +8545,16 @@ export type UserSettingsResolvers<
   ParentType extends
     ResolversParentTypes['UserSettings'] = ResolversParentTypes['UserSettings'],
 > = ResolversObject<{
+  arcadeButtonColor?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
+  arcadeButtonSound?: Resolver<
+    ResolversTypes['String'],
+    ParentType,
+    ContextType
+  >;
   autoplayPreviews?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -8487,6 +8585,11 @@ export type UserSettingsResolvers<
     ContextType
   >;
   recommendationAlerts?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showArcadeButton?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
     ContextType
@@ -8573,6 +8676,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ActivityMetadata?: ActivityMetadataResolvers<ContextType>;
   AddAlbumToCollectionPayload?: AddAlbumToCollectionPayloadResolvers<ContextType>;
   AddAlbumToPoolResult?: AddAlbumToPoolResultResolvers<ContextType>;
+  AddToMarqueeResult?: AddToMarqueeResultResolvers<ContextType>;
   AdminUpdateUserSettingsPayload?: AdminUpdateUserSettingsPayloadResolvers<ContextType>;
   Album?: AlbumResolvers<ContextType>;
   AlbumRecommendation?: AlbumRecommendationResolvers<ContextType>;
@@ -8655,6 +8759,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   MBMediumTrack?: MbMediumTrackResolvers<ContextType>;
   MBRecording?: MbRecordingResolvers<ContextType>;
   MBReleaseData?: MbReleaseDataResolvers<ContextType>;
+  MarqueeAlbumEntry?: MarqueeAlbumEntryResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   NewUser?: NewUserResolvers<ContextType>;
   NewUsersResponse?: NewUsersResponseResolvers<ContextType>;

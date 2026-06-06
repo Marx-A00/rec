@@ -2,9 +2,9 @@
 
 import { Eye, EyeOff, Loader2, RotateCcw, Save } from 'lucide-react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 
 interface ProfileFormData {
   username: string;
@@ -32,6 +32,13 @@ interface ProfileTabProps {
   hasChanges: boolean;
   onSave: () => Promise<void>;
   onDiscard: () => void;
+  isAdmin?: boolean;
+  showArcadeButton?: boolean;
+  onToggleArcadeButton?: (value: boolean) => void;
+  isArcadePending?: boolean;
+  avatarResetKey?: number;
+  onAvatarSelect?: (blob: Blob) => void;
+  onAvatarClear?: () => void;
 }
 
 export default function ProfileTab({
@@ -45,6 +52,13 @@ export default function ProfileTab({
   hasChanges,
   onSave,
   onDiscard,
+  isAdmin = false,
+  showArcadeButton = true,
+  onToggleArcadeButton,
+  isArcadePending = false,
+  avatarResetKey,
+  onAvatarSelect,
+  onAvatarClear,
 }: ProfileTabProps) {
   return (
     <TabsContent value='profile' className='p-6 space-y-6'>
@@ -55,24 +69,19 @@ export default function ProfileTab({
 
         {/* Avatar Section */}
         <div className='flex items-center gap-6'>
-          <Avatar className='h-20 w-20'>
-            <AvatarImage
-              src={user.image || '/placeholder.svg'}
-              alt={user.username || 'User'}
-            />
-            <AvatarFallback className='bg-zinc-800 text-zinc-200 text-lg'>
-              {user.username?.charAt(0) || 'A'}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarUpload
+            key={avatarResetKey}
+            currentImage={user.image}
+            size='sm'
+            onImageSelect={onAvatarSelect}
+            onImageClear={onAvatarClear}
+          />
           <div className='space-y-2'>
             <h4 className='text-lg font-medium text-white'>{user.username}</h4>
             <p className='text-zinc-400 text-sm'>
               {user.recommendationsCount} recommendations •{' '}
               {user.followersCount} followers
             </p>
-            <Button variant='outline' size='sm' className='mt-2'>
-              Change Avatar
-            </Button>
           </div>
         </div>
 
@@ -126,6 +135,37 @@ export default function ProfileTab({
             </Button>
           </div>
         </div>
+
+        {/* Arcade Button (admin only) */}
+        {isAdmin && (
+          <div className='space-y-2 border-t border-zinc-800 pt-6'>
+            <label className='text-sm font-medium text-zinc-200'>
+              Arcade Button
+            </label>
+            <div className='flex items-center justify-between gap-4'>
+              <p className='text-zinc-400 text-sm'>
+                Show the arcade button on your public profile.
+              </p>
+              <button
+                type='button'
+                role='switch'
+                aria-checked={showArcadeButton}
+                aria-label='Toggle arcade button on profile'
+                disabled={isArcadePending}
+                onClick={() => onToggleArcadeButton?.(!showArcadeButton)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50 ${
+                  showArcadeButton ? 'bg-dark-pastel-red' : 'bg-zinc-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showArcadeButton ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className='flex items-center gap-3'>

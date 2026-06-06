@@ -56,7 +56,7 @@ export default function AdminLayout({
 
   return (
     <div className='min-h-screen bg-black'>
-      <div className='flex'>
+      <div className='flex min-h-screen'>
         {/* Sidebar */}
         <aside className='w-64 bg-zinc-950 border-r border-zinc-800'>
           <div className='p-6 border-b border-zinc-800 space-y-4'>
@@ -93,6 +93,16 @@ export default function AdminLayout({
               }`}
             >
               <span>Music Database</span>
+            </Link>
+            <Link
+              href='/admin/marquee'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/marquee'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
+            >
+              <span>Marquee</span>
             </Link>
             <div className='mb-1'>
               <button

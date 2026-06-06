@@ -304,6 +304,11 @@ type UserSettings {
   defaultCollectionView: String!
   autoplayPreviews: Boolean!
 
+  # Arcade button (admin)
+  showArcadeButton: Boolean!
+  arcadeButtonColor: String!
+  arcadeButtonSound: String!
+
   # Timestamps
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -2690,6 +2695,11 @@ type Query {
   curatedChallengeCount: Int!
 
   """
+  Albums curated for the landing page marquee gallery (public)
+  """
+  marqueeAlbums: [MarqueeAlbumEntry!]!
+
+  """
   Admin: Get pool status (total, used, remaining)
   """
   uncoverPoolStatus: UncoverPoolStatus!
@@ -2875,6 +2885,26 @@ type UncoverSessionHistory {
   completedAt: DateTime
 }
 
+
+"""
+Marquee album entry for the landing page gallery
+"""
+type MarqueeAlbumEntry {
+  id: UUID!
+  album: Album!
+  sortOrder: Int!
+  createdAt: DateTime!
+}
+
+"""
+Result of adding an album to the marquee
+"""
+type AddToMarqueeResult {
+  success: Boolean!
+  message: String
+  error: String
+  marqueeAlbum: MarqueeAlbumEntry
+}
 
 """
 Curated challenge entry for admin management
@@ -3335,6 +3365,9 @@ type Mutation {
     showListenLaterInFeed: Boolean
     showCollectionAddsInFeed: Boolean
     showOnboardingTour: Boolean
+    showArcadeButton: Boolean
+    arcadeButtonColor: String
+    arcadeButtonSound: String
   ): UserSettings!
 
   # Music Database enrichment mutations
@@ -3413,6 +3446,16 @@ type Mutation {
     albumData: AlbumInput
     pinnedDate: DateTime
   ): AddAlbumToPoolResult!
+
+  """
+  Admin: Add an album (local or external) to the landing page marquee
+  """
+  addAlbumToMarquee(albumId: UUID, albumData: AlbumInput): AddToMarqueeResult!
+
+  """
+  Admin: Remove an album from the landing page marquee
+  """
+  removeMarqueeAlbum(id: UUID!): Boolean!
 
   """
   Admin: Import an external album into the database for review. No pool addition.

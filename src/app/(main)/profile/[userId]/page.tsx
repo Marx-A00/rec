@@ -254,6 +254,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       listenLater={listenLater}
       recommendations={recommendations}
       isOwnProfile={isOwnProfile}
+      isAuthenticated={!!session?.user?.id}
       showCollections={showCollections}
       isFollowingUser={!!isFollowingUser}
       isPrivateProfile={isPrivateProfile}
