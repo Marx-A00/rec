@@ -72,7 +72,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 --home /home/nextjs nextjs
 
 # tsx (worker runtime) + prisma (migrate deploy at startup)
-RUN pnpm add -g tsx prisma
+# Pin prisma to match @prisma/client / the schema's v6 datasource syntax —
+# an unpinned install pulls the latest major (v7), which rejects `url`/
+# `directUrl` in schema.prisma and makes `migrate deploy` fail at startup.
+RUN pnpm add -g tsx prisma@6.17.1
 
 # Production node_modules (worker needs full deps)
 COPY --from=prod-deps /app/node_modules ./node_modules
