@@ -300,7 +300,7 @@ function SearchResults() {
   }
 
   return (
-    <div className='max-w-7xl mx-auto px-4 py-8'>
+    <div className='px-4 md:px-8 lg:px-12 py-8'>
       <div className='mb-8'>
         <h1 className='text-3xl font-bold text-white mb-2'>Search Results</h1>
         <p className='text-zinc-400'>
