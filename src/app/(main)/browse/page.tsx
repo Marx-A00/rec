@@ -47,29 +47,30 @@ could have a 'looking for' section, showing people that have a looking for tag, 
 */
 export default async function BrowsePage() {
   return (
-    <div className='container mx-auto px-4 py-8 max-w-7xl'>
+    <div className='py-8'>
       {/* Page Header */}
-      <ContextualHint
-        id='browse-welcome'
-        title='Discover Music'
-        description='Browse trending albums, discover new artists, and explore recommendations from the community.'
-        side='bottom'
-        align='start'
-      >
-        <div
-          id='browse-page-header'
-          data-tour-step='browse-header'
-          className='mb-16'
+      <div className='px-4 md:px-8 lg:px-12 mb-16'>
+        <ContextualHint
+          id='browse-welcome'
+          title='Discover Music'
+          description='Browse trending albums, discover new artists, and explore recommendations from the community.'
+          side='bottom'
+          align='start'
         >
-          <h1 className='text-4xl font-bold text-white mb-4'>
-            Discover Music & Community
-          </h1>
-          <p className='text-zinc-400 text-lg max-w-3xl leading-relaxed'>
-            Explore new music, connect with fellow music lovers, and discover
-            your next favorite album
-          </p>
-        </div>
-      </ContextualHint>
+          <div
+            id='browse-page-header'
+            data-tour-step='browse-header'
+          >
+            <h1 className='text-4xl font-bold text-white mb-4'>
+              Discover Music & Community
+            </h1>
+            <p className='text-zinc-400 text-lg max-w-3xl leading-relaxed'>
+              Explore new music, connect with fellow music lovers, and discover
+              your next favorite album
+            </p>
+          </div>
+        </ContextualHint>
+      </div>
 
       {/* Content Sections */}
       <div className='space-y-16'>
@@ -215,42 +216,48 @@ function ContentRow({
   seeAllHref?: string;
 }) {
   return (
-    <section className='space-y-8'>
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center space-x-4'>
-          <div className='text-cosmic-latte p-3 bg-cosmic-latte/10 rounded-xl border border-cosmic-latte/20'>
-            {icon}
+    <section className='space-y-6'>
+      {/* Header */}
+      <div className='px-4 md:px-8 lg:px-12'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center space-x-4'>
+            <div className='text-cosmic-latte p-3 bg-cosmic-latte/10 rounded-xl border border-cosmic-latte/20'>
+              {icon}
+            </div>
+            <div>
+              <h2 className='text-3xl font-semibold text-white'>{title}</h2>
+              <p className='text-lg text-zinc-400 mt-2 leading-relaxed'>
+                {subtitle}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className='text-3xl font-semibold text-white'>{title}</h2>
-            <p className='text-lg text-zinc-400 mt-2 leading-relaxed'>
-              {subtitle}
-            </p>
-          </div>
-        </div>
-        {seeAllHref && (
-          <Link
-            href={seeAllHref}
-            className='text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-1 group'
-          >
-            See all
-            <svg
-              className='w-4 h-4 group-hover:translate-x-0.5 transition-transform'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
+          {seeAllHref && (
+            <Link
+              href={seeAllHref}
+              className='text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-1 group'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M9 5l7 7-7 7'
-              />
-            </svg>
-          </Link>
-        )}
+              See all
+              <svg
+                className='w-4 h-4 group-hover:translate-x-0.5 transition-transform'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M9 5l7 7-7 7'
+                />
+              </svg>
+            </Link>
+          )}
+        </div>
       </div>
-      <div className='relative'>{children}</div>
+      {/* Children - full width, left-aligned with header */}
+      <div className='pl-4 md:pl-8 lg:pl-12'>
+        {children}
+      </div>
     </section>
   );
 }
@@ -266,7 +273,7 @@ function UserCard({ user }: { user: any }) {
               alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-gradient-to-br from-zinc-700 to-zinc-800 text-cosmic-latte text-xl font-semibold'>
-              {user.username?.charAt(0)?.toUpperCase() || 'U'}
+              {[...(user.username || '')][0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
 
