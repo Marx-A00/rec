@@ -92,8 +92,11 @@ const SORT_OPTIONS: SortOption[] = [
 // Use the generated type from GraphQL
 type Album = GetLatestReleasesQuery['searchAlbums'][number];
 
+const PAGE_SIZE = 30;
+
 export default function LatestReleasesPage() {
   const [sortValue, setSortValue] = useState('releaseDate-desc');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const { data, isLoading, error } = useGetLatestReleasesQuery({
     limit: 200,
@@ -195,7 +198,10 @@ export default function LatestReleasesPage() {
             <select
               className='bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-300 focus:outline-none focus:border-green-500 transition-colors'
               value={sortValue}
-              onChange={e => setSortValue(e.target.value)}
+              onChange={e => {
+                setSortValue(e.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
             >
               {SORT_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -238,11 +244,24 @@ export default function LatestReleasesPage() {
 
       {/* Albums Grid */}
       {!isLoading && !error && sortedAlbums.length > 0 && (
-        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6'>
-          {sortedAlbums.map(album => (
-            <AlbumCard key={album.id} album={album} />
-          ))}
-        </div>
+        <>
+          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6'>
+            {sortedAlbums.slice(0, visibleCount).map(album => (
+              <AlbumCard key={album.id} album={album} />
+            ))}
+          </div>
+
+          {visibleCount < sortedAlbums.length && (
+            <div className='flex justify-center mt-10'>
+              <button
+                onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                className='px-8 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white rounded-xl transition-all duration-200 text-sm font-medium'
+              >
+                Load more ({sortedAlbums.length - visibleCount} remaining)
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
