@@ -158,14 +158,7 @@ export default function CollectionAlbumsPanel({
                   key={i}
                   className='relative group cursor-pointer transform transition-all duration-200 flex-shrink-0 w-32'
                 >
-                  <AlbumImage
-                    src={null}
-                    alt='Preview album'
-                    width={128}
-                    height={128}
-                    className='w-full aspect-square rounded object-cover border border-zinc-800'
-                    showSkeleton={true}
-                  />
+                  <div className='w-full aspect-square rounded bg-zinc-800 animate-pulse border border-zinc-800' />
                 </div>
               ))}
             </div>

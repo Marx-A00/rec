@@ -284,6 +284,7 @@ function AlbumCard({ album }: { album: Album }) {
           <AlbumImage
             src={album.coverArtUrl}
             alt={album.title}
+            cloudflareImageId={album.cloudflareImageId}
             className='w-full h-full object-cover rounded-lg shadow-lg'
           />
         </div>

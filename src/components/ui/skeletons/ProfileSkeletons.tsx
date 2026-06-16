@@ -1,6 +1,5 @@
 import { Music } from 'lucide-react';
 
-import AlbumImage from '../AlbumImage';
 
 interface ProfileSkeletonProps {
   showCollection?: boolean;
@@ -138,7 +137,7 @@ export function ProfileSkeleton({
                 <Shimmer className='h-4 w-32' />
               </div>
 
-              {/* Album Grid using AlbumImage loading states */}
+              {/* Album Grid */}
               <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                 {Array.from({ length: albumCount }).map((_, index) => (
                   <div
@@ -148,14 +147,7 @@ export function ProfileSkeleton({
                       animationDelay: `${index * 50}ms`,
                     }}
                   >
-                    <AlbumImage
-                      src={null}
-                      alt='Loading album'
-                      width={128}
-                      height={128}
-                      className='w-full aspect-square rounded object-cover border border-zinc-800'
-                      showSkeleton={true}
-                    />
+                    <div className='w-full aspect-square rounded bg-zinc-800 animate-pulse border border-zinc-800' />
                   </div>
                 ))}
               </div>
