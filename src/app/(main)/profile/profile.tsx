@@ -295,7 +295,7 @@ export default function ProfileClient({
         <div className='mb-8'>
           <button
             onClick={() => goBack()}
-            className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4'
+            className='inline-flex items-center text-cosmic-latte hover:text-cosmic-latte transition-colors mb-4'
           >
             ← Back
           </button>

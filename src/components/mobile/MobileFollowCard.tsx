@@ -43,14 +43,14 @@ export default function MobileFollowCard({
           <p className='text-sm'>
             <Link
               href={`/m/profile/${activity.actorId}`}
-              className='font-medium text-white hover:text-emeraled-green'
+              className='font-medium text-white hover:text-cosmic-latte'
             >
               {activity.actorName}
             </Link>
             <span className='text-zinc-400'> followed </span>
             <Link
               href={`/m/profile/${activity.targetId}`}
-              className='font-medium text-white hover:text-emeraled-green'
+              className='font-medium text-white hover:text-cosmic-latte'
             >
               {activity.targetName}
             </Link>

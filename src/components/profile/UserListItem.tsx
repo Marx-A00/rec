@@ -73,7 +73,7 @@ export default function UserListItem({
           <div className='flex items-start justify-between gap-3'>
             <div className='flex-1 min-w-0'>
               <Link href={`/profile/${user.id}`}>
-                <h3 className='font-medium text-white hover:text-emeraled-green transition-colors cursor-pointer truncate'>
+                <h3 className='font-medium text-white hover:text-cosmic-latte transition-colors cursor-pointer truncate'>
                   {user.username || 'Anonymous music enjoyer'}
                 </h3>
               </Link>

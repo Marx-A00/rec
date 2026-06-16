@@ -210,7 +210,7 @@ function ReleaseSection({
     <div className='border-t border-zinc-800 pt-4'>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className='flex items-center justify-between w-full mb-4 hover:text-emerald-400 transition-colors'
+        className='flex items-center justify-between w-full mb-4 hover:text-cosmic-latte transition-colors'
       >
         <h4 className='text-base font-semibold text-white'>
           {title} ({releases.length})

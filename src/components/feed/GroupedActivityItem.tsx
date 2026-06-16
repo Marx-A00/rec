@@ -124,7 +124,7 @@ export default function GroupedActivityItem({
           <p className='text-sm text-zinc-400 text-center'>
             <Link
               href={`/profile/${group.actorId}`}
-              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
             >
               {group.actorName}
             </Link>{' '}
@@ -279,7 +279,7 @@ export default function GroupedActivityItem({
                             alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                             width={110}
                             height={110}
-                            className='w-[110px] h-[110px] rounded-lg shadow-2xl border-2 border-emeraled-green/30 hover:border-emeraled-green/50 transition-all'
+                            className='w-[110px] h-[110px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
                           />
                         </Link>
 
@@ -364,7 +364,7 @@ export default function GroupedActivityItem({
           <div className='flex justify-center mt-3'>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className='flex items-center gap-1 text-xs text-zinc-400 hover:text-emeraled-green transition-colors'
+              className='flex items-center gap-1 text-xs text-zinc-400 hover:text-cosmic-latte transition-colors'
             >
               {isExpanded ? (
                 <>
@@ -458,7 +458,7 @@ export default function GroupedActivityItem({
             <div className='flex justify-center mt-3'>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className='flex items-center gap-1 text-xs text-zinc-400 hover:text-emeraled-green transition-colors'
+                className='flex items-center gap-1 text-xs text-zinc-400 hover:text-cosmic-latte transition-colors'
               >
                 {isExpanded ? (
                   <>
@@ -496,7 +496,7 @@ function SingleActivityDisplay({
             followed{' '}
             <Link
               href={`/profile/${activity.targetId}`}
-              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
             >
               {activity.targetName}
             </Link>
@@ -508,14 +508,14 @@ function SingleActivityDisplay({
             recommends{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-emeraled-green font-semibold transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte font-semibold transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-cosmic-latte hover:text-emeraled-green transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte transition-colors'
             >
               {activity.albumArtist}
             </Link>
@@ -527,14 +527,14 @@ function SingleActivityDisplay({
             collected{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-cosmic-latte hover:text-emeraled-green transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte transition-colors'
             >
               {activity.albumArtist}
             </Link>
@@ -580,7 +580,7 @@ function SingleActivityDisplay({
           <p className='text-sm text-zinc-400 text-center'>
             <Link
               href={`/profile/${activity.actorId}`}
-              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
+              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
             >
               {activity.actorName}
             </Link>{' '}
@@ -641,7 +641,7 @@ function SingleActivityDisplay({
                     alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                     width={220}
                     height={220}
-                    className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-emeraled-green/30 hover:border-emeraled-green/50 transition-all'
+                    className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
                   />
                 </div>
               </Link>
@@ -722,7 +722,7 @@ function SingleActivityDisplay({
       {activity.type === 'follow' && activity.targetImage && (
         <div className='flex justify-center'>
           <Link href={`/profile/${activity.targetId}`}>
-            <Avatar className='h-[150px] w-[150px] hover:opacity-80 hover:scale-105 transition-all cursor-pointer border-2 border-emeraled-green/30'>
+            <Avatar className='h-[150px] w-[150px] hover:opacity-80 hover:scale-105 transition-all cursor-pointer border-2 border-cosmic-latte/30'>
               <AvatarImage
                 src={activity.targetImage}
                 alt={activity.targetName || 'User'}

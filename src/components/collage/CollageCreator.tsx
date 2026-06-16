@@ -83,7 +83,7 @@ export default function CollageCreator() {
           <Button
             variant='ghost'
             onClick={() => router.back()}
-            className='text-cosmic-latte hover:text-emeraled-green'
+            className='text-cosmic-latte hover:text-cosmic-latte'
           >
             ← Back
           </Button>

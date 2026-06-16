@@ -44,7 +44,7 @@ export default function MobileCollectionCard({
           <p className='text-sm'>
             <Link
               href={`/m/profile/${activity.actorId}`}
-              className='font-medium text-white hover:text-emeraled-green'
+              className='font-medium text-white hover:text-cosmic-latte'
             >
               {activity.actorName}
             </Link>

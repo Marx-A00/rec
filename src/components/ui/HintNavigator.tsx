@@ -90,7 +90,7 @@ export default function HintNavigator() {
               onClick={() => {
                 resetHints();
               }}
-              className='flex items-center gap-1.5 text-xs text-zinc-400 hover:text-emerald-400 transition-colors'
+              className='flex items-center gap-1.5 text-xs text-zinc-400 hover:text-cosmic-latte transition-colors'
             >
               <RotateCcw className='h-3 w-3' />
               Reset all

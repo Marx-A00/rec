@@ -71,7 +71,7 @@ export default function MobileRecommendationCard({
         <div className='flex-1 min-w-0'>
           <Link
             href={`/m/profile/${activity.actorId}`}
-            className='block text-sm font-medium text-white hover:text-emeraled-green'
+            className='block text-sm font-medium text-white hover:text-cosmic-latte'
           >
             {activity.actorName}
           </Link>
