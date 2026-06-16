@@ -27,7 +27,7 @@ import type { DeezerAlbumData } from './mappers';
 import {
   detectSuspiciousTitle,
   type AlbumWarning,
-} from './suspicious-album-detection';
+} from '@/lib/albums/suspicious-title-detection';
 
 // ============================================================================
 // Types

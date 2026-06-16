@@ -153,12 +153,7 @@ async function LatestReleasesSection() {
       {newestReleaseDate && (
         <div className='text-center py-2'>
           <p className='text-zinc-500 text-xs'>
-            Newest release:{' '}
-            {new Date(newestReleaseDate).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
+            Newest release: {formatDateOnly(newestReleaseDate)}
           </p>
         </div>
       )}
