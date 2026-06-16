@@ -1,6 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+const ERROR_QUOTES = [
+  'I used to be a perfectly good app, then I took a scratch to the disc.',
+  'In Soviet Russia, error finds you.',
+  'This is fine. \u2615\uFE0F\uD83D\uDD25',
+  "You shall not pass!\u2026 this error boundary, apparently.",
+  "Have you tried turning it off and on again?",
+  "Error 💿: vibe check failed.",
+  "Task failed successfully.",
+  "It\u2019s not a bug, it\u2019s an unplanned feature.",
+  "DJ Khaled voice: Another one. (error)",
+  "The app said \u201Caight imma head out.\u201D",
+  "404 vibes found, 0 pages loaded.",
+  "Somebody once told me the server was gonna crash me\u2026",
+];
+
+function getRandomQuote() {
+  return ERROR_QUOTES[Math.floor(Math.random() * ERROR_QUOTES.length)];
+}
 
 export default function GlobalError({
   error,
@@ -9,6 +28,8 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [quote] = useState(getRandomQuote);
+
   useEffect(() => {
     console.error('Global error:', error);
   }, [error]);
@@ -48,8 +69,7 @@ export default function GlobalError({
               fontStyle: 'italic',
             }}
           >
-            &ldquo;I used to be a perfectly good app, then I took a scratch to
-            the disc.&rdquo;
+            &ldquo;{quote}&rdquo;
           </p>
 
           <h1
