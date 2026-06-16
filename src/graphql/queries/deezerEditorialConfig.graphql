@@ -1,0 +1,17 @@
+mutation TriggerDeezerEditorialSync {
+  triggerDeezerEditorialSync {
+    success
+    jobId
+    message
+  }
+}
+
+mutation UpdateDeezerEditorialConfig($input: UpdateDeezerEditorialConfigInput!) {
+  updateDeezerEditorialConfig(input: $input) {
+    enabled
+    intervalMinutes
+    maxReleases
+    genres
+    filterDeluxe
+  }
+}

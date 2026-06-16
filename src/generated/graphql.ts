@@ -1100,6 +1100,22 @@ export type DateDiff = {
   source?: Maybe<DateComponents>;
 };
 
+export type DeezerEditorialConfig = {
+  __typename?: 'DeezerEditorialConfig';
+  enabled: Scalars['Boolean']['output'];
+  filterDeluxe: Scalars['Boolean']['output'];
+  genres: Array<Scalars['String']['output']>;
+  intervalMinutes: Scalars['Int']['output'];
+  maxReleases: Scalars['Int']['output'];
+};
+
+export type DeezerEditorialSyncResult = {
+  __typename?: 'DeezerEditorialSyncResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type DeezerPlaylistImportResult = {
   __typename?: 'DeezerPlaylistImportResult';
   jobId?: Maybe<Scalars['String']['output']>;
@@ -1673,6 +1689,7 @@ export type Mutation = {
   submitGameResult: SubmitGameResultResponse;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
+  triggerDeezerEditorialSync: DeezerEditorialSyncResult;
   triggerListenBrainzSync: ListenBrainzSyncResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
@@ -1686,6 +1703,7 @@ export type Mutation = {
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
+  updateDeezerEditorialConfig: DeezerEditorialConfig;
   updateListenBrainzConfig: ListenBrainzConfig;
   updateOnboardingStatus: OnboardingStatus;
   updateProfile: UpdateProfilePayload;
@@ -1931,6 +1949,10 @@ export type MutationUpdateCollectionAlbumArgs = {
 
 export type MutationUpdateDashboardLayoutArgs = {
   layout: Scalars['JSON']['input'];
+};
+
+export type MutationUpdateDeezerEditorialConfigArgs = {
+  input: UpdateDeezerEditorialConfigInput;
 };
 
 export type MutationUpdateListenBrainzConfigArgs = {
@@ -2938,6 +2960,7 @@ export enum SyncJobStatus {
 }
 
 export enum SyncJobType {
+  DeezerEditorialReleases = 'DEEZER_EDITORIAL_RELEASES',
   DiscogsSync = 'DISCOGS_SYNC',
   EnrichmentBatch = 'ENRICHMENT_BATCH',
   ListenbrainzFreshReleases = 'LISTENBRAINZ_FRESH_RELEASES',
@@ -3401,6 +3424,13 @@ export type UpdateCollectionAlbumPayload = {
 export type UpdateCollectionPayload = {
   __typename?: 'UpdateCollectionPayload';
   id: Scalars['String']['output'];
+};
+
+export type UpdateDeezerEditorialConfigInput = {
+  filterDeluxe?: InputMaybe<Scalars['Boolean']['input']>;
+  genres?: InputMaybe<Array<Scalars['String']['input']>>;
+  intervalMinutes?: InputMaybe<Scalars['Int']['input']>;
+  maxReleases?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateListenBrainzConfigInput = {
@@ -4944,6 +4974,36 @@ export type ResetUncoverChallengesMutation = {
     __typename?: 'ResetUncoverResult';
     success: boolean;
     jobId?: string | null;
+  };
+};
+
+export type TriggerDeezerEditorialSyncMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type TriggerDeezerEditorialSyncMutation = {
+  __typename?: 'Mutation';
+  triggerDeezerEditorialSync: {
+    __typename?: 'DeezerEditorialSyncResult';
+    success: boolean;
+    jobId?: string | null;
+    message: string;
+  };
+};
+
+export type UpdateDeezerEditorialConfigMutationVariables = Exact<{
+  input: UpdateDeezerEditorialConfigInput;
+}>;
+
+export type UpdateDeezerEditorialConfigMutation = {
+  __typename?: 'Mutation';
+  updateDeezerEditorialConfig: {
+    __typename?: 'DeezerEditorialConfig';
+    enabled: boolean;
+    intervalMinutes: number;
+    maxReleases: number;
+    genres: Array<string>;
+    filterDeluxe: boolean;
   };
 };
 
@@ -10629,6 +10689,90 @@ export const useResetUncoverChallengesMutation = <
 };
 
 useResetUncoverChallengesMutation.getKey = () => ['ResetUncoverChallenges'];
+
+export const TriggerDeezerEditorialSyncDocument = `
+    mutation TriggerDeezerEditorialSync {
+  triggerDeezerEditorialSync {
+    success
+    jobId
+    message
+  }
+}
+    `;
+
+export const useTriggerDeezerEditorialSyncMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    TriggerDeezerEditorialSyncMutation,
+    TError,
+    TriggerDeezerEditorialSyncMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    TriggerDeezerEditorialSyncMutation,
+    TError,
+    TriggerDeezerEditorialSyncMutationVariables,
+    TContext
+  >({
+    mutationKey: ['TriggerDeezerEditorialSync'],
+    mutationFn: (variables?: TriggerDeezerEditorialSyncMutationVariables) =>
+      fetcher<
+        TriggerDeezerEditorialSyncMutation,
+        TriggerDeezerEditorialSyncMutationVariables
+      >(TriggerDeezerEditorialSyncDocument, variables)(),
+    ...options,
+  });
+};
+
+useTriggerDeezerEditorialSyncMutation.getKey = () => [
+  'TriggerDeezerEditorialSync',
+];
+
+export const UpdateDeezerEditorialConfigDocument = `
+    mutation UpdateDeezerEditorialConfig($input: UpdateDeezerEditorialConfigInput!) {
+  updateDeezerEditorialConfig(input: $input) {
+    enabled
+    intervalMinutes
+    maxReleases
+    genres
+    filterDeluxe
+  }
+}
+    `;
+
+export const useUpdateDeezerEditorialConfigMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateDeezerEditorialConfigMutation,
+    TError,
+    UpdateDeezerEditorialConfigMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateDeezerEditorialConfigMutation,
+    TError,
+    UpdateDeezerEditorialConfigMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateDeezerEditorialConfig'],
+    mutationFn: (variables?: UpdateDeezerEditorialConfigMutationVariables) =>
+      fetcher<
+        UpdateDeezerEditorialConfigMutation,
+        UpdateDeezerEditorialConfigMutationVariables
+      >(UpdateDeezerEditorialConfigDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateDeezerEditorialConfigMutation.getKey = () => [
+  'UpdateDeezerEditorialConfig',
+];
 
 export const GetLlamaLogsDocument = `
     query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {

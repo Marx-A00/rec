@@ -176,10 +176,10 @@ async function LatestReleasesSection() {
 function MoreReleasesCard() {
   return (
     <Link href='/latest' className='flex-shrink-0 w-[240px] group'>
-      <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 h-full flex flex-col items-center justify-center hover:border-green-500/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/10 min-h-[320px]'>
-        <div className='w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-colors'>
+      <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 h-full flex flex-col items-center justify-center hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10 min-h-[320px]'>
+        <div className='w-16 h-16 rounded-full bg-cosmic-latte/10 border border-cosmic-latte/30 flex items-center justify-center mb-4 group-hover:bg-cosmic-latte/20 transition-colors'>
           <svg
-            className='w-8 h-8 text-green-500'
+            className='w-8 h-8 text-cosmic-latte'
             fill='none'
             stroke='currentColor'
             viewBox='0 0 24 24'
@@ -265,7 +265,7 @@ function ContentRow({
 function UserCard({ user }: { user: any }) {
   return (
     <Link href={`/profile/${user.id}`}>
-      <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-6 hover:border-emeraled-green/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-emeraled-green/10'>
+      <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-6 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
         <div className='text-center space-y-4'>
           <Avatar className='w-20 h-20 mx-auto ring-2 ring-zinc-700/80 group-hover:ring-cosmic-latte/80 transition-all duration-300'>
             <AvatarImage
@@ -328,6 +328,16 @@ function SourceIcon({
           className={className}
         />
       );
+    case 'DEEZER':
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/deezer.svg'
+          alt='Deezer'
+          title='Deezer'
+          className={className}
+        />
+      );
     default:
       return (
         <Music className={className} />
@@ -351,7 +361,7 @@ function ReleaseCard({
   return (
     <div className='flex-shrink-0 w-[240px] group'>
       <Link href={`/albums/${album.id}?source=local`} className='block'>
-        <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 hover:border-green-500/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/10'>
+        <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
           <div className='relative aspect-square mb-5'>
             <AlbumImage
               src={album.coverArtUrl}

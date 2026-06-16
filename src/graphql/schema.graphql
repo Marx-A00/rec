@@ -2290,6 +2290,29 @@ type ListenBrainzSyncResult {
   message: String!
 }
 
+# Deezer Editorial Sync
+type DeezerEditorialSyncResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+}
+
+# Deezer Editorial Config (DB-backed, editable from admin UI)
+input UpdateDeezerEditorialConfigInput {
+  intervalMinutes: Int
+  maxReleases: Int
+  genres: [String!]
+  filterDeluxe: Boolean
+}
+
+type DeezerEditorialConfig {
+  enabled: Boolean!
+  intervalMinutes: Int!
+  maxReleases: Int!
+  genres: [String!]!
+  filterDeluxe: Boolean!
+}
+
 # ListenBrainz Config (DB-backed, editable from admin UI)
 input UpdateListenBrainzConfigInput {
   days: Int
@@ -2326,6 +2349,7 @@ enum SyncJobType {
   DISCOGS_SYNC
   ENRICHMENT_BATCH
   LISTENBRAINZ_FRESH_RELEASES
+  DEEZER_EDITORIAL_RELEASES
 }
 
 enum SyncJobStatus {
@@ -3268,6 +3292,12 @@ type Mutation {
 
   # ListenBrainz Config (Admin)
   updateListenBrainzConfig(input: UpdateListenBrainzConfigInput!): ListenBrainzConfig!
+
+  # Deezer Editorial Sync
+  triggerDeezerEditorialSync: DeezerEditorialSyncResult!
+
+  # Deezer Editorial Config (Admin)
+  updateDeezerEditorialConfig(input: UpdateDeezerEditorialConfigInput!): DeezerEditorialConfig!
 
   # Sync Job Management
   rollbackSyncJob(

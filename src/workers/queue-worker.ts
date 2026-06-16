@@ -43,6 +43,11 @@ import {
   listenbrainzScheduler,
 } from '@/lib/listenbrainz/scheduler';
 import {
+  initializeDeezerEditorialScheduler,
+  shutdownDeezerEditorialScheduler,
+  deezerEditorialScheduler,
+} from '@/lib/deezer/editorial-sync/scheduler';
+import {
   healthChecker,
   metricsCollector,
   alertManager,
@@ -126,6 +131,14 @@ class MusicBrainzWorkerService {
       console.log('  ✅ ListenBrainz scheduler enabled');
     } else {
       console.log('  ⏸️  ListenBrainz scheduler disabled');
+    }
+
+    // Deezer Editorial scheduler
+    const deezerEditorialStarted = await initializeDeezerEditorialScheduler();
+    if (deezerEditorialStarted) {
+      console.log('  ✅ Deezer Editorial scheduler enabled');
+    } else {
+      console.log('  ⏸️  Deezer Editorial scheduler disabled');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
@@ -773,6 +786,76 @@ class MusicBrainzWorkerService {
       }
     });
 
+    // ─── Deezer Editorial Scheduler ─────────────────────────────────
+
+    app.get('/deezer-editorial/metrics', async (_req, res) => {
+      try {
+        const status = await deezerEditorialScheduler.getStatus();
+
+        res.json({
+          scheduler: {
+            isRunning: status.isRunning,
+            activeSchedules: status.activeSchedules,
+            config: status.config,
+          },
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to get Deezer Editorial metrics',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
+    app.post('/deezer-editorial/:action', async (req, res) => {
+      const { action } = req.params;
+
+      try {
+        switch (action) {
+          case 'start': {
+            await setSchedulerEnabled('deezer-editorial', true);
+            const started = await initializeDeezerEditorialScheduler();
+            res.json({
+              success: started,
+              message: started
+                ? 'Deezer Editorial scheduler started'
+                : 'Failed to start Deezer Editorial scheduler',
+            });
+            break;
+          }
+
+          case 'stop': {
+            await deezerEditorialScheduler.stop();
+            res.json({
+              success: true,
+              message: 'Deezer Editorial scheduler stopped',
+            });
+            break;
+          }
+
+          case 'sync': {
+            await deezerEditorialScheduler.triggerSync();
+            res.json({
+              success: true,
+              message: 'Deezer Editorial releases sync triggered',
+            });
+            break;
+          }
+
+          default:
+            res.status(400).json({
+              error: 'Invalid action. Use: start, stop, or sync',
+            });
+        }
+      } catch (error) {
+        res.status(500).json({
+          error: 'Deezer Editorial action failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
     // ─── Job History ───────────────────────────────────────────────
 
     app.get('/jobs/history', async (req, res) => {
@@ -972,6 +1055,10 @@ class MusicBrainzWorkerService {
           'POST /listenbrainz/start - Start ListenBrainz Scheduler',
           'POST /listenbrainz/stop - Stop ListenBrainz Scheduler',
           'POST /listenbrainz/sync - Trigger ListenBrainz Sync',
+          '/deezer-editorial/metrics - Deezer Editorial Metrics',
+          'POST /deezer-editorial/start - Start Deezer Editorial Scheduler',
+          'POST /deezer-editorial/stop - Stop Deezer Editorial Scheduler',
+          'POST /deezer-editorial/sync - Trigger Deezer Editorial Sync',
         ],
       });
     });
@@ -1072,6 +1159,10 @@ class MusicBrainzWorkerService {
         // Stop ListenBrainz scheduler
         console.log('🛑 Stopping ListenBrainz scheduler...');
         await shutdownListenBrainzScheduler();
+
+        // Stop Deezer Editorial scheduler
+        console.log('🛑 Stopping Deezer Editorial scheduler...');
+        await shutdownDeezerEditorialScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');

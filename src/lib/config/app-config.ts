@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 
 const APP_CONFIG_ID = 'default';
 
-type SchedulerType = 'spotify' | 'musicbrainz' | 'listenbrainz';
+type SchedulerType = 'spotify' | 'musicbrainz' | 'listenbrainz' | 'deezer-editorial';
 
 // ============================================================================
 // ListenBrainz Config
@@ -89,6 +89,84 @@ export async function setListenBrainzConfig(
 }
 
 // ============================================================================
+// Deezer Editorial Config
+// ============================================================================
+
+export interface DeezerEditorialDbConfig {
+  intervalMinutes: number;
+  maxReleases: number;
+  genres: string[];
+  filterDeluxe: boolean;
+}
+
+const DEEZER_EDITORIAL_DEFAULTS: DeezerEditorialDbConfig = {
+  intervalMinutes: 10080, // 7 days
+  maxReleases: 100,
+  genres: ['0'], // All genres
+  filterDeluxe: true,
+};
+
+/**
+ * Read Deezer Editorial sync configuration from the database.
+ * Returns defaults if the row doesn't exist.
+ */
+export async function getDeezerEditorialConfig(): Promise<DeezerEditorialDbConfig> {
+  const config = await prisma.appConfig.findUnique({
+    where: { id: APP_CONFIG_ID },
+  });
+
+  if (!config) return { ...DEEZER_EDITORIAL_DEFAULTS };
+
+  return {
+    intervalMinutes: config.deezerEditorialIntervalMinutes,
+    maxReleases: config.deezerEditorialMaxReleases,
+    genres: config.deezerEditorialGenres,
+    filterDeluxe: config.deezerEditorialFilterDeluxe,
+  };
+}
+
+/**
+ * Update Deezer Editorial sync configuration in the database.
+ * Accepts partial updates — only provided fields are changed.
+ */
+export async function setDeezerEditorialConfig(
+  updates: Partial<DeezerEditorialDbConfig>
+): Promise<DeezerEditorialDbConfig> {
+  const data: Record<string, unknown> = {};
+  if (updates.intervalMinutes !== undefined)
+    data.deezerEditorialIntervalMinutes = updates.intervalMinutes;
+  if (updates.maxReleases !== undefined)
+    data.deezerEditorialMaxReleases = updates.maxReleases;
+  if (updates.genres !== undefined)
+    data.deezerEditorialGenres = updates.genres;
+  if (updates.filterDeluxe !== undefined)
+    data.deezerEditorialFilterDeluxe = updates.filterDeluxe;
+
+  const config = await prisma.appConfig.upsert({
+    where: { id: APP_CONFIG_ID },
+    update: data,
+    create: {
+      id: APP_CONFIG_ID,
+      deezerEditorialIntervalMinutes:
+        updates.intervalMinutes ?? DEEZER_EDITORIAL_DEFAULTS.intervalMinutes,
+      deezerEditorialMaxReleases:
+        updates.maxReleases ?? DEEZER_EDITORIAL_DEFAULTS.maxReleases,
+      deezerEditorialGenres:
+        updates.genres ?? DEEZER_EDITORIAL_DEFAULTS.genres,
+      deezerEditorialFilterDeluxe:
+        updates.filterDeluxe ?? DEEZER_EDITORIAL_DEFAULTS.filterDeluxe,
+    },
+  });
+
+  return {
+    intervalMinutes: config.deezerEditorialIntervalMinutes,
+    maxReleases: config.deezerEditorialMaxReleases,
+    genres: config.deezerEditorialGenres,
+    filterDeluxe: config.deezerEditorialFilterDeluxe,
+  };
+}
+
+// ============================================================================
 // Scheduler Enabled/Disabled
 // ============================================================================
 
@@ -107,6 +185,7 @@ export async function getSchedulerEnabled(
 
   if (scheduler === 'spotify') return config.spotifySchedulerEnabled;
   if (scheduler === 'musicbrainz') return config.musicbrainzSchedulerEnabled;
+  if (scheduler === 'deezer-editorial') return config.deezerEditorialSchedulerEnabled;
   return config.listenbrainzSchedulerEnabled;
 }
 
@@ -122,6 +201,7 @@ export async function setSchedulerEnabled(
     spotify: 'spotifySchedulerEnabled',
     musicbrainz: 'musicbrainzSchedulerEnabled',
     listenbrainz: 'listenbrainzSchedulerEnabled',
+    'deezer-editorial': 'deezerEditorialSchedulerEnabled',
   };
 
   const field = fieldMap[scheduler];
@@ -136,6 +216,8 @@ export async function setSchedulerEnabled(
         scheduler === 'musicbrainz' ? enabled : false,
       listenbrainzSchedulerEnabled:
         scheduler === 'listenbrainz' ? enabled : false,
+      deezerEditorialSchedulerEnabled:
+        scheduler === 'deezer-editorial' ? enabled : false,
     },
   });
 }

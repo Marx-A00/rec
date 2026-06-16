@@ -30,6 +30,9 @@ import { alertManager } from '@/lib/monitoring';
 import {
   getListenBrainzConfig,
   setListenBrainzConfig,
+  getDeezerEditorialConfig,
+  setDeezerEditorialConfig,
+  getSchedulerEnabled,
 } from '@/lib/config/app-config';
 import {
   logActivity,
@@ -468,6 +471,85 @@ export const mutationResolvers: MutationResolvers = {
       return config;
     } catch (error) {
       throw new GraphQLError(`Failed to update ListenBrainz config: ${error}`);
+    }
+  },
+
+  // Deezer Editorial Sync
+  triggerDeezerEditorialSync: async (_, _args, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const queue = getMusicBrainzQueue();
+      const dbConfig = await getDeezerEditorialConfig();
+
+      const job = await queue.addJob(
+        JOB_TYPES.DEEZER_SYNC_EDITORIAL_RELEASES,
+        {
+          maxReleases: dbConfig.maxReleases,
+          genres: dbConfig.genres,
+          filterDeluxe: dbConfig.filterDeluxe,
+          source: 'graphql',
+          requestId: `graphql_deezer_editorial_${Date.now()}`,
+        },
+        {
+          priority: 3,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+        }
+      );
+
+      return {
+        success: true,
+        jobId: job.id,
+        message: 'Deezer Editorial releases sync triggered',
+      };
+    } catch (error) {
+      throw new GraphQLError(
+        `Failed to trigger Deezer Editorial sync: ${error}`
+      );
+    }
+  },
+
+  // Deezer Editorial Config (Admin)
+  updateDeezerEditorialConfig: async (_, { input }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const updates: Record<string, number | boolean | string[]> = {};
+      if (input.intervalMinutes !== undefined && input.intervalMinutes !== null)
+        updates.intervalMinutes = input.intervalMinutes;
+      if (input.maxReleases !== undefined && input.maxReleases !== null)
+        updates.maxReleases = input.maxReleases;
+      if (input.genres !== undefined && input.genres !== null)
+        updates.genres = input.genres;
+      if (input.filterDeluxe !== undefined && input.filterDeluxe !== null)
+        updates.filterDeluxe = input.filterDeluxe;
+
+      const config = await setDeezerEditorialConfig(updates);
+      const enabled = await getSchedulerEnabled('deezer-editorial');
+      return { enabled, ...config };
+    } catch (error) {
+      throw new GraphQLError(
+        `Failed to update Deezer Editorial config: ${error}`
+      );
     }
   },
 

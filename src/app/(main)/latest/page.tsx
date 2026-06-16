@@ -39,6 +39,16 @@ function SourceIcon({
           className={className}
         />
       );
+    case 'DEEZER':
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/deezer.svg'
+          alt='Deezer'
+          title='Deezer'
+          className={className}
+        />
+      );
     default:
       return (
         <svg
@@ -279,7 +289,7 @@ function AlbumCard({ album }: { album: Album }) {
 
   return (
     <Link href={`/albums/${album.id}?source=local`} className='group'>
-      <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-4 hover:border-green-500/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-green-500/5'>
+      <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-4 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-cosmic-latte/5'>
         <div className='relative aspect-square mb-3'>
           <AlbumImage
             src={album.coverArtUrl}
@@ -289,7 +299,7 @@ function AlbumCard({ album }: { album: Album }) {
           />
         </div>
         <div className='space-y-1'>
-          <h3 className='font-semibold text-white text-sm line-clamp-1 group-hover:text-green-400 transition-colors'>
+          <h3 className='font-semibold text-white text-sm line-clamp-1 group-hover:text-cosmic-latte transition-colors'>
             {album.title}
           </h3>
           <p className='text-xs text-zinc-400 line-clamp-1'>{artistNames}</p>

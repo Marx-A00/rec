@@ -69,6 +69,7 @@ const SYNC_FILTERS: Record<string, SyncJobType | undefined> = {
   spotify: SyncJobType.SpotifyNewReleases,
   musicbrainz: SyncJobType.MusicbrainzNewReleases,
   listenbrainz: SyncJobType.ListenbrainzFreshReleases,
+  'deezer-editorial': SyncJobType.DeezerEditorialReleases,
 };
 
 type SyncJobRecord = GetSyncJobsQuery['syncJobs']['jobs'][number];
@@ -81,6 +82,8 @@ function syncJobTypeToName(jobType: SyncJobType): string {
       return 'musicbrainz:sync-new-releases';
     case SyncJobType.ListenbrainzFreshReleases:
       return 'listenbrainz:sync-fresh-releases';
+    case SyncJobType.DeezerEditorialReleases:
+      return 'deezer:sync-editorial-releases';
     default:
       return jobType.toLowerCase().replace(/_/g, '-');
   }
@@ -386,6 +389,9 @@ export function JobHistoryPanel() {
                   <SelectItem value='discogs'>Discogs</SelectItem>
                   <SelectItem value='listenbrainz'>
                     ListenBrainz Sync
+                  </SelectItem>
+                  <SelectItem value='deezer-editorial'>
+                    Deezer Editorial Sync
                   </SelectItem>
                 </SelectContent>
               </Select>

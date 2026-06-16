@@ -49,6 +49,8 @@ export const JOB_TYPES = {
   DISCOGS_GET_MASTER: 'discogs:get-master',
   // ListenBrainz Sync Jobs
   LISTENBRAINZ_SYNC_FRESH_RELEASES: 'listenbrainz:sync-fresh-releases',
+  // Deezer Editorial Sync Jobs
+  DEEZER_SYNC_EDITORIAL_RELEASES: 'deezer:sync-editorial-releases',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -142,6 +144,7 @@ export type EnrichmentSource =
   | 'manual_add'
   | 'spotify_sync'
   | 'deezer_import'
+  | 'deezer_editorial'
   | 'admin_manual';
 
 export interface CheckAlbumEnrichmentJobData {

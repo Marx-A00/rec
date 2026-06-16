@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import {
   getSchedulerEnabled,
   getListenBrainzConfig,
+  getDeezerEditorialConfig,
 } from '@/lib/config/app-config';
 import { createRedisConnection } from '@/lib/queue/redis';
 
@@ -49,6 +50,18 @@ interface SchedulerStatus {
       minArtistListeners: number;
     };
   };
+  'deezer-editorial': {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+    config: {
+      maxReleases: number;
+      genres: string[];
+      filterDeluxe: boolean;
+    };
+  };
   queue: {
     waiting: number;
     active: number;
@@ -77,15 +90,26 @@ export async function GET() {
     const listenbrainzJob = repeatableJobs.find(job =>
       job.key.includes('listenbrainz-fresh-releases')
     );
+    const deezerEditorialJob = repeatableJobs.find(job =>
+      job.key.includes('deezer-editorial-releases')
+    );
 
-    // Read scheduler enabled state and LB config from database (source of truth)
-    const [spotifyEnabled, musicbrainzEnabled, listenbrainzEnabled, lbConfig] =
-      await Promise.all([
-        getSchedulerEnabled('spotify'),
-        getSchedulerEnabled('musicbrainz'),
-        getSchedulerEnabled('listenbrainz'),
-        getListenBrainzConfig(),
-      ]);
+    // Read scheduler enabled state and LB/Deezer config from database (source of truth)
+    const [
+      spotifyEnabled,
+      musicbrainzEnabled,
+      listenbrainzEnabled,
+      deezerEditorialEnabled,
+      lbConfig,
+      deezerConfig,
+    ] = await Promise.all([
+      getSchedulerEnabled('spotify'),
+      getSchedulerEnabled('musicbrainz'),
+      getSchedulerEnabled('listenbrainz'),
+      getSchedulerEnabled('deezer-editorial'),
+      getListenBrainzConfig(),
+      getDeezerEditorialConfig(),
+    ]);
 
     // Get delayed jobs to find next scheduled runs
     const delayedJobs = await queue.getDelayed();
@@ -101,6 +125,9 @@ export async function GET() {
     const nextListenbrainzJob = delayedJobs.find(job =>
       job.name.includes('listenbrainz')
     );
+    const nextDeezerEditorialJob = delayedJobs.find(job =>
+      job.name.includes('deezer-editorial')
+    );
 
     // Get recent completed jobs to find last run times
     const completedJobs = await queue.getCompleted(0, 50);
@@ -112,6 +139,9 @@ export async function GET() {
     );
     const lastListenbrainzSync = completedJobs.find(job =>
       job.name.includes('listenbrainz')
+    );
+    const lastDeezerEditorialSync = completedJobs.find(job =>
+      job.name.includes('deezer-editorial')
     );
 
     // Get queue stats
@@ -239,6 +269,20 @@ export async function GET() {
           minListenCount: lbConfig.minListenCount,
           maxReleases: lbConfig.maxReleases,
           minArtistListeners: lbConfig.minArtistListeners,
+        },
+      },
+      'deezer-editorial': {
+        enabled: deezerEditorialEnabled,
+        nextRunAt: getNextRunTime(deezerEditorialJob, nextDeezerEditorialJob),
+        lastRunAt: lastDeezerEditorialSync?.finishedOn
+          ? new Date(lastDeezerEditorialSync.finishedOn).toISOString()
+          : null,
+        intervalMinutes: getIntervalMinutes(deezerEditorialJob),
+        jobKey: deezerEditorialJob?.key || null,
+        config: {
+          maxReleases: deezerConfig.maxReleases,
+          genres: deezerConfig.genres,
+          filterDeluxe: deezerConfig.filterDeluxe,
         },
       },
       queue: {

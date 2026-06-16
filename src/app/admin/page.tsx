@@ -35,6 +35,7 @@ import {
   useGetMyRecommendationsQuery,
   useDeleteRecommendationMutation,
   useUpdateListenBrainzConfigMutation,
+  useUpdateDeezerEditorialConfigMutation,
 } from '@/generated/graphql';
 import { Input } from '@/components/ui/input';
 
@@ -114,6 +115,18 @@ interface SchedulerStatusData {
       minArtistListeners: number;
     };
   };
+  'deezer-editorial': {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+    config?: {
+      maxReleases: number;
+      genres: string[];
+      filterDeluxe: boolean;
+    };
+  };
 }
 
 // In dev, call worker directly for speed; in prod, use the authenticated proxy
@@ -151,6 +164,18 @@ export default function AdminDashboard() {
 
   const updateLbConfig = useUpdateListenBrainzConfigMutation();
 
+  // Deezer Editorial editable config state
+  const [deConfigEdits, setDeConfigEdits] = useState<{
+    maxReleases: number;
+    genres: string[];
+    filterDeluxe: boolean;
+  } | null>(null);
+  const [editingDeConfig, setEditingDeConfig] = useState(false);
+  const [savingDeConfig, setSavingDeConfig] = useState(false);
+  const [deConfigMessage, setDeConfigMessage] = useState<string | null>(null);
+
+  const updateDeConfig = useUpdateDeezerEditorialConfigMutation();
+
   // Sync editable state when scheduler status loads
   useEffect(() => {
     if (schedulerStatus?.listenbrainz?.config && !lbConfigEdits) {
@@ -163,7 +188,15 @@ export default function AdminDashboard() {
         minArtistListeners: c.minArtistListeners,
       });
     }
-  }, [schedulerStatus, lbConfigEdits]);
+    if (schedulerStatus?.['deezer-editorial']?.config && !deConfigEdits) {
+      const c = schedulerStatus['deezer-editorial'].config;
+      setDeConfigEdits({
+        maxReleases: c.maxReleases,
+        genres: c.genres,
+        filterDeluxe: c.filterDeluxe,
+      });
+    }
+  }, [schedulerStatus, lbConfigEdits, deConfigEdits]);
 
   const handleSaveLbConfig = async () => {
     if (!lbConfigEdits) return;
@@ -190,6 +223,31 @@ export default function AdminDashboard() {
       );
     } finally {
       setSavingLbConfig(false);
+    }
+  };
+
+  const handleSaveDeConfig = async () => {
+    if (!deConfigEdits) return;
+    setSavingDeConfig(true);
+    setDeConfigMessage(null);
+    try {
+      await updateDeConfig.mutateAsync({
+        input: {
+          maxReleases: deConfigEdits.maxReleases,
+          genres: deConfigEdits.genres,
+          filterDeluxe: deConfigEdits.filterDeluxe,
+        },
+      });
+      setDeConfigMessage('Config saved');
+      setEditingDeConfig(false);
+      fetchSchedulerStatus();
+      setTimeout(() => setDeConfigMessage(null), 3000);
+    } catch (err) {
+      setDeConfigMessage(
+        `Error: ${err instanceof Error ? err.message : 'Failed to save'}`
+      );
+    } finally {
+      setSavingDeConfig(false);
     }
   };
 
@@ -234,7 +292,7 @@ export default function AdminDashboard() {
   };
 
   const toggleScheduler = async (
-    scheduler: 'spotify' | 'musicbrainz' | 'listenbrainz',
+    scheduler: 'spotify' | 'musicbrainz' | 'listenbrainz' | 'deezer-editorial',
     action: 'start' | 'stop' | 'sync'
   ) => {
     const key = `${scheduler}-${action}`;
@@ -253,6 +311,7 @@ export default function AdminDashboard() {
           spotify: 'Spotify',
           musicbrainz: 'MusicBrainz',
           listenbrainz: 'ListenBrainz',
+          'deezer-editorial': 'Deezer Editorial',
         };
         const label = labelMap[scheduler] ?? scheduler;
         const actionLabel =
@@ -897,6 +956,264 @@ export default function AdminDashboard() {
                       disabled={togglingScheduler !== null}
                     >
                       {togglingScheduler === 'listenbrainz-sync' ? (
+                        <Activity className='mr-2 h-3 w-3 animate-spin' />
+                      ) : (
+                        <RefreshCw className='mr-2 h-3 w-3' />
+                      )}
+                      Sync Now
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Deezer Editorial Scheduler */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Music className='h-4 w-4 text-purple-500' />
+                      <h4 className='text-sm font-medium text-white'>
+                        Deezer Editorial Releases
+                      </h4>
+                    </div>
+                    <Badge
+                      className={
+                        schedulerStatus?.['deezer-editorial']?.enabled
+                          ? 'bg-purple-600'
+                          : 'bg-zinc-600'
+                      }
+                    >
+                      {schedulerStatus?.['deezer-editorial']?.enabled
+                        ? 'Running'
+                        : 'Stopped'}
+                    </Badge>
+                  </div>
+
+                  {schedulerStatus?.['deezer-editorial'] && (
+                    <div className='text-xs text-zinc-400 space-y-1 mb-3'>
+                      {schedulerStatus['deezer-editorial'].intervalMinutes > 0 && (
+                        <p>
+                          Interval:{' '}
+                          {Math.round(
+                            schedulerStatus['deezer-editorial'].intervalMinutes / 1440
+                          )}{' '}
+                          days
+                        </p>
+                      )}
+                      {schedulerStatus['deezer-editorial'].nextRunAt && (
+                        <p>
+                          Next run:{' '}
+                          {new Date(
+                            schedulerStatus['deezer-editorial'].nextRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                      {schedulerStatus['deezer-editorial'].lastRunAt && (
+                        <p>
+                          Last run:{' '}
+                          {new Date(
+                            schedulerStatus['deezer-editorial'].lastRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {deConfigEdits && (
+                    <div className='border border-zinc-700/50 rounded bg-zinc-900/50 p-2.5 mb-3'>
+                      <div className='flex items-center justify-between mb-1.5'>
+                        <p className='text-[11px] font-medium text-zinc-500 uppercase tracking-wide'>
+                          Sync Config
+                        </p>
+                        {!editingDeConfig && (
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='text-xs h-6 px-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                            onClick={() => {
+                              if (schedulerStatus?.['deezer-editorial']?.config) {
+                                const c = schedulerStatus['deezer-editorial'].config;
+                                setDeConfigEdits({
+                                  maxReleases: c.maxReleases,
+                                  genres: c.genres,
+                                  filterDeluxe: c.filterDeluxe,
+                                });
+                              }
+                              setEditingDeConfig(true);
+                            }}
+                          >
+                            <Pencil className='mr-1 h-3 w-3' />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
+
+                      {editingDeConfig ? (
+                        <>
+                          <div className='grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs items-center'>
+                            <span className='text-zinc-500'>Max releases</span>
+                            <Input
+                              type='number'
+                              min={1}
+                              value={deConfigEdits.maxReleases}
+                              onChange={e =>
+                                setDeConfigEdits({
+                                  ...deConfigEdits,
+                                  maxReleases: parseInt(e.target.value) || 100,
+                                })
+                              }
+                              className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                            />
+                            <span className='text-zinc-500'>Genres</span>
+                            <Input
+                              type='text'
+                              value={deConfigEdits.genres.join(', ')}
+                              onChange={e =>
+                                setDeConfigEdits({
+                                  ...deConfigEdits,
+                                  genres: e.target.value.split(',').map(g => g.trim()).filter(Boolean),
+                                })
+                              }
+                              className='h-7 text-xs bg-zinc-800 border-zinc-700'
+                              placeholder='0 = all'
+                            />
+                            <span className='text-zinc-500'>Filter deluxe</span>
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setDeConfigEdits({
+                                  ...deConfigEdits,
+                                  filterDeluxe: !deConfigEdits.filterDeluxe,
+                                })
+                              }
+                              className={`h-7 px-2 rounded text-xs border ${
+                                deConfigEdits.filterDeluxe
+                                  ? 'bg-green-900/50 border-green-700 text-green-300'
+                                  : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                              }`}
+                            >
+                              {deConfigEdits.filterDeluxe ? 'Yes' : 'No'}
+                            </button>
+                          </div>
+                          <div className='flex items-center gap-2 mt-2'>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              className='text-xs h-7 border-zinc-700'
+                              onClick={handleSaveDeConfig}
+                              disabled={savingDeConfig}
+                            >
+                              {savingDeConfig ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              className='text-xs h-7 text-zinc-400 hover:text-white'
+                              onClick={() => {
+                                setEditingDeConfig(false);
+                                setDeConfigMessage(null);
+                                if (schedulerStatus?.['deezer-editorial']?.config) {
+                                  const c = schedulerStatus['deezer-editorial'].config;
+                                  setDeConfigEdits({
+                                    maxReleases: c.maxReleases,
+                                    genres: c.genres,
+                                    filterDeluxe: c.filterDeluxe,
+                                  });
+                                }
+                              }}
+                              disabled={savingDeConfig}
+                            >
+                              Cancel
+                            </Button>
+                            {deConfigMessage && (
+                              <span
+                                className={`text-xs ${
+                                  deConfigMessage.startsWith('Error')
+                                    ? 'text-red-400'
+                                    : 'text-green-400'
+                                }`}
+                              >
+                                {deConfigMessage}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs'>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Max releases</span>
+                            <span className='text-zinc-300'>
+                              {deConfigEdits.maxReleases}
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Genres</span>
+                            <span className='text-zinc-300'>
+                              {deConfigEdits.genres.join(', ') || '0 (all)'}
+                            </span>
+                          </div>
+                          <div className='flex justify-between'>
+                            <span className='text-zinc-500'>Filter deluxe</span>
+                            <span className='text-zinc-300'>
+                              {deConfigEdits.filterDeluxe ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                          {deConfigMessage && (
+                            <div className='col-span-2 mt-1'>
+                              <span
+                                className={`text-xs ${
+                                  deConfigMessage.startsWith('Error')
+                                    ? 'text-red-400'
+                                    : 'text-green-400'
+                                }`}
+                              >
+                                {deConfigMessage}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className='flex flex-wrap gap-2'>
+                    {schedulerStatus?.['deezer-editorial']?.enabled ? (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-red-400 border-red-900 hover:bg-red-950'
+                        onClick={() => toggleScheduler('deezer-editorial', 'stop')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'deezer-editorial-stop' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Square className='mr-2 h-3 w-3' />
+                        )}
+                        Stop Scheduler
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-green-400 border-green-900 hover:bg-green-950'
+                        onClick={() => toggleScheduler('deezer-editorial', 'start')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'deezer-editorial-start' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Play className='mr-2 h-3 w-3' />
+                        )}
+                        Start Scheduler
+                      </Button>
+                    )}
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='text-white border-zinc-700 hover:bg-zinc-700'
+                      onClick={() => toggleScheduler('deezer-editorial', 'sync')}
+                      disabled={togglingScheduler !== null}
+                    >
+                      {togglingScheduler === 'deezer-editorial-sync' ? (
                         <Activity className='mr-2 h-3 w-3 animate-spin' />
                       ) : (
                         <RefreshCw className='mr-2 h-3 w-3' />

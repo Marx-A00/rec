@@ -1074,6 +1074,22 @@ export type DateDiff = {
   source?: Maybe<DateComponents>;
 };
 
+export type DeezerEditorialConfig = {
+  __typename?: 'DeezerEditorialConfig';
+  enabled: Scalars['Boolean']['output'];
+  filterDeluxe: Scalars['Boolean']['output'];
+  genres: Array<Scalars['String']['output']>;
+  intervalMinutes: Scalars['Int']['output'];
+  maxReleases: Scalars['Int']['output'];
+};
+
+export type DeezerEditorialSyncResult = {
+  __typename?: 'DeezerEditorialSyncResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type DeezerPlaylistImportResult = {
   __typename?: 'DeezerPlaylistImportResult';
   jobId?: Maybe<Scalars['String']['output']>;
@@ -1647,6 +1663,7 @@ export type Mutation = {
   submitGameResult: SubmitGameResultResponse;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
+  triggerDeezerEditorialSync: DeezerEditorialSyncResult;
   triggerListenBrainzSync: ListenBrainzSyncResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
@@ -1660,6 +1677,7 @@ export type Mutation = {
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
+  updateDeezerEditorialConfig: DeezerEditorialConfig;
   updateListenBrainzConfig: ListenBrainzConfig;
   updateOnboardingStatus: OnboardingStatus;
   updateProfile: UpdateProfilePayload;
@@ -1905,6 +1923,10 @@ export type MutationUpdateCollectionAlbumArgs = {
 
 export type MutationUpdateDashboardLayoutArgs = {
   layout: Scalars['JSON']['input'];
+};
+
+export type MutationUpdateDeezerEditorialConfigArgs = {
+  input: UpdateDeezerEditorialConfigInput;
 };
 
 export type MutationUpdateListenBrainzConfigArgs = {
@@ -2912,6 +2934,7 @@ export enum SyncJobStatus {
 }
 
 export enum SyncJobType {
+  DeezerEditorialReleases = 'DEEZER_EDITORIAL_RELEASES',
   DiscogsSync = 'DISCOGS_SYNC',
   EnrichmentBatch = 'ENRICHMENT_BATCH',
   ListenbrainzFreshReleases = 'LISTENBRAINZ_FRESH_RELEASES',
@@ -3377,6 +3400,13 @@ export type UpdateCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+export type UpdateDeezerEditorialConfigInput = {
+  filterDeluxe?: InputMaybe<Scalars['Boolean']['input']>;
+  genres?: InputMaybe<Array<Scalars['String']['input']>>;
+  intervalMinutes?: InputMaybe<Scalars['Int']['input']>;
+  maxReleases?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type UpdateListenBrainzConfigInput = {
   days?: InputMaybe<Scalars['Int']['input']>;
   includeFuture?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3747,6 +3777,8 @@ export type ResolversTypes = ResolversObject<{
   DateComponents: ResolverTypeWrapper<DateComponents>;
   DateDiff: ResolverTypeWrapper<DateDiff>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DeezerEditorialConfig: ResolverTypeWrapper<DeezerEditorialConfig>;
+  DeezerEditorialSyncResult: ResolverTypeWrapper<DeezerEditorialSyncResult>;
   DeezerPlaylistImportResult: ResolverTypeWrapper<DeezerPlaylistImportResult>;
   DeezerPlaylistPreview: ResolverTypeWrapper<DeezerPlaylistPreview>;
   DeezerPreviewAlbum: ResolverTypeWrapper<DeezerPreviewAlbum>;
@@ -3889,6 +3921,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateAlbumGameStatusResult: ResolverTypeWrapper<UpdateAlbumGameStatusResult>;
   UpdateCollectionAlbumPayload: ResolverTypeWrapper<UpdateCollectionAlbumPayload>;
   UpdateCollectionPayload: ResolverTypeWrapper<UpdateCollectionPayload>;
+  UpdateDeezerEditorialConfigInput: UpdateDeezerEditorialConfigInput;
   UpdateListenBrainzConfigInput: UpdateListenBrainzConfigInput;
   UpdateProfilePayload: ResolverTypeWrapper<UpdateProfilePayload>;
   UpdateRecommendationPayload: ResolverTypeWrapper<UpdateRecommendationPayload>;
@@ -3980,6 +4013,8 @@ export type ResolversParentTypes = ResolversObject<{
   DateComponents: DateComponents;
   DateDiff: DateDiff;
   DateTime: Scalars['DateTime']['output'];
+  DeezerEditorialConfig: DeezerEditorialConfig;
+  DeezerEditorialSyncResult: DeezerEditorialSyncResult;
   DeezerPlaylistImportResult: DeezerPlaylistImportResult;
   DeezerPlaylistPreview: DeezerPlaylistPreview;
   DeezerPreviewAlbum: DeezerPreviewAlbum;
@@ -4101,6 +4136,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateAlbumGameStatusResult: UpdateAlbumGameStatusResult;
   UpdateCollectionAlbumPayload: UpdateCollectionAlbumPayload;
   UpdateCollectionPayload: UpdateCollectionPayload;
+  UpdateDeezerEditorialConfigInput: UpdateDeezerEditorialConfigInput;
   UpdateListenBrainzConfigInput: UpdateListenBrainzConfigInput;
   UpdateProfilePayload: UpdateProfilePayload;
   UpdateRecommendationPayload: UpdateRecommendationPayload;
@@ -5471,6 +5507,30 @@ export interface DateTimeScalarConfig
   name: 'DateTime';
 }
 
+export type DeezerEditorialConfigResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeezerEditorialConfig'] = ResolversParentTypes['DeezerEditorialConfig'],
+> = ResolversObject<{
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  filterDeluxe?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  genres?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  intervalMinutes?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  maxReleases?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type DeezerEditorialSyncResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeezerEditorialSyncResult'] = ResolversParentTypes['DeezerEditorialSyncResult'],
+> = ResolversObject<{
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type DeezerPlaylistImportResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6332,6 +6392,11 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationTriggerArtistEnrichmentArgs, 'id'>
   >;
+  triggerDeezerEditorialSync?: Resolver<
+    ResolversTypes['DeezerEditorialSyncResult'],
+    ParentType,
+    ContextType
+  >;
   triggerListenBrainzSync?: Resolver<
     ResolversTypes['ListenBrainzSyncResult'],
     ParentType,
@@ -6402,6 +6467,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationUpdateDashboardLayoutArgs, 'layout'>
+  >;
+  updateDeezerEditorialConfig?: Resolver<
+    ResolversTypes['DeezerEditorialConfig'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateDeezerEditorialConfigArgs, 'input'>
   >;
   updateListenBrainzConfig?: Resolver<
     ResolversTypes['ListenBrainzConfig'],
@@ -8727,6 +8798,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateComponents?: DateComponentsResolvers<ContextType>;
   DateDiff?: DateDiffResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  DeezerEditorialConfig?: DeezerEditorialConfigResolvers<ContextType>;
+  DeezerEditorialSyncResult?: DeezerEditorialSyncResultResolvers<ContextType>;
   DeezerPlaylistImportResult?: DeezerPlaylistImportResultResolvers<ContextType>;
   DeezerPlaylistPreview?: DeezerPlaylistPreviewResolvers<ContextType>;
   DeezerPreviewAlbum?: DeezerPreviewAlbumResolvers<ContextType>;

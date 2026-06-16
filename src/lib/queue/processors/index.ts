@@ -35,6 +35,7 @@ import {
   type UncoverResetChallengesJobData,
 } from '../jobs';
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
+import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
 
 import { toStructuredJobError } from './utils';
 import {
@@ -71,6 +72,7 @@ import {
   handleDiscogsGetMaster,
 } from './discogs-processor';
 import { handleDeezerImportPlaylist } from './deezer-processor';
+import { handleDeezerSyncEditorialReleases } from './deezer-editorial-processor';
 import {
   handleCreateDailyChallenge,
   handleResetChallenges,
@@ -289,6 +291,14 @@ export async function processMusicBrainzJob(
       case JOB_TYPES.UNCOVER_RESET_CHALLENGES:
         result = await handleResetChallenges(
           job.data as UncoverResetChallengesJobData
+        );
+        break;
+
+      // Deezer Editorial sync handler
+      case JOB_TYPES.DEEZER_SYNC_EDITORIAL_RELEASES:
+        result = await handleDeezerSyncEditorialReleases(
+          job.data as DeezerEditorialSyncJobData,
+          job.id
         );
         break;
 

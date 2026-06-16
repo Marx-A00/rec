@@ -76,6 +76,7 @@ export interface AlbumQueueCheckOptions {
     | 'manual'
     | 'spotify_sync'
     | 'deezer_import'
+    | 'deezer_editorial'
     | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;

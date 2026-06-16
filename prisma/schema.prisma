@@ -536,6 +536,7 @@ enum SyncJobType {
   DISCOGS_SYNC
   ENRICHMENT_BATCH
   LISTENBRAINZ_FRESH_RELEASES
+  DEEZER_EDITORIAL_RELEASES
 }
 
 enum SyncJobStatus {
@@ -733,6 +734,13 @@ model AppConfig {
   listenbrainzMaxReleases        Int                     @default(50) @map("listenbrainz_max_releases")
   listenbrainzMinListenCount     Int                     @default(0) @map("listenbrainz_min_listen_count")
   listenbrainzMinArtistListeners Int                     @default(1000) @map("listenbrainz_min_artist_listeners")
+
+  // Deezer Editorial sync configuration
+  deezerEditorialSchedulerEnabled Boolean                 @default(false) @map("deezer_editorial_scheduler_enabled")
+  deezerEditorialIntervalMinutes  Int                     @default(10080) @map("deezer_editorial_interval_minutes")
+  deezerEditorialMaxReleases      Int                     @default(100) @map("deezer_editorial_max_releases")
+  deezerEditorialGenres           String[]                @default(["0"]) @map("deezer_editorial_genres")
+  deezerEditorialFilterDeluxe     Boolean                 @default(true) @map("deezer_editorial_filter_deluxe")
 
   uncoverSelectionMode        UncoverSelectionMode     @default(RANDOM) @map("uncover_selection_mode")
   uncoverPoolExhaustedMode    UncoverPoolExhaustedMode @default(AUTO_RESET) @map("uncover_pool_exhausted_mode")

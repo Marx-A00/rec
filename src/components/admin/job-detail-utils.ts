@@ -23,7 +23,8 @@ export function isSyncJob(jobName: string): boolean {
   return (
     jobName.startsWith('spotify:sync') ||
     jobName.startsWith('musicbrainz:sync') ||
-    jobName.startsWith('listenbrainz:sync')
+    jobName.startsWith('listenbrainz:sync') ||
+    jobName.startsWith('deezer:sync')
   );
 }
 
