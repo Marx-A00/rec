@@ -78,35 +78,33 @@ RUN addgroup --system --gid 1001 nodejs && \
 RUN pnpm add -g tsx prisma@6.17.1
 
 # Production node_modules (worker needs full deps)
-COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Generated Prisma client (overlay onto prod node_modules)
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Prisma schema + migrations (for prisma migrate deploy)
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Next.js standalone output (web mode)
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Worker source files (tsx runs raw TypeScript)
-COPY --from=builder /app/src/workers ./src/workers
-COPY --from=builder /app/src/lib ./src/lib
+COPY --from=builder --chown=nextjs:nodejs /app/src/workers ./src/workers
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib ./src/lib
 
 # GraphQL schema (read at runtime via readFileSync)
-COPY --from=builder /app/src/graphql/schema.graphql ./src/graphql/schema.graphql
+COPY --from=builder --chown=nextjs:nodejs /app/src/graphql/schema.graphql ./src/graphql/schema.graphql
 
 # tsx needs tsconfig for @/* path alias resolution
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # Startup script
-COPY scripts/railway-start.sh ./scripts/railway-start.sh
+COPY --chown=nextjs:nodejs scripts/railway-start.sh ./scripts/railway-start.sh
 RUN chmod +x ./scripts/railway-start.sh
-
-RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
