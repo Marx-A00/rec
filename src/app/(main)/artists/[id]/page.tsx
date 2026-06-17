@@ -1,4 +1,4 @@
-import { ExternalLink, User } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -77,7 +77,7 @@ export default async function ArtistDetailsPage({
               className='w-full aspect-square object-cover rounded-lg shadow-2xl'
               sizes='(max-width: 768px) 100vw, 400px'
               priority
-              fallbackIcon={<User className='h-24 w-24 text-zinc-600' />}
+
             />
           </div>
         </div>

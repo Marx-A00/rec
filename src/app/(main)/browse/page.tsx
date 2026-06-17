@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getLatestReleases } from '@/lib/albums/latest-releases';
 import AlbumImage from '@/components/ui/AlbumImage';
+import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   TopRecommendedAlbums,
@@ -391,14 +392,14 @@ function LoadingCards({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className='flex-shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-6'
+          className='flex-shrink-0 w-[240px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5'
         >
-          <div className='animate-pulse'>
-            <div className='w-20 h-20 mx-auto bg-zinc-700/60 rounded-full mb-5' />
-            <div className='space-y-3'>
-              <div className='h-4 bg-zinc-700/60 rounded mx-auto w-3/4' />
-              <div className='h-3 bg-zinc-800/60 rounded mx-auto w-1/2' />
-            </div>
+          <div className='relative aspect-square rounded-lg overflow-hidden mb-5'>
+            <VinylPlaceholder animated />
+          </div>
+          <div className='animate-pulse space-y-2'>
+            <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
+            <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
           </div>
         </div>
       ))}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Music, Disc, Loader2 } from 'lucide-react';
+import { Disc, Loader2 } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -249,7 +249,7 @@ export default function MobileDiscography({
                     width={160}
                     height={160}
                     className='w-full h-full object-cover rounded-md'
-                    fallbackIcon={<Music className='h-8 w-8 text-zinc-600' />}
+
                   />
                   {/* Type badge */}
                   {release.primaryType && release.primaryType !== 'Album' && (

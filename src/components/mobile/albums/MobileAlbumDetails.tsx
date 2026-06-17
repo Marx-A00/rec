@@ -15,7 +15,6 @@ import {
   Heart,
   Bookmark,
   ChevronRight,
-  Music,
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -126,7 +125,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
               height={128}
               className='w-full h-full object-cover rounded-lg shadow-xl'
               priority
-              fallbackIcon={<Music className='h-10 w-10 text-zinc-600' />}
+
             />
           </div>
 

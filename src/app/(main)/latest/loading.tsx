@@ -1,4 +1,5 @@
 import { Music } from 'lucide-react';
+import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
 
 export default function ReleasesLoading() {
   return (
@@ -34,12 +35,12 @@ export default function ReleasesLoading() {
             key={i}
             className='bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-4'
           >
-            <div className='animate-pulse'>
-              <div className='aspect-square bg-zinc-700/60 rounded-lg mb-3' />
-              <div className='space-y-2'>
-                <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
-                <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
-              </div>
+            <div className='relative aspect-square rounded-lg overflow-hidden mb-3'>
+              <VinylPlaceholder animated />
+            </div>
+            <div className='animate-pulse space-y-2'>
+              <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
+              <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
             </div>
           </div>
         ))}

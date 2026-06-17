@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Music, Calendar, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Music, Calendar, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/generated/graphql';
 import { formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
+import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
 
 function SourceIcon({
   source,
@@ -225,9 +226,21 @@ export default function LatestReleasesPage() {
 
       {/* Loading state */}
       {isLoading && (
-        <div className='flex flex-col items-center justify-center py-20'>
-          <Loader2 className='w-8 h-8 text-green-500 animate-spin mb-4' />
-          <p className='text-zinc-400'>Loading releases...</p>
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6'>
+          {Array.from({ length: 18 }).map((_, i) => (
+            <div
+              key={i}
+              className='bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-4'
+            >
+              <div className='relative aspect-square rounded-lg overflow-hidden mb-3'>
+                <VinylPlaceholder animated />
+              </div>
+              <div className='animate-pulse space-y-2'>
+                <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
+                <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { Building2, Calendar, Clock, Music, Tag } from 'lucide-react';
+import { Building2, Calendar, Clock, Tag } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -74,7 +74,6 @@ export default async function AlbumDetailsPage({
               className='w-full h-full object-cover rounded-lg shadow-2xl'
               sizes='(max-width: 768px) 100vw, 400px'
               priority
-              fallbackIcon={<Music className='h-24 w-24 text-zinc-600' />}
             />
           </div>
         </div>

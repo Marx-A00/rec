@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, ExternalLink, MapPin } from 'lucide-react';
+import { ExternalLink, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -169,7 +169,7 @@ export default function LabelDetailsPage() {
                 className='w-full h-full object-cover rounded-lg shadow-2xl'
                 sizes='(max-width: 768px) 100vw, 400px'
                 priority
-                fallbackIcon={<Building2 className='h-24 w-24 text-zinc-600' />}
+
               />
             </div>
           </div>

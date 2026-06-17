@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useGetTopRecommendedAlbumsQuery } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
+import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
 
 interface TopRecommendedAlbumsProps {
   limit?: number;
@@ -99,7 +100,9 @@ function TopAlbumCard({
           <AlbumImage
             src={album.coverArtUrl}
             alt={album.title}
+            cloudflareImageId={album.cloudflareImageId}
             className='w-full h-full object-cover rounded-lg shadow-xl'
+            showSkeleton={false}
           />
         </div>
 
@@ -122,12 +125,12 @@ function LoadingSkeleton({ count }: { count: number }) {
           key={i}
           className='flex-shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5'
         >
-          <div className='animate-pulse'>
-            <div className='aspect-square bg-zinc-700/60 rounded-lg mb-4' />
-            <div className='space-y-2'>
-              <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
-              <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
-            </div>
+          <div className='relative aspect-square rounded-lg overflow-hidden mb-4'>
+            <VinylPlaceholder animated />
+          </div>
+          <div className='animate-pulse space-y-2'>
+            <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
+            <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
           </div>
         </div>
       ))}

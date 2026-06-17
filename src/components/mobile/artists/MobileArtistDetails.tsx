@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Share2,
-  User,
   ExternalLink,
   Calendar,
   MapPin,
@@ -100,7 +99,7 @@ export default function MobileArtistDetails({
             height={120}
             className='w-full h-full object-cover'
             priority
-            fallbackIcon={<User className='h-12 w-12 text-zinc-600' />}
+
           />
         </div>
 
