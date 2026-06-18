@@ -22,7 +22,7 @@ export interface SimpleSearchBarProps {
 }
 
 export default function SimpleSearchBar({
-  placeholder = 'Search albums, artists, and labels...',
+  placeholder = 'Search albums, artists, tracks, and users...',
   className = '',
   minQueryLength = 2,
 }: SimpleSearchBarProps) {

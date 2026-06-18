@@ -356,7 +356,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
     maxResults: 12,
     debounceMs: 500,
     minQueryLength: 2,
-    placeholder: 'Search albums, artists, and labels...',
+    placeholder: 'Search albums, artists, tracks, and users...',
     layout: 'comfortable',
     showGroupHeaders: true,
     enableFiltering: true,
