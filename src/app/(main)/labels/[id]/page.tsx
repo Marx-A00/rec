@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import BackButton from '@/components/ui/BackButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Label {
@@ -136,7 +135,6 @@ export default function LabelDetailsPage() {
     return (
       <div className='min-h-screen bg-black text-white'>
         <div className='container mx-auto px-4 py-8'>
-          <BackButton text='Back' fallbackHref='/' />
           <div className='text-center'>
             <h1 className='text-2xl font-bold text-red-500 mb-4'>
               Label Not Found
@@ -153,9 +151,6 @@ export default function LabelDetailsPage() {
   return (
     <div className='min-h-screen bg-black text-white'>
       <div className='container mx-auto px-4 py-8'>
-        {/* Back Navigation */}
-        <BackButton text='Back to Search' fallbackHref='/' />
-
         {/* Label Header */}
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
           {/* Label Image */}

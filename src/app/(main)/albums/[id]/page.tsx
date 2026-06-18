@@ -5,7 +5,6 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumInteractions from '@/components/albums/AlbumInteractions';
 import AlbumAdminActions from '@/components/albumDetails/AlbumAdminActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BackButton from '@/components/ui/BackButton';
 import TracklistTab from '@/components/albumDetails/tabs/TracklistTab';
 import AlbumRecommendationsTab from '@/components/albumDetails/tabs/AlbumRecommendationsTab';
 import { getAlbumDetails } from '@/lib/api/albums';
@@ -55,9 +54,6 @@ export default async function AlbumDetailsPage({
 
   return (
     <div className='px-4 py-8'>
-      {/* Back Navigation */}
-      <BackButton />
-
       {/* Album Header */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
         {/* Album Cover */}

@@ -2,7 +2,6 @@ import { ExternalLink } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import BackButton from '@/components/ui/BackButton';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import ArtistRecommendationsTab from '@/components/artistDetails/tabs/ArtistRecommendationsTab';
 import ArtistAdminActions from '@/components/artistDetails/ArtistAdminActions';
@@ -58,9 +57,6 @@ export default async function ArtistDetailsPage({
 
   return (
     <div className='px-4 py-8'>
-      {/* Back Navigation */}
-      <BackButton text='Back' fallbackHref='/' />
-
       {/* Artist Header */}
       <div
         id='artist-page-header'

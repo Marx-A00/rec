@@ -2,7 +2,6 @@ import { Fragment } from 'react';
 import Image from 'next/image';
 import { ChevronRight, HelpCircle } from 'lucide-react';
 
-import BackButton from '@/components/ui/BackButton';
 import {
   Accordion,
   AccordionContent,
@@ -19,7 +18,6 @@ export default function HelpPage() {
     <div className='container mx-auto px-4 py-8 max-w-3xl'>
       <div className='mb-10'>
         <div className='flex items-center gap-3 mb-4'>
-          <BackButton />
           <HelpCircle className='h-8 w-8 text-emerald-400' />
           <h1 className='text-3xl font-bold text-white'>Help & FAQ</h1>
         </div>

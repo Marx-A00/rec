@@ -1,17 +1,12 @@
 import { Mail, Github, MessageCircle } from 'lucide-react';
 
-import BackButton from '@/components/ui/BackButton';
-
 export default function ContactPage() {
   return (
     <div className='max-w-4xl mx-auto space-y-6'>
       {/* Header */}
-      <div className='flex items-center gap-4'>
-        <BackButton />
-        <div>
-          <h1 className='text-3xl font-bold text-white'>Contact</h1>
-          <p className='text-zinc-400 mt-2'>Get in touch with the rec team</p>
-        </div>
+      <div>
+        <h1 className='text-3xl font-bold text-white'>Contact</h1>
+        <p className='text-zinc-400 mt-2'>Get in touch with the rec team</p>
       </div>
 
       {/* Contact Options */}

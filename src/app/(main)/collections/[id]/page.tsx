@@ -5,7 +5,6 @@ import { auth } from '@/../auth';
 import CollectionHeader from '@/components/collections/CollectionHeader';
 import CollectionAlbums from '@/components/collections/CollectionAlbums';
 import { ListSkeleton } from '@/components/ui/skeletons';
-import BackButton from '@/components/ui/BackButton';
 import prisma from '@/lib/prisma';
 import type {
   Collection as UICollection,
@@ -120,9 +119,6 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
   return (
     <div className='space-y-6'>
-      {/* Back Button */}
-      <BackButton />
-
       {/* Collection Header */}
       <CollectionHeader collection={collection} canEdit={canEdit} />
 

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { FC, useMemo, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { LogOut } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 import {
@@ -30,6 +30,7 @@ interface SidebarProps {
 
 export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
   const { openDrawer } = useRecommendationDrawerContext();
   const { isExpanded, closeSidebar } = useSidebar();
@@ -101,6 +102,47 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
       )}
       aria-label='Main navigation'
     >
+      {/* Back Button - pinned to top */}
+      <div
+        className={cn(
+          isExpanded ? 'px-3 py-3' : 'flex justify-center py-3'
+        )}
+      >
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push('/');
+            }
+            if (isExpanded) closeSidebar();
+          }}
+          className={cn(
+            'transition-all duration-200',
+            !isExpanded
+              ? 'flex items-center justify-center p-3 rounded-xl'
+              : 'flex items-center gap-2 px-3 py-2 rounded-lg w-full',
+            'hover:bg-zinc-800/50',
+            'text-zinc-400 hover:text-white'
+          )}
+          aria-label='Go back'
+        >
+          <ArrowLeft
+            className={cn(!isExpanded ? 'w-5 h-5' : 'w-4 h-4', 'flex-shrink-0')}
+          />
+          <span
+            className={cn(
+              'text-sm font-medium whitespace-nowrap overflow-hidden ease-in-out',
+              !isExpanded
+                ? 'max-w-0 opacity-0 transition-all duration-150'
+                : 'max-w-[150px] opacity-100 transition-all duration-300 delay-100'
+            )}
+          >
+            Back
+          </span>
+        </button>
+      </div>
+
       {/* Navigation Items */}
       <TooltipProvider>
         <div

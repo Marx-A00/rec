@@ -13,8 +13,6 @@ import {
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
 import { uploadAvatar } from '@/lib/upload-avatar';
-import BackButton from '@/components/ui/BackButton';
-
 import ProfileTab from './components/ProfileTab';
 import PreferencesTab from './components/PreferencesTab';
 import PrivacyTab from './components/PrivacyTab';
@@ -212,12 +210,9 @@ export default function SettingsPage() {
   if (error || !userData?.user) {
     return (
       <div className='max-w-4xl mx-auto space-y-6'>
-        <div className='flex items-center gap-4'>
-          <BackButton />
-          <div>
-            <h1 className='text-3xl font-bold text-white'>Settings</h1>
-            <p className='text-red-400 mt-2'>Failed to load user data</p>
-          </div>
+        <div>
+          <h1 className='text-3xl font-bold text-white'>Settings</h1>
+          <p className='text-red-400 mt-2'>Failed to load user data</p>
         </div>
       </div>
     );
@@ -228,14 +223,11 @@ export default function SettingsPage() {
   return (
     <div className='max-w-4xl mx-auto space-y-6'>
       {/* Header */}
-      <div className='flex items-center gap-4'>
-        <BackButton />
-        <div>
-          <h1 className='text-3xl font-bold text-white'>Settings</h1>
-          <p className='text-zinc-400 mt-2'>
-            Manage your account settings and preferences
-          </p>
-        </div>
+      <div>
+        <h1 className='text-3xl font-bold text-white'>Settings</h1>
+        <p className='text-zinc-400 mt-2'>
+          Manage your account settings and preferences
+        </p>
       </div>
 
       {/* Settings Content */}

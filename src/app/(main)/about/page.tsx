@@ -1,17 +1,12 @@
 import { Music, Heart, Globe, Sparkles } from 'lucide-react';
 
-import BackButton from '@/components/ui/BackButton';
-
 export default function AboutPage() {
   return (
     <div className='max-w-4xl mx-auto space-y-6'>
       {/* Header */}
-      <div className='flex items-center gap-4'>
-        <BackButton />
-        <div>
-          <h1 className='text-3xl font-bold text-white'>About</h1>
-          <p className='text-zinc-400 mt-2'>What rec is and why we built it</p>
-        </div>
+      <div>
+        <h1 className='text-3xl font-bold text-white'>About</h1>
+        <p className='text-zinc-400 mt-2'>What rec is and why we built it</p>
       </div>
 
       {/* Mission */}

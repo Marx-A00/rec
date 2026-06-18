@@ -3,7 +3,6 @@ import Image from 'next/image';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-import BackButton from '@/components/ui/BackButton';
 import FollowersList from '@/components/profile/FollowersList';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 
@@ -44,8 +43,6 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
       <div className='container mx-auto px-4 py-8 max-w-4xl'>
         {/* Header */}
         <div className='mb-8'>
-          <BackButton className='inline-flex items-center text-cosmic-latte hover:text-cosmic-latte transition-colors mb-4' />
-
           <div className='flex items-center gap-4 mb-6'>
             <Image
               src={userData.image || '/placeholder.svg'}

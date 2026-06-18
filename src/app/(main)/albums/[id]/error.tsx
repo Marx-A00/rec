@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 
-import BackButton from '@/components/ui/BackButton';
-
 export default function AlbumError({
   error,
   reset,
@@ -19,9 +17,6 @@ export default function AlbumError({
   return (
     <div className='min-h-screen bg-black text-white'>
       <div className='container mx-auto px-4 py-8'>
-        {/* Back Navigation */}
-        <BackButton text='Back' fallbackHref='/' />
-
         <div className='text-center max-w-lg mx-auto'>
           <h1 className='text-3xl font-bold text-red-500 mb-4'>
             Album Loading Error

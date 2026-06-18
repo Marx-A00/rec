@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import SocialStatsDashboard from '@/components/profile/SocialStatsDashboard';
-import BackButton from '@/components/ui/BackButton';
 
 interface StatsPageProps {
   params: Promise<{
@@ -61,7 +60,6 @@ export default async function StatsPage({ params }: StatsPageProps) {
         {/* Header */}
         <div className='mb-8'>
           <div className='flex items-center space-x-4 mb-4'>
-            <BackButton />
             <div className='flex items-center space-x-3'>
               {user.image && (
                 <Image
