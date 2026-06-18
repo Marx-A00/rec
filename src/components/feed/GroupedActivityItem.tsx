@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import Link from 'next/link';
 import { Heart, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -15,9 +15,10 @@ import type {
   TransformedActivity,
   TransformedActivityMetadata,
 } from '@/utils/transform-activity';
+import { ScoreColorOverrideContext } from '@/components/feed/ScoreColorOverrideContext';
 
-// Helper function to get color classes based on score
-const getScoreColors = (score: number) => {
+// Default score color function
+const defaultGetScoreColors = (score: number) => {
   if (score >= 10) {
     return {
       heartColor: 'text-red-500 fill-red-500',
@@ -53,6 +54,8 @@ export default function GroupedActivityItem({
   className = '',
 }: GroupedActivityItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const colorOverride = useContext(ScoreColorOverrideContext);
+  const getScoreColors = colorOverride || defaultGetScoreColors;
 
   // For non-grouped activities, use the original display
   if (!group.isGrouped) {
@@ -195,20 +198,23 @@ export default function GroupedActivityItem({
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
                       (activity.metadata as TransformedActivityMetadata)
-                        ?.score && (
-                        <div
-                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
-                        >
-                          <span
-                            className={`text-[10px] font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor}`}
+                        ?.score && (() => {
+                        const sc = getScoreColors((activity.metadata as TransformedActivityMetadata).score!);
+                        return (
+                          <div
+                            className={`absolute -top-1 -right-1 bg-linear-to-r ${sc.bgGradient} border ${sc.borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
                           >
-                            {
-                              (activity.metadata as TransformedActivityMetadata)
-                                .score
-                            }
-                          </span>
-                        </div>
-                      )}
+                            <span
+                              className={`text-[10px] font-bold ${sc.textColor}`}
+                            >
+                              {
+                                (activity.metadata as TransformedActivityMetadata)
+                                  .score
+                              }
+                            </span>
+                          </div>
+                        );
+                      })()}
                   </Link>
                 ))}
 
@@ -488,6 +494,8 @@ function SingleActivityDisplay({
   activity: TransformedActivity;
   className?: string;
 }) {
+  const colorOverride = useContext(ScoreColorOverrideContext);
+  const getScoreColors = colorOverride || defaultGetScoreColors;
   const getActivityText = () => {
     switch (activity.type) {
       case 'follow':
