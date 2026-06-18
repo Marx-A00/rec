@@ -19,23 +19,23 @@ const getScoreColors = (score: number) => {
   if (score >= 10) {
     return {
       heartColor: 'text-red-500 fill-red-500',
-      textColor: 'text-red-500',
-      bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/30',
+      textColor: 'text-red-400',
+      bgColor: 'bg-red-950',
+      borderColor: 'border-red-500/40',
     };
   } else if (score >= 8) {
     return {
-      heartColor: 'text-emeraled-green fill-emeraled-green',
-      textColor: 'text-emeraled-green',
-      bgColor: 'bg-emeraled-green/10',
-      borderColor: 'border-emeraled-green/30',
+      heartColor: 'text-emerald-500 fill-emerald-500',
+      textColor: 'text-emerald-400',
+      bgColor: 'bg-emerald-950',
+      borderColor: 'border-emerald-500/40',
     };
   } else {
     return {
       heartColor: 'text-yellow-500 fill-yellow-500',
-      textColor: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500/30',
+      textColor: 'text-yellow-400',
+      bgColor: 'bg-yellow-950',
+      borderColor: 'border-yellow-500/40',
     };
   }
 };

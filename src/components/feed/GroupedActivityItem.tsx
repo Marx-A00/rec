@@ -22,24 +22,24 @@ const defaultGetScoreColors = (score: number) => {
   if (score >= 10) {
     return {
       heartColor: 'text-red-500 fill-red-500',
-      textColor: 'text-red-600',
-      bgGradient: 'from-red-50/10 to-pink-50/10',
-      borderColor: 'border-red-500/30',
+      textColor: 'text-red-400',
+      bgGradient: 'from-red-950 to-red-950',
+      borderColor: 'border-red-500/40',
     };
   } else if (score >= 8) {
     return {
-      heartColor: 'text-emeraled-green fill-emeraled-green',
-      textColor: 'text-emeraled-green',
-      bgGradient: 'from-green-50/10 to-emerald-50/10',
-      borderColor: 'border-emeraled-green/30',
+      heartColor: 'text-emerald-500 fill-emerald-500',
+      textColor: 'text-emerald-400',
+      bgGradient: 'from-emerald-950 to-emerald-950',
+      borderColor: 'border-emerald-500/40',
     };
   } else {
     // 5-7 range (yellow)
     return {
       heartColor: 'text-yellow-500 fill-yellow-500',
-      textColor: 'text-yellow-600',
-      bgGradient: 'from-yellow-50/10 to-amber-50/10',
-      borderColor: 'border-yellow-500/30',
+      textColor: 'text-yellow-400',
+      bgGradient: 'from-yellow-950 to-yellow-950',
+      borderColor: 'border-yellow-500/40',
     };
   }
 };
@@ -154,7 +154,7 @@ export default function GroupedActivityItem({
                         ? `/albums/${activity.albumId}?source=local`
                         : '#'
                     }
-                    className='relative group cursor-pointer block hover:z-10!'
+                    className='relative group cursor-pointer block hover:z-10! transition-transform duration-200 hover:scale-110'
                     style={{ zIndex: 5 - index }}
                   >
                     <AlbumImage
@@ -163,7 +163,7 @@ export default function GroupedActivityItem({
                       alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                       width={96}
                       height={96}
-                      className='w-24 h-24 rounded-lg ring-2 ring-zinc-900 transition-all group-hover:scale-110 group-hover:ring-cosmic-latte/80 group-hover:z-10'
+                      className='w-24 h-24 rounded-lg ring-2 ring-zinc-900 transition-all group-hover:ring-cosmic-latte/80'
                     />
 
                     {/* Show rating badge for collection adds */}
@@ -202,7 +202,7 @@ export default function GroupedActivityItem({
                         const sc = getScoreColors((activity.metadata as TransformedActivityMetadata).score!);
                         return (
                           <div
-                            className={`absolute -top-1 -right-1 bg-linear-to-r ${sc.bgGradient} border ${sc.borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
+                            className={`absolute -top-1 -right-1 z-20 bg-linear-to-r ${sc.bgGradient} border ${sc.borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
                           >
                             <span
                               className={`text-[10px] font-bold ${sc.textColor}`}
