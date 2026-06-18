@@ -14,6 +14,7 @@ import {
 } from '@/generated/graphql';
 import { ActivityFeedSkeleton } from '@/components/ui/skeletons';
 
+import { LumaSpinner } from '@/components/ui/LumaSpinner';
 import GroupedActivityItem from './GroupedActivityItem';
 
 interface SocialActivityFeedProps {
@@ -278,12 +279,8 @@ export default function SocialActivityFeed({
 
       {/* Loading More Indicator */}
       {isFetchingNextPage && (
-        <div className='text-center py-4'>
-          <div className='rounded-lg p-4'>
-            <div className='flex items-center justify-center'>
-              <div className='w-4 h-4 border-2 border-emeraled-green border-t-transparent rounded-full animate-spin' />
-            </div>
-          </div>
+        <div className='flex justify-center py-4'>
+          <LumaSpinner className='w-8' />
         </div>
       )}
 
