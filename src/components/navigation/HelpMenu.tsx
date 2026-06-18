@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { HelpCircle, Mail, Info } from 'lucide-react';
+import { HelpCircle, Mail, Info, Coffee } from 'lucide-react';
 
 interface HelpMenuProps {
   isExpanded?: boolean;
@@ -87,6 +87,15 @@ export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
           <Info className='h-5 w-5' />
           <span>About</span>
         </Link>
+        <a
+          href='https://ko-fi.com/mrxdev'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors'
+        >
+          <Coffee className='h-5 w-5' />
+          <span>Support</span>
+        </a>
       </div>
     );
   }
@@ -130,6 +139,17 @@ export default function HelpMenu({ isExpanded = false }: HelpMenuProps) {
           <Info className='h-4 w-4 text-zinc-400' />
           About
         </Link>
+        <a
+          href='https://ko-fi.com/mrxdev'
+          target='_blank'
+          rel='noopener noreferrer'
+          onClick={() => setIsOpen(false)}
+          className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full transition-colors'
+          role='menuitem'
+        >
+          <Coffee className='h-4 w-4 text-zinc-400' />
+          Support
+        </a>
       </div>,
       document.body
     );
