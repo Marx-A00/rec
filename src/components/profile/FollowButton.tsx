@@ -66,7 +66,7 @@ export default function FollowButton({
     <Button
       onClick={handleToggle}
       disabled={isLoading}
-      variant={displayFollowing ? 'outline-solid' : 'destructive'}
+      variant={displayFollowing ? 'outline' : 'destructive'}
       className={className}
     >
       {isLoading ? (

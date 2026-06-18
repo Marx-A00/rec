@@ -28,7 +28,7 @@ interface EnrichmentTreeProps {
 
 function getStatusBadgeVariant(
   status: LlamaLogStatus
-): 'default' | 'secondary' | 'destructive' | 'outline-solid' {
+): 'default' | 'secondary' | 'destructive' | 'outline' {
   const color = getStatusColor(status);
   switch (color) {
     case 'primary':
@@ -36,7 +36,7 @@ function getStatusBadgeVariant(
     case 'secondary':
       return 'destructive'; // failed - red
     case 'accent':
-      return 'outline-solid'; // partial/preview - yellow/blue
+      return 'outline'; // partial/preview - yellow/blue
     case 'muted':
     default:
       return 'secondary'; // skipped/no data - gray

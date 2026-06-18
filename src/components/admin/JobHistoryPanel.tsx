@@ -288,9 +288,9 @@ export function JobHistoryPanel() {
         return 'secondary';
       case 'waiting':
       case 'delayed':
-        return 'outline-solid';
+        return 'outline';
       default:
-        return 'outline-solid';
+        return 'outline';
     }
   };
 

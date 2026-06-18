@@ -187,7 +187,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
             Make Rec
           </MobileButton>
           <MobileButton
-            variant={isInAnyCollection ? 'success' : 'outline-solid'}
+            variant={isInAnyCollection ? 'success' : 'outline'}
             size='md'
             className='aspect-square p-0! w-11'
             aria-label={saveButtonLabel}
