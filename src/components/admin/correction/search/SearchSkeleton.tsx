@@ -22,7 +22,7 @@ export function SearchSkeleton() {
       {/* Results skeletons */}
       {[...Array(5)].map((_, i) => (
         <div key={i} className='flex gap-3 p-3'>
-          <Skeleton className='h-12 w-12 rounded flex-shrink-0' />
+          <Skeleton className='h-12 w-12 rounded shrink-0' />
           <div className='flex-1 space-y-2'>
             <Skeleton className='h-4 w-2/3' />
             <Skeleton className='h-3 w-1/3' />

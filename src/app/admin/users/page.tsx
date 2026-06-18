@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
             {/* Soft-deleted banner */}
             {isSoftDeleted && (
               <div className='bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 flex items-center gap-3'>
-                <AlertTriangle className='h-5 w-5 text-orange-400 flex-shrink-0' />
+                <AlertTriangle className='h-5 w-5 text-orange-400 shrink-0' />
                 <div>
                   <div className='text-sm font-medium text-orange-300'>
                     This user is soft-deleted
@@ -691,7 +691,7 @@ export default function AdminUsersPage() {
                   type='text'
                   value={hardDeleteConfirmation}
                   onChange={e => setHardDeleteConfirmation(e.target.value)}
-                  className='w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-red-500'
+                  className='w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-hidden focus:border-red-500'
                   placeholder='Type username to confirm...'
                   autoComplete='off'
                 />
@@ -1081,9 +1081,9 @@ export default function AdminUsersPage() {
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='flex items-center gap-2'>
                           {expandedRows.has(user.id) ? (
-                            <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                            <ChevronDown className='h-4 w-4 text-zinc-400 shrink-0' />
                           ) : (
-                            <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                            <ChevronRight className='h-4 w-4 text-zinc-400 shrink-0' />
                           )}
                           <Avatar className='h-10 w-10'>
                             <AvatarImage

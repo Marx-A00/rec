@@ -82,7 +82,7 @@ export function DesktopHomeClient() {
             )}
             {/* Lock overlay */}
             <div className='absolute inset-0 flex items-center justify-center'>
-              <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
+              <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur-sm'>
                 <Lock className='h-7 w-7 text-zinc-400' />
               </div>
             </div>
@@ -188,7 +188,7 @@ export function DesktopHomeClient() {
         </div>
         {!hasCompleted && (
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-sm'>
+            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-xs'>
               <Lock className='h-6 w-6 text-zinc-300' />
             </div>
           </div>
@@ -234,7 +234,7 @@ export function DesktopHomeClient() {
         <div className='absolute top-0 left-1/2 -translate-x-1/2 w-[260px] h-[80px] rounded-full blur-2xl opacity-35 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.4)_0%,rgba(147,51,234,0.2)_60%,transparent_100%)]' />
         <Link
           href='/game/play'
-          className='relative flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-12 py-4 text-base font-semibold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] ring-1 ring-white/[0.08] shadow-[0_0_20px_rgba(16,185,129,0.18),0_0_40px_rgba(147,51,234,0.1),0_4px_20px_rgba(0,0,0,0.5)]'
+          className='relative flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-12 py-4 text-base font-semibold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] ring-1 ring-white/8 shadow-[0_0_20px_rgba(16,185,129,0.18),0_0_40px_rgba(147,51,234,0.1),0_4px_20px_rgba(0,0,0,0.5)]'
         >
           {/* Dark inset background — separates button from page smoke */}
           <div className='absolute inset-0 rounded-xl bg-black/60' />
@@ -243,7 +243,7 @@ export function DesktopHomeClient() {
             <SmokeBackground smokeColor='#0d9668' speed={0.1} density={4.0} />
           </div>
           {/* Frosted glass overlay */}
-          <div className='absolute inset-0 rounded-xl border border-emerald-400/20 backdrop-blur-sm' />
+          <div className='absolute inset-0 rounded-xl border border-emerald-400/20 backdrop-blur-xs' />
           {/* Button content */}
           <span className='relative z-10 flex items-center gap-2'>
             {hasCompleted ? (

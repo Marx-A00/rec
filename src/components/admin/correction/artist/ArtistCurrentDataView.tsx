@@ -34,7 +34,7 @@ export function ArtistCurrentDataView({ artist }: ArtistCurrentDataViewProps) {
       {/* Header: Avatar placeholder + name + quality badge */}
       <div className='flex gap-6'>
         {/* Avatar placeholder */}
-        <div className='w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center'>
+        <div className='w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center'>
           {artist.imageUrl ? (
             <img
               src={artist.imageUrl}

@@ -128,7 +128,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
           aria-label='Go back'
         >
           <ArrowLeft
-            className={cn(!isExpanded ? 'w-5 h-5' : 'w-4 h-4', 'flex-shrink-0')}
+            className={cn(!isExpanded ? 'w-5 h-5' : 'w-4 h-4', 'shrink-0')}
           />
           <span
             className={cn(

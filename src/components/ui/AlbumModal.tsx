@@ -808,7 +808,7 @@ export default function AlbumModal({
             e.currentTarget.blur();
             onClose();
           }}
-          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none rounded-full p-1'
+          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-hidden rounded-full p-1'
           aria-label='Close album details modal'
           role='button'
           tabIndex={0}
@@ -830,7 +830,7 @@ export default function AlbumModal({
         </button>
 
         {/* Zoomed Album Cover */}
-        <div className='flex-shrink-0 lg:mr-2'>
+        <div className='shrink-0 lg:mr-2'>
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
             <AlbumImage
               src={getImageUrl()}
@@ -853,7 +853,7 @@ export default function AlbumModal({
             onClick={handleAlbumClick}
             onKeyDown={handleAlbumKeyDown}
             disabled={!isNavigationAvailable()}
-            className={`text-3xl lg:text-4xl font-bold mb-2 transition-all duration-200 rounded-md px-1 focus:outline-none ${
+            className={`text-3xl lg:text-4xl font-bold mb-2 transition-all duration-200 rounded-md px-1 focus:outline-hidden ${
               isNavigationAvailable()
                 ? 'text-cosmic-latte hover:underline cursor-pointer hover:text-white'
                 : 'text-zinc-500 cursor-not-allowed'
@@ -878,7 +878,7 @@ export default function AlbumModal({
                   handleArtistClick(artist.id, artist.name);
                 }
               }}
-              className='text-cosmic-latte hover:underline cursor-pointer hover:text-white transition-all duration-200 rounded-md px-1 focus:outline-none'
+              className='text-cosmic-latte hover:underline cursor-pointer hover:text-white transition-all duration-200 rounded-md px-1 focus:outline-hidden'
               aria-label={`Navigate to artist ${getArtist()}`}
             >
               {getArtist()}
@@ -1170,7 +1170,7 @@ export default function AlbumModal({
 
               <div className='mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3'>
                 <div className='flex gap-2'>
-                  <AlertCircle className='mt-0.5 h-4 w-4 flex-shrink-0 text-red-400' />
+                  <AlertCircle className='mt-0.5 h-4 w-4 shrink-0 text-red-400' />
                   <div className='text-sm text-red-200'>
                     <p className='font-medium'>This will permanently delete:</p>
                     <ul className='mt-1 list-inside list-disc space-y-0.5 text-red-300'>

@@ -306,7 +306,7 @@ export default function ProfileClient({
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
             <button
               onClick={() => setIsImageLightboxOpen(true)}
-              className='cursor-pointer rounded-full focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black transition-transform hover:scale-105'
+              className='cursor-pointer rounded-full focus:outline-hidden focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black transition-transform hover:scale-105'
               aria-label='View profile picture'
             >
               <Avatar className='w-32 h-32 border-2 border-zinc-800'>
@@ -337,7 +337,7 @@ export default function ProfileClient({
                     <AdminBadge role={user.role} />
                   </div>
                 </div>
-                <div className='flex-shrink-0 flex gap-3'>
+                <div className='shrink-0 flex gap-3'>
                   {isOwnProfile ? (
                     <div className='relative' ref={settingsMenuRef}>
                       <Button
@@ -348,7 +348,7 @@ export default function ProfileClient({
                           setShowSettings(!showSettings);
                           (e.currentTarget as HTMLElement).blur();
                         }}
-                        className='p-2 h-9 w-9 hover:bg-zinc-800 rounded-lg transition-colors focus:outline-none border border-zinc-600'
+                        className='p-2 h-9 w-9 hover:bg-zinc-800 rounded-lg transition-colors focus:outline-hidden border border-zinc-600'
                         aria-label='Profile settings menu'
                         aria-expanded={showSettings}
                         aria-haspopup='menu'
@@ -360,7 +360,7 @@ export default function ProfileClient({
                       </Button>
                       {showSettings && (
                         <div
-                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-1 min-w-[160px] backdrop-blur-sm'
+                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-1 min-w-[160px] backdrop-blur-xs'
                           role='menu'
                           aria-label='Profile settings'
                         >
@@ -369,7 +369,7 @@ export default function ProfileClient({
                               e.stopPropagation();
                               handleEditProfile();
                             }}
-                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-hidden focus:bg-zinc-800'
                             role='menuitem'
                             tabIndex={0}
                             aria-label='Edit your profile'
@@ -383,7 +383,7 @@ export default function ProfileClient({
                           <Link
                             href='/settings'
                             onClick={() => setShowSettings(false)}
-                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-hidden focus:bg-zinc-800'
                             role='menuitem'
                             tabIndex={0}
                             aria-label='Account settings'

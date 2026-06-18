@@ -245,7 +245,7 @@ export default function CollectionSelectionSheet({
                     {/* Checkbox indicator */}
                     <div
                       className={cn(
-                        'w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0',
+                        'w-6 h-6 rounded-md flex items-center justify-center shrink-0',
                         isChecked
                           ? 'bg-emeraled-green'
                           : 'bg-zinc-700 border border-zinc-600'

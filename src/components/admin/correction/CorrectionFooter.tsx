@@ -49,7 +49,7 @@ export function CorrectionFooter({
   onEnterManualEdit,
 }: CorrectionFooterProps) {
   return (
-    <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 flex-shrink-0'>
+    <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 shrink-0'>
       <div className='flex w-full justify-between'>
         <Button variant='outline' onClick={onClose}>
           Cancel

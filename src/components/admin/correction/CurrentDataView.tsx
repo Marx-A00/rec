@@ -88,7 +88,7 @@ export function CurrentDataView({ album }: CurrentDataViewProps) {
       {/* Header: Cover art + title + quality badge */}
       <div className='flex gap-6'>
         {/* Cover art */}
-        <div className='w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700'>
+        <div className='w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700'>
           <AlbumImage
             src={album.coverArtUrl}
             cloudflareImageId={album.cloudflareImageId}

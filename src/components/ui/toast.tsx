@@ -33,7 +33,7 @@ export default function Toast({
 
   // Render via portal to bypass stacking context issues
   const toastElement = (
-    <div className='fixed top-4 right-4 z-[9999] animate-in slide-in-from-top-2'>
+    <div className='fixed top-4 right-4 z-9999 animate-in slide-in-from-top-2'>
       <div
         className={`
         flex items-center space-x-3 px-4 py-3 rounded-lg shadow-lg border max-w-md
@@ -45,9 +45,9 @@ export default function Toast({
       `}
       >
         {type === 'success' ? (
-          <CheckCircle className='h-5 w-5 text-green-400 flex-shrink-0' />
+          <CheckCircle className='h-5 w-5 text-green-400 shrink-0' />
         ) : (
-          <XCircle className='h-5 w-5 text-red-400 flex-shrink-0' />
+          <XCircle className='h-5 w-5 text-red-400 shrink-0' />
         )}
 
         <p className='text-sm font-medium flex-1'>{message}</p>

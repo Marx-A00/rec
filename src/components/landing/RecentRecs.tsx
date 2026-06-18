@@ -120,7 +120,7 @@ function RecCard({ rec, featured }: RecCardProps) {
       {/* Album pair */}
       <div className='flex items-start gap-3'>
         {/* Source album */}
-        <div className='relative flex-shrink-0'>
+        <div className='relative shrink-0'>
           <AlbumImage
             src={rec.basisAlbum?.coverArtUrl}
             cloudflareImageId={rec.basisAlbum?.cloudflareImageId}
@@ -137,7 +137,7 @@ function RecCard({ rec, featured }: RecCardProps) {
         </div>
 
         {/* Recommended album */}
-        <div className='relative flex-shrink-0'>
+        <div className='relative shrink-0'>
           <AlbumImage
             src={rec.recommendedAlbum?.coverArtUrl}
             cloudflareImageId={rec.recommendedAlbum?.cloudflareImageId}

@@ -288,7 +288,7 @@ async function HeroSection() {
   return (
     <section className='relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black'>
       {/* Subtle gradient overlay */}
-      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cosmic-latte/5 via-transparent to-transparent pointer-events-none' />
+      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--tw-gradient-stops))] from-cosmic-latte/5 via-transparent to-transparent pointer-events-none' />
 
       {/* Main content */}
       <div className='relative z-10 flex min-h-[calc(100vh-4rem)]'>

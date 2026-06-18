@@ -243,7 +243,7 @@ export function SyncJobExpandedContent({
                     className='bg-zinc-800 rounded-lg p-2 hover:bg-zinc-700 transition-colors group'
                   >
                     <div className='flex gap-2'>
-                      <div className='w-10 h-10 bg-zinc-700 rounded flex-shrink-0 overflow-hidden'>
+                      <div className='w-10 h-10 bg-zinc-700 rounded shrink-0 overflow-hidden'>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {album.coverArtUrl && (
                           <img
@@ -261,7 +261,7 @@ export function SyncJobExpandedContent({
                           {album.artists?.[0]?.artist?.name || 'Unknown Artist'}
                         </div>
                       </div>
-                      <ExternalLink className='h-3 w-3 text-zinc-600 group-hover:text-green-400 flex-shrink-0 mt-0.5' />
+                      <ExternalLink className='h-3 w-3 text-zinc-600 group-hover:text-green-400 shrink-0 mt-0.5' />
                     </div>
                   </Link>
                 ))}

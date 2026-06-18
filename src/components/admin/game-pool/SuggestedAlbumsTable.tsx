@@ -736,7 +736,7 @@ export function SuggestedAlbumsTable() {
                     onChange={e => setExtAlbumQuery(e.target.value)}
                     onKeyDown={handleExtKeyDown}
                     autoFocus
-                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
                   />
                   {extAlbumQuery && (
                     <button
@@ -758,7 +758,7 @@ export function SuggestedAlbumsTable() {
                     value={extArtistQuery}
                     onChange={e => setExtArtistQuery(e.target.value)}
                     onKeyDown={handleExtKeyDown}
-                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
                   />
                   {extArtistQuery && (
                     <button
@@ -815,7 +815,7 @@ export function SuggestedAlbumsTable() {
                         onClick={() => handleExternalSearchSelect(result)}
                         className='flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors overflow-hidden'
                       >
-                        <div className='w-10 h-10 flex-shrink-0'>
+                        <div className='w-10 h-10 shrink-0'>
                           <AlbumImage
                             src={result.image?.url || result.cover_image}
                             alt={result.title}
@@ -830,13 +830,13 @@ export function SuggestedAlbumsTable() {
                               {result.title}
                             </span>
                             {result.source === 'local' && (
-                              <span className='inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 leading-none flex-shrink-0'>
+                              <span className='inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 leading-none shrink-0'>
                                 <CheckCircle2 className='h-2.5 w-2.5' />
                                 In DB
                               </span>
                             )}
                             {isInPool(result) && (
-                              <span className='inline-flex items-center gap-0.5 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-400 leading-none flex-shrink-0'>
+                              <span className='inline-flex items-center gap-0.5 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-400 leading-none shrink-0'>
                                 <CheckCircle2 className='h-2.5 w-2.5' />
                                 In Pool
                               </span>
@@ -856,7 +856,7 @@ export function SuggestedAlbumsTable() {
                           </p>
                         </div>
                         {result.source !== 'local' && (
-                          <span className='text-[10px] text-zinc-600 flex-shrink-0'>
+                          <span className='text-[10px] text-zinc-600 shrink-0'>
                             {result.source === 'musicbrainz'
                               ? 'MB'
                               : result.source}

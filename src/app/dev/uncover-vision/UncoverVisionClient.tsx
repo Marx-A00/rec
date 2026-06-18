@@ -261,7 +261,7 @@ export default function UncoverVisionClient() {
                   className='pointer-events-none absolute inset-0 h-full w-full'
                 />
                 {isDetecting && (
-                  <div className='absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm'>
+                  <div className='absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs'>
                     <div className='flex items-center gap-2 text-sm text-white'>
                       <Loader2 className='h-5 w-5 animate-spin' />
                       Detecting text...
@@ -352,7 +352,7 @@ export default function UncoverVisionClient() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder='Search approved albums...'
-              className='w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:outline-none'
+              className='w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:outline-hidden'
             />
           </div>
         </div>
@@ -507,11 +507,11 @@ export default function UncoverVisionClient() {
                   <span className='text-white font-medium truncate'>
                     &quot;{item.text}&quot;
                   </span>
-                  <span className='text-zinc-600 text-xs flex-shrink-0'>
+                  <span className='text-zinc-600 text-xs shrink-0'>
                     vs {item.matchedAgainst}
                   </span>
                   <span
-                    className={`ml-auto text-xs font-mono flex-shrink-0 ${
+                    className={`ml-auto text-xs font-mono shrink-0 ${
                       item.similarity >= threshold
                         ? 'text-red-400'
                         : 'text-zinc-600'

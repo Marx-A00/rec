@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
         />
 
         <div className='text-center space-y-3'>
-          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
+          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-xs border border-cosmic-latte/30 mb-4'>
             <svg
               className='w-6 h-6 text-cosmic-latte'
               fill='none'
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
           </h1>
         </div>
 
-        <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+        <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
           <p className='text-zinc-300 text-sm leading-relaxed text-center'>
             If an account exists with that email, we have sent a password reset
             link. Please check your inbox and spam folder.
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
           <div className='pt-2'>
             <Link
               href='/signin'
-              className='block w-full text-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white transition-all duration-200'
+              className='block w-full text-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white transition-all duration-200'
             >
               Back to sign in
             </Link>
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
       />
 
       <div className='text-center space-y-3'>
-        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
+        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-xs border border-cosmic-latte/30 mb-4'>
           <svg
             className='w-6 h-6 text-cosmic-latte'
             fill='none'
@@ -127,12 +127,12 @@ export default function ForgotPasswordPage() {
           Forgot your password?
         </h1>
 
-        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg'>
+        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-xs px-3 py-1 rounded-lg'>
           Enter your email and we will send you a reset link
         </p>
       </div>
 
-      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+      <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
         <form onSubmit={handleSubmit} className='space-y-4' noValidate>
           {error && (
             <div
@@ -164,7 +164,7 @@ export default function ForgotPasswordPage() {
                 setEmail(e.target.value);
                 if (error) setError('');
               }}
-              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
               placeholder='Enter your email address'
             />
           </div>
@@ -172,7 +172,7 @@ export default function ForgotPasswordPage() {
           <button
             type='submit'
             disabled={isLoading || !email}
-            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isLoading ? (
               <span className='flex items-center'>

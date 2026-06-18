@@ -129,7 +129,7 @@ export function ArtistChipsInput({
           onChange={e => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={artists.length === 0 ? 'Add artist name' : 'Add another'}
-          className='flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-500'
+          className='flex-1 min-w-[120px] bg-transparent border-none outline-hidden text-sm text-zinc-100 placeholder:text-zinc-500'
         />
       </div>
       {error && <p className='text-xs text-red-400'>{error}</p>}

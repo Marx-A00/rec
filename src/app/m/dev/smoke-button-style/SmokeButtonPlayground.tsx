@@ -37,7 +37,7 @@ export function SmokeButtonPlayground() {
 
       {/* Vignette */}
       <div
-        className='pointer-events-none absolute inset-0 z-[1]'
+        className='pointer-events-none absolute inset-0 z-1'
         style={{
           background:
             'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.7) 100%)',
@@ -72,7 +72,7 @@ export function SmokeButtonPlayground() {
       {/* ── Game content ── */}
       <div className='relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6'>
         {/* Album cover placeholder */}
-        <div className='aspect-square w-full max-w-[200px] overflow-hidden rounded-lg bg-gradient-to-br from-zinc-800 via-zinc-700 to-zinc-900'>
+        <div className='aspect-square w-full max-w-[200px] overflow-hidden rounded-lg bg-linear-to-br from-zinc-800 via-zinc-700 to-zinc-900'>
           <div className='flex h-full w-full items-center justify-center'>
             <div className='h-20 w-20 rounded-full bg-zinc-600/30' />
           </div>
@@ -116,7 +116,7 @@ export function SmokeButtonPlayground() {
       {/* ── Floating style selector toggle ── */}
       <button
         onClick={() => setMenuOpen(prev => !prev)}
-        className='absolute bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900/90 shadow-lg shadow-black/50 ring-1 ring-zinc-700 backdrop-blur-sm transition-transform active:scale-95'
+        className='absolute bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900/90 shadow-lg shadow-black/50 ring-1 ring-zinc-700 backdrop-blur-xs transition-transform active:scale-95'
       >
         {menuOpen ? (
           <X className='h-5 w-5 text-zinc-300' />

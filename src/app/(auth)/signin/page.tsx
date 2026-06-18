@@ -79,7 +79,7 @@ export default function SignIn() {
       />
       {/* Header */}
       <div className='text-center space-y-3'>
-        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
+        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-xs border border-cosmic-latte/30 mb-4'>
           <svg
             className='w-6 h-6 text-cosmic-latte'
             fill='none'
@@ -99,7 +99,7 @@ export default function SignIn() {
           Welcome back
         </h1>
 
-        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg'>
+        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-xs px-3 py-1 rounded-lg'>
           New around here?{' '}
           <Link
             href='/register'
@@ -112,13 +112,13 @@ export default function SignIn() {
       </div>
 
       {/* Sign In Form */}
-      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+      <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
         {/* OAuth Buttons */}
         <div className='space-y-4'>
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isLoading ? (
               <span className='flex items-center'>
@@ -177,7 +177,7 @@ export default function SignIn() {
           <button
             onClick={handleSpotifySignIn}
             disabled={isSpotifyLoading}
-            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-3 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs py-3 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isSpotifyLoading ? (
               <span className='flex items-center'>
@@ -205,7 +205,7 @@ export default function SignIn() {
             <div className='w-full border-t border-zinc-700/60'></div>
           </div>
           <div className='relative flex justify-center'>
-            <span className='bg-zinc-900/80 backdrop-blur-sm px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
+            <span className='bg-zinc-900/80 backdrop-blur-xs px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
               Or continue with email
             </span>
           </div>
@@ -242,7 +242,7 @@ export default function SignIn() {
                 onChange={e =>
                   setCredentials({ ...credentials, identifier: e.target.value })
                 }
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Enter your email or username'
               />
             </div>
@@ -276,13 +276,13 @@ export default function SignIn() {
                   onChange={e =>
                     setCredentials({ ...credentials, password: e.target.value })
                   }
-                  className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                  className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                   placeholder='Enter your password'
                 />
                 <button
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
-                  className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-none focus:text-zinc-200 transition-colors duration-200'
+                  className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-hidden focus:text-zinc-200 transition-colors duration-200'
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -330,7 +330,7 @@ export default function SignIn() {
           <button
             type='submit'
             disabled={isCredentialsLoading}
-            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isCredentialsLoading ? (
               <span className='flex items-center'>

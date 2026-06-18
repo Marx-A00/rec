@@ -22,7 +22,7 @@ export default function TestUILayout({
 
       {/* Vignette overlay — frames the smoke */}
       <div
-        className='pointer-events-none absolute inset-0 z-[1]'
+        className='pointer-events-none absolute inset-0 z-1'
         style={{
           background:
             'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.6) 100%)',

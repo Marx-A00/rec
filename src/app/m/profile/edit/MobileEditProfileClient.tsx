@@ -127,7 +127,7 @@ export default function MobileEditProfileClient({
   return (
     <div className='min-h-screen bg-black'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <button
             onClick={() => router.back()}
@@ -183,7 +183,7 @@ export default function MobileEditProfileClient({
             maxLength={500}
             rows={4}
             placeholder='Tell others about yourself and your music taste...'
-            className='flex w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white shadow-sm transition-colors placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emeraled-green focus-visible:border-emeraled-green resize-none'
+            className='flex w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white shadow-xs transition-colors placeholder:text-zinc-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emeraled-green focus-visible:border-emeraled-green resize-none'
           />
           <p className='mt-1.5 text-xs text-zinc-500'>
             {bio.length}/500 characters

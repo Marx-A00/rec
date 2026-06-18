@@ -95,7 +95,7 @@ function TopAlbumCard({
 
   return (
     <Link href={`/albums/${album.id}?source=local`}>
-      <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
+      <div className='shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-xs border border-zinc-800/80 rounded-xl p-5 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
         <div className='relative aspect-square mb-4'>
           <AlbumImage
             src={album.coverArtUrl}
@@ -123,7 +123,7 @@ function LoadingSkeleton({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className='flex-shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5'
+          className='shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5'
         >
           <div className='relative aspect-square rounded-lg overflow-hidden mb-4'>
             <VinylPlaceholder animated />

@@ -151,7 +151,7 @@ export default function GroupedActivityItem({
                         ? `/albums/${activity.albumId}?source=local`
                         : '#'
                     }
-                    className='relative group cursor-pointer block hover:!z-10'
+                    className='relative group cursor-pointer block hover:z-10!'
                     style={{ zIndex: 5 - index }}
                   >
                     <AlbumImage
@@ -229,7 +229,7 @@ export default function GroupedActivityItem({
           {isExpanded && (
             <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
-                <div key={activity.id} className='flex-shrink-0'>
+                <div key={activity.id} className='shrink-0'>
                   {/* Recommendation: Stacked albums that separate on hover */}
                   {group.type === 'recommendation' && activity.albumImage && (
                     <div className='relative inline-block'>
@@ -289,11 +289,11 @@ export default function GroupedActivityItem({
                           <div className='arrow-indicator absolute left-[77px] top-[37px] opacity-0 transition-all duration-300 z-20'>
                             <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                               <div
-                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
+                                className={`flex items-center justify-center w-12 h-12 bg-linear-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
                               >
                                 <div className='flex flex-col items-center'>
                                   <Heart
-                                    className={`h-3 w-3 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
+                                    className={`h-3 w-3 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-xs mb-0.5`}
                                   />
                                   <span
                                     className={`text-[10px] font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor} tabular-nums leading-none`}
@@ -651,11 +651,11 @@ function SingleActivityDisplay({
                 <div className='arrow-indicator absolute left-[155px] top-[75px] opacity-0 transition-all duration-300 z-20'>
                   <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                     <div
-                      className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
+                      className={`flex items-center justify-center w-16 h-16 bg-linear-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
                     >
                       <div className='flex flex-col items-center'>
                         <Heart
-                          className={`h-4 w-4 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
+                          className={`h-4 w-4 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-xs mb-0.5`}
                         />
                         <span
                           className={`text-xs font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor} tabular-nums leading-none`}

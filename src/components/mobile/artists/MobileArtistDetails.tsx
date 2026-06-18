@@ -67,7 +67,7 @@ export default function MobileArtistDetails({
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <button
             onClick={() => router.back()}

@@ -113,21 +113,21 @@ export const TopBar: FC<TopBarProps> = ({
       {/* Skip to content link for keyboard navigation */}
       <a
         href='#main-content'
-        className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:bg-emeraled-green focus:text-black focus:px-4 focus:py-2 focus:rounded-md focus:outline-none'
+        className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-60 focus:bg-emeraled-green focus:text-black focus:px-4 focus:py-2 focus:rounded-md focus:outline-hidden'
       >
         Skip to main content
       </a>
 
       <header
         className={cn(
-          'sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50',
+          'sticky top-0 z-50 backdrop-blur-xs bg-black/80 border-b border-zinc-800/50',
           className
         )}
         role='banner'
       >
         <div className='flex items-center h-16 px-4'>
           {/* Left Section - Hamburger + Avatar */}
-          <div className='flex items-center flex-shrink-0 w-48'>
+          <div className='flex items-center shrink-0 w-48'>
             <button
               onClick={toggleSidebar}
               className='p-2 mr-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors'
@@ -154,7 +154,7 @@ export const TopBar: FC<TopBarProps> = ({
           </div>
 
           {/* Right Section - Actions */}
-          <div className='flex items-center gap-2 flex-shrink-0 w-48 justify-end'>
+          <div className='flex items-center gap-2 shrink-0 w-48 justify-end'>
             {isHomePage ? <MosaicControls /> : rightContent}
           </div>
         </div>

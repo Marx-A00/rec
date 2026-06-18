@@ -77,7 +77,7 @@ export function SearchResultCard<T extends SearchResultDisplay>({
       aria-label={`Select ${result.title} by ${result.primaryArtistName}`}
     >
       {/* Album thumbnail */}
-      <div className='h-12 w-12 flex-shrink-0 rounded overflow-hidden bg-zinc-800'>
+      <div className='h-12 w-12 shrink-0 rounded overflow-hidden bg-zinc-800'>
         <AlbumImage
           src={result.coverArtUrl}
           alt={result.title}
@@ -100,7 +100,7 @@ export function SearchResultCard<T extends SearchResultDisplay>({
               </span>
             )}
           </span>
-          <span className='text-sm font-semibold text-emeraled-green flex-shrink-0'>
+          <span className='text-sm font-semibold text-emeraled-green shrink-0'>
             {matchScore}% match
           </span>
         </div>

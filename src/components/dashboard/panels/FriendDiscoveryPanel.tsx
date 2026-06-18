@@ -147,7 +147,7 @@ export default function FriendDiscoveryPanel({
     return (
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
         <div className='h-full flex flex-col'>
-          <div className='mb-3 flex-shrink-0'>
+          <div className='mb-3 shrink-0'>
             <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
             <h2 className='text-lg font-semibold text-white'>
               Friend Discovery
@@ -161,7 +161,7 @@ export default function FriendDiscoveryPanel({
                 className='bg-zinc-800/30 rounded-lg p-4 border border-zinc-700'
               >
                 <div className='flex items-start gap-3'>
-                  <div className='w-12 h-12 bg-zinc-700 rounded-full animate-pulse flex-shrink-0' />
+                  <div className='w-12 h-12 bg-zinc-700 rounded-full animate-pulse shrink-0' />
                   <div className='flex-1 space-y-2'>
                     <div className='h-4 bg-zinc-700 rounded animate-pulse w-2/3' />
                     <div className='h-3 bg-zinc-700 rounded animate-pulse w-1/2' />
@@ -181,7 +181,7 @@ export default function FriendDiscoveryPanel({
       {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           {/* Header with refresh */}
-          <div className='flex items-center justify-between mb-4 flex-shrink-0'>
+          <div className='flex items-center justify-between mb-4 shrink-0'>
             <h3 className='text-sm font-medium text-white'>Discover People</h3>
             <Button
               variant='ghost'
@@ -197,7 +197,7 @@ export default function FriendDiscoveryPanel({
           </div>
 
           {/* Suggestions */}
-          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
             {isSessionLoading || isLoading ? (
               <div className='space-y-4'>
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -206,7 +206,7 @@ export default function FriendDiscoveryPanel({
                     className='bg-zinc-800/30 rounded-lg p-4 border border-zinc-700'
                   >
                     <div className='flex items-start gap-3'>
-                      <div className='w-12 h-12 bg-zinc-700 rounded-full animate-pulse flex-shrink-0' />
+                      <div className='w-12 h-12 bg-zinc-700 rounded-full animate-pulse shrink-0' />
                       <div className='flex-1 space-y-2'>
                         <div className='h-4 bg-zinc-700 rounded animate-pulse w-2/3' />
                         <div className='h-3 bg-zinc-700 rounded animate-pulse w-1/2' />
@@ -225,7 +225,7 @@ export default function FriendDiscoveryPanel({
                   >
                     {/* User Info */}
                     <div className='flex items-start gap-3 mb-3'>
-                      <div className='w-12 h-12 bg-zinc-600 rounded-full flex items-center justify-center flex-shrink-0'>
+                      <div className='w-12 h-12 bg-zinc-600 rounded-full flex items-center justify-center shrink-0'>
                         {suggestion.avatar ? (
                           <img
                             src={suggestion.avatar}

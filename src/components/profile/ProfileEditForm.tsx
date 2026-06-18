@@ -152,7 +152,7 @@ export default function ProfileEditForm({
               value={username}
               onChange={handleUsernameChange}
               maxLength={30}
-              className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+              className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:border-transparent ${
                 nameError
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-zinc-600 focus:ring-emeraled-green'
@@ -186,7 +186,7 @@ export default function ProfileEditForm({
               onChange={e => setBio(e.target.value)}
               maxLength={500}
               rows={4}
-              className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emeraled-green focus:border-transparent resize-none'
+              className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-emeraled-green focus:border-transparent resize-none'
               placeholder='Tell others about yourself and your music taste...'
             />
             <p className='text-xs text-zinc-500 mt-1'>

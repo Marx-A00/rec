@@ -26,7 +26,7 @@ export default function AdminBadge({ role }: AdminBadgeProps) {
         }}
       >
         <div
-          className='flex-shrink-0'
+          className='shrink-0'
           style={{
             width: '50px',
             height: '50px',

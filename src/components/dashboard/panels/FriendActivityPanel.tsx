@@ -181,7 +181,7 @@ export default function FriendActivityPanel({
     return (
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
         <div className='h-full flex flex-col'>
-          <div className='mb-3 flex-shrink-0'>
+          <div className='mb-3 shrink-0'>
             <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
             <h2 className='text-lg font-semibold text-white'>
               Friend Activity
@@ -194,8 +194,8 @@ export default function FriendActivityPanel({
                 key={i}
                 className='flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg'
               >
-                <div className='w-8 h-8 bg-zinc-700 rounded-full animate-pulse flex-shrink-0' />
-                <div className='w-10 h-10 bg-zinc-700 rounded animate-pulse flex-shrink-0' />
+                <div className='w-8 h-8 bg-zinc-700 rounded-full animate-pulse shrink-0' />
+                <div className='w-10 h-10 bg-zinc-700 rounded animate-pulse shrink-0' />
                 <div className='flex-1 space-y-1'>
                   <div className='h-3 bg-zinc-700 rounded animate-pulse w-3/4' />
                   <div className='h-2 bg-zinc-700 rounded animate-pulse w-1/2' />
@@ -213,7 +213,7 @@ export default function FriendActivityPanel({
       {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           {/* Friend Selector */}
-          <div className='mb-4 flex-shrink-0'>
+          <div className='mb-4 shrink-0'>
             <div className='relative'>
               <Button
                 variant='ghost'
@@ -280,7 +280,7 @@ export default function FriendActivityPanel({
           </div>
 
           {/* Activities */}
-          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
             {isSessionLoading || isLoading ? (
               <div className='space-y-3'>
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -288,8 +288,8 @@ export default function FriendActivityPanel({
                     key={i}
                     className='flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg'
                   >
-                    <div className='w-8 h-8 bg-zinc-700 rounded-full animate-pulse flex-shrink-0' />
-                    <div className='w-10 h-10 bg-zinc-700 rounded animate-pulse flex-shrink-0' />
+                    <div className='w-8 h-8 bg-zinc-700 rounded-full animate-pulse shrink-0' />
+                    <div className='w-10 h-10 bg-zinc-700 rounded animate-pulse shrink-0' />
                     <div className='flex-1 space-y-1'>
                       <div className='h-3 bg-zinc-700 rounded animate-pulse w-3/4' />
                       <div className='h-2 bg-zinc-700 rounded animate-pulse w-1/2' />
@@ -305,7 +305,7 @@ export default function FriendActivityPanel({
                     className='flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer group'
                   >
                     {/* Friend Avatar */}
-                    <div className='relative flex-shrink-0'>
+                    <div className='relative shrink-0'>
                       <div className='w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center'>
                         {activity.friend.avatar ? (
                           <img
@@ -323,7 +323,7 @@ export default function FriendActivityPanel({
                     </div>
 
                     {/* Album Cover */}
-                    <div className='flex-shrink-0'>
+                    <div className='shrink-0'>
                       <AlbumImage
                         src={activity.album.imageUrl}
                         alt={`${activity.album.title} by ${activity.album.artist}`}

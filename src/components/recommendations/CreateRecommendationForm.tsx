@@ -57,7 +57,7 @@ function SimilarityRatingDial({
         <div className='text-sm font-bold text-zinc-300 mb-1'>
           SIMILARITY RATING
         </div>
-        <div className='text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+        <div className='text-2xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
           {value}/10
         </div>
       </div>
@@ -65,7 +65,7 @@ function SimilarityRatingDial({
       {/* Main Dial Container */}
       <div className='relative'>
         {/* Outer Ring with LED Indicators */}
-        <div className='relative w-32 h-32 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 border-4 border-zinc-600 shadow-2xl'>
+        <div className='relative w-32 h-32 rounded-full bg-linear-to-br from-zinc-700 to-zinc-800 border-4 border-zinc-600 shadow-2xl'>
           {/* LED Ring */}
           {Array.from({ length: 10 }, (_, i) => {
             const ledAngle = (i * 270) / 9 - 135; // Start from -135 degrees

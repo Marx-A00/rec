@@ -150,7 +150,7 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <div className='bg-black/80 backdrop-blur-sm rounded-2xl p-8 border border-zinc-800/50'>
+    <div className='bg-black/80 backdrop-blur-xs rounded-2xl p-8 border border-zinc-800/50'>
       <div className='w-full'>
         {/* Header — avatar + text side by side */}
         <div className='flex items-center gap-5 mb-6'>
@@ -193,7 +193,7 @@ export default function CompleteProfilePage() {
                 autoCorrect='off'
                 spellCheck='false'
                 autoFocus
-                className='w-full px-4 h-12 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-12'
+                className='w-full px-4 h-12 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-12'
               />
               {/* Status indicator */}
               <div className='absolute right-3 top-1/2 -translate-y-1/2'>
@@ -237,7 +237,7 @@ export default function CompleteProfilePage() {
               placeholder='Tell us a little about yourself...'
               maxLength={160}
               rows={3}
-              className='w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent resize-none'
+              className='w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:border-transparent resize-none'
             />
             <p className='text-xs text-zinc-500 text-right'>{bio.length}/160</p>
           </div>

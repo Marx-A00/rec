@@ -254,7 +254,7 @@ export default function SearchResultRenderer({
       <div className={`flex items-center ${spacing} w-full min-w-0`}>
         {/* Image/Icon Section */}
         <div
-          className='flex-shrink-0 relative'
+          className='shrink-0 relative'
           style={{
             width: imageSize.width,
             height: imageSize.height,
@@ -286,7 +286,7 @@ export default function SearchResultRenderer({
 
         {/* Metadata Section */}
         {showMetadata && (
-          <div className='flex-shrink-0 flex flex-col items-end space-y-1'>
+          <div className='shrink-0 flex flex-col items-end space-y-1'>
             {/* Type Label */}
             {showTypeLabel && (
               <span

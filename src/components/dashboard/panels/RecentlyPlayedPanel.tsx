@@ -86,7 +86,7 @@ export default function RecentlyPlayedPanel({
     return (
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
         <div className='h-full flex flex-col'>
-          <div className='mb-3 flex-shrink-0'>
+          <div className='mb-3 shrink-0'>
             <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
             <h2 className='text-lg font-semibold text-white'>
               Recently Played
@@ -96,7 +96,7 @@ export default function RecentlyPlayedPanel({
           <div className='flex-1 space-y-3'>
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className='flex items-center gap-3'>
-                <div className='w-12 h-12 bg-zinc-700 rounded animate-pulse flex-shrink-0' />
+                <div className='w-12 h-12 bg-zinc-700 rounded animate-pulse shrink-0' />
                 <div className='flex-1 space-y-1'>
                   <div className='h-4 bg-zinc-700 rounded animate-pulse' />
                   <div className='h-3 bg-zinc-700 rounded animate-pulse w-2/3' />
@@ -113,12 +113,12 @@ export default function RecentlyPlayedPanel({
     <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
       {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
-          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+          <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
             {isSessionLoading || isLoading ? (
               <div className='space-y-3'>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className='flex items-center gap-3'>
-                    <div className='w-12 h-12 bg-zinc-700 rounded animate-pulse flex-shrink-0' />
+                    <div className='w-12 h-12 bg-zinc-700 rounded animate-pulse shrink-0' />
                     <div className='flex-1 space-y-1'>
                       <div className='h-4 bg-zinc-700 rounded animate-pulse' />
                       <div className='h-3 bg-zinc-700 rounded animate-pulse w-2/3' />
@@ -133,7 +133,7 @@ export default function RecentlyPlayedPanel({
                     key={album.id}
                     className='flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer group'
                   >
-                    <div className='relative flex-shrink-0'>
+                    <div className='relative shrink-0'>
                       <AlbumImage
                         src={album.imageUrl}
                         alt={`${album.title} by ${album.artist}`}

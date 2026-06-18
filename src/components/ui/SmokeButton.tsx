@@ -67,7 +67,7 @@ interface StylePreset {
   stretch: number;
   /** Opacity of the smoke canvas layer (0-1) */
   smokeOpacity: number;
-  /** Glass overlay: backdrop-blur + semi-transparent fill on top of smoke */
+  /** Glass overlay: backdrop-blur-sm + semi-transparent fill on top of smoke */
   glassOverlay: boolean;
   /** Border style */
   borderClass: string;

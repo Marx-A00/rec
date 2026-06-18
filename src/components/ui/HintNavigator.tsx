@@ -61,7 +61,7 @@ export default function HintNavigator() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'fixed top-20 right-6 z-[60] flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all duration-200',
+          'fixed top-20 right-6 z-60 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all duration-200',
           'bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600',
           isOpen && 'bg-zinc-700 border-zinc-600'
         )}
@@ -82,7 +82,7 @@ export default function HintNavigator() {
 
       {/* Panel */}
       {isOpen && (
-        <div className='fixed top-[88px] right-6 z-[60] w-80 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl'>
+        <div className='fixed top-[88px] right-6 z-60 w-80 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl'>
           {/* Header */}
           <div className='flex items-center justify-between border-b border-zinc-800 px-4 py-3'>
             <h3 className='text-sm font-bold text-white'>Hints</h3>
@@ -143,7 +143,7 @@ export default function HintNavigator() {
                         {hint.description}
                       </p>
                     </div>
-                    <div className='flex items-center gap-1 flex-shrink-0'>
+                    <div className='flex items-center gap-1 shrink-0'>
                       <button
                         onClick={e => handleToggleHint(e, hint)}
                         className='p-1 text-zinc-600 hover:text-zinc-300 transition-colors'

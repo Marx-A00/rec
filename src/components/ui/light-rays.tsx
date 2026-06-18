@@ -61,7 +61,7 @@ const Ray = ({
 }: LightRay) => {
   return (
     <motion.div
-      className="pointer-events-none absolute -top-[12%] origin-top -translate-x-1/2 rounded-full opacity-0"
+      className="pointer-events-none absolute top-[-12%] origin-top -translate-x-1/2 rounded-full opacity-0"
       style={
         {
           left: `${left}%`,

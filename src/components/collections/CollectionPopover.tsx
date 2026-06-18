@@ -24,7 +24,7 @@ import {
 
 interface CollectionPopoverProps {
   album: Album;
-  variant?: 'default' | 'outline' | 'ghost' | 'primary' | 'secondary';
+  variant?: 'default' | 'outline-solid' | 'ghost' | 'primary' | 'secondary';
   size?: 'sm' | 'lg';
 }
 

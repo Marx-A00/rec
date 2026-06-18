@@ -208,7 +208,7 @@ export default function UncoverPage() {
           {revealed && (
             <div className='flex gap-5'>
               {/* Album cover with text region overlay */}
-              <div className='relative w-[280px] flex-shrink-0 overflow-hidden rounded-lg'>
+              <div className='relative w-[280px] shrink-0 overflow-hidden rounded-lg'>
                 <AlbumImage
                   src={todaysChallenge.coverUrl}
                   cloudflareImageId={todaysChallenge.cloudflareImageId}

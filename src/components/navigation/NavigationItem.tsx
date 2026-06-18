@@ -60,7 +60,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       )}
     >
       <ItemIcon
-        className={cn(isCollapsed ? 'w-6 h-6' : 'w-5 h-5', 'flex-shrink-0')}
+        className={cn(isCollapsed ? 'w-6 h-6' : 'w-5 h-5', 'shrink-0')}
       />
       <span
         className={cn(

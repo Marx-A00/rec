@@ -63,7 +63,7 @@ export default function MobileCollectionCard({
         className='block active:scale-[0.98] transition-transform'
       >
         <div className='flex gap-3'>
-          <div className='relative flex-shrink-0'>
+          <div className='relative shrink-0'>
             <AlbumImage
               src={activity.albumImage || '/placeholder-album.png'}
               cloudflareImageId={activity.albumCloudflareImageId}

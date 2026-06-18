@@ -3,7 +3,7 @@ export function CollectionActivitySkeleton() {
   return (
     <div className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'>
       <div className='flex justify-center items-center gap-2 mb-3'>
-        <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+        <div className='w-6 h-6 bg-zinc-700 rounded-full shrink-0' />
         <div className='h-4 bg-zinc-700 rounded w-52' />
       </div>
       <div className='flex justify-center'>
@@ -18,7 +18,7 @@ export function RecommendationActivitySkeleton() {
   return (
     <div className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'>
       <div className='flex justify-center items-center gap-2 mb-3'>
-        <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+        <div className='w-6 h-6 bg-zinc-700 rounded-full shrink-0' />
         <div className='h-4 bg-zinc-700 rounded w-64' />
       </div>
       <div className='flex justify-center'>
@@ -36,7 +36,7 @@ export function GroupedActivitySkeleton() {
   return (
     <div className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'>
       <div className='flex justify-center items-center gap-2 mb-3'>
-        <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+        <div className='w-6 h-6 bg-zinc-700 rounded-full shrink-0' />
         <div className='h-4 bg-zinc-700 rounded w-44' />
       </div>
       <div className='flex justify-center'>
@@ -59,7 +59,7 @@ export function FollowActivitySkeleton() {
   return (
     <div className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'>
       <div className='flex justify-center items-center gap-2 mb-3'>
-        <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+        <div className='w-6 h-6 bg-zinc-700 rounded-full shrink-0' />
         <div className='h-4 bg-zinc-700 rounded w-36' />
       </div>
       <div className='flex justify-center'>

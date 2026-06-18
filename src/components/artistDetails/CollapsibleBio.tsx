@@ -66,9 +66,9 @@ export function CollapsibleBio({
         >
           <span>{isExpanded ? 'Show less' : 'Read more'}</span>
           {isExpanded ? (
-            <ChevronUp className='h-3 w-3 group-hover:translate-y-[-1px] transition-transform duration-200' />
+            <ChevronUp className='h-3 w-3 group-hover:-translate-y-px transition-transform duration-200' />
           ) : (
-            <ChevronDown className='h-3 w-3 group-hover:translate-y-[1px] transition-transform duration-200' />
+            <ChevronDown className='h-3 w-3 group-hover:translate-y-px transition-transform duration-200' />
           )}
         </button>
       )}

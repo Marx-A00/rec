@@ -156,7 +156,7 @@ export default function FollowersList({
               placeholder={`Search ${type}...`}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className='w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-zinc-400 focus:outline-none focus:border-emeraled-green transition-colors'
+              className='w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-zinc-400 focus:outline-hidden focus:border-emeraled-green transition-colors'
             />
           </div>
 
@@ -164,7 +164,7 @@ export default function FollowersList({
           <select
             value={sort}
             onChange={e => setSort(e.target.value as 'recent' | 'alphabetical')}
-            className='bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emeraled-green transition-colors'
+            className='bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:outline-hidden focus:border-emeraled-green transition-colors'
           >
             <option value='recent'>Most Recent</option>
             <option value='alphabetical'>Alphabetical</option>

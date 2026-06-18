@@ -103,7 +103,7 @@ const AlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
               value={searchQuery}
               onChange={e => handleInputChange(e.target.value)}
               disabled={disabled}
-              className={`w-full pl-10 pr-4 py-2 bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses()}`}
+              className={`w-full pl-10 pr-4 py-2 bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses()}`}
             />
           </div>
         </div>
@@ -123,14 +123,14 @@ const AlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
         )}
 
         {searchResults.length > 0 && (
-          <div className='space-y-2 max-h-64 overflow-y-auto relative z-[200] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
+          <div className='space-y-2 max-h-64 overflow-y-auto relative z-200 bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
             {searchResults.map(album => (
               <div
                 key={album.id}
                 onClick={() => onAlbumSelect(album)}
                 className='flex items-center space-x-3 p-3 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
               >
-                <div className='w-12 h-12 flex-shrink-0 relative'>
+                <div className='w-12 h-12 shrink-0 relative'>
                   <AlbumImage
                     src={album.image?.url}
                     alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}

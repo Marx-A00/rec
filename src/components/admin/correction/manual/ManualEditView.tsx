@@ -129,7 +129,7 @@ export function ManualEditView({ album }: ManualEditViewProps) {
       {/* Validation banner */}
       {showValidationBanner && errorCount > 0 && (
         <div className='flex items-start gap-3 p-4 rounded-lg border border-amber-500/50 bg-amber-500/10'>
-          <AlertCircle className='w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5' />
+          <AlertCircle className='w-5 h-5 text-amber-500 shrink-0 mt-0.5' />
           <div className='flex-1'>
             <p className='font-medium text-amber-200'>
               {errorCount} validation {errorCount === 1 ? 'error' : 'errors'}

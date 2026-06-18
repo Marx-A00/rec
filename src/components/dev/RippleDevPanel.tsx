@@ -221,7 +221,7 @@ export function RippleDevPanel({ config, onChange }: RippleDevPanelProps) {
                   e.target.value as RippleConfig['accentPattern']
                 )
               }
-              className='w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cosmic-latte'
+              className='w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-hidden focus:border-cosmic-latte'
             >
               {ACCENT_PATTERNS.map(p => (
                 <option key={p.value} value={p.value}>

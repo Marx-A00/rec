@@ -70,7 +70,7 @@ export default function AlbumSelector({
               onSearchQueryChange(e.target.value);
               onSearch(e.target.value);
             }}
-            className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500'
           />
           {isSearching && (
             <div className='absolute right-3 top-3'>

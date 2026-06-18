@@ -154,20 +154,20 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       {/* Glassmorphism calendar container */}
       <div className='relative inline-block'>
         {/* Ambient glow behind the glass */}
-        <div className='pointer-events-none absolute -inset-6 rounded-3xl bg-emerald-500/[0.06] blur-3xl' />
+        <div className='pointer-events-none absolute -inset-6 rounded-3xl bg-emerald-500/6 blur-3xl' />
 
         {/* Glass card */}
-        <div className='relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl'>
+        <div className='relative overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl'>
           {/* Top edge highlight */}
-          <div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent' />
+          <div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent' />
           {/* Subtle inner gradient */}
-          <div className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.03] via-transparent to-white/[0.01]' />
+          <div className='pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-br from-white/3 via-transparent to-white/1' />
 
           {/* Always render calendar so the card never shifts size;
               overlay spinner when loading */}
           <div className='relative'>
             {isLoading && (
-              <div className='absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/40 backdrop-blur-sm'>
+              <div className='absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/40 backdrop-blur-xs'>
                 <LumaSpinner />
               </div>
             )}
@@ -200,19 +200,19 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
 
       {/* Legend */}
       <div className='flex flex-wrap justify-center gap-3 text-sm'>
-        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+        <div className='flex items-center gap-2 rounded-full border border-white/6 bg-white/3 px-3 py-1.5 backdrop-blur-md'>
           <div className='h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' />
           <span className='text-zinc-300'>Won</span>
         </div>
-        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+        <div className='flex items-center gap-2 rounded-full border border-white/6 bg-white/3 px-3 py-1.5 backdrop-blur-md'>
           <div className='h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]' />
           <span className='text-zinc-300'>Lost</span>
         </div>
-        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+        <div className='flex items-center gap-2 rounded-full border border-white/6 bg-white/3 px-3 py-1.5 backdrop-blur-md'>
           <div className='h-2.5 w-2.5 rounded-full bg-zinc-500' />
           <span className='text-zinc-300'>Missed</span>
         </div>
-        <div className='flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 backdrop-blur-md'>
+        <div className='flex items-center gap-2 rounded-full border border-white/6 bg-white/3 px-3 py-1.5 backdrop-blur-md'>
           <div className='h-2.5 w-2.5 rounded-full border-2 border-emerald-400 bg-emerald-500/20 shadow-[0_0_6px_rgba(52,211,153,0.4)]' />
           <span className='text-zinc-300'>Today</span>
         </div>

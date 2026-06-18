@@ -154,7 +154,7 @@ export default function RegisterForm() {
             value={formData.email}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Enter your email address'
             aria-describedby={errors.email ? 'email-error' : undefined}
             aria-invalid={errors.email ? 'true' : 'false'}
@@ -190,7 +190,7 @@ export default function RegisterForm() {
               value={formData.password}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
               placeholder='Create a strong password'
               aria-describedby={`password-strength ${errors.password ? 'password-error' : ''}`}
               aria-invalid={errors.password ? 'true' : 'false'}
@@ -199,7 +199,7 @@ export default function RegisterForm() {
             <button
               type='button'
               onClick={() => setShowPassword(!showPassword)}
-              className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-none focus:text-zinc-200 transition-colors duration-200'
+              className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-hidden focus:text-zinc-200 transition-colors duration-200'
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
@@ -259,7 +259,7 @@ export default function RegisterForm() {
       <button
         type='submit'
         disabled={isLoading || !isFormValid}
-        className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+        className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
         aria-describedby='submit-button-description'
       >
         <span id='submit-button-description' className='sr-only'>

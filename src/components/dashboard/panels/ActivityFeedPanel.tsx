@@ -15,7 +15,7 @@ export default function ActivityFeedPanel({
   if (isEditMode) {
     return (
       <div className='bg-zinc-900/50 p-6 h-full flex flex-col overflow-hidden'>
-        <div className='mb-3 flex-shrink-0'>
+        <div className='mb-3 shrink-0'>
           <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
           <h3 className='text-lg font-semibold text-white'>Recent Activity</h3>
         </div>
@@ -44,7 +44,7 @@ export default function ActivityFeedPanel({
 
   return (
     <div className='bg-zinc-900/50 p-6 h-full flex flex-col overflow-hidden'>
-      <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+      <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
         <Suspense
           fallback={<div className='text-zinc-400'>Loading activity...</div>}
         >

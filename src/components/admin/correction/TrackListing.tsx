@@ -66,7 +66,7 @@ export function TrackListing({ tracks }: TrackListingProps) {
       key={track.discNumber + '-' + track.trackNumber}
       className='flex justify-between items-center py-0.5 text-sm'
     >
-      <span className='text-zinc-500 mr-2 tabular-nums w-6 text-right flex-shrink-0'>
+      <span className='text-zinc-500 mr-2 tabular-nums w-6 text-right shrink-0'>
         {track.trackNumber}.
       </span>
       <span className='flex-1 truncate text-zinc-300'>{track.title}</span>

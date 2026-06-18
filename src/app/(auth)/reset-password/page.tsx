@@ -32,7 +32,7 @@ function ResetPasswordForm() {
         />
 
         <div className='text-center space-y-3'>
-          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 backdrop-blur-sm border border-red-500/30 mb-4'>
+          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 backdrop-blur-xs border border-red-500/30 mb-4'>
             <svg
               className='w-6 h-6 text-red-400'
               fill='none'
@@ -52,7 +52,7 @@ function ResetPasswordForm() {
           </h1>
         </div>
 
-        <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+        <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
           <p className='text-zinc-400 text-sm text-center'>
             This password reset link is invalid or incomplete. Please request a
             new one.
@@ -73,7 +73,7 @@ function ResetPasswordForm() {
     return (
       <div className='space-y-6'>
         <div className='text-center space-y-3'>
-          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-500/20 backdrop-blur-sm border border-green-500/30 mb-4'>
+          <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-500/20 backdrop-blur-xs border border-green-500/30 mb-4'>
             <svg
               className='w-6 h-6 text-green-400'
               fill='none'
@@ -93,7 +93,7 @@ function ResetPasswordForm() {
           </h1>
         </div>
 
-        <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+        <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
           <p className='text-zinc-300 text-sm text-center'>
             Your password has been reset successfully. You can now sign in with
             your new password.
@@ -196,7 +196,7 @@ function ResetPasswordForm() {
       />
 
       <div className='text-center space-y-3'>
-        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
+        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-xs border border-cosmic-latte/30 mb-4'>
           <svg
             className='w-6 h-6 text-cosmic-latte'
             fill='none'
@@ -216,12 +216,12 @@ function ResetPasswordForm() {
           Set new password
         </h1>
 
-        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg'>
+        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-xs px-3 py-1 rounded-lg'>
           Choose a strong password for your account
         </p>
       </div>
 
-      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
+      <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
         <form onSubmit={handleSubmit} className='space-y-4' noValidate>
           {error && (
             <div
@@ -255,13 +255,13 @@ function ResetPasswordForm() {
                   if (fieldError) setFieldError('');
                   if (error) setError('');
                 }}
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Enter new password'
               />
               <button
                 type='button'
                 onClick={() => setShowPassword(!showPassword)}
-                className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-none focus:text-zinc-200 transition-colors duration-200'
+                className='absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-200 focus:outline-hidden focus:text-zinc-200 transition-colors duration-200'
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {passwordToggleIcon}
@@ -292,7 +292,7 @@ function ResetPasswordForm() {
                   setConfirmPassword(e.target.value);
                   if (fieldError) setFieldError('');
                 }}
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Confirm new password'
               />
             </div>
@@ -307,7 +307,7 @@ function ResetPasswordForm() {
           <button
             type='submit'
             disabled={isLoading || !password || !confirmPassword}
-            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isLoading ? (
               <span className='flex items-center'>

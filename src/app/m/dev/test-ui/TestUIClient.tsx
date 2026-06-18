@@ -29,7 +29,7 @@ const FROST_TINTS = [
 
 const BLUR_LEVELS = [
   { name: 'None', value: 'backdrop-blur-none' },
-  { name: 'SM', value: 'backdrop-blur-sm' },
+  { name: 'SM', value: 'backdrop-blur-xs' },
   { name: 'MD', value: 'backdrop-blur-md' },
   { name: 'LG', value: 'backdrop-blur-lg' },
   { name: 'XL', value: 'backdrop-blur-xl' },
@@ -82,7 +82,7 @@ export function TestUIClient() {
 
           {/* Frosted glass overlay */}
           <div
-            className={`absolute inset-0 ${blur} border border-white/[0.15] rounded-xl`}
+            className={`absolute inset-0 ${blur} border border-white/15 rounded-xl`}
             style={{ backgroundColor: frostTint }}
           />
 
@@ -104,7 +104,7 @@ export function TestUIClient() {
       </div>
 
       {/* Controls */}
-      <div className='w-full max-w-xs rounded-xl bg-zinc-900/70 p-4 backdrop-blur-sm'>
+      <div className='w-full max-w-xs rounded-xl bg-zinc-900/70 p-4 backdrop-blur-xs'>
         {/* Smoke color */}
         <p className='mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400'>
           Smoke Color

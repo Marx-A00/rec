@@ -96,7 +96,7 @@ export default function ProfileTab({
             onChange={e =>
               setProfileForm(prev => ({ ...prev, username: e.target.value }))
             }
-            className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent'
+            className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:border-transparent'
             placeholder='Your display name'
           />
         </div>
@@ -109,7 +109,7 @@ export default function ProfileTab({
             onChange={e =>
               setProfileForm(prev => ({ ...prev, bio: e.target.value }))
             }
-            className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent h-24 resize-none'
+            className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:border-transparent h-24 resize-none'
             placeholder='Tell us about yourself...'
           />
         </div>
@@ -153,7 +153,7 @@ export default function ProfileTab({
                 aria-label='Toggle arcade button on profile'
                 disabled={isArcadePending}
                 onClick={() => onToggleArcadeButton?.(!showArcadeButton)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50 ${
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50 ${
                   showArcadeButton ? 'bg-dark-pastel-red' : 'bg-zinc-700'
                 }`}
               >

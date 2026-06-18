@@ -246,7 +246,7 @@ function ChallengeCard({
 }) {
   return (
     <div className='flex gap-3 rounded-md border border-zinc-800 bg-zinc-950/50 p-3'>
-      <div className='relative w-12 h-12 flex-shrink-0 overflow-hidden rounded'>
+      <div className='relative w-12 h-12 shrink-0 overflow-hidden rounded'>
         <AlbumImage
           src={challenge.coverUrl ?? undefined}
           cloudflareImageId={challenge.cloudflareImageId ?? undefined}
@@ -401,9 +401,9 @@ function RecentActivity({ sessions }: { sessions: RecentSessionEntry[] }) {
               </p>
             </div>
             {session.won ? (
-              <CheckCircle2 className='h-4 w-4 flex-shrink-0 text-green-500' />
+              <CheckCircle2 className='h-4 w-4 shrink-0 text-green-500' />
             ) : (
-              <XCircle className='h-4 w-4 flex-shrink-0 text-red-500' />
+              <XCircle className='h-4 w-4 shrink-0 text-red-500' />
             )}
           </div>
         ))}

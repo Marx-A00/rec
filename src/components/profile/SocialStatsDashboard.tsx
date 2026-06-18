@@ -131,7 +131,7 @@ const StatCard = ({
   icon?: string;
   trend?: 'up' | 'down' | 'neutral';
 }) => (
-  <div className='bg-white rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow'>
+  <div className='bg-white rounded-lg border p-6 shadow-xs hover:shadow-md transition-shadow'>
     <div className='flex items-center justify-between'>
       <div>
         <p className='text-sm font-medium text-gray-600'>{title}</p>
@@ -268,7 +268,7 @@ export default function SocialStatsDashboard({
               onClick={() => setTimeRange(option.value)}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                 timeRange === option.value
-                  ? 'bg-white text-gray-900 shadow-sm'
+                  ? 'bg-white text-gray-900 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -286,7 +286,7 @@ export default function SocialStatsDashboard({
             onClick={() => setActiveTab(tab.value as any)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.value
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -332,7 +332,7 @@ export default function SocialStatsDashboard({
           </div>
 
           {/* Growth Chart */}
-          <div className='bg-white rounded-lg border p-6 shadow-sm'>
+          <div className='bg-white rounded-lg border p-6 shadow-xs'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Follower Growth
             </h3>
@@ -389,7 +389,7 @@ export default function SocialStatsDashboard({
           </div>
 
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-            <div className='bg-white rounded-lg border p-6 shadow-sm'>
+            <div className='bg-white rounded-lg border p-6 shadow-xs'>
               <h3 className='text-lg font-semibold text-gray-900 mb-4'>
                 Followers Over Time
               </h3>
@@ -412,7 +412,7 @@ export default function SocialStatsDashboard({
               </ResponsiveContainer>
             </div>
 
-            <div className='bg-white rounded-lg border p-6 shadow-sm'>
+            <div className='bg-white rounded-lg border p-6 shadow-xs'>
               <h3 className='text-lg font-semibold text-gray-900 mb-4'>
                 Recommendations Over Time
               </h3>
@@ -455,7 +455,7 @@ export default function SocialStatsDashboard({
           </div>
 
           {/* Top Recommendations */}
-          <div className='bg-white rounded-lg border p-6 shadow-sm'>
+          <div className='bg-white rounded-lg border p-6 shadow-xs'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Top Performing Recommendations
             </h3>
@@ -465,7 +465,7 @@ export default function SocialStatsDashboard({
                   key={rec.id}
                   className='flex items-center space-x-4 p-4 bg-gray-50 rounded-lg'
                 >
-                  <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                  <div className='shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
                     <span className='text-sm font-medium text-blue-600'>
                       #{index + 1}
                     </span>
@@ -478,7 +478,7 @@ export default function SocialStatsDashboard({
                       {rec.basisAlbum.artist} / {rec.recommendedAlbum.artist}
                     </p>
                   </div>
-                  <div className='flex-shrink-0 text-right'>
+                  <div className='shrink-0 text-right'>
                     <p
                       className={`text-sm font-medium ${getScoreTextColor(rec.score)}`}
                     >
@@ -494,7 +494,7 @@ export default function SocialStatsDashboard({
           </div>
 
           {/* Engagement Over Time */}
-          <div className='bg-white rounded-lg border p-6 shadow-sm'>
+          <div className='bg-white rounded-lg border p-6 shadow-xs'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Average Recommendation Score
             </h3>
@@ -548,7 +548,7 @@ export default function SocialStatsDashboard({
           </div>
 
           {/* Activity Heatmap */}
-          <div className='bg-white rounded-lg border p-6 shadow-sm'>
+          <div className='bg-white rounded-lg border p-6 shadow-xs'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Activity Heatmap
             </h3>
@@ -596,7 +596,7 @@ export default function SocialStatsDashboard({
           </div>
 
           {/* Consistency Score */}
-          <div className='bg-white rounded-lg border p-6 shadow-sm'>
+          <div className='bg-white rounded-lg border p-6 shadow-xs'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Consistency Score
             </h3>

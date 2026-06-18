@@ -161,7 +161,7 @@ export default function MobileHeader() {
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder='Search...'
-                className='w-full h-10 pl-9 pr-9 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors'
+                className='w-full h-10 pl-9 pr-9 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-hidden focus:border-emerald-500 transition-colors'
               />
               {query && (
                 <button

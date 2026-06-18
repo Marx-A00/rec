@@ -44,7 +44,7 @@ function AlbumSkeletonItem({
 }) {
   const itemClasses =
     layout === 'row'
-      ? `relative group cursor-pointer transition-all duration-200 flex-shrink-0 w-32 ${showHoverEffects ? 'hover:scale-105 hover:z-10' : ''}`
+      ? `relative group cursor-pointer transition-all duration-200 shrink-0 w-32 ${showHoverEffects ? 'hover:scale-105 hover:z-10' : ''}`
       : `relative group cursor-pointer transition-all duration-200 ${showHoverEffects ? 'hover:scale-105 hover:z-10' : ''}`;
 
   return (
@@ -52,7 +52,7 @@ function AlbumSkeletonItem({
       {/* Main album cover skeleton */}
       <div className='relative w-full aspect-square rounded border border-zinc-800 group-hover:border-zinc-600 transition-colors overflow-hidden bg-zinc-800'>
         {/* Animated shimmer effect */}
-        <div className='absolute inset-0 bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent -translate-x-full animate-pulse transition-transform duration-1000'></div>
+        <div className='absolute inset-0 bg-linear-to-r from-transparent via-zinc-700/50 to-transparent -translate-x-full animate-pulse transition-transform duration-1000'></div>
 
         {/* Music note placeholder in center */}
         <div className='absolute inset-0 flex items-center justify-center'>
@@ -98,7 +98,7 @@ export function AlbumCollectionSkeleton({
 }: AlbumCollectionSkeletonProps) {
   const containerClasses =
     layout === 'row'
-      ? `flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${className}`
+      ? `flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none ${className}`
       : `grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 ${className}`;
 
   return (

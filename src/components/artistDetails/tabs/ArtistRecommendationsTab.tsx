@@ -102,7 +102,7 @@ export default function ArtistRecommendationsTab({
           </p>
           <button
             onClick={() => refetch()}
-            className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
+            className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors inline-flex items-center gap-2 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
             aria-label='Retry loading recommendations'
           >
             <RefreshCw className='h-4 w-4' />
@@ -147,7 +147,7 @@ export default function ArtistRecommendationsTab({
               <button
                 key={option.value}
                 onClick={() => setFilter(option.value)}
-                className={`px-4 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                className={`px-4 py-2 rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
                   filter === option.value
                     ? 'bg-cosmic-latte text-black font-medium focus:ring-cosmic-latte'
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 focus:ring-zinc-600'
@@ -169,7 +169,7 @@ export default function ArtistRecommendationsTab({
               id='sort-select'
               value={sort}
               onChange={e => setSort(e.target.value as SortType)}
-              className='bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-cosmic-latte focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900'
+              className='bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg border border-zinc-700 focus:outline-hidden focus:border-cosmic-latte focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900'
               aria-label='Sort recommendations'
             >
               {sortOptions.map(option => (
@@ -201,14 +201,14 @@ export default function ArtistRecommendationsTab({
           <div className='flex justify-center gap-4'>
             <button
               onClick={() => router.push('/recommend')}
-              className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
+              className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
               aria-label='Create a new recommendation'
             >
               Create Recommendation
             </button>
             <button
               onClick={() => router.push('/browse')}
-              className='px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:ring-offset-2 focus:ring-offset-zinc-900'
+              className='px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-600 focus:ring-offset-2 focus:ring-offset-zinc-900'
               aria-label='Browse albums'
             >
               Browse Albums
@@ -239,7 +239,7 @@ export default function ArtistRecommendationsTab({
               <button
                 onClick={loadMore}
                 disabled={isFetching}
-                className='flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
+                className='flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
               >
                 {isFetching ? (
                   <>

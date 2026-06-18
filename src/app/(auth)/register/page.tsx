@@ -29,7 +29,7 @@ export default function Register() {
         <h1 className='text-2xl font-bold text-white tracking-tight'>
           Create your account
         </h1>
-        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg'>
+        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-xs px-3 py-1 rounded-lg'>
           Already have an account?{' '}
           <Link
             href='/signin'
@@ -42,12 +42,12 @@ export default function Register() {
       </div>
 
       {/* Registration Form */}
-      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-5 shadow-2xl space-y-4'>
+      <div className='bg-black/40 backdrop-blur-xs border border-zinc-700/50 rounded-xl p-5 shadow-2xl space-y-4'>
         {/* Google Sign Up */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isGoogleLoading}
-          className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+          className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-xs py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
         >
           {isGoogleLoading ? (
             <span className='flex items-center'>
@@ -108,7 +108,7 @@ export default function Register() {
             <div className='w-full border-t border-zinc-700/60'></div>
           </div>
           <div className='relative flex justify-center'>
-            <span className='bg-zinc-900/80 backdrop-blur-sm px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
+            <span className='bg-zinc-900/80 backdrop-blur-xs px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
               Or continue with email
             </span>
           </div>

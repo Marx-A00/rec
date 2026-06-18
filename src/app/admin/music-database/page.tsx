@@ -757,7 +757,7 @@ export default function MusicDatabasePage() {
                 </Select>
 
                 <Button
-                  variant={filters.needsEnrichment ? 'default' : 'outline'}
+                  variant={filters.needsEnrichment ? 'default' : 'outline-solid'}
                   onClick={() =>
                     setFilters(prev => ({
                       ...prev,
@@ -806,7 +806,7 @@ export default function MusicDatabasePage() {
                 </div>
                 <div className='flex flex-wrap gap-2'>
                   <Button
-                    variant={sourceFilter === 'SPOTIFY' ? 'default' : 'outline'}
+                    variant={sourceFilter === 'SPOTIFY' ? 'default' : 'outline-solid'}
                     onClick={() =>
                       setSourceFilter(prev =>
                         prev === 'SPOTIFY' ? 'all' : 'SPOTIFY'
@@ -829,7 +829,7 @@ export default function MusicDatabasePage() {
                   </Button>
                   <Button
                     variant={
-                      sourceFilter === 'LISTENBRAINZ' ? 'default' : 'outline'
+                      sourceFilter === 'LISTENBRAINZ' ? 'default' : 'outline-solid'
                     }
                     onClick={() =>
                       setSourceFilter(prev =>
@@ -852,7 +852,7 @@ export default function MusicDatabasePage() {
                   </Button>
                   <Button
                     variant={
-                      sourceFilter === 'MUSICBRAINZ' ? 'default' : 'outline'
+                      sourceFilter === 'MUSICBRAINZ' ? 'default' : 'outline-solid'
                     }
                     onClick={() =>
                       setSourceFilter(prev =>
@@ -1008,15 +1008,15 @@ export default function MusicDatabasePage() {
                         <TableCell className='overflow-hidden'>
                           <div className='flex items-center gap-2 min-w-0'>
                             {expandedRows.has(album.id) ? (
-                              <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                              <ChevronDown className='h-4 w-4 text-zinc-400 shrink-0' />
                             ) : (
-                              <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                              <ChevronRight className='h-4 w-4 text-zinc-400 shrink-0' />
                             )}
                             {album.coverArtUrl && (
                               <img
                                 src={album.coverArtUrl}
                                 alt={album.title}
-                                className='h-10 w-10 rounded flex-shrink-0'
+                                className='h-10 w-10 rounded shrink-0'
                               />
                             )}
                             <div className='min-w-0'>
@@ -1327,15 +1327,15 @@ export default function MusicDatabasePage() {
                         <TableCell className='overflow-hidden'>
                           <div className='flex items-center gap-2 min-w-0'>
                             {expandedRows.has(artist.id) ? (
-                              <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                              <ChevronDown className='h-4 w-4 text-zinc-400 shrink-0' />
                             ) : (
-                              <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                              <ChevronRight className='h-4 w-4 text-zinc-400 shrink-0' />
                             )}
                             {artist.imageUrl && (
                               <img
                                 src={artist.imageUrl}
                                 alt={artist.name}
-                                className='h-10 w-10 rounded-full flex-shrink-0'
+                                className='h-10 w-10 rounded-full shrink-0'
                               />
                             )}
                             <div className='font-medium text-white truncate'>

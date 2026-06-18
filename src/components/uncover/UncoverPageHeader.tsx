@@ -24,9 +24,9 @@ export function UncoverPageHeader() {
     tabs.find(t => pathname.startsWith(t.href))?.href ?? '/game/play';
 
   return (
-    <div className='flex shrink-0 items-center justify-center pb-3 pt-4 bg-black/30 backdrop-blur-sm'>
+    <div className='flex shrink-0 items-center justify-center pb-3 pt-4 bg-black/30 backdrop-blur-xs'>
       {/* Frosted pill tab group */}
-      <div className='flex items-center gap-1 rounded-full border border-white/[0.12] bg-white/[0.08] px-1.5 py-1 backdrop-blur-md'>
+      <div className='flex items-center gap-1 rounded-full border border-white/12 bg-white/8 px-1.5 py-1 backdrop-blur-md'>
         {tabs.map(tab => {
           const isActive = activeHref === tab.href;
           const Icon = tab.icon;
@@ -37,7 +37,7 @@ export function UncoverPageHeader() {
               className={cn(
                 'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-white/[0.12] text-white'
+                  ? 'bg-white/12 text-white'
                   : 'text-zinc-400 hover:text-zinc-200'
               )}
             >

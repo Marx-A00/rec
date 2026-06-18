@@ -352,7 +352,7 @@ export default function MobileSearchPage() {
                     </div>
                   )}
                   {/* Image */}
-                  <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
+                  <div className='w-12 h-12 shrink-0 rounded-md overflow-hidden'>
                     <AlbumImage
                       src={result.image?.url || result.cover_image}
                       alt={result.title}

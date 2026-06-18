@@ -100,7 +100,7 @@ function CenteredHero() {
           <TeaserImage />
         </div>
         <div className='absolute inset-0 flex items-center justify-center'>
-          <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
+          <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur-sm'>
             <Lock className='h-7 w-7 text-zinc-400' />
           </div>
         </div>
@@ -112,7 +112,7 @@ function CenteredHero() {
       </p>
 
       {/* CTA — white pill */}
-      <button className='relative z-10 flex cursor-pointer items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-white/50'>
+      <button className='relative z-10 flex cursor-pointer items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-white/50'>
         Start today&apos;s puzzle
         <span aria-hidden>→</span>
       </button>
@@ -162,7 +162,7 @@ function SplitEditorial() {
       />
 
       {/* Left — large art with indigo accent frame */}
-      <div className='relative z-10 flex-shrink-0'>
+      <div className='relative z-10 shrink-0'>
         <div className='relative w-[420px]'>
           {/* Decorative outer ring — indigo */}
           <div className='absolute -inset-3 rounded-3xl border border-indigo-500/15' />
@@ -203,13 +203,13 @@ function SplitEditorial() {
 
         {/* CTA row — green primary from music streaming palette */}
         <div className='flex items-center gap-4'>
-          <button className='flex cursor-pointer items-center gap-2.5 rounded-xl bg-[#22C55E] px-7 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-green-500/50'>
+          <button className='flex cursor-pointer items-center gap-2.5 rounded-xl bg-[#22C55E] px-7 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#16A34A] focus:outline-hidden focus:ring-2 focus:ring-green-500/50'>
             <Play className='h-4 w-4 fill-current' />
             Play Now
           </button>
           <Link
             href='/game/archive'
-            className='flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-700 px-5 py-3.5 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+            className='flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-700 px-5 py-3.5 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
           >
             <Archive className='h-4 w-4' />
             Archive
@@ -274,8 +274,8 @@ function CinematicDark() {
           <TeaserImage className='rounded-none' />
         </div>
         {/* OLED gradient overlays — deep black edges */}
-        <div className='absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/85 to-[#000000]/30' />
-        <div className='absolute inset-0 bg-gradient-to-b from-[#000000] via-transparent to-transparent' />
+        <div className='absolute inset-0 bg-linear-to-t from-[#000000] via-[#000000]/85 to-[#000000]/30' />
+        <div className='absolute inset-0 bg-linear-to-b from-[#000000] via-transparent to-transparent' />
         {/* Subtle gold spotlight from top */}
         <div
           className='absolute inset-0 opacity-20'
@@ -306,7 +306,7 @@ function CinematicDark() {
         </div>
 
         {/* Gold CTA — spotlight accent */}
-        <button className='group flex cursor-pointer items-center gap-3 rounded-full bg-[#CA8A04] px-10 py-4 text-base font-semibold text-[#0F0F23] shadow-[0_0_40px_rgba(202,138,4,0.15)] transition-all hover:bg-[#EAB308] hover:shadow-[0_0_60px_rgba(202,138,4,0.25)] focus:outline-none focus:ring-2 focus:ring-[#CA8A04]/50'>
+        <button className='group flex cursor-pointer items-center gap-3 rounded-full bg-[#CA8A04] px-10 py-4 text-base font-semibold text-[#0F0F23] shadow-[0_0_40px_rgba(202,138,4,0.15)] transition-all hover:bg-[#EAB308] hover:shadow-[0_0_60px_rgba(202,138,4,0.25)] focus:outline-hidden focus:ring-2 focus:ring-[#CA8A04]/50'>
           <Eye className='h-5 w-5 transition-transform group-hover:scale-110' />
           Reveal Today&apos;s Challenge
         </button>
@@ -326,7 +326,7 @@ function CinematicDark() {
         {/* Archive — subtle */}
         <Link
           href='/game/archive'
-          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-600 transition-colors hover:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-600 transition-colors hover:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
         >
           <Clock className='h-3 w-3' />
           Browse past puzzles
@@ -363,7 +363,7 @@ function GlassCard() {
       <div className='absolute z-0 h-[500px] w-[460px] -translate-x-2 translate-y-2 -rotate-1 rounded-3xl border border-[#4338CA]/15 bg-[#1E1B4B]/30' />
 
       {/* Main glass card */}
-      <div className='relative z-10 flex h-[500px] w-[460px] flex-col items-center justify-between rounded-3xl border border-white/[0.08] bg-white/[0.04] p-8 shadow-2xl backdrop-blur-xl'>
+      <div className='relative z-10 flex h-[500px] w-[460px] flex-col items-center justify-between rounded-3xl border border-white/8 bg-white/4 p-8 shadow-2xl backdrop-blur-xl'>
         {/* Top — badge row */}
         <div className='flex w-full items-center justify-between'>
           <div className='flex items-center gap-2'>
@@ -372,7 +372,7 @@ function GlassCard() {
               DAILY CHALLENGE
             </span>
           </div>
-          <div className='flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.04] px-2.5 py-1 backdrop-blur'>
+          <div className='flex items-center gap-1.5 rounded-full border border-white/6 bg-white/4 px-2.5 py-1 backdrop-blur-sm'>
             <Flame className='h-3 w-3 text-orange-500' />
             <span className='text-xs font-bold text-orange-400'>
               {STATS.streak}
@@ -384,11 +384,11 @@ function GlassCard() {
         <div className='flex flex-col items-center gap-5'>
           <div className='relative w-[200px]'>
             {/* Glass border on image */}
-            <div className='overflow-hidden rounded-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)]'>
+            <div className='overflow-hidden rounded-xl border border-white/8 shadow-[0_8px_32px_rgba(0,0,0,0.3)]'>
               <TeaserImage />
             </div>
             {/* Puzzle badge — green accent */}
-            <div className='absolute -bottom-2.5 -right-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-[#22C55E] shadow-lg'>
+            <div className='absolute -bottom-2.5 -right-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#22C55E] shadow-lg'>
               <span className='text-[11px] font-bold text-white'>
                 #{STATS.puzzleNumber}
               </span>
@@ -405,7 +405,7 @@ function GlassCard() {
         {/* Bottom — CTA + stats */}
         <div className='flex w-full flex-col gap-4'>
           {/* Green CTA — music streaming accent */}
-          <button className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#22C55E] py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-green-500/50'>
+          <button className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#22C55E] py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#16A34A] focus:outline-hidden focus:ring-2 focus:ring-green-500/50'>
             <Play className='h-4 w-4 fill-current' />
             Start Puzzle
           </button>
@@ -416,14 +416,14 @@ function GlassCard() {
               <p className='text-lg font-bold text-[#F8FAFC]'>{STATS.played}</p>
               <p className='text-[10px] text-zinc-600'>Played</p>
             </div>
-            <div className='h-8 w-px bg-white/[0.06]' />
+            <div className='h-8 w-px bg-white/6' />
             <div className='text-center'>
               <p className='text-lg font-bold text-[#F8FAFC]'>
                 {STATS.winRate}%
               </p>
               <p className='text-[10px] text-zinc-600'>Win Rate</p>
             </div>
-            <div className='h-8 w-px bg-white/[0.06]' />
+            <div className='h-8 w-px bg-white/6' />
             <div className='text-center'>
               <p className='text-lg font-bold text-orange-400'>
                 {STATS.streak}
@@ -657,7 +657,7 @@ function SmokeReveal() {
 
       {/* Vignette */}
       <div
-        className='absolute inset-0 z-[1]'
+        className='absolute inset-0 z-1'
         style={{
           background:
             'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.6) 100%)',
@@ -667,7 +667,7 @@ function SmokeReveal() {
       {/* Tweaker toggle */}
       <button
         onClick={() => setShowTweaker(prev => !prev)}
-        className='absolute right-4 top-4 z-[60] cursor-pointer rounded-full bg-zinc-800/80 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 backdrop-blur transition-colors hover:bg-zinc-700 hover:text-white'
+        className='absolute right-4 top-4 z-60 cursor-pointer rounded-full bg-zinc-800/80 p-2.5 text-zinc-400 shadow-lg ring-1 ring-zinc-700 backdrop-blur-sm transition-colors hover:bg-zinc-700 hover:text-white'
         title='Toggle smoke tweaker'
       >
         <Zap className='h-4 w-4' />
@@ -702,7 +702,7 @@ function SmokeReveal() {
             <TeaserImage />
           </div>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-sm'>
+            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/50 backdrop-blur-xs'>
               <Lock className='h-6 w-6 text-zinc-300' />
             </div>
           </div>
@@ -717,7 +717,7 @@ function SmokeReveal() {
           </p>
         </div>
 
-        <button className='flex cursor-pointer items-center gap-2.5 rounded-full bg-white px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:shadow-[0_0_50px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-white/50'>
+        <button className='flex cursor-pointer items-center gap-2.5 rounded-full bg-white px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:shadow-[0_0_50px_rgba(16,185,129,0.2)] focus:outline-hidden focus:ring-2 focus:ring-white/50'>
           <Play className='h-4 w-4 fill-current' />
           Start Today&apos;s Puzzle
         </button>
@@ -741,7 +741,7 @@ function SmokeReveal() {
 
         <Link
           href='/game/archive'
-          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
         >
           <Archive className='h-3 w-3' />
           Browse past puzzles
@@ -801,12 +801,12 @@ function SmokeLights() {
       {/* Layer 3: Smoke on top — neutral/dark, acts as fog over the lights */}
       <SmokeBackground
         smokeColor='#1a1a2e'
-        className='z-[2] mix-blend-multiply opacity-80'
+        className='z-2 mix-blend-multiply opacity-80'
       />
 
       {/* Layer 4: Subtle vignette to frame content */}
       <div
-        className='absolute inset-0 z-[3]'
+        className='absolute inset-0 z-3'
         style={{
           background:
             'radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(0,0,0,0.5) 100%)',
@@ -831,7 +831,7 @@ function SmokeLights() {
             <TeaserImage />
           </div>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 backdrop-blur-sm'>
+            <div className='flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/40 backdrop-blur-xs'>
               <Lock className='h-6 w-6 text-zinc-300' />
             </div>
           </div>
@@ -848,7 +848,7 @@ function SmokeLights() {
         </div>
 
         {/* CTA */}
-        <button className='flex cursor-pointer items-center gap-2.5 rounded-full bg-white/95 px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_40px_rgba(255,255,255,0.08)] transition-all hover:bg-white hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] focus:outline-none focus:ring-2 focus:ring-white/50'>
+        <button className='flex cursor-pointer items-center gap-2.5 rounded-full bg-white/95 px-9 py-4 text-sm font-semibold text-zinc-900 shadow-[0_0_40px_rgba(255,255,255,0.08)] transition-all hover:bg-white hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] focus:outline-hidden focus:ring-2 focus:ring-white/50'>
           <Play className='h-4 w-4 fill-current' />
           Start Today&apos;s Puzzle
         </button>
@@ -874,7 +874,7 @@ function SmokeLights() {
         {/* Archive */}
         <Link
           href='/game/archive'
-          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+          className='flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
         >
           <Archive className='h-3 w-3' />
           Browse past puzzles
@@ -921,7 +921,7 @@ export function HomePreview() {
           <button
             onClick={prev}
             aria-label='Previous variant'
-            className='flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+            className='flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
           >
             <ChevronLeft className='h-4 w-4' />
           </button>
@@ -930,9 +930,9 @@ export function HomePreview() {
             <button
               key={v.id}
               onClick={() => setActiveIdx(i)}
-              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-zinc-500/50 ${
+              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-all focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50 ${
                 i === activeIdx
-                  ? 'bg-white text-zinc-900 shadow-sm'
+                  ? 'bg-white text-zinc-900 shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -943,7 +943,7 @@ export function HomePreview() {
           <button
             onClick={next}
             aria-label='Next variant'
-            className='flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500/50'
+            className='flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-zinc-500/50'
           >
             <ChevronRight className='h-4 w-4' />
           </button>

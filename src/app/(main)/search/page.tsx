@@ -393,7 +393,7 @@ function SearchResults() {
                           <Loader2 className='h-6 w-6 text-white animate-spin' />
                         </div>
                       )}
-                      <div className='flex-shrink-0 relative w-16 h-16'>
+                      <div className='shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
                           alt={result.image?.alt || result.title}
@@ -454,7 +454,7 @@ function SearchResults() {
                           <Loader2 className='h-6 w-6 text-white animate-spin' />
                         </div>
                       )}
-                      <div className='flex-shrink-0 relative w-16 h-16'>
+                      <div className='shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
                           alt={result.image?.alt || result.title}
@@ -513,7 +513,7 @@ function SearchResults() {
                           <Loader2 className='h-6 w-6 text-white animate-spin' />
                         </div>
                       )}
-                      <div className='flex-shrink-0 relative w-16 h-16'>
+                      <div className='shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
                           alt={result.image?.alt || result.title}
@@ -572,7 +572,7 @@ function SearchResults() {
                           <Loader2 className='h-6 w-6 text-white animate-spin' />
                         </div>
                       )}
-                      <div className='flex-shrink-0 relative w-16 h-16'>
+                      <div className='shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
                           alt={result.image?.alt || result.title}
@@ -635,7 +635,7 @@ function SearchResults() {
                         <Loader2 className='h-6 w-6 text-white animate-spin' />
                       </div>
                     )}
-                    <div className='flex-shrink-0 relative w-16 h-16'>
+                    <div className='shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
                         cloudflareImageId={(result as any).cloudflareImageId}
@@ -698,7 +698,7 @@ function SearchResults() {
                         <Loader2 className='h-6 w-6 text-white animate-spin' />
                       </div>
                     )}
-                    <div className='flex-shrink-0 relative w-16 h-16'>
+                    <div className='shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
                         alt={result.image?.alt || result.title}
@@ -759,7 +759,7 @@ function SearchResults() {
                         <Loader2 className='h-6 w-6 text-white animate-spin' />
                       </div>
                     )}
-                    <div className='flex-shrink-0 relative w-16 h-16'>
+                    <div className='shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
                         alt={result.image?.alt || result.title}
@@ -803,7 +803,7 @@ function SearchResults() {
           <div className='flex justify-center mt-8 mb-4'>
             <button
               onClick={loadMore}
-              className='px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
+              className='px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-colors focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900'
             >
               Load More Results
             </button>

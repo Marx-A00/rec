@@ -154,7 +154,7 @@ export default function PanelSelector({
                   </div>
 
                   {/* Hover overlay */}
-                  <div className='absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none' />
+                  <div className='absolute inset-0 bg-linear-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none' />
                 </button>
               );
             })}

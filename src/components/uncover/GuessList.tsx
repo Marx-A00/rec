@@ -91,7 +91,7 @@ export function GuessList({ guesses, correctArtist, correctYear }: GuessListProp
                   </div>
                 )}
               </div>
-              <div className='ml-3 flex-shrink-0'>
+              <div className='ml-3 shrink-0'>
                 {guess.isCorrect ? (
                   <span className='text-sm text-emerald-400' aria-label='Correct'>
                     ✓

@@ -54,7 +54,7 @@ export function AuthLayoutClient({ children }: { children: React.ReactNode }) {
       />
 
       {/* Gradient overlay to ensure content readability */}
-      <div className='absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-black/20 to-black/40' />
+      <div className='absolute inset-0 z-10 bg-linear-to-t from-black/60 via-black/20 to-black/40' />
 
       {/* Content */}
       <div className='relative z-20 w-full max-w-md px-4 py-4 h-full flex justify-center items-center'>

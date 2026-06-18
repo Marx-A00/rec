@@ -639,7 +639,7 @@ const ContextAwareResult = ({
       <div className={`flex items-center ${spacing} w-full min-w-0`}>
         {/* Image/Icon Section */}
         <div
-          className='flex-shrink-0 relative'
+          className='shrink-0 relative'
           style={{
             width: imageSize.width,
             height: imageSize.height,
@@ -748,7 +748,7 @@ const ContextAwareResult = ({
 
         {/* Metadata Section */}
         {showMetadata && (
-          <div className='flex-shrink-0 flex flex-col items-end space-y-1'>
+          <div className='shrink-0 flex flex-col items-end space-y-1'>
             {/* Type Label */}
             {showTypeLabel && (
               <span
@@ -1012,7 +1012,7 @@ export default function UniversalSearchBar({
         className='border-zinc-700 shadow-lg bg-zinc-900'
         shouldFilter={false}
       >
-        <div className='[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
+        <div className='[&_.border-b]:border-cosmic-latte **:[[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
           <CommandInput
             id='main-search-bar'
             placeholder={finalPlaceholder}
@@ -1096,7 +1096,7 @@ export default function UniversalSearchBar({
       </Command>
 
       {error && (
-        <div className='absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-[60]'>
+        <div className='absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-60'>
           {error}
         </div>
       )}

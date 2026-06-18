@@ -86,7 +86,7 @@ export default function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
             >
               {/* Panel Info */}
               <div className='flex items-start gap-3 mb-3'>
-                <div className='flex-shrink-0 w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center'>
+                <div className='shrink-0 w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center'>
                   <panel.icon className='w-4 h-4 text-emeraled-green' />
                 </div>
 

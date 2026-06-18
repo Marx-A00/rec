@@ -1454,7 +1454,7 @@ function TestingTab() {
                   </div>
 
                   {/* Arrow */}
-                  <ArrowRight className='h-5 w-5 text-zinc-500 flex-shrink-0' />
+                  <ArrowRight className='h-5 w-5 text-zinc-500 shrink-0' />
 
                   {/* Recommended Album */}
                   <div className='flex items-center gap-3 flex-1'>
@@ -1480,7 +1480,7 @@ function TestingTab() {
                   </div>
 
                   {/* Score & Delete */}
-                  <div className='flex items-center gap-3 flex-shrink-0'>
+                  <div className='flex items-center gap-3 shrink-0'>
                     <Badge className='bg-zinc-700 text-white'>
                       Score: {rec.score}
                     </Badge>

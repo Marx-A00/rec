@@ -77,7 +77,7 @@ export function ArcadeButtonPlayground() {
               value={draftHex}
               onChange={e => commitHex(e.target.value)}
               spellCheck={false}
-              className='w-32 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 font-mono text-sm uppercase text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte'
+              className='w-32 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 font-mono text-sm uppercase text-white focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte'
               placeholder='#CC4B24'
             />
           </div>

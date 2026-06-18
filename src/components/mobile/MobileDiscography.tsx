@@ -138,7 +138,7 @@ export default function MobileDiscography({
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className='h-8 w-20 bg-zinc-800 rounded-full animate-pulse flex-shrink-0'
+              className='h-8 w-20 bg-zinc-800 rounded-full animate-pulse shrink-0'
             />
           ))}
         </div>
@@ -210,7 +210,7 @@ export default function MobileDiscography({
               key={option.value}
               onClick={() => setFilter(option.value)}
               className={cn(
-                'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[36px]',
+                'shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[36px]',
                 filter === option.value
                   ? 'bg-white text-black'
                   : 'bg-zinc-800 text-zinc-300'

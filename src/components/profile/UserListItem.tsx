@@ -117,7 +117,7 @@ export default function UserListItem({
 
             {/* Follow Button */}
             {!isOwnProfile && showFollowButton && (
-              <div className='flex-shrink-0'>
+              <div className='shrink-0'>
                 <FollowButton
                   userId={user.id}
                   isFollowing={user.isFollowing}

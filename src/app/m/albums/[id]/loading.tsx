@@ -4,7 +4,7 @@ export default function MobileAlbumLoading() {
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <div className='min-h-[44px] min-w-[44px] flex items-center'>
             <ArrowLeft className='h-5 w-5 text-zinc-600' />
@@ -20,7 +20,7 @@ export default function MobileAlbumLoading() {
       <section className='px-4 py-6'>
         <div className='flex gap-4'>
           {/* Album Cover */}
-          <div className='w-32 h-32 flex-shrink-0 bg-zinc-800 rounded-lg animate-pulse' />
+          <div className='w-32 h-32 shrink-0 bg-zinc-800 rounded-lg animate-pulse' />
 
           {/* Album Info */}
           <div className='flex-1 py-1 space-y-2'>
@@ -66,7 +66,7 @@ export default function MobileAlbumLoading() {
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className='w-32 flex-shrink-0 bg-zinc-900 rounded-lg p-3 border border-zinc-800'
+              className='w-32 shrink-0 bg-zinc-900 rounded-lg p-3 border border-zinc-800'
             >
               <div className='w-full aspect-square bg-zinc-800 rounded-md animate-pulse mb-2' />
               <div className='h-4 w-full bg-zinc-800 rounded animate-pulse' />

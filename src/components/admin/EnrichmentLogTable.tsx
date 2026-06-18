@@ -213,7 +213,7 @@ function ExpandableLogRow({
         </TableCell>
         <TableCell className='max-w-md'>
           {log.reason ? (
-            <div className='text-xs text-zinc-300 whitespace-pre-wrap break-words'>
+            <div className='text-xs text-zinc-300 whitespace-pre-wrap wrap-break-word'>
               {log.reason}
             </div>
           ) : (
@@ -287,7 +287,7 @@ function ExpandableLogRow({
         </TableCell>
         <TableCell className='max-w-md'>
           {log.errorMessage ? (
-            <div className='text-xs text-red-400 whitespace-pre-wrap break-words'>
+            <div className='text-xs text-red-400 whitespace-pre-wrap wrap-break-word'>
               {log.errorMessage}
             </div>
           ) : (

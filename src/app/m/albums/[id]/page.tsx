@@ -47,7 +47,7 @@ export default async function MobileAlbumPage({
     // Show error page instead of notFound for better UX
     return (
       <div className='min-h-screen bg-black'>
-        <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+        <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
           <Link
             href='/m/search'
             className='flex items-center gap-2 text-white min-h-[44px] min-w-[44px]'

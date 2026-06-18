@@ -38,7 +38,7 @@ export default function MobileAlbumRecommendations({
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className='flex-shrink-0 w-[140px] bg-zinc-900 rounded-lg p-3 border border-zinc-800 animate-pulse'
+              className='shrink-0 w-[140px] bg-zinc-900 rounded-lg p-3 border border-zinc-800 animate-pulse'
             >
               <div className='w-full aspect-square bg-zinc-800 rounded-md mb-2' />
               <div className='h-4 w-3/4 bg-zinc-800 rounded mb-1' />
@@ -94,7 +94,7 @@ export default function MobileAlbumRecommendations({
             <Link
               key={rec.id}
               href={`/m/albums/${displayAlbum.discogsId}?source=local`}
-              className='flex-shrink-0 w-[140px] bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
+              className='shrink-0 w-[140px] bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
             >
               {/* Album Cover */}
               <div className='relative w-full aspect-square mb-2'>

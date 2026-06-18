@@ -62,7 +62,7 @@ export default function QuickStatsPanel({
     return (
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
         <div className='h-full flex flex-col'>
-          <div className='mb-3 flex-shrink-0'>
+          <div className='mb-3 shrink-0'>
             <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
             <h2 className='text-lg font-semibold text-white'>
               Quick Stats

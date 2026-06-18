@@ -315,7 +315,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
           <motion.div
             className={`rounded-lg overflow-hidden transition-colors duration-300 ${
               isMorphedState
-                ? `absolute inset-x-0 top-0 z-50 bg-zinc-900/95 backdrop-blur-sm border-2 ${getResultsBorderColor()} p-4 shadow-2xl`
+                ? `absolute inset-x-0 top-0 z-50 bg-zinc-900/95 backdrop-blur-xs border-2 ${getResultsBorderColor()} p-4 shadow-2xl`
                 : 'relative w-full'
             }`}
             style={isMorphedState ? { maxHeight: '600px' } : {}}
@@ -349,7 +349,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                       disabled={disabled}
                       aria-label='Album title'
                       tabIndex={0}
-                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(false)}`}
+                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(false)}`}
                     />
                   </div>
 
@@ -365,7 +365,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                       disabled={disabled}
                       aria-label='Artist name (optional)'
                       tabIndex={0}
-                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(true)}`}
+                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(true)}`}
                     />
                   </div>
 
@@ -448,7 +448,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                   className='max-h-[500px] overflow-hidden flex flex-col'
                 >
                   {/* Header with search info and back button */}
-                  <div className='flex items-center justify-between mb-3 flex-shrink-0'>
+                  <div className='flex items-center justify-between mb-3 shrink-0'>
                     <div className='flex items-center gap-2'>
                       <button
                         onClick={handleBackToSearch}
@@ -490,7 +490,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                               onClick={() => onAlbumSelect(album)}
                               className='flex items-center gap-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition-all'
                             >
-                              <div className='w-12 h-12 flex-shrink-0 relative'>
+                              <div className='w-12 h-12 shrink-0 relative'>
                                 <AlbumImage
                                   src={album.image?.url}
                                   alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
@@ -563,7 +563,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                 onChange={e => handleInputChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={disabled}
-                className={`w-full pl-10 pr-4 py-2 bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses()}`}
+                className={`w-full pl-10 pr-4 py-2 bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses()}`}
               />
             </div>
 
@@ -574,7 +574,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
             )}
 
             {albumResults.length > 0 && (
-              <div className='space-y-2 max-h-48 overflow-y-auto relative z-[100] bg-zinc-900 rounded-lg border border-zinc-600 p-2 mt-4 custom-scrollbar'>
+              <div className='space-y-2 max-h-48 overflow-y-auto relative z-100 bg-zinc-900 rounded-lg border border-zinc-600 p-2 mt-4 custom-scrollbar'>
                 {albumResults.map((result: UnifiedSearchResult) => {
                   const album = convertToAlbum(result);
                   return (
@@ -583,7 +583,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
                       onClick={() => onAlbumSelect(album)}
                       className='flex items-center space-x-2 p-2 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
                     >
-                      <div className='w-10 h-10 flex-shrink-0 relative'>
+                      <div className='w-10 h-10 shrink-0 relative'>
                         <AlbumImage
                           src={album.image?.url}
                           alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}

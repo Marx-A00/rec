@@ -144,7 +144,7 @@ export default function CollectionAlbumsPanel({
     return (
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
         <div className='h-full flex flex-col'>
-          <div className='mb-3 flex-shrink-0'>
+          <div className='mb-3 shrink-0'>
             <p className='text-sm text-zinc-400 mb-2'>Panel Preview</p>
             <h2 className='text-lg font-semibold text-white'>
               Your Collection
@@ -156,7 +156,7 @@ export default function CollectionAlbumsPanel({
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className='relative group cursor-pointer transform transition-all duration-200 flex-shrink-0 w-32'
+                  className='relative group cursor-pointer transform transition-all duration-200 shrink-0 w-32'
                 >
                   <div className='w-full aspect-square rounded bg-zinc-800 animate-pulse border border-zinc-800' />
                 </div>
@@ -206,13 +206,13 @@ export default function CollectionAlbumsPanel({
               </button>
             </div>
 
-            <div className='flex-1 h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+            <div className='flex-1 h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
               {isSessionLoading || isLoading ? (
-                <div className='h-full flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+                <div className='h-full flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'>
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
-                      className='relative group cursor-pointer transform transition-all duration-200 flex-shrink-0 w-32'
+                      className='relative group cursor-pointer transform transition-all duration-200 shrink-0 w-32'
                     >
                       <AlbumImage
                         src={null}
@@ -230,14 +230,14 @@ export default function CollectionAlbumsPanel({
                   ref={scrollContainerRef}
                   className={
                     layoutMode === 'horizontal'
-                      ? 'h-full flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'
-                      : 'h-full flex flex-col gap-2 overflow-y-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'
+                      ? 'h-full flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'
+                      : 'h-full flex flex-col gap-2 overflow-y-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none'
                   }
                 >
                   {userAlbums.map(collectionAlbum => (
                     <div
                       key={collectionAlbum.id}
-                      className={`relative group/album cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 ${
+                      className={`relative group/album cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 shrink-0 ${
                         layoutMode === 'horizontal'
                           ? 'w-[clamp(8rem,15vw,12rem)] h-[clamp(8rem,15vw,12rem)]'
                           : 'w-[clamp(8rem,15vw,12rem)] h-[clamp(8rem,15vw,12rem)]'

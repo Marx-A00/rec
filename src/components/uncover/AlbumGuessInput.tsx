@@ -264,7 +264,7 @@ export function AlbumGuessInput({
             createPortal(
               <div
                 ref={dropdownRef}
-                className='z-[60]'
+                className='z-60'
                 style={{
                   position: 'absolute',
                   top: dropdownPos!.top,
@@ -282,7 +282,7 @@ export function AlbumGuessInput({
       <button
         onClick={onSkip}
         disabled={disabled || isSubmitting}
-        className='min-h-[44px] w-full rounded-md border border-zinc-600 bg-transparent px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500'
+        className='min-h-[44px] w-full rounded-md border border-zinc-600 bg-transparent px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500'
       >
         {isSubmitting ? 'Skipping...' : 'Skip Guess'}
       </button>

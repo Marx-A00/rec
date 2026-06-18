@@ -358,7 +358,7 @@ export function MarqueeManager() {
                     onChange={e => setAlbumQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
                   />
                   {albumQuery && (
                     <button
@@ -379,7 +379,7 @@ export function MarqueeManager() {
                     value={artistQuery}
                     onChange={e => setArtistQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
+                    className='w-full pl-10 pr-9 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-sm placeholder:text-zinc-500 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-cosmic-latte transition-colors'
                   />
                   {artistQuery && (
                     <button
@@ -433,7 +433,7 @@ export function MarqueeManager() {
                         }}
                         className='flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors overflow-hidden'
                       >
-                        <div className='w-10 h-10 flex-shrink-0'>
+                        <div className='w-10 h-10 shrink-0'>
                           <AlbumImage
                             src={result.image?.url || result.cover_image}
                             alt={result.title}
@@ -448,7 +448,7 @@ export function MarqueeManager() {
                               {result.title}
                             </span>
                             {isInMarquee(result) && (
-                              <span className='inline-flex items-center gap-0.5 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-400 leading-none flex-shrink-0'>
+                              <span className='inline-flex items-center gap-0.5 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-400 leading-none shrink-0'>
                                 <CheckCircle2 className='h-2.5 w-2.5' />
                                 In Marquee
                               </span>

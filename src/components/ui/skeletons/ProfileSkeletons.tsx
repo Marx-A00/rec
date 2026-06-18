@@ -95,7 +95,7 @@ export function ProfileSkeleton({
                 </div>
 
                 {/* Action button (Follow or Settings) */}
-                <div className='flex-shrink-0'>
+                <div className='shrink-0'>
                   {isOwnProfile ? (
                     <Shimmer className='h-9 w-9 rounded-lg' />
                   ) : (

@@ -225,9 +225,9 @@ export default function RecommendationDrawer({
     >
       <DrawerContent
         id='recommendation-drawer'
-        className='h-[85vh] bg-zinc-900 border-zinc-700 focus:outline-none'
+        className='h-[85vh] bg-zinc-900 border-zinc-700 focus:outline-hidden'
       >
-        <DrawerHeader className='flex-shrink-0'>
+        <DrawerHeader className='shrink-0'>
           <div className='flex items-center justify-center relative'>
             <DrawerTitle className='text-2xl font-bold text-white'>
               Create Recommendation

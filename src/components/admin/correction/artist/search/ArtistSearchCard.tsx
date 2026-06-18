@@ -57,7 +57,7 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
       aria-label={'Select ' + result.name}
     >
       {/* Artist avatar placeholder */}
-      <div className='h-12 w-12 flex-shrink-0 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center'>
+      <div className='h-12 w-12 shrink-0 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center'>
         <User className='h-6 w-6 text-zinc-600' />
       </div>
 
@@ -68,7 +68,7 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
           <span className='font-medium text-cosmic-latte truncate flex-1'>
             {result.name}
           </span>
-          <span className='text-sm font-semibold text-emeraled-green flex-shrink-0'>
+          <span className='text-sm font-semibold text-emeraled-green shrink-0'>
             {matchScore}% match
           </span>
         </div>

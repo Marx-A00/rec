@@ -40,7 +40,7 @@ const STYLE_ICONS: Record<RevealStyle, typeof Grid3X3> = {
 };
 
 const STYLE_LABELS: Record<RevealStyle, string> = {
-  pixelation: 'Switch to blur style',
+  pixelation: 'Switch to blur-sm style',
   blur: 'Switch to pixelation style',
 };
 
@@ -70,7 +70,7 @@ export function RevealImage({
   }, [imageUrl]);
 
   const toggleStyle = () => {
-    setPreferredStyle(preferredStyle === 'pixelation' ? 'blur' : 'pixelation');
+    setPreferredStyle(preferredStyle === 'pixelation' ? 'blur-sm' : 'pixelation');
   };
 
   const handleImageLoad = () => {
@@ -107,7 +107,7 @@ export function RevealImage({
 
       {/* Loading overlay during image load or submission */}
       {(isImageLoading || isSubmitting) && (
-        <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-sm transition-opacity'>
+        <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-xs transition-opacity'>
           <Loader2 className='h-8 w-8 animate-spin text-white/80' />
         </div>
       )}
@@ -118,7 +118,7 @@ export function RevealImage({
           onClick={toggleStyle}
           aria-label={STYLE_LABELS[preferredStyle]}
           title={STYLE_LABELS[preferredStyle]}
-          className='absolute bottom-2 right-2 rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
+          className='absolute bottom-2 right-2 rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-xs transition-colors hover:bg-black/70 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
         >
           <Icon className='h-4 w-4' />
         </button>

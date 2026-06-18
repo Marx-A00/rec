@@ -36,7 +36,7 @@ export function ModalSkeleton({
           {/* Cover art / avatar placeholder */}
           <Skeleton
             className={cn(
-              'flex-shrink-0',
+              'shrink-0',
               variant === 'album'
                 ? 'h-24 w-24 rounded-md'
                 : 'h-20 w-20 rounded-full'

@@ -211,7 +211,7 @@ export default function MobileSignInPage() {
                 }}
                 onFocus={handleInputFocus}
                 disabled={isLoading}
-                className={`w-full h-[52px] pl-12 pr-4 bg-zinc-900 border rounded-xl text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                className={`w-full h-[52px] pl-12 pr-4 bg-zinc-900 border rounded-xl text-base text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600 disabled:opacity-50 transition-colors ${
                   fieldErrors.identifier ? 'border-red-500' : 'border-zinc-800'
                 }`}
                 placeholder='you@example.com'
@@ -258,7 +258,7 @@ export default function MobileSignInPage() {
                 }}
                 onFocus={handleInputFocus}
                 disabled={isLoading}
-                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-base text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600 disabled:opacity-50 transition-colors ${
                   fieldErrors.password ? 'border-red-500' : 'border-zinc-800'
                 }`}
                 placeholder='Enter your password'

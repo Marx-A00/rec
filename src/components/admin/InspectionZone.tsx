@@ -142,7 +142,7 @@ export function InspectionZone({
       return (
         <div className='fixed top-1/2 -translate-y-1/2 right-0 z-40 pointer-events-none'>
           <div className='pointer-events-auto'>
-            <div className='bg-zinc-800/80 backdrop-blur-sm border border-r-0 border-zinc-700 rounded-l-lg px-2 py-4 flex flex-col items-center gap-2 text-zinc-600'>
+            <div className='bg-zinc-800/80 backdrop-blur-xs border border-r-0 border-zinc-700 rounded-l-lg px-2 py-4 flex flex-col items-center gap-2 text-zinc-600'>
               <Search className='h-3.5 w-3.5' />
               <span className='text-xs [writing-mode:vertical-lr] rotate-180'>
                 Click a job to inspect
@@ -156,7 +156,7 @@ export function InspectionZone({
     return (
       <div className='fixed bottom-0 left-0 right-0 z-40 pointer-events-none'>
         <div className='max-w-5xl mx-auto px-4 flex justify-center pointer-events-auto'>
-          <div className='bg-zinc-800/80 backdrop-blur-sm border border-b-0 border-zinc-700 rounded-t-lg px-4 py-2 flex items-center gap-2 text-zinc-600'>
+          <div className='bg-zinc-800/80 backdrop-blur-xs border border-b-0 border-zinc-700 rounded-t-lg px-4 py-2 flex items-center gap-2 text-zinc-600'>
             <Search className='h-3.5 w-3.5' />
             <span className='text-xs'>Click a job to inspect</span>
           </div>

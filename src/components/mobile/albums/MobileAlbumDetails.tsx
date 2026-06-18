@@ -90,7 +90,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <button
             onClick={() => router.back()}
@@ -116,7 +116,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
       <section className='px-4 py-6'>
         <div className='flex gap-4'>
           {/* Album Cover */}
-          <div className='w-32 h-32 flex-shrink-0 relative'>
+          <div className='w-32 h-32 shrink-0 relative'>
             <AlbumImage
               src={album.image?.url}
               cloudflareImageId={album.cloudflareImageId}
@@ -187,9 +187,9 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
             Make Rec
           </MobileButton>
           <MobileButton
-            variant={isInAnyCollection ? 'success' : 'outline'}
+            variant={isInAnyCollection ? 'success' : 'outline-solid'}
             size='md'
-            className='aspect-square !p-0 w-11'
+            className='aspect-square p-0! w-11'
             aria-label={saveButtonLabel}
             onClick={handleSaveClick}
           >
@@ -202,7 +202,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
           <MobileButton
             variant='outline'
             size='md'
-            className='aspect-square !p-0 w-11'
+            className='aspect-square p-0! w-11'
             onClick={handleShare}
             aria-label='Share'
           >
@@ -225,7 +225,7 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
                     'border-b border-zinc-800/50'
                 )}
               >
-                <span className='text-zinc-500 text-sm w-7 flex-shrink-0'>
+                <span className='text-zinc-500 text-sm w-7 shrink-0'>
                   {track.trackNumber}
                 </span>
                 <span className='text-white flex-1 truncate text-sm'>

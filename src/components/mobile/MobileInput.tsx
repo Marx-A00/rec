@@ -46,9 +46,9 @@ const MobileInput = React.forwardRef<HTMLInputElement, MobileInputProps>(
           <input
             type={inputType}
             className={cn(
-              'flex h-12 w-full rounded-md border bg-zinc-800 px-3 text-base text-white shadow-sm transition-colors',
+              'flex h-12 w-full rounded-md border bg-zinc-800 px-3 text-base text-white shadow-xs transition-colors',
               'placeholder:text-zinc-500',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emeraled-green focus-visible:border-emeraled-green',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emeraled-green focus-visible:border-emeraled-green',
               'disabled:cursor-not-allowed disabled:opacity-50',
               error
                 ? 'border-red-500 focus-visible:ring-red-500'

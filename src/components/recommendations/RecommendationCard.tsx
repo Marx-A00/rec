@@ -197,18 +197,18 @@ export default function RecommendationCard({
         <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center space-x-2'>
             <div className='relative'>
-              <Avatar className='h-6 w-6 ring-2 ring-zinc-600 shadow-sm'>
+              <Avatar className='h-6 w-6 ring-2 ring-zinc-600 shadow-xs'>
                 <AvatarImage
                   src={recommendation.user?.image || undefined}
                   alt={recommendation.user?.username || 'User'}
                 />
-                <AvatarFallback className='bg-gradient-to-br from-zinc-600 to-zinc-700 text-white text-xs font-semibold'>
+                <AvatarFallback className='bg-linear-to-br from-zinc-600 to-zinc-700 text-white text-xs font-semibold'>
                   {(recommendation.user?.username || 'A')
                     .charAt(0)
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
+              <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-xs'></div>
             </div>
             <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-xs font-medium text-cosmic-latte hover:underline cursor-pointer transition-all duration-200'>
@@ -242,7 +242,7 @@ export default function RecommendationCard({
                       setShowActions(!showActions);
                     }
                   }}
-                  className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-none'
+                  className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-hidden'
                   aria-label='Recommendation actions menu'
                   aria-expanded={showActions}
                   aria-haspopup='menu'
@@ -254,7 +254,7 @@ export default function RecommendationCard({
                 </Button>
                 {showActions && !showScoreEdit && (
                   <div
-                    className='absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
+                    className='absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-xs'
                     role='menu'
                     aria-label='Recommendation actions'
                   >
@@ -267,7 +267,7 @@ export default function RecommendationCard({
                         e.stopPropagation();
                         handleKeyDown(e, handleEdit);
                       }}
-                      className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                      className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-hidden focus:bg-zinc-800'
                       role='menuitem'
                       tabIndex={0}
                       aria-label='Edit score'
@@ -287,7 +287,7 @@ export default function RecommendationCard({
                         e.stopPropagation();
                         handleKeyDown(e, handleDelete);
                       }}
-                      className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800 ${
+                      className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-hidden focus:bg-zinc-800 ${
                         showDeleteConfirm
                           ? 'text-red-400 bg-red-950'
                           : 'text-zinc-200'
@@ -320,7 +320,7 @@ export default function RecommendationCard({
                           e.stopPropagation();
                           handleKeyDown(e, () => setShowDeleteConfirm(false));
                         }}
-                        className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 w-full transition-colors border-t border-zinc-700 mt-1 focus:outline-none focus:bg-zinc-800'
+                        className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 w-full transition-colors border-t border-zinc-700 mt-1 focus:outline-hidden focus:bg-zinc-800'
                         role='menuitem'
                         tabIndex={0}
                         aria-label='Cancel deletion'
@@ -366,7 +366,7 @@ export default function RecommendationCard({
               </div>
               {/* Album image */}
               <button
-                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
+                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-hidden transition-all duration-300'
                 onClick={e => {
                   e.stopPropagation();
                   e.currentTarget.blur();
@@ -429,7 +429,7 @@ export default function RecommendationCard({
               </div>
               {/* Album image */}
               <button
-                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
+                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-hidden transition-all duration-300'
                 onClick={e => {
                   e.stopPropagation();
                   e.currentTarget.blur();
@@ -482,13 +482,13 @@ export default function RecommendationCard({
           <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
             <div className='bg-black border-3 border-black rounded-full shadow-lg'>
               <div
-                className={`flex items-center justify-center w-10 h-10 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}
+                className={`flex items-center justify-center w-10 h-10 bg-linear-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}
                 role='img'
                 aria-label={`Rating: ${recommendation.score} out of 10 hearts`}
               >
                 <div className='flex flex-col items-center'>
                   <Heart
-                    className={`h-3 w-3 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
+                    className={`h-3 w-3 ${scoreColors.heartColor} drop-shadow-xs mb-0.5`}
                     aria-hidden='true'
                   />
                   <span

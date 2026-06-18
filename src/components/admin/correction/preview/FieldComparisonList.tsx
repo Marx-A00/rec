@@ -123,10 +123,10 @@ export function FieldComparisonList({
           </div>
 
           <div className='grid grid-cols-2 gap-4 text-sm'>
-            <div className='text-zinc-400 min-w-0 break-words'>
+            <div className='text-zinc-400 min-w-0 wrap-break-word'>
               {artistDiff.currentDisplay || '—'}
             </div>
-            <div className='text-zinc-200 min-w-0 break-words'>
+            <div className='text-zinc-200 min-w-0 wrap-break-word'>
               {artistDiff.nameDiff && artistDiff.nameDiff.length > 0 ? (
                 <InlineTextDiff parts={artistDiff.nameDiff as TextDiffPart[]} />
               ) : (

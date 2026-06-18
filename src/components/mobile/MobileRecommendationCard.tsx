@@ -88,7 +88,7 @@ export default function MobileRecommendationCard({
         {basisAlbum && (
           <Link
             href={`/m/albums/${basisAlbum.id}?source=local`}
-            className='flex-shrink-0 active:scale-95 transition-transform'
+            className='shrink-0 active:scale-95 transition-transform'
           >
             <AlbumImage
               src={basisAlbum.coverArtUrl || '/placeholder-album.png'}
@@ -124,7 +124,7 @@ export default function MobileRecommendationCard({
         {/* Recommended Album */}
         <Link
           href={`/m/albums/${activity.albumId}?source=local`}
-          className='flex-shrink-0 active:scale-95 transition-transform'
+          className='shrink-0 active:scale-95 transition-transform'
         >
           <AlbumImage
             src={activity.albumImage || '/placeholder-album.png'}

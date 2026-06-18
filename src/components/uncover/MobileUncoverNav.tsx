@@ -57,7 +57,7 @@ export function MobileUncoverNav() {
   const ActiveIcon = activeItem.icon;
 
   return (
-    <div className='flex shrink-0 items-center justify-between px-6 pb-3 pt-3 bg-black/30 backdrop-blur-sm'>
+    <div className='flex shrink-0 items-center justify-between px-6 pb-3 pt-3 bg-black/30 backdrop-blur-xs'>
       <h1 className='text-[22px] font-bold text-white'>Uncover</h1>
 
       <DropdownMenu>
@@ -65,22 +65,22 @@ export function MobileUncoverNav() {
           <button
             className={cn(
               'flex h-9 items-center gap-2 rounded-full border px-3',
-              'bg-white/[0.08] backdrop-blur-md text-sm font-medium text-white',
-              'border-white/[0.12] transition-colors',
+              'bg-white/8 backdrop-blur-md text-sm font-medium text-white',
+              'border-white/12 transition-colors',
               'data-[state=open]:border-emerald-500/60',
-              'active:scale-[0.97] focus-visible:outline-none'
+              'active:scale-[0.97] focus-visible:outline-hidden'
             )}
           >
             <ActiveIcon className='h-3.5 w-3.5 text-emerald-400' />
             <span>{activeItem.shortLabel}</span>
-            <ChevronDown className='h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 [[data-state=open]_&]:rotate-180' />
+            <ChevronDown className='h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 in-data-[state=open]:rotate-180' />
           </button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
           align='end'
           sideOffset={6}
-          className='z-50 min-w-[160px] rounded-xl border-white/[0.12] bg-black/40 p-1.5 backdrop-blur-xl'
+          className='z-50 min-w-[160px] rounded-xl border-white/12 bg-black/40 p-1.5 backdrop-blur-xl'
         >
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;

@@ -207,7 +207,7 @@ export default function LatestReleasesPage() {
           <div className='flex items-center gap-2'>
             <ArrowUpDown className='w-4 h-4 text-zinc-500' />
             <select
-              className='bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-300 focus:outline-none focus:border-green-500 transition-colors'
+              className='bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-300 focus:outline-hidden focus:border-green-500 transition-colors'
               value={sortValue}
               onChange={e => {
                 setSortValue(e.target.value);
@@ -302,7 +302,7 @@ function AlbumCard({ album }: { album: Album }) {
 
   return (
     <Link href={`/albums/${album.id}?source=local`} className='group'>
-      <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-4 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-cosmic-latte/5'>
+      <div className='bg-zinc-900/60 backdrop-blur-xs border border-zinc-800/80 rounded-xl p-4 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-cosmic-latte/5'>
         <div className='relative aspect-square mb-3'>
           <AlbumImage
             src={album.coverArtUrl}

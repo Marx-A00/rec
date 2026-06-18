@@ -85,7 +85,7 @@ export default function RecommendationsList({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className='bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl h-64 animate-pulse border border-zinc-600'
+              className='bg-linear-to-br from-zinc-800 to-zinc-900 rounded-2xl h-64 animate-pulse border border-zinc-600'
             />
           ))}
         </div>
@@ -138,7 +138,7 @@ export default function RecommendationsList({
           <button
             onClick={handleLoadMore}
             disabled={isFetchingNextPage}
-            className='w-full block rounded-md px-4 py-2 h-10 bg-zinc-800/60 hover:bg-cosmic-latte text-zinc-100 hover:text-black border border-zinc-700/60 hover:border-cosmic-latte backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+            className='w-full block rounded-md px-4 py-2 h-10 bg-zinc-800/60 hover:bg-cosmic-latte text-zinc-100 hover:text-black border border-zinc-700/60 hover:border-cosmic-latte backdrop-blur-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
           >
             <span className='flex items-center justify-center gap-2'>
               {isFetchingNextPage ? (

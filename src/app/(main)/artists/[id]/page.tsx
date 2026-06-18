@@ -192,7 +192,7 @@ export default async function ArtistDetailsPage({
           <TabsContent
             value='discography'
             data-tour-step='artist-discography'
-            className='focus:outline-none outline-none'
+            className='focus:outline-hidden outline-hidden'
           >
             <DiscographyTab
               artistId={artist.id}
@@ -204,7 +204,7 @@ export default async function ArtistDetailsPage({
 
         <TabsContent
           value='recommendations'
-          className='focus:outline-none outline-none'
+          className='focus:outline-hidden outline-hidden'
         >
           <ArtistRecommendationsTab
             artistId={artist.id}

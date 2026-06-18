@@ -269,7 +269,7 @@ export function ArtistCorrectionModal({
 
   return (
     <Dialog open={true} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-hidden flex flex-col gap-0 bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
+      <DialogContent className='sm:max-w-[1100px]! max-h-[90vh] overflow-hidden flex flex-col gap-0 bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 hover:[&>button]:text-zinc-300'>
         <DialogHeader>
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>
             {headerTitle}
@@ -384,7 +384,7 @@ export function ArtistCorrectionModal({
             )}
         </div>
 
-        <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 flex-shrink-0'>
+        <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 shrink-0'>
           <div className='flex w-full justify-between'>
             <Button variant='outline' onClick={handleClose}>
               Cancel

@@ -105,7 +105,7 @@ export function MobileSideDrawer({
       {/* Overlay */}
       <div
         className={cn(
-          'fixed inset-0 z-[60] bg-black/60 transition-opacity duration-300',
+          'fixed inset-0 z-60 bg-black/60 transition-opacity duration-300',
           open
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
@@ -118,7 +118,7 @@ export function MobileSideDrawer({
       <div
         ref={drawerRef}
         className={cn(
-          'fixed top-0 left-0 z-[60] h-full w-[310px] bg-zinc-900 shadow-2xl',
+          'fixed top-0 left-0 z-60 h-full w-[310px] bg-zinc-900 shadow-2xl',
           'flex flex-col transition-transform duration-300 ease-out',
           'pt-[env(safe-area-inset-top)]',
           open ? 'translate-x-0' : '-translate-x-full'
@@ -131,7 +131,7 @@ export function MobileSideDrawer({
         <div className='flex items-center gap-3 px-5 pt-6 pb-5'>
           <Link
             href={profileHref}
-            className='flex-shrink-0'
+            className='shrink-0'
             onClick={() => onOpenChange(false)}
           >
             {userImage ? (
@@ -191,7 +191,7 @@ export function MobileSideDrawer({
                 )}
               >
                 <Icon
-                  className='h-5 w-5 flex-shrink-0'
+                  className='h-5 w-5 shrink-0'
                   strokeWidth={active ? 2.5 : 2}
                 />
                 <span
@@ -226,7 +226,7 @@ export function MobileSideDrawer({
                     : 'text-zinc-400 active:bg-zinc-800'
                 )}
               >
-                <Icon className='h-5 w-5 flex-shrink-0' strokeWidth={2} />
+                <Icon className='h-5 w-5 shrink-0' strokeWidth={2} />
                 <span className='text-[15px]'>{item.label}</span>
               </Link>
             );
@@ -238,7 +238,7 @@ export function MobileSideDrawer({
             onClick={() => signOut({ callbackUrl: '/m/auth/signin' })}
             className='flex items-center gap-4 px-3 h-12 w-full rounded-xl text-red-400 active:bg-zinc-800 transition-colors'
           >
-            <LogOut className='h-5 w-5 flex-shrink-0' strokeWidth={2} />
+            <LogOut className='h-5 w-5 shrink-0' strokeWidth={2} />
             <span className='text-[15px]'>Log Out</span>
           </button>
         </div>

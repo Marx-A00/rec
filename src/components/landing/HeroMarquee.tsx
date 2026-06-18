@@ -83,7 +83,7 @@ function AlbumCard({ cover, priority = false }: AlbumCardProps) {
         sizes='(max-width: 640px) 128px, (max-width: 768px) 160px, 176px'
       />
       {/* Glossy overlay */}
-      <div className='absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/30 pointer-events-none' />
+      <div className='absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-black/30 pointer-events-none' />
     </div>
   );
 
@@ -92,7 +92,7 @@ function AlbumCard({ cover, priority = false }: AlbumCardProps) {
       <Link
         href={cover.href}
         aria-label={cover.alt}
-        className='relative group/card block cursor-pointer outline-none rounded-xl'
+        className='relative group/card block cursor-pointer outline-hidden rounded-xl'
       >
         {inner}
       </Link>
@@ -143,13 +143,13 @@ export function HeroMarquee({ covers }: HeroMarqueeProps) {
       {/* Right side - 3D Tilted Vertical Marquee */}
       <div className='hidden lg:flex flex-1 relative h-[calc(100vh-4rem)] w-full items-center justify-center'>
         {/* Gradient overlays for smooth fade on all edges */}
-        <div className='pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black via-black/80 to-transparent z-10' />
-        <div className='pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black via-black/80 to-transparent z-10' />
-        <div className='pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-black via-black/80 to-transparent z-10' />
-        <div className='pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-black via-black/80 to-transparent z-10' />
+        <div className='pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-black via-black/80 to-transparent z-10' />
+        <div className='pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black via-black/80 to-transparent z-10' />
+        <div className='pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-black via-black/80 to-transparent z-10' />
+        <div className='pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-linear-to-l from-black via-black/80 to-transparent z-10' />
 
         {/* Inner container with overflow hidden and perspective */}
-        <div className='absolute inset-0 overflow-hidden [perspective:1200px]'>
+        <div className='absolute inset-0 overflow-hidden perspective-distant'>
           <div className='absolute inset-0 flex items-center justify-center'>
             <div
               className='flex flex-row items-center gap-4'
@@ -219,8 +219,8 @@ export function HeroMarquee({ covers }: HeroMarqueeProps) {
             })}
           </Marquee>
           {/* Gradient overlays for smooth fade */}
-          <div className='pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-black' />
-          <div className='pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-black' />
+          <div className='pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-linear-to-r from-black' />
+          <div className='pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-linear-to-l from-black' />
         </div>
       </div>
     </>

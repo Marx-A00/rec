@@ -297,7 +297,7 @@ export default function MobileSettingsClient({
               </div>
               <div className='relative'>
                 <select
-                  className='appearance-none bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-cosmic-latte min-h-[44px]'
+                  className='appearance-none bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-hidden focus:border-cosmic-latte min-h-[44px]'
                   value={settings.profileVisibility}
                   onChange={e =>
                     handleToggle('profileVisibility', e.target.value)
@@ -502,8 +502,8 @@ function ToggleRow({
           disabled={disabled}
           onClick={() => onChange(!checked)}
           className={`
-            relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
-            transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900
+            relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+            transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-cosmic-latte focus:ring-offset-2 focus:ring-offset-zinc-900
             ${checked ? 'bg-emeraled-green' : 'bg-zinc-700'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}

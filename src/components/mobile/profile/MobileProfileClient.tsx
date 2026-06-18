@@ -120,7 +120,7 @@ export default function MobileProfileClient({
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <button
             onClick={() => router.back()}
@@ -157,7 +157,7 @@ export default function MobileProfileClient({
       <section className='px-4 py-6 flex flex-col items-center'>
         <button
           onClick={() => setIsImageLightboxOpen(true)}
-          className='rounded-full focus:outline-none active:scale-95 transition-transform mb-4'
+          className='rounded-full focus:outline-hidden active:scale-95 transition-transform mb-4'
           aria-label='View profile picture'
         >
           <Avatar className='w-20 h-20 border-2 border-zinc-700'>
@@ -308,7 +308,7 @@ export default function MobileProfileClient({
                   >
                     {/* Album Covers Row */}
                     <div className='flex items-center justify-center gap-2 mb-2'>
-                      <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
+                      <div className='w-12 h-12 shrink-0 rounded-md overflow-hidden'>
                         <AlbumImage
                           src={rec.basisAlbum.coverArtUrl}
                           cloudflareImageId={rec.basisAlbum.cloudflareImageId}
@@ -318,8 +318,8 @@ export default function MobileProfileClient({
                           className='w-full h-full object-cover'
                         />
                       </div>
-                      <ChevronRight className='h-4 w-4 text-zinc-500 flex-shrink-0' />
-                      <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
+                      <ChevronRight className='h-4 w-4 text-zinc-500 shrink-0' />
+                      <div className='w-12 h-12 shrink-0 rounded-md overflow-hidden'>
                         <AlbumImage
                           src={rec.recommendedAlbum.coverArtUrl}
                           cloudflareImageId={

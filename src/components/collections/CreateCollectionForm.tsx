@@ -101,7 +101,7 @@ export default function CreateCollectionForm() {
           value={formData.name}
           onChange={e => handleInputChange('name', e.target.value)}
           placeholder='My Favorite Albums'
-          className={`w-full px-4 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-full px-4 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 ${
             errors.name ? 'border-red-500' : 'border-zinc-600'
           }`}
           maxLength={100}
@@ -125,7 +125,7 @@ export default function CreateCollectionForm() {
           onChange={e => handleInputChange('description', e.target.value)}
           placeholder='A collection of my all-time favorite albums...'
           rows={4}
-          className={`w-full px-4 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical ${
+          className={`w-full px-4 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 resize-vertical ${
             errors.description ? 'border-red-500' : 'border-zinc-600'
           }`}
           maxLength={500}

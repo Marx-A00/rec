@@ -46,7 +46,7 @@ export default function MobileBrowseClient({
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
-      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+      <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-xs border-b border-zinc-800 px-4 py-3'>
         <div className='flex items-center justify-between'>
           <button
             onClick={() => router.back()}
@@ -219,7 +219,7 @@ function UserCard({ user }: { user: NewUser }) {
   return (
     <Link
       href={`/m/profile/${user.id}`}
-      className='flex-shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3 active:scale-[0.97] transition-transform'
+      className='shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3 active:scale-[0.97] transition-transform'
     >
       <div className='flex flex-col items-center text-center gap-2'>
         <Avatar className='w-14 h-14 border border-zinc-700'>
@@ -256,7 +256,7 @@ function ArtistCard({
   return (
     <Link
       href={`/m/artists/${artist.id}?source=local`}
-      className='flex-shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3 active:scale-[0.97] transition-transform'
+      className='shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3 active:scale-[0.97] transition-transform'
     >
       <div className='flex flex-col items-center text-center gap-2'>
         <div className='w-14 h-14 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center'>
@@ -296,7 +296,7 @@ function AlbumCard({
   return (
     <Link
       href={`/m/albums/${album.id}?source=local`}
-      className='flex-shrink-0 w-[100px] active:scale-[0.97] transition-transform'
+      className='shrink-0 w-[100px] active:scale-[0.97] transition-transform'
     >
       <div className='aspect-square rounded-lg overflow-hidden mb-1.5'>
         <AlbumImage
@@ -318,7 +318,7 @@ function ReleaseCard({ album }: { album: LatestRelease }) {
   return (
     <Link
       href={`/m/albums/${album.id}?source=local`}
-      className='flex-shrink-0 w-[100px] active:scale-[0.97] transition-transform'
+      className='shrink-0 w-[100px] active:scale-[0.97] transition-transform'
     >
       <div className='aspect-square rounded-lg overflow-hidden mb-1.5'>
         <AlbumImage
@@ -348,7 +348,7 @@ function ReleaseCard({ album }: { album: LatestRelease }) {
 
 function SkeletonCard({ variant }: { variant: 'circle' | 'square' }) {
   return (
-    <div className='flex-shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3'>
+    <div className='shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3'>
       <div className='animate-pulse flex flex-col items-center gap-2'>
         <div
           className={`w-14 h-14 bg-zinc-800 ${variant === 'circle' ? 'rounded-full' : 'rounded-lg'}`}

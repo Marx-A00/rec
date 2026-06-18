@@ -287,7 +287,7 @@ function ReleaseCard({
       }}
     >
       <div className='flex h-24'>
-        <div className='relative w-24 h-24 flex-shrink-0'>
+        <div className='relative w-24 h-24 shrink-0'>
           <AlbumImage
             src={release.imageUrl || ''}
             alt={release.title}

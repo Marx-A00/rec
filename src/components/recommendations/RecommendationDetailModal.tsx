@@ -124,7 +124,7 @@ export default function RecommendationDetailModal({
             e.currentTarget.blur();
             onClose();
           }}
-          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none rounded-full p-1'
+          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-hidden rounded-full p-1'
           aria-label='Close recommendation details modal'
           role='button'
           tabIndex={0}
@@ -147,7 +147,7 @@ export default function RecommendationDetailModal({
 
         {/* User Info */}
         <div className='flex items-center space-x-3 mb-6'>
-          <Avatar className='h-10 w-10 ring-2 ring-zinc-600 shadow-sm'>
+          <Avatar className='h-10 w-10 ring-2 ring-zinc-600 shadow-xs'>
             <AvatarImage
               src={recommendation.user?.image || undefined}
               alt={recommendation.user?.username || 'User'}
@@ -278,11 +278,11 @@ export default function RecommendationDetailModal({
           >
             <div className='bg-black border-2 border-black rounded-full shadow-xl'>
               <div
-                className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-lg`}
+                className={`flex items-center justify-center w-16 h-16 bg-linear-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-lg`}
               >
                 <div className='flex flex-col items-center'>
                   <Heart
-                    className={`h-5 w-5 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
+                    className={`h-5 w-5 ${scoreColors.heartColor} drop-shadow-xs mb-0.5`}
                   />
                   <span
                     className={`text-sm font-bold ${scoreColors.textColor} tabular-nums leading-none`}

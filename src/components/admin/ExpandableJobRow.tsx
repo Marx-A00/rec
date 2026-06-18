@@ -131,7 +131,7 @@ export function ExpandableJobRow({
                   | 'default'
                   | 'destructive'
                   | 'secondary'
-                  | 'outline'
+                  | 'outline-solid'
               }
               className='text-xs'
             >

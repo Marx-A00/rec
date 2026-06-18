@@ -127,7 +127,7 @@ export default function SimpleSearchBar({
             className='border-0 shadow-none bg-transparent flex-1'
             shouldFilter={false}
           >
-            <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_[cmdk-input-wrapper]>svg]:hidden'>
+            <div className='[&_.border-b]:border-0 **:[[cmdk-input-wrapper]]:border-0 [&_[cmdk-input-wrapper]>svg]:hidden'>
               <CommandInput
                 id='main-search-bar'
                 data-tour-step='main-search'
@@ -147,7 +147,7 @@ export default function SimpleSearchBar({
           <button
             onClick={executeSearch}
             disabled={query.length < minQueryLength}
-            className='h-full px-3 bg-zinc-800 rounded-none rounded-r-lg hover:bg-zinc-700 transition-colors disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cosmic-latte'
+            className='h-full px-3 bg-zinc-800 rounded-none rounded-r-lg hover:bg-zinc-700 transition-colors disabled:cursor-not-allowed focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-cosmic-latte'
           >
             <Search className='w-4 h-4 text-cosmic-latte' />
           </button>
