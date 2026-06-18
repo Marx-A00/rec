@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { X, Calendar, Zap, Share2, ChevronLeft, ChevronRight, Archive } from 'lucide-react';
+import { X, Calendar, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
@@ -88,7 +87,6 @@ function GameOver({
   mode,
   displayDate,
   formattedDate,
-  archiveUrl,
   onDevReset,
 }: {
   game: ReturnType<typeof useUncoverGame>;
@@ -96,7 +94,6 @@ function GameOver({
   mode: 'daily' | 'archive';
   displayDate: Date;
   formattedDate: string;
-  archiveUrl: string;
   onDevReset?: () => void;
 }) {
   const isDaily = mode === 'daily';
@@ -106,6 +103,7 @@ function GameOver({
     <div className='relative flex h-full items-start gap-12 px-[60px] pt-8'>
       {/* Art Column — full reveal */}
       <div className='flex flex-col items-center gap-4'>
+        <DateNav displayDate={displayDate} formattedDate={formattedDate} />
         {challengeImageUrl && game.challengeId && (
           <div
             className={`overflow-hidden rounded-2xl border ${
@@ -127,11 +125,8 @@ function GameOver({
         )}
       </div>
 
-      {/* Controls Column — result + actions */}
-      <div className='flex min-h-0 flex-1 flex-col'>
-        {/* Date nav */}
-        <DateNav displayDate={displayDate} formattedDate={formattedDate} className='pb-1' />
-
+      {/* Controls Column — result + actions (pt aligns with image top past DateNav + gap) */}
+      <div className='flex min-h-0 flex-1 flex-col pt-[36px]'>
         {/* Album info */}
         {(game.correctAlbumTitle || game.correctAlbumArtist) && (
           <div className='pb-2'>
@@ -141,9 +136,7 @@ function GameOver({
               </p>
             )}
             {game.correctAlbumArtist && (
-              <p className='text-lg text-zinc-300'>
-                {game.correctAlbumArtist}
-              </p>
+              <p className='text-lg text-zinc-300'>{game.correctAlbumArtist}</p>
             )}
           </div>
         )}
@@ -152,7 +145,9 @@ function GameOver({
         <p className='pb-1 text-sm text-zinc-400'>
           {won
             ? getWinPhrase(displayDate.toISOString().split('T')[0])
-            : getLossPhrase(isDaily ? displayDate.toISOString().split('T')[0] : undefined)}
+            : getLossPhrase(
+                isDaily ? displayDate.toISOString().split('T')[0] : undefined
+              )}
         </p>
 
         <div className='flex items-center gap-2 pb-5'>
@@ -174,50 +169,14 @@ function GameOver({
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className='flex gap-3 pb-5'>
-          <button
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors ${
-              won
-                ? 'bg-emerald-600 hover:bg-emerald-500'
-                : 'bg-red-600 hover:bg-red-500'
-            }`}
-          >
-            <Share2 className='h-3.5 w-3.5' />
-            Share Result
-          </button>
-          <Link
-            href={archiveUrl}
-            className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
-          >
-            {isDaily ? (
-              <>
-                <Archive className='h-3.5 w-3.5' />
-                Play Archive
-              </>
-            ) : (
-              <>
-                <Calendar className='h-3.5 w-3.5' />
-                Back to Archive
-              </>
-            )}
-          </Link>
-        </div>
-
-        {/* Divider */}
-        <div className='h-px w-full bg-zinc-800' />
-
-        {/* Daily: next puzzle message */}
-        {isDaily && (
-          <p className='pt-3 text-xs text-zinc-500'>
-            Next puzzle drops at midnight
-          </p>
-        )}
-
         {/* Guesses list */}
         {game.guesses.length > 0 && (
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
-            <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
+            <GuessList
+              guesses={game.guesses}
+              correctArtist={game.correctAlbumArtist}
+              correctYear={game.correctAlbumYear}
+            />
           </div>
         )}
 
@@ -266,7 +225,10 @@ export function UncoverGame({
     try {
       await resetDailySession({});
     } catch (e) {
-      console.warn('[DEV] Server reset failed (continuing with local reset):', e);
+      console.warn(
+        '[DEV] Server reset failed (continuing with local reset):',
+        e
+      );
     }
     game.resetGame();
     setChallengeImageUrl(null);
@@ -340,7 +302,11 @@ export function UncoverGame({
   }
 
   // ─── Initializing ─────────────────────────────────────────────
-  if (isInitializing || game.isPuzzleLoading || (game.isAuthenticated && !game.sessionId)) {
+  if (
+    isInitializing ||
+    game.isPuzzleLoading ||
+    (game.isAuthenticated && !game.sessionId)
+  ) {
     return (
       <div className='flex h-full items-center justify-center'>
         <LumaSpinner />
@@ -403,7 +369,6 @@ export function UncoverGame({
         mode={mode}
         displayDate={displayDate}
         formattedDate={formattedDate}
-        archiveUrl={archiveUrl}
         onDevReset={handleDevReset}
       />
     );
@@ -463,7 +428,11 @@ export function UncoverGame({
         {/* Previous guesses */}
         {game.guesses.length > 0 && (
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
-            <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
+            <GuessList
+              guesses={game.guesses}
+              correctArtist={game.correctAlbumArtist}
+              correctYear={game.correctAlbumYear}
+            />
           </div>
         )}
 

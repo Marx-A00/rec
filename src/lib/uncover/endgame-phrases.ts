@@ -10,6 +10,8 @@ const LOSS_PHRASES = [
   'Better luck tomorrow',
   `Sorry, we don't think Fantano reviewed this one`,
   'Better luck next time',
+  `but didn't you say that you listen to 'everything'?`,
+  `We heard buzzfeed is hiring?`,
 ] as const;
 
 /**

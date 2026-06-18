@@ -114,7 +114,13 @@ export default function AlbumImage({
       <div
         className={`relative overflow-hidden ${fill ? 'absolute inset-0' : ''} ${className}`}
       >
-        {fallbackIcon || <VinylPlaceholder animated={false} />}
+        {fallbackIcon ? (
+          <div className='flex items-center justify-center w-full h-full bg-zinc-800 text-zinc-400'>
+            {fallbackIcon}
+          </div>
+        ) : (
+          <VinylPlaceholder animated={false} />
+        )}
       </div>
     );
   }
