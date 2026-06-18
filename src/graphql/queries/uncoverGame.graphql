@@ -40,6 +40,7 @@ query DailyPuzzle {
     correctAlbumTitle
     correctAlbumArtist
     correctAlbumCloudflareImageId
+    correctAlbumYear
     existingResult {
       ...GameResultFields
     }
@@ -63,6 +64,7 @@ query ArchivePuzzle($date: DateTime!) {
     correctAlbumTitle
     correctAlbumArtist
     correctAlbumCloudflareImageId
+    correctAlbumYear
     existingResult {
       ...GameResultFields
     }

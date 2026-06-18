@@ -10,6 +10,8 @@ export interface Guess {
   guessedText: string | null; // null if skip
   isCorrect: boolean;
   guessedAlbumId?: string; // album UUID for client-side validation
+  guessedArtistName?: string; // artist name for partial-match hints
+  guessedYear?: number; // release year for decade-match hints
 }
 
 export type GameMode = 'daily' | 'archive';

@@ -39,6 +39,7 @@ export type DailyChallengeWithAlbum = UncoverChallenge & {
   album: {
     id: string;
     title: string;
+    releaseDate: Date | null;
     cloudflareImageId: string | null;
     artists: Array<{
       artist: {
@@ -55,6 +56,7 @@ const ALBUM_INCLUDE = {
     select: {
       id: true,
       title: true,
+      releaseDate: true,
       cloudflareImageId: true,
       artists: {
         select: {

@@ -3509,6 +3509,7 @@ export const queryResolvers: QueryResolvers = {
             release_group_mbid?: string;
             listen_count?: number;
             release_type?: string;
+            first_release_date?: string;
           }>;
         };
 
@@ -3535,6 +3536,11 @@ export const queryResolvers: QueryResolvers = {
           const localId = r.release_group_mbid
             ? (localAlbumMap.get(r.release_group_mbid) ?? null)
             : null;
+          // Extract year from first_release_date (e.g. "1997-06-16" → 1997)
+          const releaseYear = r.first_release_date
+            ? parseInt(r.first_release_date.slice(0, 4), 10) || null
+            : null;
+
           return {
             id: r.id,
             title: r.title,
@@ -3542,6 +3548,7 @@ export const queryResolvers: QueryResolvers = {
             score: r.listen_count || 0,
             isLocalAlbum: localId !== null,
             localAlbumId: localId,
+            releaseYear,
           };
         });
       } catch (err) {
@@ -4500,6 +4507,9 @@ export const queryResolvers: QueryResolvers = {
         correctAlbumTitle: challenge.album.title,
         correctAlbumArtist: artistName,
         correctAlbumCloudflareImageId: challenge.album.cloudflareImageId,
+        correctAlbumYear: challenge.album.releaseDate
+          ? challenge.album.releaseDate.getUTCFullYear()
+          : null,
         existingResult,
       };
     } catch (error) {
@@ -4590,6 +4600,9 @@ export const queryResolvers: QueryResolvers = {
         correctAlbumTitle: challenge.album.title,
         correctAlbumArtist: artistName,
         correctAlbumCloudflareImageId: challenge.album.cloudflareImageId,
+        correctAlbumYear: challenge.album.releaseDate
+          ? challenge.album.releaseDate.getUTCFullYear()
+          : null,
         existingResult,
       };
     } catch (error) {

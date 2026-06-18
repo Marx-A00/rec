@@ -278,7 +278,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
   // ----- Submit guess (instant) -----
 
   const submitGuess = useCallback(
-    async (guessText: string, localAlbumId?: string) => {
+    async (guessText: string, localAlbumId?: string, artistName?: string, releaseYear?: number) => {
       if (!gameStore.sessionId || !gameStore.challengeId) {
         throw new Error('No active session');
       }
@@ -321,6 +321,8 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
         guessedText: guessText,
         isCorrect: correct,
         guessedAlbumId: localAlbumId,
+        guessedArtistName: artistName,
+        guessedYear: releaseYear,
       });
 
       const newAttemptCount = gameStore.attemptCount + 1;
@@ -361,6 +363,8 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
             guessedText: guessText,
             isCorrect: correct,
             guessedAlbumId: localAlbumId,
+            guessedArtistName: artistName,
+            guessedYear: releaseYear,
           },
         ];
 
@@ -474,6 +478,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
     correctAlbumId,
     correctAlbumTitle: puzzle?.correctAlbumTitle ?? null,
     correctAlbumArtist: puzzle?.correctAlbumArtist ?? null,
+    correctAlbumYear: puzzle?.correctAlbumYear ?? null,
     textRegions: puzzle?.textRegions ?? null,
 
     // UI state

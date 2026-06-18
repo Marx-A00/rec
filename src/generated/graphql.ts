@@ -344,6 +344,8 @@ export type ArchivePuzzle = {
   /** Correct answer - exposed to client for instant game responsiveness */
   correctAlbumId: Scalars['UUID']['output'];
   correctAlbumTitle: Scalars['String']['output'];
+  /** Release year of the correct album (e.g. 1997) */
+  correctAlbumYear?: Maybe<Scalars['Int']['output']>;
   date: Scalars['DateTime']['output'];
   /** User's existing result for this puzzle (null if not played) */
   existingResult?: Maybe<GameResult>;
@@ -1032,6 +1034,8 @@ export type DailyPuzzle = {
   /** Correct answer - exposed to client for instant game responsiveness */
   correctAlbumId: Scalars['UUID']['output'];
   correctAlbumTitle: Scalars['String']['output'];
+  /** Release year of the correct album (e.g. 1997) */
+  correctAlbumYear?: Maybe<Scalars['Int']['output']>;
   date: Scalars['DateTime']['output'];
   /** User's existing result for this puzzle (null if not played) */
   existingResult?: Maybe<GameResult>;
@@ -1266,6 +1270,8 @@ export type GameAlbumResult = {
   id: Scalars['Int']['output'];
   isLocalAlbum: Scalars['Boolean']['output'];
   localAlbumId?: Maybe<Scalars['UUID']['output']>;
+  /** Release year extracted from first_release_date (e.g. 1997) */
+  releaseYear?: Maybe<Scalars['Int']['output']>;
   score: Scalars['Int']['output'];
   title: Scalars['String']['output'];
 };
@@ -6647,6 +6653,7 @@ export type SearchGameAlbumsQuery = {
     score: number;
     isLocalAlbum: boolean;
     localAlbumId?: string | null;
+    releaseYear?: number | null;
   }>;
 };
 
@@ -6982,6 +6989,7 @@ export type DailyPuzzleQuery = {
     correctAlbumTitle: string;
     correctAlbumArtist: string;
     correctAlbumCloudflareImageId?: string | null;
+    correctAlbumYear?: number | null;
     textRegions?: Array<{
       __typename?: 'TextRegionBox';
       x: number;
@@ -7024,6 +7032,7 @@ export type ArchivePuzzleQuery = {
     correctAlbumTitle: string;
     correctAlbumArtist: string;
     correctAlbumCloudflareImageId?: string | null;
+    correctAlbumYear?: number | null;
     textRegions?: Array<{
       __typename?: 'TextRegionBox';
       x: number;
@@ -15254,6 +15263,7 @@ export const SearchGameAlbumsDocument = `
     score
     isLocalAlbum
     localAlbumId
+    releaseYear
   }
 }
     `;
@@ -15943,6 +15953,7 @@ export const DailyPuzzleDocument = `
     correctAlbumTitle
     correctAlbumArtist
     correctAlbumCloudflareImageId
+    correctAlbumYear
     existingResult {
       ...GameResultFields
     }
@@ -16032,6 +16043,7 @@ export const ArchivePuzzleDocument = `
     correctAlbumTitle
     correctAlbumArtist
     correctAlbumCloudflareImageId
+    correctAlbumYear
     existingResult {
       ...GameResultFields
     }

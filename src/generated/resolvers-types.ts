@@ -318,6 +318,8 @@ export type ArchivePuzzle = {
   /** Correct answer - exposed to client for instant game responsiveness */
   correctAlbumId: Scalars['UUID']['output'];
   correctAlbumTitle: Scalars['String']['output'];
+  /** Release year of the correct album (e.g. 1997) */
+  correctAlbumYear?: Maybe<Scalars['Int']['output']>;
   date: Scalars['DateTime']['output'];
   /** User's existing result for this puzzle (null if not played) */
   existingResult?: Maybe<GameResult>;
@@ -1006,6 +1008,8 @@ export type DailyPuzzle = {
   /** Correct answer - exposed to client for instant game responsiveness */
   correctAlbumId: Scalars['UUID']['output'];
   correctAlbumTitle: Scalars['String']['output'];
+  /** Release year of the correct album (e.g. 1997) */
+  correctAlbumYear?: Maybe<Scalars['Int']['output']>;
   date: Scalars['DateTime']['output'];
   /** User's existing result for this puzzle (null if not played) */
   existingResult?: Maybe<GameResult>;
@@ -1240,6 +1244,8 @@ export type GameAlbumResult = {
   id: Scalars['Int']['output'];
   isLocalAlbum: Scalars['Boolean']['output'];
   localAlbumId?: Maybe<Scalars['UUID']['output']>;
+  /** Release year extracted from first_release_date (e.g. 1997) */
+  releaseYear?: Maybe<Scalars['Int']['output']>;
   score: Scalars['Int']['output'];
   title: Scalars['String']['output'];
 };
@@ -4561,6 +4567,11 @@ export type ArchivePuzzleResolvers<
     ParentType,
     ContextType
   >;
+  correctAlbumYear?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
   date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   existingResult?: Resolver<
     Maybe<ResolversTypes['GameResult']>,
@@ -5411,6 +5422,11 @@ export type DailyPuzzleResolvers<
     ParentType,
     ContextType
   >;
+  correctAlbumYear?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
   date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   existingResult?: Resolver<
     Maybe<ResolversTypes['GameResult']>,
@@ -5718,6 +5734,7 @@ export type GameAlbumResultResolvers<
     ParentType,
     ContextType
   >;
+  releaseYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;

@@ -6,5 +6,6 @@ query SearchGameAlbums($query: String!, $limit: Int) {
     score
     isLocalAlbum
     localAlbumId
+    releaseYear
   }
 }

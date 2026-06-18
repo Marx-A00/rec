@@ -2766,6 +2766,8 @@ type GameAlbumResult {
   score: Int!
   isLocalAlbum: Boolean!
   localAlbumId: UUID
+  "Release year extracted from first_release_date (e.g. 1997)"
+  releaseYear: Int
 }
 
 # =============================================
@@ -3180,6 +3182,8 @@ type DailyPuzzle {
   correctAlbumTitle: String!
   correctAlbumArtist: String!
   correctAlbumCloudflareImageId: String
+  "Release year of the correct album (e.g. 1997)"
+  correctAlbumYear: Int
 
   "User's existing result for this puzzle (null if not played)"
   existingResult: GameResult
@@ -3205,6 +3209,8 @@ type ArchivePuzzle {
   correctAlbumTitle: String!
   correctAlbumArtist: String!
   correctAlbumCloudflareImageId: String
+  "Release year of the correct album (e.g. 1997)"
+  correctAlbumYear: Int
 
   "User's existing result for this puzzle (null if not played)"
   existingResult: GameResult

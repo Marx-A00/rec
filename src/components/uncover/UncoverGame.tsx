@@ -214,7 +214,7 @@ function GameOver({
         {/* Guesses list */}
         {game.guesses.length > 0 && (
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
-            <GuessList guesses={game.guesses} />
+            <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
           </div>
         )}
 
@@ -451,7 +451,7 @@ export function UncoverGame({
         {/* Previous guesses */}
         {game.guesses.length > 0 && (
           <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
-            <GuessList guesses={game.guesses} />
+            <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
           </div>
         )}
 
