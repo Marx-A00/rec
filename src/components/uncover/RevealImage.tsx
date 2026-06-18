@@ -70,7 +70,7 @@ export function RevealImage({
   }, [imageUrl]);
 
   const toggleStyle = () => {
-    setPreferredStyle(preferredStyle === 'pixelation' ? 'blur-sm' : 'pixelation');
+    setPreferredStyle(preferredStyle === 'pixelation' ? 'blur' : 'pixelation');
   };
 
   const handleImageLoad = () => {
