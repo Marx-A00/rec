@@ -757,7 +757,7 @@ export default function MusicDatabasePage() {
                 </Select>
 
                 <Button
-                  variant={filters.needsEnrichment ? 'default' : 'outline-solid'}
+                  variant={filters.needsEnrichment ? 'default' : 'outline'}
                   onClick={() =>
                     setFilters(prev => ({
                       ...prev,
@@ -806,7 +806,7 @@ export default function MusicDatabasePage() {
                 </div>
                 <div className='flex flex-wrap gap-2'>
                   <Button
-                    variant={sourceFilter === 'SPOTIFY' ? 'default' : 'outline-solid'}
+                    variant={sourceFilter === 'SPOTIFY' ? 'default' : 'outline'}
                     onClick={() =>
                       setSourceFilter(prev =>
                         prev === 'SPOTIFY' ? 'all' : 'SPOTIFY'
@@ -829,7 +829,7 @@ export default function MusicDatabasePage() {
                   </Button>
                   <Button
                     variant={
-                      sourceFilter === 'LISTENBRAINZ' ? 'default' : 'outline-solid'
+                      sourceFilter === 'LISTENBRAINZ' ? 'default' : 'outline'
                     }
                     onClick={() =>
                       setSourceFilter(prev =>
@@ -852,7 +852,7 @@ export default function MusicDatabasePage() {
                   </Button>
                   <Button
                     variant={
-                      sourceFilter === 'MUSICBRAINZ' ? 'default' : 'outline-solid'
+                      sourceFilter === 'MUSICBRAINZ' ? 'default' : 'outline'
                     }
                     onClick={() =>
                       setSourceFilter(prev =>
