@@ -6,6 +6,7 @@ import { Calendar } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
+import { useResetDailySessionMutation } from '@/generated/graphql';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
@@ -43,6 +44,18 @@ export function MobilePlayClient({
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
+
+  const { mutateAsync: resetDailySession } = useResetDailySessionMutation();
+
+  const handleDevReset = async () => {
+    try {
+      await resetDailySession({});
+    } catch (e) {
+      console.warn('[DEV] Server reset failed (continuing with local reset):', e);
+    }
+    game.resetGame();
+    setChallengeImageUrl(null);
+  };
 
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
@@ -171,28 +184,25 @@ export function MobilePlayClient({
       <div className='flex h-full flex-col items-center overflow-y-auto px-4 py-4'>
         {isArchive && <p className='text-xs text-zinc-500'>{formattedDate}</p>}
         <div className='text-center'>
-          <h2 className='mb-1 text-2xl font-bold text-white'>
-            {game.won ? 'You Won!' : 'Game Over'}
-          </h2>
-          <p className='text-sm text-zinc-400'>
-            {game.won
-              ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
-              : `You used all ${game.attemptCount} attempts.`}
-          </p>
           {(game.correctAlbumTitle || game.correctAlbumArtist) && (
-            <div className='mt-2'>
+            <div className='mb-1'>
               {game.correctAlbumTitle && (
-                <p className='text-sm font-semibold text-zinc-200'>
+                <p className='text-xl font-bold text-white'>
                   {game.correctAlbumTitle}
                 </p>
               )}
               {game.correctAlbumArtist && (
-                <p className='text-xs text-zinc-400'>
+                <p className='text-base text-zinc-300'>
                   {game.correctAlbumArtist}
                 </p>
               )}
             </div>
           )}
+          <p className='text-sm text-zinc-400'>
+            {game.won
+              ? `Guessed in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
+              : `Used all ${game.attemptCount} attempts.`}
+          </p>
         </div>
 
         {challengeImageUrl && game.challengeId && (
@@ -290,10 +300,7 @@ export function MobilePlayClient({
       {/* Dev-only reset button */}
       {process.env.NODE_ENV === 'development' && (
         <button
-          onClick={() => {
-            game.resetGame();
-            setChallengeImageUrl(null);
-          }}
+          onClick={handleDevReset}
           className='mt-2 shrink-0 rounded-md border border-yellow-600/50 bg-yellow-950/20 px-3 py-1.5 text-xs font-mono text-yellow-400 transition-colors hover:bg-yellow-900/30'
         >
           [DEV] Reset Session

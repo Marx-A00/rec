@@ -8,7 +8,10 @@ import { X, Calendar, Zap, Share2, ChevronLeft, ChevronRight, Archive } from 'lu
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { getWinPhrase, getLossPhrase } from '@/lib/uncover/endgame-phrases';
-import { useSearchGameAlbumsQuery } from '@/generated/graphql';
+import {
+  useSearchGameAlbumsQuery,
+  useResetDailySessionMutation,
+} from '@/generated/graphql';
 import { Lens } from '@/components/ui/lens';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
@@ -129,28 +132,28 @@ function GameOver({
         {/* Date nav */}
         <DateNav displayDate={displayDate} formattedDate={formattedDate} className='pb-1' />
 
-        {/* Result header */}
-        <h2 className='pb-1 text-2xl font-bold text-white'>
-          {won
-            ? getWinPhrase(displayDate.toISOString().split('T')[0])
-            : getLossPhrase(isDaily ? displayDate.toISOString().split('T')[0] : undefined)}
-        </h2>
-
         {/* Album info */}
         {(game.correctAlbumTitle || game.correctAlbumArtist) && (
           <div className='pb-2'>
             {game.correctAlbumTitle && (
-              <p className='text-sm font-semibold text-zinc-200'>
+              <p className='text-2xl font-bold text-white'>
                 {game.correctAlbumTitle}
               </p>
             )}
             {game.correctAlbumArtist && (
-              <p className='text-xs text-zinc-400'>
+              <p className='text-lg text-zinc-300'>
                 {game.correctAlbumArtist}
               </p>
             )}
           </div>
         )}
+
+        {/* Result header */}
+        <p className='pb-1 text-sm text-zinc-400'>
+          {won
+            ? getWinPhrase(displayDate.toISOString().split('T')[0])
+            : getLossPhrase(isDaily ? displayDate.toISOString().split('T')[0] : undefined)}
+        </p>
 
         <div className='flex items-center gap-2 pb-5'>
           {won ? (
@@ -256,6 +259,18 @@ export function UncoverGame({
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
+
+  const { mutateAsync: resetDailySession } = useResetDailySessionMutation();
+
+  const handleDevReset = async () => {
+    try {
+      await resetDailySession({});
+    } catch (e) {
+      console.warn('[DEV] Server reset failed (continuing with local reset):', e);
+    }
+    game.resetGame();
+    setChallengeImageUrl(null);
+  };
 
   // Format date in UTC — archive uses challengeDate, daily uses today
   const displayDate = challengeDate ?? new Date();
@@ -389,10 +404,7 @@ export function UncoverGame({
         displayDate={displayDate}
         formattedDate={formattedDate}
         archiveUrl={archiveUrl}
-        onDevReset={() => {
-          game.resetGame();
-          setChallengeImageUrl(null);
-        }}
+        onDevReset={handleDevReset}
       />
     );
   }
@@ -465,10 +477,7 @@ export function UncoverGame({
         {/* Dev-only reset button */}
         {process.env.NODE_ENV === 'development' && (
           <button
-            onClick={() => {
-              game.resetGame();
-              setChallengeImageUrl(null);
-            }}
+            onClick={handleDevReset}
             className='mt-4 rounded-md border border-yellow-600/50 bg-yellow-950/20 px-3 py-1.5 text-xs font-mono text-yellow-400 transition-colors hover:bg-yellow-900/30'
           >
             [DEV] Reset Session
