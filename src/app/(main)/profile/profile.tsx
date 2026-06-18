@@ -58,7 +58,7 @@ export default function ProfileClient({
   const isCollectionEditorEnabled =
     process.env.NEXT_PUBLIC_ENABLE_COLLECTION_EDITOR === 'true';
 
-  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } =
+  const { prefetchRoute, navigateTo, navigateToAlbum } =
     useNavigation();
 
   // Use the collection data passed from server component
@@ -123,9 +123,6 @@ export default function ProfileClient({
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
-    // Prefetch browse page since there's a back button
-    prefetchRoute('/browse');
-
     // Prefetch collage page for own profile
     if (isOwnProfile) {
       prefetchRoute('/profile/collage');
@@ -291,16 +288,6 @@ export default function ProfileClient({
       />
 
       <div className='container mx-auto px-4 py-8'>
-        {/* Header with intelligent back navigation */}
-        <div className='mb-8'>
-          <button
-            onClick={() => goBack()}
-            className='inline-flex items-center text-cosmic-latte hover:text-cosmic-latte transition-colors mb-4'
-          >
-            ← Back
-          </button>
-        </div>
-
         {/* Profile Header */}
         <div className='max-w-4xl mx-auto'>
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
