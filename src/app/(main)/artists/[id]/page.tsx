@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import AlbumImage from '@/components/ui/AlbumImage';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import ArtistRecommendationsTab from '@/components/artistDetails/tabs/ArtistRecommendationsTab';
+import SimilarArtistsTab from '@/components/artistDetails/tabs/SimilarArtistsTab';
 import ArtistAdminActions from '@/components/artistDetails/ArtistAdminActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
@@ -50,7 +51,7 @@ export default async function ArtistDetailsPage({
   }
 
   // Determine initial tab from URL param
-  const validTabs = ['discography', 'recommendations'];
+  const validTabs = ['discography', 'recommendations', 'similar'];
   const initialTab = validTabs.includes(rawSearch?.tab || '')
     ? rawSearch!.tab!
     : 'discography';
@@ -73,7 +74,6 @@ export default async function ArtistDetailsPage({
               className='w-full aspect-square object-cover rounded-lg shadow-2xl'
               sizes='(max-width: 768px) 100vw, 400px'
               priority
-
             />
           </div>
         </div>
@@ -167,7 +167,7 @@ export default async function ArtistDetailsPage({
 
       {/* Tabs */}
       <Tabs defaultValue={initialTab} className='w-full'>
-        <TabsList className='grid w-full grid-cols-2 bg-zinc-900'>
+        <TabsList className='grid w-full grid-cols-3 bg-zinc-900'>
           <TabsTrigger
             value='discography'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
@@ -179,6 +179,12 @@ export default async function ArtistDetailsPage({
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Recs
+          </TabsTrigger>
+          <TabsTrigger
+            value='similar'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
+          >
+            Similar Artists
           </TabsTrigger>
         </TabsList>
 
@@ -209,6 +215,17 @@ export default async function ArtistDetailsPage({
           <ArtistRecommendationsTab
             artistId={artist.id}
             artistName={sanitizeArtistName(artist.name)}
+          />
+        </TabsContent>
+
+        <TabsContent
+          value='similar'
+          className='focus:outline-hidden outline-hidden'
+        >
+          <SimilarArtistsTab
+            artistId={artist.id}
+            artistName={artist.name}
+            source={artist.source as 'local' | 'musicbrainz' | 'discogs'}
           />
         </TabsContent>
       </Tabs>

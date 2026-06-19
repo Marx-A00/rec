@@ -13,9 +13,61 @@ import type {
   ListenBrainzArtistPopularity,
   ListenBrainzFreshRelease,
   ListenBrainzFreshReleasesResponse,
+  ListenBrainzSimilarArtist,
 } from './types';
 
 const BASE_URL = 'https://api.listenbrainz.org/1';
+const LABS_BASE_URL = 'https://labs.api.listenbrainz.org';
+
+// ============================================================================
+// Similar Artists (Labs API)
+// ============================================================================
+
+const DEFAULT_SIMILAR_ALGORITHM =
+  'session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30';
+
+/**
+ * Fetch similar artists from the ListenBrainz Labs API.
+ * Returns empty array on any error for graceful degradation.
+ */
+export async function fetchSimilarArtists(
+  artistMbid: string,
+  algorithm: string = DEFAULT_SIMILAR_ALGORITHM
+): Promise<ListenBrainzSimilarArtist[]> {
+  const url = `${LABS_BASE_URL}/similar-artists/json?artist_mbids=${artistMbid}&algorithm=${algorithm}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Rec/1.0 (music recommendation platform)',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(
+        `[ListenBrainz Labs] Similar artists error: ${response.status} ${response.statusText}`
+      );
+      return [];
+    }
+
+    const data: ListenBrainzSimilarArtist[] = await response.json();
+
+    if (!Array.isArray(data)) {
+      console.warn('[ListenBrainz Labs] Unexpected response format');
+      return [];
+    }
+
+    console.log(
+      `[ListenBrainz Labs] Found ${data.length} similar artists for ${artistMbid}`
+    );
+    return data;
+  } catch (error: unknown) {
+    console.error(
+      `[ListenBrainz Labs] fetchSimilarArtists error: ${error instanceof Error ? error.message : 'unknown'}`
+    );
+    return [];
+  }
+}
 
 // ============================================================================
 // Fetch Options

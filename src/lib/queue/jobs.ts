@@ -165,6 +165,8 @@ export interface CheckArtistEnrichmentJobData {
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;
+  /** Skip similar artists sync during enrichment (prevents cascading) */
+  skipSimilarArtistsSync?: boolean;
 }
 
 export interface CheckTrackEnrichmentJobData {
@@ -194,6 +196,8 @@ export interface EnrichArtistJobData {
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;
+  /** Skip similar artists sync during enrichment (prevents cascading) */
+  skipSimilarArtistsSync?: boolean;
 }
 
 export interface EnrichTrackJobData {

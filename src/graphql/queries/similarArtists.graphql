@@ -1,0 +1,21 @@
+query SimilarArtists(
+  $id: String!
+  $source: DataSource!
+  $artistName: String
+  $limit: Int
+) {
+  similarArtists(
+    id: $id
+    source: $source
+    artistName: $artistName
+    limit: $limit
+  ) {
+    name
+    musicbrainzId
+    similarity
+    imageUrl
+    cloudflareImageId
+    localArtistId
+    source
+  }
+}

@@ -259,12 +259,33 @@ model Artist {
   albums           AlbumArtist[]
   tracks           TrackArtist[]
   llamaLogs        LlamaLog[]
+  similarTo        ArtistSimilarity[] @relation("SeedArtist")
+  similarFrom      ArtistSimilarity[] @relation("SimilarArtist")
 
   @@index([name])
   @@index([musicbrainzId])
   @@index([searchVector], type: Gin)
   @@index([source])
   @@map("artists")
+}
+
+model ArtistSimilarity {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seedArtistId    String   @map("seed_artist_id") @db.Uuid
+  similarArtistId String?  @map("similar_artist_id") @db.Uuid
+  similarMbid     String   @map("similar_mbid") @db.Uuid
+  similarName     String   @map("similar_name")
+  similarity      Float
+  source          String
+  lastSynced      DateTime @default(now()) @map("last_synced")
+
+  seedArtist    Artist  @relation("SeedArtist", fields: [seedArtistId], references: [id], onDelete: Cascade)
+  similarArtist Artist? @relation("SimilarArtist", fields: [similarArtistId], references: [id], onDelete: SetNull)
+
+  @@unique([seedArtistId, similarMbid])
+  @@index([seedArtistId])
+  @@index([similarMbid])
+  @@map("artist_similarities")
 }
 
 model Album {
@@ -492,6 +513,41 @@ enum DataQuality {
   HIGH
 }
 
+// Enrichment lifecycle statuses for Artist/Album/Track records.
+//
+// UNENRICHED       — Never enriched. Should rarely persist; usually transitions
+//                    to QUEUED immediately on creation. If it lingers, something
+//                    broke in the creation pipeline.
+//
+// QUEUED           — Enrichment job is in BullMQ, waiting to be processed.
+//
+// IN_PROGRESS      — Worker has picked up the job and is actively enriching.
+//
+// COMPLETED        — Fully enriched: core data (bio, image, genres, discography)
+//                    AND supplementary data (similar artists) are all populated.
+//
+// SUCCESS          — Alias for COMPLETED. Legacy — prefer COMPLETED for new code.
+//
+// BASIC            — Core enrichment done (bio, image, genres, discography) but
+//                    supplementary steps were intentionally skipped. Created for
+//                    artists auto-discovered via similar-artists-sync: they get
+//                    full enrichment minus their own similar artists to prevent
+//                    cascading. Query this status to find artists ready for
+//                    promotion to COMPLETED.
+//
+// PARTIAL_SUCCESS  — Enrichment ran but only some sources returned data.
+//                    E.g. MusicBrainz succeeded but Spotify/Discogs failed.
+//
+// FAILED           — Enrichment errored out. Can be retried.
+//
+// NO_DATA_AVAILABLE — Sources were queried but returned nothing. The artist/album
+//                     is too obscure or not indexed. Don't retry automatically.
+//
+// SKIPPED          — Enrichment was intentionally skipped (e.g. corrections flow,
+//                    manual override).
+//
+// PREVIEW          — Dry-run enrichment preview (admin tool). Shows what WOULD
+//                    change without applying. Not a real enrichment state.
 enum EnrichmentStatus {
   UNENRICHED
   QUEUED
@@ -503,6 +559,7 @@ enum EnrichmentStatus {
   NO_DATA_AVAILABLE
   SKIPPED
   PREVIEW
+  BASIC
 }
 
 enum EnrichmentEntityType {

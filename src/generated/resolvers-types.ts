@@ -1186,6 +1186,7 @@ export type EnrichmentStats = {
 };
 
 export enum EnrichmentStatus {
+  Basic = 'BASIC',
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   InProgress = 'IN_PROGRESS',
@@ -2169,6 +2170,7 @@ export type Query = {
    */
   searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
+  similarArtists: Array<SimilarArtist>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
   suggestedGameAlbums: SuggestedGameAlbumsResult;
@@ -2432,6 +2434,13 @@ export type QuerySearchTracksArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
   skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QuerySimilarArtistsArgs = {
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  source: DataSource;
 };
 
 export type QuerySocialFeedArgs = {
@@ -2753,6 +2762,17 @@ export type SelectionEntry = {
   key: Scalars['String']['input'];
   /** Whether to apply this change */
   selected: Scalars['Boolean']['input'];
+};
+
+export type SimilarArtist = {
+  __typename?: 'SimilarArtist';
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  localArtistId?: Maybe<Scalars['String']['output']>;
+  musicbrainzId?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  similarity: Scalars['Float']['output'];
+  source: Scalars['String']['output'];
 };
 
 export enum SortOrder {
@@ -3867,6 +3887,7 @@ export type ResolversTypes = ResolversObject<{
   SearchResults: ResolverTypeWrapper<SearchResults>;
   SearchType: SearchType;
   SelectionEntry: SelectionEntry;
+  SimilarArtist: ResolverTypeWrapper<SimilarArtist>;
   SortOrder: SortOrder;
   SourceStat: ResolverTypeWrapper<SourceStat>;
   SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
@@ -4089,6 +4110,7 @@ export type ResolversParentTypes = ResolversObject<{
   SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
   SearchResults: SearchResults;
   SelectionEntry: SelectionEntry;
+  SimilarArtist: SimilarArtist;
   SourceStat: SourceStat;
   SpotifyAlbum: SpotifyAlbum;
   SpotifyArtist: SpotifyArtist;
@@ -7026,6 +7048,12 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QuerySearchTracksArgs, 'limit' | 'query'>
   >;
+  similarArtists?: Resolver<
+    Array<ResolversTypes['SimilarArtist']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySimilarArtistsArgs, 'id' | 'source'>
+  >;
   socialFeed?: Resolver<
     ResolversTypes['ActivityFeed'],
     ParentType,
@@ -7458,6 +7486,33 @@ export type SearchResultsResolvers<
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SimilarArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SimilarArtist'] = ResolversParentTypes['SimilarArtist'],
+> = ResolversObject<{
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  localArtistId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  musicbrainzId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  similarity?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -8874,6 +8929,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ScoredSearchResult?: ScoredSearchResultResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
+  SimilarArtist?: SimilarArtistResolvers<ContextType>;
   SourceStat?: SourceStatResolvers<ContextType>;
   SpotifyAlbum?: SpotifyAlbumResolvers<ContextType>;
   SpotifyArtist?: SpotifyArtistResolvers<ContextType>;

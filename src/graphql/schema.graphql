@@ -167,6 +167,16 @@ enum DataSource {
   DISCOGS
 }
 
+type SimilarArtist {
+  name: String!
+  musicbrainzId: String
+  similarity: Float!
+  imageUrl: String
+  cloudflareImageId: String
+  localArtistId: String
+  source: String!
+}
+
 # =============================================
 # RELATIONSHIP TYPES
 # =============================================
@@ -799,6 +809,7 @@ enum EnrichmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+  BASIC
 }
 
 enum EnrichmentEntityType {
@@ -2461,6 +2472,14 @@ type Query {
   # Note: artistDetails is handled directly by server components
   # Returns all releases categorized by type (albums, EPs, singles, etc.)
   artistDiscography(id: String!, source: DataSource!): CategorizedDiscography!
+
+  # Similar artists (from Last.fm + ListenBrainz, merged and deduplicated)
+  similarArtists(
+    id: String!
+    source: DataSource!
+    artistName: String
+    limit: Int
+  ): [SimilarArtist!]!
 
   # Feed & Social
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!

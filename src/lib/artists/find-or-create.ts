@@ -348,6 +348,38 @@ export async function runPostCreateSideEffects(
         metadata: logging.metadata,
       });
     }
+
+    // ------------------------------------------------------------------
+    // Backfill similar artist links
+    // ------------------------------------------------------------------
+    if (artist.musicbrainzId) {
+      try {
+        const updated = await globalPrisma.artistSimilarity.updateMany({
+          where: {
+            similarMbid: artist.musicbrainzId,
+            similarArtistId: null,
+          },
+          data: {
+            similarArtistId: artist.id,
+          },
+        });
+
+        if (updated.count > 0) {
+          console.log(
+            chalk.magenta(
+              `[ARTIST-HELPER] Backfilled ${updated.count} similar artist links for "${artist.name}"`
+            )
+          );
+        }
+      } catch (backfillError) {
+        console.warn(
+          chalk.magenta(
+            `[ARTIST-HELPER] Failed to backfill similar artist links for "${artist.name}":`
+          ),
+          backfillError
+        );
+      }
+    }
   } catch (error) {
     console.warn(
       chalk.magenta(

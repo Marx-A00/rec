@@ -247,6 +247,7 @@ export async function handleCheckArtistEnrichment(
         source: data.source,
         requestId: data.requestId,
         parentJobId: data.parentJobId, // Propagate parent context for provenance chain
+        skipSimilarArtistsSync: data.skipSimilarArtistsSync,
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -1478,10 +1479,11 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
     }
 
     // Update enrichment status
+    const enrichmentStatus = data.skipSimilarArtistsSync ? 'BASIC' : 'COMPLETED';
     await prisma.artist.update({
       where: { id: data.artistId },
       data: {
-        enrichmentStatus: 'COMPLETED',
+        enrichmentStatus,
         dataQuality: newDataQuality,
         lastEnriched: new Date(),
       },
@@ -1489,7 +1491,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
     await publishEnrichmentEvent(redis, {
       entityType: 'ARTIST',
       entityId: data.artistId,
-      status: 'COMPLETED',
+      status: enrichmentStatus,
       timestamp: new Date().toISOString(),
       entityName: artist.name,
     });
@@ -1557,6 +1559,74 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           `Failed to queue artist image caching for ${data.artistId}:`,
           cacheError
         );
+      }
+    }
+
+    // Sync similar artists (from Last.fm + ListenBrainz) — non-blocking
+    if (artist.name && artist.id && !data.skipSimilarArtistsSync) {
+      const similarStartTime = Date.now();
+      try {
+        const { syncSimilarArtists } = await import(
+          '@/lib/api/similar-artists-service'
+        );
+        console.log(
+          `[Enrichment] Syncing similar artists for ${artist.name}...`
+        );
+        const syncResult = await syncSimilarArtists(
+          artist.id,
+          artist.name,
+          artist.musicbrainzId || undefined,
+          20,
+          job.id
+        );
+        console.log(
+          `[Enrichment] Similar artists synced: ${syncResult.created} created`
+        );
+
+        // Log the similar artists sync as a child of the main enrichment
+        await llamaLogger.logEnrichment({
+          entityType: 'ARTIST',
+          entityId: artist.id,
+          operation: 'similar-artists-sync',
+          category: 'ENRICHED',
+          sources: ['LASTFM', 'LISTENBRAINZ'],
+          status: syncResult.created > 0 ? 'SUCCESS' : 'NO_DATA_AVAILABLE',
+          fieldsEnriched: syncResult.created > 0 ? ['similarArtists'] : [],
+          durationMs: Date.now() - similarStartTime,
+          apiCallCount: 2,
+          metadata: {
+            artistName: artist.name,
+            similarArtistsSynced: syncResult.created,
+          },
+          jobId: `similar-sync-${artist.id}-${Date.now()}`,
+          parentJobId: job.id,
+          isRootJob: false,
+          triggeredBy: data.source || 'manual',
+        });
+      } catch (similarError) {
+        console.error(
+          `[Enrichment] Failed to sync similar artists: ${similarError instanceof Error ? similarError.message : 'unknown'}`,
+          similarError
+        );
+
+        // Log the failure too
+        await llamaLogger.logEnrichment({
+          entityType: 'ARTIST',
+          entityId: artist.id,
+          operation: 'similar-artists-sync',
+          category: 'FAILED',
+          sources: ['LASTFM', 'LISTENBRAINZ'],
+          status: 'FAILED',
+          fieldsEnriched: [],
+          errorMessage: similarError instanceof Error ? similarError.message : 'Unknown error',
+          durationMs: Date.now() - similarStartTime,
+          apiCallCount: 2,
+          metadata: { artistName: artist.name },
+          jobId: `similar-sync-${artist.id}-${Date.now()}`,
+          parentJobId: job.id,
+          isRootJob: false,
+          triggeredBy: data.source || 'manual',
+        });
       }
     }
 

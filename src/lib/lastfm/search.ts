@@ -160,6 +160,97 @@ export async function searchLastFmArtists(
  * Get detailed artist information from Last.fm
  * Useful for fetching high-quality images and listener counts
  */
+// ============================================================================
+// Similar Artists
+// ============================================================================
+
+export interface LastFmSimilarArtist {
+  name: string;
+  mbid?: string;
+  match: string; // 0.0-1.0 float as string
+  url: string;
+  image?: LastFmArtistImage[];
+}
+
+interface LastFmSimilarArtistResponse {
+  similarartists: {
+    artist: LastFmSimilarArtist[];
+  };
+}
+
+/**
+ * Get similar artists from Last.fm's artist.getSimilar endpoint.
+ * Returns empty array on any error for graceful degradation.
+ */
+export async function getSimilarArtists(
+  artistNameOrMbid: string,
+  useMbid: boolean = false,
+  limit: number = 20
+): Promise<LastFmSimilarArtist[]> {
+  const apiKey = process.env.LASTFM_API_KEY;
+  if (!apiKey) {
+    console.warn('[Last.fm] API key not configured, skipping getSimilar');
+    return [];
+  }
+
+  const startTime = Date.now();
+  const params = new URLSearchParams({
+    method: 'artist.getsimilar',
+    api_key: apiKey,
+    format: 'json',
+    limit: String(limit),
+  });
+
+  if (useMbid) {
+    params.set('mbid', artistNameOrMbid);
+  } else {
+    params.set('artist', artistNameOrMbid);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${LASTFM_API_URL}?${params}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const duration = Date.now() - startTime;
+      console.error(
+        `[Last.fm] getSimilar error: ${response.status} (${duration}ms)`
+      );
+      return [];
+    }
+
+    const data: LastFmSimilarArtistResponse = await response.json();
+    const artists = data?.similarartists?.artist || [];
+
+    if (!Array.isArray(artists)) {
+      console.warn('[Last.fm] Unexpected getSimilar response format');
+      return [];
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `[Last.fm] Found ${artists.length} similar artists (${duration}ms)`
+    );
+    return artists;
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    const duration = Date.now() - startTime;
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[Last.fm] getSimilar timeout after ${TIMEOUT_MS}ms`);
+    } else {
+      console.error(
+        `[Last.fm] getSimilar error: ${error instanceof Error ? error.message : 'unknown'} (${duration}ms)`
+      );
+    }
+    return [];
+  }
+}
+
 export async function getLastFmArtistInfo(
   artistName: string
 ): Promise<LastFmSearchResult | null> {

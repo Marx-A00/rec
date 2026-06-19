@@ -348,6 +348,102 @@ export const resolvers: Resolvers = {
       };
     },
 
+    // Similar artists (Last.fm + ListenBrainz, merged)
+    similarArtists: async (_, { id, source, artistName, limit = 15 }, { prisma }) => {
+      const normalizedSource = source.toLowerCase();
+
+      if (normalizedSource === 'local') {
+        // LOCAL: read from ArtistSimilarity table
+        const rows = await prisma.artistSimilarity.findMany({
+          where: { seedArtistId: id },
+          orderBy: { similarity: 'desc' },
+          take: limit,
+          include: {
+            similarArtist: {
+              select: {
+                id: true,
+                imageUrl: true,
+                cloudflareImageId: true,
+              },
+            },
+          },
+        });
+
+        if (rows.length > 0) {
+          return rows.map(row => ({
+            name: row.similarName,
+            musicbrainzId: row.similarMbid,
+            similarity: row.similarity,
+            imageUrl: row.similarArtist?.imageUrl || null,
+            cloudflareImageId: row.similarArtist?.cloudflareImageId || null,
+            localArtistId: row.similarArtistId || null,
+            source: row.source,
+          }));
+        }
+
+        // No local data — fall back to live fetch if artist has an MBID
+        const artist = await prisma.artist.findUnique({
+          where: { id },
+          select: { musicbrainzId: true, name: true },
+        });
+
+        if (!artist?.musicbrainzId) {
+          return [];
+        }
+
+        // Use the artist's own name and MBID for the live fetch
+        artistName = artist.name;
+        id = artist.musicbrainzId;
+        // Fall through to the live fetch path below
+      }
+
+      // MUSICBRAINZ/DISCOGS or LOCAL fallback: fetch live from APIs
+      if (!artistName) {
+        throw new GraphQLError('artistName is required for non-LOCAL source');
+      }
+
+      const { fetchSimilarArtistsFromAPIs } = await import(
+        '@/lib/api/similar-artists-service'
+      );
+
+      const results = await fetchSimilarArtistsFromAPIs(
+        artistName,
+        id, // id is the MBID for external artists
+        limit
+      );
+
+      // Enrich with local artist data
+      const mbids = results.map(r => r.musicbrainzId);
+      const localArtists = mbids.length > 0
+        ? await prisma.artist.findMany({
+            where: { musicbrainzId: { in: mbids } },
+            select: {
+              id: true,
+              musicbrainzId: true,
+              imageUrl: true,
+              cloudflareImageId: true,
+            },
+          })
+        : [];
+
+      const mbidToLocal = new Map(
+        localArtists.map(a => [a.musicbrainzId, a])
+      );
+
+      return results.map(r => {
+        const local = mbidToLocal.get(r.musicbrainzId);
+        return {
+          name: r.name,
+          musicbrainzId: r.musicbrainzId,
+          similarity: r.similarity,
+          imageUrl: local?.imageUrl || null,
+          cloudflareImageId: local?.cloudflareImageId || null,
+          localArtistId: local?.id || null,
+          source: r.source,
+        };
+      });
+    },
+
     // Enhanced search using SearchOrchestrator
     search: async (_, { input }, { prisma }) => {
       const {

@@ -198,32 +198,42 @@ function TimelineLogItem({
 
       <TimelineConnector />
 
-      <TimelineHeader>
-        <TimelineTitle
-          className={cn(
-            'cursor-pointer hover:text-white transition-colors',
-            isChild && 'text-sm',
-            compact && 'text-xs'
+      <div className='flex-1 min-w-0'>
+        <TimelineHeader>
+          <TimelineTitle
+            className={cn(
+              'cursor-pointer hover:text-white transition-colors',
+              isChild && 'text-sm',
+              compact && 'text-xs'
+            )}
+            onClick={onToggleExpand}
+          >
+            {formatOperationTitle(log.operation, log.entityType)}
+            {(() => {
+              const meta = log.metadata as Record<string, unknown> | null;
+              const name = meta?.artistName || meta?.albumTitle || meta?.trackTitle;
+              return name ? (
+                <span className='text-zinc-500 font-normal'>
+                  {' — '}{String(name)}
+                </span>
+              ) : null;
+            })()}
+          </TimelineTitle>
+          {log.triggeredBy && (
+            <span
+              className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
+            >
+              by {log.triggeredBy}
+            </span>
           )}
-          onClick={onToggleExpand}
-        >
-          {formatOperationTitle(log.operation, log.entityType)}
-        </TimelineTitle>
-        {log.triggeredBy && (
-          <span
+          <TimelineTime
             className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
           >
-            by {log.triggeredBy}
-          </span>
-        )}
-        <TimelineTime
-          className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
-        >
-          {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
-        </TimelineTime>
-      </TimelineHeader>
+            {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+          </TimelineTime>
+        </TimelineHeader>
 
-      <TimelineContent className={cn(compact && 'mt-1 p-2')}>
+        <TimelineContent className={cn(compact && 'mt-1 p-2')}>
         {(!compact || isExpanded) && (
           <TimelineDescription>{getItemDescription(log)}</TimelineDescription>
         )}
@@ -298,6 +308,7 @@ function TimelineLogItem({
           </div>
         )}
       </TimelineContent>
+      </div>
     </TimelineItem>
   );
 }

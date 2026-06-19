@@ -16,6 +16,7 @@ import {
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import MobileDiscography from '@/components/mobile/MobileDiscography';
+import SimilarArtistsTab from '@/components/artistDetails/tabs/SimilarArtistsTab';
 import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 import { sanitizeArtistName } from '@/lib/utils';
 
@@ -99,7 +100,6 @@ export default function MobileArtistDetails({
             height={120}
             className='w-full h-full object-cover'
             priority
-
           />
         </div>
 
@@ -179,6 +179,15 @@ export default function MobileArtistDetails({
         <MobileDiscography
           artistId={artist.id}
           artistName={sanitizeArtistName(artist.name)}
+          source={artist.source}
+        />
+      </section>
+
+      {/* Similar Artists Section */}
+      <section className='px-4 mb-6'>
+        <SimilarArtistsTab
+          artistId={artist.id}
+          artistName={artist.name}
           source={artist.source}
         />
       </section>

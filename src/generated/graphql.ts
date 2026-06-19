@@ -1212,6 +1212,7 @@ export type EnrichmentStats = {
 };
 
 export enum EnrichmentStatus {
+  Basic = 'BASIC',
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   InProgress = 'IN_PROGRESS',
@@ -2195,6 +2196,7 @@ export type Query = {
    */
   searchGameAlbums: Array<GameAlbumResult>;
   searchTracks: Array<Track>;
+  similarArtists: Array<SimilarArtist>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
   suggestedGameAlbums: SuggestedGameAlbumsResult;
@@ -2458,6 +2460,13 @@ export type QuerySearchTracksArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
   skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QuerySimilarArtistsArgs = {
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  source: DataSource;
 };
 
 export type QuerySocialFeedArgs = {
@@ -2779,6 +2788,17 @@ export type SelectionEntry = {
   key: Scalars['String']['input'];
   /** Whether to apply this change */
   selected: Scalars['Boolean']['input'];
+};
+
+export type SimilarArtist = {
+  __typename?: 'SimilarArtist';
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  localArtistId?: Maybe<Scalars['String']['output']>;
+  musicbrainzId?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  similarity: Scalars['Float']['output'];
+  source: Scalars['String']['output'];
 };
 
 export enum SortOrder {
@@ -6654,6 +6674,27 @@ export type SearchGameAlbumsQuery = {
     isLocalAlbum: boolean;
     localAlbumId?: string | null;
     releaseYear?: number | null;
+  }>;
+};
+
+export type SimilarArtistsQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+  source: DataSource;
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SimilarArtistsQuery = {
+  __typename?: 'Query';
+  similarArtists: Array<{
+    __typename?: 'SimilarArtist';
+    name: string;
+    musicbrainzId?: string | null;
+    similarity: number;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+    localArtistId?: string | null;
+    source: string;
   }>;
 };
 
@@ -15333,6 +15374,83 @@ export const useInfiniteSearchGameAlbumsQuery = <
 useInfiniteSearchGameAlbumsQuery.getKey = (
   variables: SearchGameAlbumsQueryVariables
 ) => ['SearchGameAlbums.infinite', variables];
+
+export const SimilarArtistsDocument = `
+    query SimilarArtists($id: String!, $source: DataSource!, $artistName: String, $limit: Int) {
+  similarArtists(id: $id, source: $source, artistName: $artistName, limit: $limit) {
+    name
+    musicbrainzId
+    similarity
+    imageUrl
+    cloudflareImageId
+    localArtistId
+    source
+  }
+}
+    `;
+
+export const useSimilarArtistsQuery = <
+  TData = SimilarArtistsQuery,
+  TError = unknown,
+>(
+  variables: SimilarArtistsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SimilarArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<SimilarArtistsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<SimilarArtistsQuery, TError, TData>({
+    queryKey: ['SimilarArtists', variables],
+    queryFn: fetcher<SimilarArtistsQuery, SimilarArtistsQueryVariables>(
+      SimilarArtistsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSimilarArtistsQuery.getKey = (variables: SimilarArtistsQueryVariables) => [
+  'SimilarArtists',
+  variables,
+];
+
+export const useInfiniteSimilarArtistsQuery = <
+  TData = InfiniteData<SimilarArtistsQuery>,
+  TError = unknown,
+>(
+  variables: SimilarArtistsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SimilarArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SimilarArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SimilarArtistsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SimilarArtists.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SimilarArtistsQuery, SimilarArtistsQueryVariables>(
+            SimilarArtistsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSimilarArtistsQuery.getKey = (
+  variables: SimilarArtistsQueryVariables
+) => ['SimilarArtists.infinite', variables];
 
 export const GetSocialFeedDocument = `
     query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int = 20) {

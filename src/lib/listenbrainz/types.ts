@@ -45,6 +45,21 @@ export interface ListenBrainzArtistPopularity {
 }
 
 // ============================================================================
+// Similar Artists (from Labs API)
+// ============================================================================
+
+/** A similar artist from the ListenBrainz Labs similar-artists endpoint */
+export interface ListenBrainzSimilarArtist {
+  artist_mbid: string;
+  name: string;
+  comment: string;
+  type: string;
+  gender: string | null;
+  score: number;
+  reference_mbid: string;
+}
+
+// ============================================================================
 // Scheduler Configuration
 // ============================================================================
 
