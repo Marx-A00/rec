@@ -1229,11 +1229,13 @@ export const resolvers: Resolvers = {
       return trackArtists.map(ta => ta.track);
     },
     // Computed fields with simple implementations
-    albumCount: async (parent, _, { prisma }) => {
-      return prisma.albumArtist.count({ where: { artistId: parent.id } });
+    albumCount: async (parent) => {
+      const { getArtistAlbumCount } = await import('@/lib/cache/count-cache');
+      return getArtistAlbumCount(parent.id);
     },
-    trackCount: async (parent, _, { prisma }) => {
-      return prisma.trackArtist.count({ where: { artistId: parent.id } });
+    trackCount: async (parent) => {
+      const { getArtistTrackCount } = await import('@/lib/cache/count-cache');
+      return getArtistTrackCount(parent.id);
     },
     popularity: () => null, // Placeholder
     needsEnrichment: parent => {
@@ -1282,8 +1284,9 @@ export const resolvers: Resolvers = {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     },
     averageRating: () => null, // Placeholder
-    inCollectionsCount: async (parent, _, { prisma }) => {
-      return prisma.collectionAlbum.count({ where: { albumId: parent.id } });
+    inCollectionsCount: async (parent) => {
+      const { getAlbumCollectionCount } = await import('@/lib/cache/count-cache');
+      return getAlbumCollectionCount(parent.id);
     },
     recommendationScore: () => null, // Placeholder
     needsEnrichment: parent => {
@@ -1470,10 +1473,9 @@ export const resolvers: Resolvers = {
       return collectionAlbums;
     },
     // Simplified computed fields
-    albumCount: async (parent, _, { prisma }) => {
-      return prisma.collectionAlbum.count({
-        where: { collectionId: parent.id },
-      });
+    albumCount: async (parent) => {
+      const { getCollectionAlbumCount } = await import('@/lib/cache/count-cache');
+      return getCollectionAlbumCount(parent.id);
     },
     totalDuration: () => 0, // Placeholder
     averageRating: () => null, // Placeholder
