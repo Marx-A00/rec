@@ -404,7 +404,8 @@ export const resolvers: Resolvers = {
 
       const { cache, CACHE_KEYS } = await import('@/lib/cache');
 
-      console.log(`[similar-artists] Checking cache for "${artistName}" (${id})`);
+      const cacheBorder = chalk.blue('─'.repeat(60));
+      const cacheTag = chalk.blue('[CACHE LAYER]');
 
       const cacheKey = CACHE_KEYS.similarArtists(id);
       const cached = await cache.get<
@@ -413,7 +414,11 @@ export const resolvers: Resolvers = {
 
       // Cache miss — queue background job and return empty (frontend polls)
       if (cached === null) {
-        console.log(`[similar-artists] CACHE MISS for "${artistName}" — queuing background fetch`);
+        console.log(cacheBorder);
+        console.log(
+          `${chalk.blue('❄ CACHE MISS')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— queuing background fetch')}`
+        );
+        console.log(cacheBorder);
         const { getMusicBrainzQueue, JOB_TYPES } = await import('@/lib/queue');
         const queue = getMusicBrainzQueue();
         await queue.addJob(JOB_TYPES.FETCH_SIMILAR_ARTISTS, {
@@ -424,7 +429,11 @@ export const resolvers: Resolvers = {
         return [];
       }
 
-      console.log(`[similar-artists] CACHE HIT for "${artistName}" — ${cached.length} results`);
+      console.log(cacheBorder);
+      console.log(
+        `${chalk.blue('⚡ CACHE HIT')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
+      );
+      console.log(cacheBorder);
 
       // Cache hit — enrich with local artist data
       const mbids = cached.map(r => r.mbid);

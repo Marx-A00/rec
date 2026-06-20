@@ -1,4 +1,5 @@
 import type { Job } from 'bullmq';
+import chalk from 'chalk';
 
 import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
 import { fetchSimilarArtistsFromAPIs } from '@/lib/api/similar-artists-service';
@@ -13,6 +14,9 @@ interface CachedSimilarArtist {
   source: string;
 }
 
+const border = () => chalk.blue('─'.repeat(60));
+const tag = chalk.blue('[CACHE LAYER]');
+
 export async function handleFetchSimilarArtists(
   job: Job<FetchSimilarArtistsJobData>
 ) {
@@ -22,18 +26,30 @@ export async function handleFetchSimilarArtists(
   // Check cache
   const cached = await cache.get<CachedSimilarArtist[]>(cacheKey);
   if (cached !== null) {
+    console.log(border());
     console.log(
-      `[similar-artists] Cache hit for ${artistName} (${cached.length} results)`
+      `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
     );
+    console.log(border());
     return { success: true, cached: true, count: cached.length };
   }
 
   // Cache miss — fetch from Last.fm + ListenBrainz APIs
-  console.log(`[similar-artists] CACHE MISS for "${artistName}" — calling Last.fm + ListenBrainz APIs...`);
+  console.log(border());
+  console.log(
+    `${chalk.blue('❄ CACHE MISS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
+  );
+  console.log(`  ${chalk.blue('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`);
+  console.log(border());
+
   const results = await fetchSimilarArtistsFromAPIs(artistName, mbid);
 
   if (results.length === 0) {
-    console.log(`[similar-artists] No similar artists found for "${artistName}"`);
+    console.log(border());
+    console.log(
+      `${chalk.blue('📭 NO RESULTS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— caching empty result')}`
+    );
+    console.log(border());
     await cache.set(cacheKey, [], CACHE_TTLS.SIMILAR_ARTISTS);
     return { success: true, cached: false, count: 0 };
   }
@@ -46,10 +62,8 @@ export async function handleFetchSimilarArtists(
   }));
 
   await cache.set(cacheKey, toCache, CACHE_TTLS.SIMILAR_ARTISTS);
-  console.log(`[similar-artists] Cached ${toCache.length} results for "${artistName}" (7-day TTL)`);
 
   // Queue image fetch jobs for each similar artist
-  console.log(`[similar-artists] Queuing ${toCache.length} image fetch jobs...`);
   const queue = getMusicBrainzQueue();
   for (const artist of toCache) {
     await queue.addJob(JOB_TYPES.FETCH_ARTIST_IMAGE, {
@@ -61,7 +75,15 @@ export async function handleFetchSimilarArtists(
 
   const artistNames = toCache.slice(0, 5).map(a => a.name).join(', ');
   const suffix = toCache.length > 5 ? `, +${toCache.length - 5} more` : '';
-  console.log(`[similar-artists] Done for "${artistName}": ${artistNames}${suffix}`);
+
+  console.log(border());
+  console.log(
+    `${chalk.blue('💾 CACHED')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
+  );
+  console.log(`  ${chalk.blue('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`);
+  console.log(`  ${chalk.blue('Artists:')} ${chalk.white(artistNames + suffix)}`);
+  console.log(`  ${chalk.blue('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`);
+  console.log(border());
 
   return { success: true, cached: false, count: toCache.length };
 }

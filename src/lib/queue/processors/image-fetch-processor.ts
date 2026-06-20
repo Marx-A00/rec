@@ -1,10 +1,13 @@
 import type { Job } from 'bullmq';
+import chalk from 'chalk';
 
 import { cache, CACHE_KEYS } from '@/lib/cache';
 import { tryFetchSpotifyArtistImage } from '@/lib/spotify/artist-image-helper';
 import prisma from '@/lib/prisma';
 
 import type { FetchArtistImageJobData } from '../jobs';
+
+const tag = chalk.blue('[CACHE LAYER]');
 
 export async function handleFetchArtistImage(
   job: Job<FetchArtistImageJobData>
@@ -16,10 +19,12 @@ export async function handleFetchArtistImage(
   const cached = await cache.get<{ imageUrl: string }>(cacheKey);
   if (cached !== null) {
     if (cache.isMiss(cached)) {
+      console.log(
+        `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(no image — sentinel)')}`
+      );
       return { success: true, cached: true, imageUrl: null };
     }
 
-    // Update DB if we have an artistId and the image isn't set yet
     if (artistId) {
       await prisma.artist.updateMany({
         where: { id: artistId, imageUrl: null },
@@ -27,10 +32,17 @@ export async function handleFetchArtistImage(
       });
     }
 
+    console.log(
+      `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(image found)')}`
+    );
     return { success: true, cached: true, imageUrl: cached.imageUrl };
   }
 
-  // Cache miss — fetch from Spotify (artist-image-helper handles its own caching too)
+  // Cache miss — fetch from Spotify
+  console.log(
+    `${chalk.blue('❄ CACHE MISS')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— fetching from Spotify')}`
+  );
+
   const result = await tryFetchSpotifyArtistImage(artistName, mbid);
 
   if (result && artistId) {
