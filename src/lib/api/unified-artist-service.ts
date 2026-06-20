@@ -1,6 +1,7 @@
 import { Client } from 'disconnect';
 
 import { getCAAUrl } from '@/lib/cover-art-archive';
+import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
 import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
@@ -489,6 +490,10 @@ class UnifiedArtistService {
   }
 
   private async getMusicBrainzDiscography(mbid: string) {
+    const cacheKey = CACHE_KEYS.discography(mbid, 'musicbrainz');
+    const cached = await cache.get(cacheKey);
+    if (cached !== null) return cached;
+
     // Use queued browse for artist release-groups
     const groupsResp =
       await getQueuedMusicBrainzService().browseReleaseGroupsByArtist(
@@ -585,6 +590,7 @@ class UnifiedArtistService {
       );
     });
 
+    await cache.set(cacheKey, categorized, CACHE_TTLS.DISCOGRAPHY);
     return categorized;
   }
 

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 
+import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
 import { getCAAUrl, getCAAUrlForRelease } from '@/lib/cover-art-archive';
 import type {
   UnifiedSearchResult,
@@ -94,6 +95,15 @@ export class SearchOrchestrator {
 
   async search(options: SearchOptions): Promise<OrchestratedSearchResult> {
     const startTime = Date.now();
+
+    // Check cache for identical search
+    const cacheKey = CACHE_KEYS.searchResults(
+      options.query,
+      (options.types || ['album', 'artist']).join(',')
+    );
+    const cached = await cache.get<OrchestratedSearchResult>(cacheKey);
+    if (cached !== null) return cached;
+
     const {
       query,
       types = ['album', 'artist'],
@@ -230,7 +240,7 @@ export class SearchOrchestrator {
       `   Enrichment results (Spotify, no limit): ${enrichmentResults.length} artists for image matching\n`
     );
 
-    return {
+    const searchResult: OrchestratedSearchResult = {
       query,
       totalResults: finalResults.length,
       results: slicedResults,
@@ -244,6 +254,13 @@ export class SearchOrchestrator {
         discogsDuration: sourceResults.discogs?.timing.duration,
       },
     };
+
+    // Cache successful non-empty results
+    if (searchResult.totalResults > 0) {
+      await cache.set(cacheKey, searchResult, CACHE_TTLS.SEARCH_RESULTS);
+    }
+
+    return searchResult;
   }
 
   private async searchLocal(
