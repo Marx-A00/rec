@@ -1174,6 +1174,10 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       llamaLogger,
     });
 
+    // Invalidate cached data for this album
+    const { invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+    await invalidateAlbumCache(data.albumId);
+
     return {
       albumId: data.albumId,
       action: 'enriched',
@@ -1629,6 +1633,10 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
         });
       }
     }
+
+    // Invalidate cached data for this artist
+    const { invalidateArtistCache } = await import('@/lib/cache/invalidation');
+    await invalidateArtistCache(data.artistId);
 
     return {
       artistId: data.artistId,

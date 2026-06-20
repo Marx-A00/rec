@@ -35,6 +35,10 @@ import {
   type UncoverResetChallengesJobData,
   type FetchSimilarArtistsJobData,
   type FetchArtistImageJobData,
+  type LastFmSearchArtistsJobData,
+  type LastFmSimilarArtistsJobData,
+  type LastFmArtistInfoJobData,
+  type ListenBrainzSimilarArtistsJobData,
 } from '../jobs';
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
@@ -82,6 +86,12 @@ import {
 import { handleListenBrainzSyncFreshReleases } from './listenbrainz-processor';
 import { handleFetchSimilarArtists } from './similar-artists-processor';
 import { handleFetchArtistImage } from './image-fetch-processor';
+import {
+  handleLastFmSearchArtists,
+  handleLastFmSimilarArtists,
+  handleLastFmArtistInfo,
+} from './lastfm-cache-processor';
+import { handleListenBrainzSimilarArtists } from './listenbrainz-cache-processor';
 
 // Re-export JOB_TYPES for convenience
 export { JOB_TYPES } from '../jobs';
@@ -316,6 +326,32 @@ export async function processMusicBrainzJob(
       case JOB_TYPES.FETCH_ARTIST_IMAGE:
         result = await handleFetchArtistImage(
           job as Job<FetchArtistImageJobData>
+        );
+        break;
+
+      // Last.fm cached handlers
+      case JOB_TYPES.LASTFM_SEARCH_ARTISTS:
+        result = await handleLastFmSearchArtists(
+          job as Job<LastFmSearchArtistsJobData>
+        );
+        break;
+
+      case JOB_TYPES.LASTFM_SIMILAR_ARTISTS:
+        result = await handleLastFmSimilarArtists(
+          job as Job<LastFmSimilarArtistsJobData>
+        );
+        break;
+
+      case JOB_TYPES.LASTFM_ARTIST_INFO:
+        result = await handleLastFmArtistInfo(
+          job as Job<LastFmArtistInfoJobData>
+        );
+        break;
+
+      // ListenBrainz cached handler
+      case JOB_TYPES.LISTENBRAINZ_SIMILAR_ARTISTS:
+        result = await handleListenBrainzSimilarArtists(
+          job as Job<ListenBrainzSimilarArtistsJobData>
         );
         break;
 

@@ -1394,6 +1394,12 @@ export const mutationResolvers: MutationResolvers = {
         position: input.position || 0,
         caller: 'addAlbumToCollection',
       });
+      // Invalidate cache for affected collection and album
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      await Promise.all([
+        invalidateCollectionCache(collectionId, user.id),
+        invalidateAlbumCache(albumId),
+      ]);
       return result.collectionAlbum;
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
@@ -1446,6 +1452,12 @@ export const mutationResolvers: MutationResolvers = {
         position: position || 0,
         caller: 'addAlbumToCollectionWithCreate',
       });
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      const effectiveAlbumId = albumId || result.collectionAlbum?.albumId;
+      await Promise.all([
+        invalidateCollectionCache(collectionId, user.id),
+        effectiveAlbumId ? invalidateAlbumCache(effectiveAlbumId) : Promise.resolve(),
+      ]);
       return result.collectionAlbum;
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
@@ -1499,6 +1511,12 @@ export const mutationResolvers: MutationResolvers = {
         });
       });
 
+      // Invalidate cache for affected collection and album
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      await Promise.all([
+        invalidateCollectionCache(collectionId, user.id),
+        invalidateAlbumCache(albumId),
+      ]);
       return true;
     } catch (error) {
       throw new GraphQLError(
@@ -1911,6 +1929,9 @@ export const mutationResolvers: MutationResolvers = {
         }
       });
 
+      const { invalidateUserRecsCache } = await import('@/lib/cache/invalidation');
+      await invalidateUserRecsCache(user.id);
+
       return recommendation;
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
@@ -1996,6 +2017,9 @@ export const mutationResolvers: MutationResolvers = {
 
         // Count update handled automatically by DB trigger (recommendations_count_trigger)
       });
+
+      const { invalidateUserRecsCache } = await import('@/lib/cache/invalidation');
+      await invalidateUserRecsCache(user.id);
 
       return true;
     } catch (error) {
