@@ -404,6 +404,8 @@ export const resolvers: Resolvers = {
 
       const { cache, CACHE_KEYS } = await import('@/lib/cache');
 
+      console.log(`[similar-artists] Checking cache for "${artistName}" (${id})`);
+
       const cacheKey = CACHE_KEYS.similarArtists(id);
       const cached = await cache.get<
         Array<{ name: string; mbid: string; similarity: number; source: string }>
@@ -411,6 +413,7 @@ export const resolvers: Resolvers = {
 
       // Cache miss — queue background job and return empty (frontend polls)
       if (cached === null) {
+        console.log(`[similar-artists] CACHE MISS for "${artistName}" — queuing background fetch`);
         const { getMusicBrainzQueue, JOB_TYPES } = await import('@/lib/queue');
         const queue = getMusicBrainzQueue();
         await queue.addJob(JOB_TYPES.FETCH_SIMILAR_ARTISTS, {
@@ -420,6 +423,8 @@ export const resolvers: Resolvers = {
         });
         return [];
       }
+
+      console.log(`[similar-artists] CACHE HIT for "${artistName}" — ${cached.length} results`);
 
       // Cache hit — enrich with local artist data
       const mbids = cached.map(r => r.mbid);
