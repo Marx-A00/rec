@@ -1292,7 +1292,9 @@ export const mutationResolvers: MutationResolvers = {
         caller: 'addAlbumToCollection',
       });
       // Invalidate cache for affected collection and album
-      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import(
+        '@/lib/cache/invalidation'
+      );
       await Promise.all([
         invalidateCollectionCache(collectionId, user.id),
         invalidateAlbumCache(albumId),
@@ -1349,11 +1351,15 @@ export const mutationResolvers: MutationResolvers = {
         position: position || 0,
         caller: 'addAlbumToCollectionWithCreate',
       });
-      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import(
+        '@/lib/cache/invalidation'
+      );
       const effectiveAlbumId = albumId || result.collectionAlbum?.albumId;
       await Promise.all([
         invalidateCollectionCache(collectionId, user.id),
-        effectiveAlbumId ? invalidateAlbumCache(effectiveAlbumId) : Promise.resolve(),
+        effectiveAlbumId
+          ? invalidateAlbumCache(effectiveAlbumId)
+          : Promise.resolve(),
       ]);
       return result.collectionAlbum;
     } catch (error) {
@@ -1409,7 +1415,9 @@ export const mutationResolvers: MutationResolvers = {
       });
 
       // Invalidate cache for affected collection and album
-      const { invalidateCollectionCache, invalidateAlbumCache } = await import('@/lib/cache/invalidation');
+      const { invalidateCollectionCache, invalidateAlbumCache } = await import(
+        '@/lib/cache/invalidation'
+      );
       await Promise.all([
         invalidateCollectionCache(collectionId, user.id),
         invalidateAlbumCache(albumId),
@@ -1826,7 +1834,9 @@ export const mutationResolvers: MutationResolvers = {
         }
       });
 
-      const { invalidateUserRecsCache } = await import('@/lib/cache/invalidation');
+      const { invalidateUserRecsCache } = await import(
+        '@/lib/cache/invalidation'
+      );
       await invalidateUserRecsCache(user.id);
 
       return recommendation;
@@ -1915,7 +1925,9 @@ export const mutationResolvers: MutationResolvers = {
         // Count update handled automatically by DB trigger (recommendations_count_trigger)
       });
 
-      const { invalidateUserRecsCache } = await import('@/lib/cache/invalidation');
+      const { invalidateUserRecsCache } = await import(
+        '@/lib/cache/invalidation'
+      );
       await invalidateUserRecsCache(user.id);
 
       return true;
@@ -2453,6 +2465,9 @@ export const mutationResolvers: MutationResolvers = {
       showArcadeButton,
       arcadeButtonColor,
       arcadeButtonSound,
+      showLastfmStats,
+      lastfmSyncEnabled,
+      showTasteProfile,
     } = args;
 
     try {
@@ -2477,6 +2492,12 @@ export const mutationResolvers: MutationResolvers = {
         updateData.arcadeButtonColor = arcadeButtonColor;
       if (arcadeButtonSound !== undefined)
         updateData.arcadeButtonSound = arcadeButtonSound;
+      if (showLastfmStats !== undefined)
+        updateData.showLastfmStats = showLastfmStats;
+      if (lastfmSyncEnabled !== undefined)
+        updateData.lastfmSyncEnabled = lastfmSyncEnabled;
+      if (showTasteProfile !== undefined)
+        updateData.showTasteProfile = showTasteProfile;
 
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
@@ -3670,11 +3691,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  removeMarqueeAlbum: async (
-    _,
-    { id }: { id: string },
-    { prisma, user }
-  ) => {
+  removeMarqueeAlbum: async (_, { id }: { id: string }, { prisma, user }) => {
     try {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
@@ -4938,6 +4955,229 @@ export const mutationResolvers: MutationResolvers = {
     } catch (error) {
       graphqlLogger.error('Failed to queue uncover reset job:', { error });
       throw new GraphQLError(`Failed to queue reset: ${error}`);
+    }
+  },
+
+  // ============================================================================
+  // Last.fm Integration Mutations
+  // ============================================================================
+
+  connectLastfm: async (_, { username }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      const { getUserInfo } = await import('@/lib/lastfm/lastfm-client');
+      const result = await getUserInfo(username);
+
+      if (!result.success) {
+        const errorMessages: Record<string, string> = {
+          user_not_found: `Last.fm user "${username}" not found`,
+          private_profile: `Last.fm profile "${username}" is private`,
+          rate_limited:
+            'Last.fm API rate limit exceeded. Please try again later.',
+          missing_api_key: 'Last.fm integration is not configured',
+          timeout: 'Last.fm API timed out. Please try again.',
+          network_error: 'Could not reach Last.fm. Please try again.',
+          api_error: 'Last.fm API error. Please try again.',
+          invalid_response: 'Unexpected response from Last.fm.',
+        };
+
+        return {
+          success: false,
+          error: errorMessages[result.error.code] || result.error.message,
+        };
+      }
+
+      const info = result.data;
+      return {
+        success: true,
+        username: info.username,
+        profileImage: info.imageUrl || null,
+        totalPlaycount: info.playcount,
+        registeredAt: new Date(info.registeredAt * 1000),
+      };
+    } catch (error) {
+      graphqlLogger.error('connectLastfm error:', { error });
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
+    }
+  },
+
+  confirmLastfmConnection: async (_, { username }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      const settings = await prisma.userSettings.upsert({
+        where: { userId: user.id },
+        update: {
+          lastfmUsername: username,
+          lastfmConnectedAt: new Date(),
+        },
+        create: {
+          userId: user.id,
+          lastfmUsername: username,
+          lastfmConnectedAt: new Date(),
+        },
+      });
+
+      // Enqueue initial sync job
+      try {
+        const queue = getMusicBrainzQueue();
+        await queue.add(
+          JOB_TYPES.LASTFM_SYNC_USER,
+          { userId: user.id, lastfmUsername: username },
+          { priority: 5, removeOnComplete: 100, removeOnFail: 50 }
+        );
+      } catch (queueError) {
+        graphqlLogger.warn('Failed to enqueue initial Last.fm sync:', {
+          error: queueError,
+        });
+      }
+
+      return settings;
+    } catch (error) {
+      throw new GraphQLError(`Failed to save Last.fm connection: ${error}`);
+    }
+  },
+
+  disconnectLastfm: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Delete synced data
+      await prisma.userLastfmData.deleteMany({
+        where: { userId: user.id },
+      });
+
+      // Clear connection in settings
+      const settings = await prisma.userSettings.update({
+        where: { userId: user.id },
+        data: {
+          lastfmUsername: null,
+          lastfmConnectedAt: null,
+        },
+      });
+
+      // Invalidate Redis cache
+      if (redis) {
+        const { CACHE_KEYS } = await import('@/lib/cache/keys');
+        await redis.del(CACHE_KEYS.lastfmUserStats(user.id));
+      }
+
+      return settings;
+    } catch (error) {
+      throw new GraphQLError(`Failed to disconnect Last.fm: ${error}`);
+    }
+  },
+
+  triggerLastfmSync: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Check connection
+    const settings = await prisma.userSettings.findUnique({
+      where: { userId: user.id },
+      select: { lastfmUsername: true },
+    });
+
+    if (!settings?.lastfmUsername) {
+      throw new GraphQLError('Last.fm is not connected');
+    }
+
+    // Check cooldown (5 minutes)
+    const lastfmData = await prisma.userLastfmData.findUnique({
+      where: { userId: user.id },
+      select: { lastSyncedAt: true },
+    });
+
+    if (lastfmData?.lastSyncedAt) {
+      const cooldownMs = 5 * 60 * 1000;
+      const elapsed = Date.now() - lastfmData.lastSyncedAt.getTime();
+      if (elapsed < cooldownMs) {
+        const remaining = Math.ceil((cooldownMs - elapsed) / 1000);
+        throw new GraphQLError(
+          `Please wait ${remaining} seconds before syncing again`
+        );
+      }
+    }
+
+    // Enqueue sync job
+    try {
+      const queue = getMusicBrainzQueue();
+      await queue.add(
+        JOB_TYPES.LASTFM_SYNC_USER,
+        { userId: user.id, lastfmUsername: settings.lastfmUsername },
+        { priority: 5, removeOnComplete: 100, removeOnFail: 50 }
+      );
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger sync: ${error}`);
+    }
+  },
+
+  // ============================================================================
+  // Taste Profile Mutations
+  // ============================================================================
+
+  setTasteProfile: async (_, { artistIds }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    if (artistIds.length > 5) {
+      throw new GraphQLError('Maximum 5 favorite artists allowed');
+    }
+
+    try {
+      // Atomic replace: delete existing, insert new
+      await prisma.$transaction(async tx => {
+        await tx.userFavoriteArtist.deleteMany({
+          where: { userId: user.id },
+        });
+
+        if (artistIds.length > 0) {
+          await tx.userFavoriteArtist.createMany({
+            data: artistIds.map((artistId, index) => ({
+              userId: user.id,
+              artistId,
+              position: index + 1,
+            })),
+          });
+        }
+      });
+
+      // Return the new profile
+      const favorites = await prisma.userFavoriteArtist.findMany({
+        where: { userId: user.id },
+        orderBy: { position: 'asc' },
+        include: { artist: true },
+      });
+
+      return favorites.map(f => ({
+        position: f.position,
+        artist: f.artist,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to update taste profile: ${error}`);
     }
   },
 };

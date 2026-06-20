@@ -66,6 +66,8 @@ model User {
   uncoverSessions    UncoverSession[]
   uncoverStats       UncoverPlayerStats?
   uncoverArchiveStats UncoverArchiveStats?
+  lastfmData         UserLastfmData?
+  favoriteArtists    UserFavoriteArtist[]
 }
 
 model UserSettings {
@@ -88,6 +90,13 @@ model UserSettings {
   showArcadeButton      Boolean  @default(true)
   arcadeButtonColor     String   @default("#CC4B24")
   arcadeButtonSound     String   @default("pluh")
+  // Last.fm Integration
+  lastfmUsername         String?
+  lastfmConnectedAt     DateTime?
+  showLastfmStats       Boolean  @default(true)
+  lastfmSyncEnabled     Boolean  @default(true)
+  // Taste Profile
+  showTasteProfile      Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -261,6 +270,7 @@ model Artist {
   llamaLogs        LlamaLog[]
   similarTo        ArtistSimilarity[] @relation("SeedArtist")
   similarFrom      ArtistSimilarity[] @relation("SimilarArtist")
+  favoritedBy      UserFavoriteArtist[]
 
   @@index([name])
   @@index([musicbrainzId])
@@ -799,6 +809,9 @@ model AppConfig {
   deezerEditorialGenres           String[]                @default(["0"]) @map("deezer_editorial_genres")
   deezerEditorialFilterDeluxe     Boolean                 @default(true) @map("deezer_editorial_filter_deluxe")
 
+  // Last.fm user sync configuration
+  lastfmSchedulerEnabled         Boolean                 @default(false) @map("lastfm_scheduler_enabled")
+
   uncoverSelectionMode        UncoverSelectionMode     @default(RANDOM) @map("uncover_selection_mode")
   uncoverPoolExhaustedMode    UncoverPoolExhaustedMode @default(AUTO_RESET) @map("uncover_pool_exhausted_mode")
   updatedAt                   DateTime                 @updatedAt @map("updated_at")
@@ -836,4 +849,46 @@ model MarqueeAlbum {
   @@map("marquee_albums")
 }
 
+// ============================================================================
+// Last.fm Integration
+// ============================================================================
+
+model UserLastfmData {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  lastfmUsername   String
+  topArtists      Json?
+  topAlbums       Json?
+  recentTracks    Json?
+  totalPlaycount  Int?
+  totalArtists    Int?
+  totalAlbums     Int?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_lastfm_data")
+}
+
+// ============================================================================
+// Taste Profile
+// ============================================================================
+
+model UserFavoriteArtist {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String   @db.Uuid
+  position  Int      // 1-5, ordinal position
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
+  @@unique([userId, position])
+  @@index([userId])
+  @@index([artistId])
+  @@map("user_favorite_artists")
+}
 

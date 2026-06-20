@@ -1,0 +1,34 @@
+# Last.fm Integration Mutations
+
+mutation ConnectLastfm($username: String!) {
+  connectLastfm(username: $username) {
+    success
+    error
+    username
+    profileImage
+    totalPlaycount
+    registeredAt
+  }
+}
+
+mutation ConfirmLastfmConnection($username: String!) {
+  confirmLastfmConnection(username: $username) {
+    id
+    lastfmUsername
+    lastfmConnectedAt
+    showLastfmStats
+    lastfmSyncEnabled
+  }
+}
+
+mutation DisconnectLastfm {
+  disconnectLastfm {
+    id
+    lastfmUsername
+    lastfmConnectedAt
+  }
+}
+
+mutation TriggerLastfmSync {
+  triggerLastfmSync
+}

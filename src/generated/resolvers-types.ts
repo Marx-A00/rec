@@ -1374,6 +1374,46 @@ export type JobStatusUpdate = {
   type: Scalars['String']['output'];
 };
 
+export type LastfmConnectionResult = {
+  __typename?: 'LastfmConnectionResult';
+  error?: Maybe<Scalars['String']['output']>;
+  profileImage?: Maybe<Scalars['String']['output']>;
+  registeredAt?: Maybe<Scalars['DateTime']['output']>;
+  success: Scalars['Boolean']['output'];
+  totalPlaycount?: Maybe<Scalars['Int']['output']>;
+  username?: Maybe<Scalars['String']['output']>;
+};
+
+export type LastfmStats = {
+  __typename?: 'LastfmStats';
+  lastSyncedAt?: Maybe<Scalars['DateTime']['output']>;
+  topAlbums: Array<LastfmTopAlbum>;
+  topArtists: Array<LastfmTopArtist>;
+  totalAlbums?: Maybe<Scalars['Int']['output']>;
+  totalArtists?: Maybe<Scalars['Int']['output']>;
+  totalPlaycount?: Maybe<Scalars['Int']['output']>;
+  username: Scalars['String']['output'];
+};
+
+export type LastfmTopAlbum = {
+  __typename?: 'LastfmTopAlbum';
+  /** Resolved local album ID (null if not in DB) */
+  albumId?: Maybe<Scalars['String']['output']>;
+  artistName: Scalars['String']['output'];
+  mbid?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  playcount: Scalars['Int']['output'];
+};
+
+export type LastfmTopArtist = {
+  __typename?: 'LastfmTopArtist';
+  /** Resolved local artist ID (null if not in DB) */
+  artistId?: Maybe<Scalars['String']['output']>;
+  mbid?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  playcount: Scalars['Int']['output'];
+};
+
 export type ListenBrainzConfig = {
   __typename?: 'ListenBrainzConfig';
   days: Scalars['Int']['output'];
@@ -1601,6 +1641,8 @@ export type Mutation = {
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
+  confirmLastfmConnection: UserSettings;
+  connectLastfm: LastfmConnectionResult;
   /** Apply selected corrections from a preview to an album */
   correctionApply: CorrectionApplyResult;
   createCollection: CreateCollectionPayload;
@@ -1616,6 +1658,7 @@ export type Mutation = {
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
+  disconnectLastfm: UserSettings;
   dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
@@ -1661,6 +1704,7 @@ export type Mutation = {
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
+  setTasteProfile: Array<UserFavoriteArtist>;
   softDeleteUser: DeleteUserPayload;
   /**
    * Submit a completed game result (client-side game model).
@@ -1671,6 +1715,7 @@ export type Mutation = {
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerDeezerEditorialSync: DeezerEditorialSyncResult;
+  triggerLastfmSync: Scalars['Boolean']['output'];
   triggerListenBrainzSync: ListenBrainzSyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   /** Admin: Unpin a curated challenge (remove date override) */
@@ -1740,6 +1785,14 @@ export type MutationBatchEnrichmentArgs = {
 
 export type MutationCleanQueueArgs = {
   olderThan?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type MutationConfirmLastfmConnectionArgs = {
+  username: Scalars['String']['input'];
+};
+
+export type MutationConnectLastfmArgs = {
+  username: Scalars['String']['input'];
 };
 
 export type MutationCorrectionApplyArgs = {
@@ -1860,6 +1913,10 @@ export type MutationRollbackSyncJobArgs = {
   syncJobId: Scalars['UUID']['input'];
 };
 
+export type MutationSetTasteProfileArgs = {
+  artistIds: Array<Scalars['String']['input']>;
+};
+
 export type MutationSoftDeleteUserArgs = {
   userId: Scalars['String']['input'];
 };
@@ -1969,13 +2026,16 @@ export type MutationUpdateUserSettingsArgs = {
   arcadeButtonColor?: InputMaybe<Scalars['String']['input']>;
   arcadeButtonSound?: InputMaybe<Scalars['String']['input']>;
   language?: InputMaybe<Scalars['String']['input']>;
+  lastfmSyncEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
   showArcadeButton?: InputMaybe<Scalars['Boolean']['input']>;
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showLastfmStats?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  showTasteProfile?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2172,6 +2232,7 @@ export type Query = {
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
   systemHealth: SystemHealth;
+  tasteMatches: Array<TasteMatch>;
   topRecommendedAlbums: Array<TopRecommendedAlbum>;
   topRecommendedArtists: Array<TopRecommendedArtist>;
   track?: Maybe<Track>;
@@ -2197,6 +2258,7 @@ export type Query = {
   userFollowing: UserConnection;
   userStats: UserStats;
   userSuggestions: Array<User>;
+  userTasteProfile: Array<UserFavoriteArtist>;
   users: Array<User>;
   usersCount: Scalars['Int']['output'];
 };
@@ -2462,6 +2524,10 @@ export type QuerySyncJobsArgs = {
   input?: InputMaybe<SyncJobsInput>;
 };
 
+export type QueryTasteMatchesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QueryTopRecommendedAlbumsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -2527,6 +2593,10 @@ export type QueryUserStatsArgs = {
 
 export type QueryUserSuggestionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUserTasteProfileArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type QueryUsersArgs = {
@@ -2892,6 +2962,13 @@ export type SystemHealth = {
   status: HealthStatus;
   timestamp: Scalars['DateTime']['output'];
   uptime: Scalars['Float']['output'];
+};
+
+export type TasteMatch = {
+  __typename?: 'TasteMatch';
+  overlapCount: Scalars['Int']['output'];
+  sharedArtists: Array<Artist>;
+  user: User;
 };
 
 /** Diff for a text field (title, disambiguation, etc.) */
@@ -3389,12 +3466,14 @@ export type User = {
   image?: Maybe<Scalars['String']['output']>;
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
   lastActive?: Maybe<Scalars['DateTime']['output']>;
+  lastfmStats?: Maybe<LastfmStats>;
   mutualFollowers: Array<User>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
   role: UserRole;
   settings?: Maybe<UserSettings>;
+  tasteProfile: Array<UserFavoriteArtist>;
   updatedAt: Scalars['DateTime']['output'];
   username?: Maybe<Scalars['String']['output']>;
 };
@@ -3427,6 +3506,12 @@ export type UserEdge = {
   username?: Maybe<Scalars['String']['output']>;
 };
 
+export type UserFavoriteArtist = {
+  __typename?: 'UserFavoriteArtist';
+  artist: Artist;
+  position: Scalars['Int']['output'];
+};
+
 export type UserFollow = {
   __typename?: 'UserFollow';
   createdAt: Scalars['DateTime']['output'];
@@ -3454,14 +3539,19 @@ export type UserSettings = {
   followAlerts: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   language: Scalars['String']['output'];
+  lastfmConnectedAt?: Maybe<Scalars['DateTime']['output']>;
+  lastfmSyncEnabled: Scalars['Boolean']['output'];
+  lastfmUsername?: Maybe<Scalars['String']['output']>;
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
   showArcadeButton: Scalars['Boolean']['output'];
   showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
+  showLastfmStats: Scalars['Boolean']['output'];
   showListenLaterInFeed: Scalars['Boolean']['output'];
   showOnboardingTour: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
+  showTasteProfile: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   userId: Scalars['String']['output'];
@@ -3737,6 +3827,10 @@ export type ResolversTypes = ResolversObject<{
   JobRecord: ResolverTypeWrapper<JobRecord>;
   JobStatus: JobStatus;
   JobStatusUpdate: ResolverTypeWrapper<JobStatusUpdate>;
+  LastfmConnectionResult: ResolverTypeWrapper<LastfmConnectionResult>;
+  LastfmStats: ResolverTypeWrapper<LastfmStats>;
+  LastfmTopAlbum: ResolverTypeWrapper<LastfmTopAlbum>;
+  LastfmTopArtist: ResolverTypeWrapper<LastfmTopArtist>;
   ListenBrainzConfig: ResolverTypeWrapper<ListenBrainzConfig>;
   ListenBrainzSyncResult: ResolverTypeWrapper<ListenBrainzSyncResult>;
   LlamaLog: ResolverTypeWrapper<LlamaLog>;
@@ -3799,6 +3893,7 @@ export type ResolversTypes = ResolversObject<{
   SyncJobsConnection: ResolverTypeWrapper<SyncJobsConnection>;
   SyncJobsInput: SyncJobsInput;
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
+  TasteMatch: ResolverTypeWrapper<TasteMatch>;
   TextDiff: ResolverTypeWrapper<TextDiff>;
   TextDiffPart: ResolverTypeWrapper<TextDiffPart>;
   TextRegionBox: ResolverTypeWrapper<TextRegionBox>;
@@ -3846,6 +3941,7 @@ export type ResolversTypes = ResolversObject<{
   UserConnection: ResolverTypeWrapper<UserConnection>;
   UserCount: ResolverTypeWrapper<UserCount>;
   UserEdge: ResolverTypeWrapper<UserEdge>;
+  UserFavoriteArtist: ResolverTypeWrapper<UserFavoriteArtist>;
   UserFollow: ResolverTypeWrapper<UserFollow>;
   UserRole: UserRole;
   UserSettings: ResolverTypeWrapper<UserSettings>;
@@ -3958,6 +4054,10 @@ export type ResolversParentTypes = ResolversObject<{
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
   JobStatusUpdate: JobStatusUpdate;
+  LastfmConnectionResult: LastfmConnectionResult;
+  LastfmStats: LastfmStats;
+  LastfmTopAlbum: LastfmTopAlbum;
+  LastfmTopArtist: LastfmTopArtist;
   ListenBrainzConfig: ListenBrainzConfig;
   ListenBrainzSyncResult: ListenBrainzSyncResult;
   LlamaLog: LlamaLog;
@@ -4009,6 +4109,7 @@ export type ResolversParentTypes = ResolversObject<{
   SyncJobsConnection: SyncJobsConnection;
   SyncJobsInput: SyncJobsInput;
   SystemHealth: SystemHealth;
+  TasteMatch: TasteMatch;
   TextDiff: TextDiff;
   TextDiffPart: TextDiffPart;
   TextRegionBox: TextRegionBox;
@@ -4053,6 +4154,7 @@ export type ResolversParentTypes = ResolversObject<{
   UserConnection: UserConnection;
   UserCount: UserCount;
   UserEdge: UserEdge;
+  UserFavoriteArtist: UserFavoriteArtist;
   UserFollow: UserFollow;
   UserSettings: UserSettings;
   UserStats: UserStats;
@@ -5810,6 +5912,92 @@ export type JobStatusUpdateResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type LastfmConnectionResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LastfmConnectionResult'] = ResolversParentTypes['LastfmConnectionResult'],
+> = ResolversObject<{
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  profileImage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  registeredAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalPlaycount?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LastfmStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LastfmStats'] = ResolversParentTypes['LastfmStats'],
+> = ResolversObject<{
+  lastSyncedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  topAlbums?: Resolver<
+    Array<ResolversTypes['LastfmTopAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  topArtists?: Resolver<
+    Array<ResolversTypes['LastfmTopArtist']>,
+    ParentType,
+    ContextType
+  >;
+  totalAlbums?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  totalArtists?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  totalPlaycount?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  username?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LastfmTopAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LastfmTopAlbum'] = ResolversParentTypes['LastfmTopAlbum'],
+> = ResolversObject<{
+  albumId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mbid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  playcount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LastfmTopArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LastfmTopArtist'] = ResolversParentTypes['LastfmTopArtist'],
+> = ResolversObject<{
+  artistId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  mbid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  playcount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type ListenBrainzConfigResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6100,6 +6288,18 @@ export type MutationResolvers<
     ParentType,
     ContextType
   >;
+  confirmLastfmConnection?: Resolver<
+    ResolversTypes['UserSettings'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationConfirmLastfmConnectionArgs, 'username'>
+  >;
+  connectLastfm?: Resolver<
+    ResolversTypes['LastfmConnectionResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationConnectLastfmArgs, 'username'>
+  >;
   correctionApply?: Resolver<
     ResolversTypes['CorrectionApplyResult'],
     ParentType,
@@ -6153,6 +6353,11 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationDeleteTrackArgs, 'id'>
+  >;
+  disconnectLastfm?: Resolver<
+    ResolversTypes['UserSettings'],
+    ParentType,
+    ContextType
   >;
   dismissUserSuggestion?: Resolver<
     ResolversTypes['Boolean'],
@@ -6286,6 +6491,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationRollbackSyncJobArgs, 'dryRun' | 'syncJobId'>
   >;
+  setTasteProfile?: Resolver<
+    Array<ResolversTypes['UserFavoriteArtist']>,
+    ParentType,
+    ContextType,
+    RequireFields<MutationSetTasteProfileArgs, 'artistIds'>
+  >;
   softDeleteUser?: Resolver<
     ResolversTypes['DeleteUserPayload'],
     ParentType,
@@ -6312,6 +6523,11 @@ export type MutationResolvers<
   >;
   triggerDeezerEditorialSync?: Resolver<
     ResolversTypes['DeezerEditorialSyncResult'],
+    ParentType,
+    ContextType
+  >;
+  triggerLastfmSync?: Resolver<
+    ResolversTypes['Boolean'],
     ParentType,
     ContextType
   >;
@@ -6962,6 +7178,12 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  tasteMatches?: Resolver<
+    Array<ResolversTypes['TasteMatch']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTasteMatchesArgs, 'limit'>
+  >;
   topRecommendedAlbums?: Resolver<
     Array<ResolversTypes['TopRecommendedAlbum']>,
     ParentType,
@@ -7060,6 +7282,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryUserSuggestionsArgs, 'limit'>
+  >;
+  userTasteProfile?: Resolver<
+    Array<ResolversTypes['UserFavoriteArtist']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryUserTasteProfileArgs, 'userId'>
   >;
   users?: Resolver<
     Array<ResolversTypes['User']>,
@@ -7538,6 +7766,21 @@ export type SystemHealthResolvers<
   status?: Resolver<ResolversTypes['HealthStatus'], ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   uptime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type TasteMatchResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TasteMatch'] = ResolversParentTypes['TasteMatch'],
+> = ResolversObject<{
+  overlapCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sharedArtists?: Resolver<
+    Array<ResolversTypes['Artist']>,
+    ParentType,
+    ContextType
+  >;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -8280,6 +8523,11 @@ export type UserResolvers<
     ParentType,
     ContextType
   >;
+  lastfmStats?: Resolver<
+    Maybe<ResolversTypes['LastfmStats']>,
+    ParentType,
+    ContextType
+  >;
   mutualFollowers?: Resolver<
     Array<ResolversTypes['User']>,
     ParentType,
@@ -8303,6 +8551,11 @@ export type UserResolvers<
   role?: Resolver<ResolversTypes['UserRole'], ParentType, ContextType>;
   settings?: Resolver<
     Maybe<ResolversTypes['UserSettings']>,
+    ParentType,
+    ContextType
+  >;
+  tasteProfile?: Resolver<
+    Array<ResolversTypes['UserFavoriteArtist']>,
     ParentType,
     ContextType
   >;
@@ -8359,6 +8612,16 @@ export type UserEdgeResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type UserFavoriteArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UserFavoriteArtist'] = ResolversParentTypes['UserFavoriteArtist'],
+> = ResolversObject<{
+  artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
+  position?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UserFollowResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -8410,6 +8673,21 @@ export type UserSettingsResolvers<
   followAlerts?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   language?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  lastfmConnectedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  lastfmSyncEnabled?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  lastfmUsername?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   profileVisibility?: Resolver<
     ResolversTypes['String'],
     ParentType,
@@ -8435,6 +8713,11 @@ export type UserSettingsResolvers<
     ParentType,
     ContextType
   >;
+  showLastfmStats?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
   showListenLaterInFeed?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -8446,6 +8729,11 @@ export type UserSettingsResolvers<
     ContextType
   >;
   showRecentActivity?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showTasteProfile?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
     ContextType
@@ -8582,6 +8870,10 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   JSON?: GraphQLScalarType;
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;
+  LastfmConnectionResult?: LastfmConnectionResultResolvers<ContextType>;
+  LastfmStats?: LastfmStatsResolvers<ContextType>;
+  LastfmTopAlbum?: LastfmTopAlbumResolvers<ContextType>;
+  LastfmTopArtist?: LastfmTopArtistResolvers<ContextType>;
   ListenBrainzConfig?: ListenBrainzConfigResolvers<ContextType>;
   ListenBrainzSyncResult?: ListenBrainzSyncResultResolvers<ContextType>;
   LlamaLog?: LlamaLogResolvers<ContextType>;
@@ -8625,6 +8917,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SyncJob?: SyncJobResolvers<ContextType>;
   SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;
+  TasteMatch?: TasteMatchResolvers<ContextType>;
   TextDiff?: TextDiffResolvers<ContextType>;
   TextDiffPart?: TextDiffPartResolvers<ContextType>;
   TextRegionBox?: TextRegionBoxResolvers<ContextType>;
@@ -8663,6 +8956,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   UserConnection?: UserConnectionResolvers<ContextType>;
   UserCount?: UserCountResolvers<ContextType>;
   UserEdge?: UserEdgeResolvers<ContextType>;
+  UserFavoriteArtist?: UserFavoriteArtistResolvers<ContextType>;
   UserFollow?: UserFollowResolvers<ContextType>;
   UserSettings?: UserSettingsResolvers<ContextType>;
   UserStats?: UserStatsResolvers<ContextType>;

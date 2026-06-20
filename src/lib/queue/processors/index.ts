@@ -37,6 +37,7 @@ import {
   type LastFmSimilarArtistsJobData,
   type LastFmArtistInfoJobData,
   type ListenBrainzSimilarArtistsJobData,
+  type LastFmSyncUserJobData,
 } from '../jobs';
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
@@ -85,6 +86,7 @@ import {
   handleLastFmSimilarArtists,
   handleLastFmArtistInfo,
 } from './lastfm-cache-processor';
+import { handleLastFmSyncUser } from './lastfm-sync';
 import { handleListenBrainzSimilarArtists } from './listenbrainz-cache-processor';
 
 // Re-export JOB_TYPES for convenience
@@ -326,6 +328,19 @@ export async function processMusicBrainzJob(
           job as Job<LastFmArtistInfoJobData>
         );
         break;
+
+      // Last.fm user sync handler
+      case JOB_TYPES.LASTFM_SYNC_USER:
+        result = await handleLastFmSyncUser(job as Job<LastFmSyncUserJobData>);
+        break;
+
+      // Last.fm dispatch sync (fan-out to per-user jobs)
+      case JOB_TYPES.LASTFM_DISPATCH_SYNC: {
+        const { lastfmScheduler } = await import('@/lib/lastfm/sync-scheduler');
+        await lastfmScheduler.dispatchSyncJobs();
+        result = { success: true };
+        break;
+      }
 
       // ListenBrainz cached handler
       case JOB_TYPES.LISTENBRAINZ_SIMILAR_ARTISTS:

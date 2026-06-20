@@ -1,11 +1,15 @@
 // src/lib/lastfm/search.ts
 /**
- * Last.fm API service for fetching artist information and images
- * Follows the pattern established by MusicBrainz service with error handling and logging
+ * Last.fm API service for fetching artist information and images.
+ * Uses shared lastfm-base.ts for API calls.
  */
 
-const LASTFM_API_URL = 'https://ws.audioscrobbler.com/2.0/';
-const TIMEOUT_MS = 5000;
+import { lastfmFetch } from './lastfm-base';
+import type { LastfmImage } from './types';
+
+// ============================================================================
+// Exported Interfaces (backward-compatible)
+// ============================================================================
 
 export interface LastFmArtistImage {
   size: 'small' | 'medium' | 'large' | 'extralarge' | 'mega';
@@ -29,22 +33,59 @@ export interface LastFmSearchResult {
   match?: number;
 }
 
+export interface LastFmSimilarArtist {
+  name: string;
+  mbid?: string;
+  match: string; // 0.0-1.0 float as string
+  url: string;
+  image?: LastFmArtistImage[];
+}
+
+// ============================================================================
+// API Response Shapes (internal)
+// ============================================================================
+
+interface ArtistSearchResponse {
+  results: {
+    artistmatches: {
+      artist: LastFmArtist[];
+    };
+  };
+}
+
+interface SimilarArtistsResponse {
+  similarartists: {
+    artist: LastFmSimilarArtist[];
+  };
+}
+
+interface ArtistInfoResponse {
+  artist: {
+    name: string;
+    mbid?: string;
+    url?: string;
+    image?: LastfmImage[];
+    stats?: {
+      listeners?: string;
+      playcount?: string;
+    };
+  };
+}
+
+// ============================================================================
+// Image Extraction
+// ============================================================================
+
 /**
- * Extract the best quality image URL from Last.fm image array
+ * Extract the best quality image URL from Last.fm image array.
  * Preference order: mega > extralarge > large > medium > small
  */
 export function extractBestImage(
-  images?: LastFmArtistImage[]
+  images?: LastFmArtistImage[] | LastfmImage[]
 ): string | undefined {
   if (!images || images.length === 0) return undefined;
 
-  const sizeOrder: LastFmArtistImage['size'][] = [
-    'mega',
-    'extralarge',
-    'large',
-    'medium',
-    'small',
-  ];
+  const sizeOrder = ['mega', 'extralarge', 'large', 'medium', 'small'];
 
   for (const size of sizeOrder) {
     const img = images.find(i => i.size === size);
@@ -56,127 +97,73 @@ export function extractBestImage(
   return undefined;
 }
 
+// ============================================================================
+// Artist Search
+// ============================================================================
+
 /**
- * Search for artists on Last.fm
- * Returns empty array on any error to allow graceful degradation
+ * Search for artists on Last.fm.
+ * Returns empty array on any error to allow graceful degradation.
  */
 export async function searchLastFmArtists(
   query: string
 ): Promise<LastFmSearchResult[]> {
-  const apiKey = process.env.LASTFM_API_KEY;
+  const startTime = Date.now();
 
-  if (!apiKey) {
+  const result = await lastfmFetch<ArtistSearchResponse>('artist.search', {
+    artist: query,
+    limit: '5',
+  });
+
+  const duration = Date.now() - startTime;
+
+  if (!result.success) {
+    if (result.error.code === 'missing_api_key') {
+      console.warn(
+        '⚠️ [Last.fm] API key not configured, skipping Last.fm search'
+      );
+    } else {
+      console.error(
+        `❌ [Last.fm] Search error: ${result.error.message} (${duration}ms)`
+      );
+    }
+    return [];
+  }
+
+  const artists = result.data?.results?.artistmatches?.artist || [];
+
+  if (!Array.isArray(artists)) {
     console.warn(
-      '⚠️ [Last.fm] API key not configured, skipping Last.fm search'
+      `⚠️ [Last.fm] Unexpected response format for query "${query}"`
     );
     return [];
   }
 
-  const startTime = Date.now();
-
-  try {
-    const params = new URLSearchParams({
-      method: 'artist.search',
-      artist: query,
-      api_key: apiKey,
-      format: 'json',
-      limit: '5', // Limit to top 5 results for matching
-    });
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    const response = await fetch(`${LASTFM_API_URL}?${params}`, {
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const duration = Date.now() - startTime;
-      console.error(
-        `❌ [Last.fm] API error: ${response.status} ${response.statusText} (${duration}ms)`
-      );
-      return [];
-    }
-
-    const data = await response.json();
-    const duration = Date.now() - startTime;
-
-    // Last.fm wraps results in results.artistmatches.artist
-    const artists = data?.results?.artistmatches?.artist || [];
-
-    if (!Array.isArray(artists)) {
-      console.warn(
-        `⚠️ [Last.fm] Unexpected response format for query "${query}"`
-      );
-      return [];
-    }
-
-    const results: LastFmSearchResult[] = artists.map(
-      (artist: LastFmArtist) => {
-        const imageUrl = extractBestImage(artist.image);
-        console.log(
-          `🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`,
-          artist.image
-        );
-        return {
-          name: artist.name,
-          mbid: artist.mbid || undefined,
-          listeners: artist.listeners
-            ? parseInt(artist.listeners, 10)
-            : undefined,
-          imageUrl,
-          match: artist.match ? parseFloat(artist.match) : undefined,
-        };
-      }
-    );
-
+  const results: LastFmSearchResult[] = artists.map((artist: LastFmArtist) => {
+    const imageUrl = extractBestImage(artist.image);
     console.log(
-      `✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`
+      `🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`,
+      artist.image
     );
+    return {
+      name: artist.name,
+      mbid: artist.mbid || undefined,
+      listeners: artist.listeners ? parseInt(artist.listeners, 10) : undefined,
+      imageUrl,
+      match: artist.match ? parseFloat(artist.match) : undefined,
+    };
+  });
 
-    return results;
-  } catch (error: unknown) {
-    const duration = Date.now() - startTime;
+  console.log(
+    `✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`
+  );
 
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error(
-          `⏱️ [Last.fm] Request timeout after ${TIMEOUT_MS}ms for query "${query}"`
-        );
-      } else {
-        console.error(`❌ [Last.fm] Error: ${error.message} (${duration}ms)`);
-      }
-    } else {
-      console.error(`❌ [Last.fm] Unknown error during search (${duration}ms)`);
-    }
-
-    return []; // Graceful degradation
-  }
+  return results;
 }
 
-/**
- * Get detailed artist information from Last.fm
- * Useful for fetching high-quality images and listener counts
- */
 // ============================================================================
 // Similar Artists
 // ============================================================================
-
-export interface LastFmSimilarArtist {
-  name: string;
-  mbid?: string;
-  match: string; // 0.0-1.0 float as string
-  url: string;
-  image?: LastFmArtistImage[];
-}
-
-interface LastFmSimilarArtistResponse {
-  similarartists: {
-    artist: LastFmSimilarArtist[];
-  };
-}
 
 /**
  * Get similar artists from Last.fm's artist.getSimilar endpoint.
@@ -187,145 +174,93 @@ export async function getSimilarArtists(
   useMbid: boolean = false,
   limit: number = 20
 ): Promise<LastFmSimilarArtist[]> {
-  const apiKey = process.env.LASTFM_API_KEY;
-  if (!apiKey) {
-    console.warn('[Last.fm] API key not configured, skipping getSimilar');
-    return [];
-  }
-
   const startTime = Date.now();
-  const params = new URLSearchParams({
-    method: 'artist.getsimilar',
-    api_key: apiKey,
-    format: 'json',
-    limit: String(limit),
-  });
 
+  const params: Record<string, string> = { limit: String(limit) };
   if (useMbid) {
-    params.set('mbid', artistNameOrMbid);
+    params.mbid = artistNameOrMbid;
   } else {
-    params.set('artist', artistNameOrMbid);
+    params.artist = artistNameOrMbid;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const result = await lastfmFetch<SimilarArtistsResponse>(
+    'artist.getsimilar',
+    params
+  );
 
-  try {
-    const response = await fetch(`${LASTFM_API_URL}?${params}`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  const duration = Date.now() - startTime;
 
-    if (!response.ok) {
-      const duration = Date.now() - startTime;
-      console.error(
-        `[Last.fm] getSimilar error: ${response.status} (${duration}ms)`
-      );
-      return [];
-    }
-
-    const data: LastFmSimilarArtistResponse = await response.json();
-    const artists = data?.similarartists?.artist || [];
-
-    if (!Array.isArray(artists)) {
-      console.warn('[Last.fm] Unexpected getSimilar response format');
-      return [];
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(
-      `[Last.fm] Found ${artists.length} similar artists (${duration}ms)`
-    );
-    return artists;
-  } catch (error: unknown) {
-    clearTimeout(timeoutId);
-    const duration = Date.now() - startTime;
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error(`[Last.fm] getSimilar timeout after ${TIMEOUT_MS}ms`);
+  if (!result.success) {
+    if (result.error.code === 'missing_api_key') {
+      console.warn('[Last.fm] API key not configured, skipping getSimilar');
     } else {
       console.error(
-        `[Last.fm] getSimilar error: ${error instanceof Error ? error.message : 'unknown'} (${duration}ms)`
+        `[Last.fm] getSimilar error: ${result.error.message} (${duration}ms)`
       );
     }
     return [];
   }
+
+  const artists = result.data?.similarartists?.artist || [];
+
+  if (!Array.isArray(artists)) {
+    console.warn('[Last.fm] Unexpected getSimilar response format');
+    return [];
+  }
+
+  console.log(
+    `[Last.fm] Found ${artists.length} similar artists (${duration}ms)`
+  );
+  return artists;
 }
 
+// ============================================================================
+// Artist Info
+// ============================================================================
+
+/**
+ * Get detailed artist information from Last.fm.
+ * Useful for fetching high-quality images and listener counts.
+ */
 export async function getLastFmArtistInfo(
   artistName: string
 ): Promise<LastFmSearchResult | null> {
-  const apiKey = process.env.LASTFM_API_KEY;
-
-  if (!apiKey) {
-    return null;
-  }
-
   const startTime = Date.now();
 
-  try {
-    const params = new URLSearchParams({
-      method: 'artist.getinfo',
-      artist: artistName,
-      api_key: apiKey,
-      format: 'json',
-    });
+  const result = await lastfmFetch<ArtistInfoResponse>('artist.getinfo', {
+    artist: artistName,
+  });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const duration = Date.now() - startTime;
 
-    const response = await fetch(`${LASTFM_API_URL}?${params}`, {
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const duration = Date.now() - startTime;
+  if (!result.success) {
+    if (result.error.code !== 'missing_api_key') {
       console.error(
-        `❌ [Last.fm] getinfo error: ${response.status} ${response.statusText} (${duration}ms)`
+        `❌ [Last.fm] getinfo error: ${result.error.message} (${duration}ms)`
       );
-      return null;
     }
-
-    const data = await response.json();
-    const duration = Date.now() - startTime;
-
-    const artist = data?.artist;
-
-    if (!artist) {
-      console.warn(`⚠️ [Last.fm] No artist info found for "${artistName}"`);
-      return null;
-    }
-
-    const result: LastFmSearchResult = {
-      name: artist.name,
-      mbid: artist.mbid || undefined,
-      listeners: artist.stats?.listeners
-        ? parseInt(artist.stats.listeners, 10)
-        : undefined,
-      imageUrl: extractBestImage(artist.image),
-    };
-
-    console.log(
-      `✅ [Last.fm] Got artist info for "${artistName}" (${duration}ms)`
-    );
-
-    return result;
-  } catch (error: unknown) {
-    const duration = Date.now() - startTime;
-
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error(
-          `⏱️ [Last.fm] getinfo timeout after ${TIMEOUT_MS}ms for "${artistName}"`
-        );
-      } else {
-        console.error(
-          `❌ [Last.fm] getinfo error: ${error.message} (${duration}ms)`
-        );
-      }
-    }
-
     return null;
   }
+
+  const artist = result.data?.artist;
+
+  if (!artist) {
+    console.warn(`⚠️ [Last.fm] No artist info found for "${artistName}"`);
+    return null;
+  }
+
+  const searchResult: LastFmSearchResult = {
+    name: artist.name,
+    mbid: artist.mbid || undefined,
+    listeners: artist.stats?.listeners
+      ? parseInt(artist.stats.listeners, 10)
+      : undefined,
+    imageUrl: extractBestImage(artist.image as LastFmArtistImage[]),
+  };
+
+  console.log(
+    `✅ [Last.fm] Got artist info for "${artistName}" (${duration}ms)`
+  );
+
+  return searchResult;
 }

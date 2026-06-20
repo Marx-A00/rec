@@ -961,9 +961,7 @@ export const queryResolvers: QueryResolvers = {
             select: { followedId: true },
           })
         : [];
-      const isFollowingSet = new Set(
-        currentUserFollows.map(f => f.followedId)
-      );
+      const isFollowingSet = new Set(currentUserFollows.map(f => f.followedId));
 
       const users = edges.map(follow => ({
         ...follow.follower,
@@ -1026,9 +1024,7 @@ export const queryResolvers: QueryResolvers = {
             select: { followedId: true },
           })
         : [];
-      const isFollowingSet = new Set(
-        currentUserFollows.map(f => f.followedId)
-      );
+      const isFollowingSet = new Set(currentUserFollows.map(f => f.followedId));
 
       const users = edges.map(follow => ({
         ...follow.followed,
@@ -1289,9 +1285,7 @@ export const queryResolvers: QueryResolvers = {
       const collections = await prisma.collection.findMany({
         where: {
           userId,
-          OR: [
-            { isPublic: true },
-          ],
+          OR: [{ isPublic: true }],
         },
         orderBy: { updatedAt: 'desc' },
       });
@@ -1979,7 +1973,8 @@ export const queryResolvers: QueryResolvers = {
       // Sorting
       const orderBy: any = {};
       if (sortBy === 'title') orderBy.title = sortOrder;
-      else if (sortBy === 'releaseDate') orderBy.releaseDate = { sort: sortOrder, nulls: 'last' };
+      else if (sortBy === 'releaseDate')
+        orderBy.releaseDate = { sort: sortOrder, nulls: 'last' };
       else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
       else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
       else if (sortBy === 'createdAt') orderBy.createdAt = sortOrder;
@@ -4581,12 +4576,20 @@ export const queryResolvers: QueryResolvers = {
   // Discovery queries
   // =============================================
 
-  trendingUsers: async (_, { limit = 20, timeframe = '7d' }, { prisma, user }) => {
+  trendingUsers: async (
+    _,
+    { limit = 20, timeframe = '7d' },
+    { prisma, user }
+  ) => {
     try {
       const timeframeDays = timeframe === '30d' ? 30 : 7;
       const now = new Date();
-      const startDate = new Date(now.getTime() - timeframeDays * 24 * 60 * 60 * 1000);
-      const midDate = new Date(now.getTime() - (timeframeDays / 2) * 24 * 60 * 60 * 1000);
+      const startDate = new Date(
+        now.getTime() - timeframeDays * 24 * 60 * 60 * 1000
+      );
+      const midDate = new Date(
+        now.getTime() - (timeframeDays / 2) * 24 * 60 * 60 * 1000
+      );
 
       const usersWithActivity = await prisma.user.findMany({
         where: {
@@ -4630,7 +4633,9 @@ export const queryResolvers: QueryResolvers = {
         const firstHalf = u.followers.filter(
           f => f.createdAt >= startDate && f.createdAt <= midDate
         ).length;
-        const secondHalf = u.followers.filter(f => f.createdAt > midDate).length;
+        const secondHalf = u.followers.filter(
+          f => f.createdAt > midDate
+        ).length;
 
         const followerGrowthRate =
           firstHalf > 0
@@ -4642,7 +4647,8 @@ export const queryResolvers: QueryResolvers = {
         const recentRecs = u.recommendations.length;
         const avgScore =
           recentRecs > 0
-            ? u.recommendations.reduce((sum, r) => sum + r.score, 0) / recentRecs
+            ? u.recommendations.reduce((sum, r) => sum + r.score, 0) /
+              recentRecs
             : 0;
 
         const recentActivityScore = recentRecs * 10 + avgScore * 2;
@@ -4651,10 +4657,16 @@ export const queryResolvers: QueryResolvers = {
         const artistCounts = new Map();
         u.recommendations.forEach(rec => {
           if (rec.basisAlbumArtist) {
-            artistCounts.set(rec.basisAlbumArtist, (artistCounts.get(rec.basisAlbumArtist) || 0) + 1);
+            artistCounts.set(
+              rec.basisAlbumArtist,
+              (artistCounts.get(rec.basisAlbumArtist) || 0) + 1
+            );
           }
           if (rec.recommendedAlbumArtist) {
-            artistCounts.set(rec.recommendedAlbumArtist, (artistCounts.get(rec.recommendedAlbumArtist) || 0) + 1);
+            artistCounts.set(
+              rec.recommendedAlbumArtist,
+              (artistCounts.get(rec.recommendedAlbumArtist) || 0) + 1
+            );
           }
         });
         const topGenres = Array.from(artistCounts.entries())
@@ -4665,7 +4677,8 @@ export const queryResolvers: QueryResolvers = {
         const baseScore = Math.log(Math.max(u._count.followers, 1)) * 10;
         const growthBonus = followerGrowthRate * 2;
         const qualityBonus = avgScore * 5;
-        const trendingScore = baseScore + growthBonus + recentActivityScore + qualityBonus;
+        const trendingScore =
+          baseScore + growthBonus + recentActivityScore + qualityBonus;
 
         if (trendingScore > 20 || recentFollowers > 0 || recentRecs > 0) {
           scored.push({
@@ -4746,14 +4759,18 @@ export const queryResolvers: QueryResolvers = {
 
       for (const u of rawUsers) {
         const activityDates = [
-          ...(u.recommendations.length > 0 ? [u.recommendations[0].createdAt] : []),
+          ...(u.recommendations.length > 0
+            ? [u.recommendations[0].createdAt]
+            : []),
           ...(u.followers.length > 0 ? [u.followers[0].createdAt] : []),
           ...(u.following.length > 0 ? [u.following[0].createdAt] : []),
         ].filter(Boolean);
 
         if (activityDates.length === 0) continue;
 
-        const earliestActivity = new Date(Math.min(...activityDates.map(d => d.getTime())));
+        const earliestActivity = new Date(
+          Math.min(...activityDates.map(d => d.getTime()))
+        );
         const daysSinceJoined = Math.floor(
           (Date.now() - earliestActivity.getTime()) / (1000 * 60 * 60 * 24)
         );
@@ -4787,7 +4804,9 @@ export const queryResolvers: QueryResolvers = {
 
       const activityOrder = { active: 3, getting_started: 2, new: 1 };
       processed.sort((a, b) => {
-        const diff = (activityOrder[b.activityLevel] || 0) - (activityOrder[a.activityLevel] || 0);
+        const diff =
+          (activityOrder[b.activityLevel] || 0) -
+          (activityOrder[a.activityLevel] || 0);
         if (diff !== 0) return diff;
         return a.daysSinceJoined - b.daysSinceJoined;
       });
@@ -4814,6 +4833,92 @@ export const queryResolvers: QueryResolvers = {
       console.error('Error fetching browse new users:', error);
       return [];
     }
+  },
+
+  // ============================================================================
+  // Taste Profile Queries
+  // ============================================================================
+
+  userTasteProfile: async (_, { userId }, { user, prisma }) => {
+    // Check visibility
+    if (user?.id !== userId) {
+      const settings = await prisma.userSettings.findUnique({
+        where: { userId },
+        select: { showTasteProfile: true },
+      });
+      if (settings && !settings.showTasteProfile) {
+        return [];
+      }
+    }
+
+    const favorites = await prisma.userFavoriteArtist.findMany({
+      where: { userId },
+      orderBy: { position: 'asc' },
+      include: { artist: true },
+    });
+
+    return favorites.map(f => ({
+      position: f.position,
+      artist: f.artist,
+    }));
+  },
+
+  tasteMatches: async (_, { limit = 10 }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Get current user's favorite artist IDs
+    const myFavorites = await prisma.userFavoriteArtist.findMany({
+      where: { userId: user.id },
+      select: { artistId: true },
+    });
+
+    if (myFavorites.length === 0) {
+      return [];
+    }
+
+    const myArtistIds = myFavorites.map(f => f.artistId);
+
+    // Find users with overlapping favorites
+    const matches = await prisma.userFavoriteArtist.groupBy({
+      by: ['userId'],
+      where: {
+        artistId: { in: myArtistIds },
+        userId: { not: user.id },
+      },
+      _count: { artistId: true },
+      orderBy: { _count: { artistId: 'desc' } },
+      take: limit,
+    });
+
+    // Build full match objects
+    const results = await Promise.all(
+      matches.map(async match => {
+        const matchUser = await prisma.user.findUnique({
+          where: { id: match.userId },
+        });
+        if (!matchUser || matchUser.deletedAt) return null;
+
+        const sharedFavorites = await prisma.userFavoriteArtist.findMany({
+          where: {
+            userId: match.userId,
+            artistId: { in: myArtistIds },
+          },
+          include: { artist: true },
+        });
+
+        return {
+          user: matchUser,
+          sharedArtists: sharedFavorites.map(f => f.artist),
+          overlapCount: match._count.artistId,
+        };
+      })
+    );
+
+    return results.filter(Boolean);
   },
 
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects

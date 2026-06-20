@@ -275,6 +275,12 @@ type User {
   isFollowing: Boolean # Context-dependent based on current user
   mutualFollowers: [User!]!
 
+  # Last.fm integration
+  lastfmStats: LastfmStats
+
+  # Taste profile
+  tasteProfile: [UserFavoriteArtist!]!
+
   # Count aggregations for admin
   _count: UserCount
 }
@@ -318,6 +324,15 @@ type UserSettings {
   showArcadeButton: Boolean!
   arcadeButtonColor: String!
   arcadeButtonSound: String!
+
+  # Last.fm integration
+  lastfmUsername: String
+  lastfmConnectedAt: DateTime
+  showLastfmStats: Boolean!
+  lastfmSyncEnabled: Boolean!
+
+  # Taste profile
+  showTasteProfile: Boolean!
 
   # Timestamps
   createdAt: DateTime!
@@ -2259,7 +2274,6 @@ type ListenBrainzConfig {
   minArtistListeners: Int!
 }
 
-
 # =============================================
 # SYNC JOB TRACKING
 # =============================================
@@ -2398,6 +2412,10 @@ type Query {
   topRecommendedArtists(limit: Int = 20): [TopRecommendedArtist!]!
   userSuggestions(limit: Int = 10): [User!]!
 
+  # Taste profile
+  userTasteProfile(userId: String!): [UserFavoriteArtist!]!
+  tasteMatches(limit: Int = 10): [TasteMatch!]!
+
   # Artist Recommendations (recommendations featuring an artist's albums)
   artistRecommendations(
     artistId: ID!
@@ -2430,13 +2448,28 @@ type Query {
   socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
 
   # User social queries
-  userFollowers(userId: String!, cursor: String, limit: Int = 20, search: String, sort: String = "recent"): UserConnection!
-  userFollowing(userId: String!, cursor: String, limit: Int = 20, search: String, sort: String = "recent"): UserConnection!
+  userFollowers(
+    userId: String!
+    cursor: String
+    limit: Int = 20
+    search: String
+    sort: String = "recent"
+  ): UserConnection!
+  userFollowing(
+    userId: String!
+    cursor: String
+    limit: Int = 20
+    search: String
+    sort: String = "recent"
+  ): UserConnection!
   mutualConnections(userId: String!): [User!]!
   isFollowing(userId: String!): Boolean!
 
   # Discovery queries
-  trendingUsers(limit: Int = 20, timeframe: String = "7d"): TrendingUsersResponse!
+  trendingUsers(
+    limit: Int = 20
+    timeframe: String = "7d"
+  ): TrendingUsersResponse!
   newUsers(limit: Int = 20, maxDays: Int = 30): NewUsersResponse!
   browseNewUsers(limit: Int = 15): [User!]!
 
@@ -2619,7 +2652,10 @@ type Query {
   Get user's session history for calendar display (ARCHIVE-02).
   Optional date filters for efficient month-by-month loading.
   """
-  myUncoverSessions(fromDate: DateTime, toDate: DateTime): [UncoverSessionHistory!]!
+  myUncoverSessions(
+    fromDate: DateTime
+    toDate: DateTime
+  ): [UncoverSessionHistory!]!
 
   """
   Get dates that have an Uncover challenge available.
@@ -2637,7 +2673,11 @@ type Query {
   """
   Admin: Get curated challenge list
   """
-  curatedChallenges(limit: Int, offset: Int, status: CuratedPoolFilter): [CuratedChallengeEntry!]!
+  curatedChallenges(
+    limit: Int
+    offset: Int
+    status: CuratedPoolFilter
+  ): [CuratedChallengeEntry!]!
 
   """
   Admin: Get count of curated challenges
@@ -2738,7 +2778,9 @@ type TextRegionBox {
   y: Float!
   w: Float!
   h: Float!
-  """The detected text content (null for regions stored before this field was added)"""
+  """
+  The detected text content (null for regions stored before this field was added)
+  """
   text: String
 }
 
@@ -2804,11 +2846,10 @@ type UncoverPlayerStats {
   lastPlayedDate: DateTime
   "Win count by attempt number (index 0 = 1-guess wins, etc.)"
   winDistribution: [Int!]!
-  
+
   "Computed: gamesWon / gamesPlayed (0 if no games)"
   winRate: Float!
 }
-
 
 """
 Archive game statistics (separate from daily stats).
@@ -2836,7 +2877,6 @@ type UncoverSessionHistory {
   attemptCount: Int!
   completedAt: DateTime
 }
-
 
 """
 Marquee album entry for the landing page gallery
@@ -2902,9 +2942,13 @@ type ChallengeHistoryEntry {
   totalPlays: Int!
   totalWins: Int!
   avgAttempts: Float
-  """Number of detected text regions, null if not analyzed"""
+  """
+  Number of detected text regions, null if not analyzed
+  """
   textRegionCount: Int
-  """Full text region data with coordinates and detected text"""
+  """
+  Full text region data with coordinates and detected text
+  """
   textRegions: [TextRegionBox!]
 }
 
@@ -2916,31 +2960,57 @@ type ChallengeHistoryEntry {
 Aggregated game-wide stats for the Uncover admin dashboard
 """
 type UncoverGameStats {
-  """Total number of challenges that have been played"""
+  """
+  Total number of challenges that have been played
+  """
   totalChallenges: Int!
-  """Total number of unique players (users who have started at least one session)"""
+  """
+  Total number of unique players (users who have started at least one session)
+  """
   totalUniquePlayers: Int!
-  """Total number of completed sessions (won + lost)"""
+  """
+  Total number of completed sessions (won + lost)
+  """
   totalPlays: Int!
-  """Total number of wins across all sessions"""
+  """
+  Total number of wins across all sessions
+  """
   totalWins: Int!
-  """Overall win rate as a decimal (0-1)"""
+  """
+  Overall win rate as a decimal (0-1)
+  """
   overallWinRate: Float!
-  """Overall average attempts across all completed sessions"""
+  """
+  Overall average attempts across all completed sessions
+  """
   overallAvgAttempts: Float
-  """Average number of plays per challenge"""
+  """
+  Average number of plays per challenge
+  """
   avgPlaysPerChallenge: Float
-  """Win distribution across attempt counts [attempt1, attempt2, ..., attempt6]"""
+  """
+  Win distribution across attempt counts [attempt1, attempt2, ..., attempt6]
+  """
   globalWinDistribution: [Int!]!
-  """Top players by games won"""
+  """
+  Top players by games won
+  """
   topPlayers: [UncoverPlayerLeaderboardEntry!]!
-  """Recent sessions with player info"""
+  """
+  Recent sessions with player info
+  """
   recentSessions: [UncoverRecentSession!]!
-  """Challenge with the most plays"""
+  """
+  Challenge with the most plays
+  """
   mostPlayedChallenge: UncoverChallengeStatEntry
-  """Challenge with the highest win rate (min 3 plays)"""
+  """
+  Challenge with the highest win rate (min 3 plays)
+  """
   hardestChallenge: UncoverChallengeStatEntry
-  """Challenge with the lowest win rate (min 3 plays)"""
+  """
+  Challenge with the lowest win rate (min 3 plays)
+  """
   easiestChallenge: UncoverChallengeStatEntry
 }
 
@@ -3220,13 +3290,17 @@ type Mutation {
   triggerListenBrainzSync: ListenBrainzSyncResult!
 
   # ListenBrainz Config (Admin)
-  updateListenBrainzConfig(input: UpdateListenBrainzConfigInput!): ListenBrainzConfig!
+  updateListenBrainzConfig(
+    input: UpdateListenBrainzConfigInput!
+  ): ListenBrainzConfig!
 
   # Deezer Editorial Sync
   triggerDeezerEditorialSync: DeezerEditorialSyncResult!
 
   # Deezer Editorial Config (Admin)
-  updateDeezerEditorialConfig(input: UpdateDeezerEditorialConfigInput!): DeezerEditorialConfig!
+  updateDeezerEditorialConfig(
+    input: UpdateDeezerEditorialConfigInput!
+  ): DeezerEditorialConfig!
 
   # Sync Job Management
   rollbackSyncJob(
@@ -3311,7 +3385,11 @@ type Mutation {
   dismissUserSuggestion(userId: String!): Boolean!
 
   # Profile management
-  updateProfile(username: String, bio: String, image: String): UpdateProfilePayload!
+  updateProfile(
+    username: String
+    bio: String
+    image: String
+  ): UpdateProfilePayload!
   updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
   resetOnboardingStatus: OnboardingStatus!
   updateDashboardLayout(layout: JSON!): UserSettings!
@@ -3327,6 +3405,9 @@ type Mutation {
     showArcadeButton: Boolean
     arcadeButtonColor: String
     arcadeButtonSound: String
+    showLastfmStats: Boolean
+    lastfmSyncEnabled: Boolean
+    showTasteProfile: Boolean
   ): UserSettings!
 
   # Music Database enrichment mutations
@@ -3394,7 +3475,10 @@ type Mutation {
   If selectedDeezerIds is provided, only those albums are imported.
   Otherwise all albums from the playlist are imported.
   """
-  importDeezerPlaylist(playlistId: String!, selectedDeezerIds: [String!]): DeezerPlaylistImportResult!
+  importDeezerPlaylist(
+    playlistId: String!
+    selectedDeezerIds: [String!]
+  ): DeezerPlaylistImportResult!
 
   """
   Admin: Add an album to the game pool.
@@ -3439,7 +3523,10 @@ type Mutation {
   """
   Admin: Update uncover game settings
   """
-  updateUncoverSettings(selectionMode: String, poolExhaustedMode: String): UncoverSettings!
+  updateUncoverSettings(
+    selectionMode: String
+    poolExhaustedMode: String
+  ): UncoverSettings!
 
   # Uncover Game mutations
 
@@ -3462,6 +3549,15 @@ type Mutation {
   The actual work runs as a BullMQ job (visible in /admin/job-history).
   """
   resetUncoverChallenges: ResetUncoverResult!
+
+  # Last.fm integration
+  connectLastfm(username: String!): LastfmConnectionResult!
+  confirmLastfmConnection(username: String!): UserSettings!
+  disconnectLastfm: UserSettings!
+  triggerLastfmSync: Boolean!
+
+  # Taste profile
+  setTasteProfile(artistIds: [String!]!): [UserFavoriteArtist!]!
 }
 
 type FollowUserPayload {
@@ -3872,4 +3968,63 @@ input ArtistCorrectionApplyInput {
   Source of correction data (default: MUSICBRAINZ)
   """
   source: CorrectionSource = MUSICBRAINZ
+}
+
+# ============================================================================
+# Last.fm Integration Types
+# ============================================================================
+
+type LastfmStats {
+  username: String!
+  totalPlaycount: Int
+  totalArtists: Int
+  totalAlbums: Int
+  topArtists: [LastfmTopArtist!]!
+  topAlbums: [LastfmTopAlbum!]!
+  lastSyncedAt: DateTime
+}
+
+type LastfmTopArtist {
+  name: String!
+  playcount: Int!
+  mbid: String
+  """
+  Resolved local artist ID (null if not in DB)
+  """
+  artistId: String
+}
+
+type LastfmTopAlbum {
+  name: String!
+  artistName: String!
+  playcount: Int!
+  mbid: String
+  """
+  Resolved local album ID (null if not in DB)
+  """
+  albumId: String
+}
+
+type LastfmConnectionResult {
+  success: Boolean!
+  error: String
+  username: String
+  profileImage: String
+  totalPlaycount: Int
+  registeredAt: DateTime
+}
+
+# ============================================================================
+# Taste Profile Types
+# ============================================================================
+
+type UserFavoriteArtist {
+  position: Int!
+  artist: Artist!
+}
+
+type TasteMatch {
+  user: User!
+  sharedArtists: [Artist!]!
+  overlapCount: Int!
 }

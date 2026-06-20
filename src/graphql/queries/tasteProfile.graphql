@@ -1,0 +1,44 @@
+# Taste Profile Queries and Mutations
+
+query GetUserTasteProfile($userId: String!) {
+  userTasteProfile(userId: $userId) {
+    position
+    artist {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+      musicbrainzId
+    }
+  }
+}
+
+query GetTasteMatches($limit: Int) {
+  tasteMatches(limit: $limit) {
+    user {
+      id
+      username
+      image
+      bio
+    }
+    sharedArtists {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+    }
+    overlapCount
+  }
+}
+
+mutation SetTasteProfile($artistIds: [String!]!) {
+  setTasteProfile(artistIds: $artistIds) {
+    position
+    artist {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+    }
+  }
+}

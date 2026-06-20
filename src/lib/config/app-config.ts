@@ -2,7 +2,12 @@ import prisma from '@/lib/prisma';
 
 const APP_CONFIG_ID = 'default';
 
-type SchedulerType = 'spotify' | 'musicbrainz' | 'listenbrainz' | 'deezer-editorial';
+type SchedulerType =
+  | 'spotify'
+  | 'musicbrainz'
+  | 'listenbrainz'
+  | 'deezer-editorial'
+  | 'lastfm';
 
 // ============================================================================
 // ListenBrainz Config
@@ -137,8 +142,7 @@ export async function setDeezerEditorialConfig(
     data.deezerEditorialIntervalMinutes = updates.intervalMinutes;
   if (updates.maxReleases !== undefined)
     data.deezerEditorialMaxReleases = updates.maxReleases;
-  if (updates.genres !== undefined)
-    data.deezerEditorialGenres = updates.genres;
+  if (updates.genres !== undefined) data.deezerEditorialGenres = updates.genres;
   if (updates.filterDeluxe !== undefined)
     data.deezerEditorialFilterDeluxe = updates.filterDeluxe;
 
@@ -151,8 +155,7 @@ export async function setDeezerEditorialConfig(
         updates.intervalMinutes ?? DEEZER_EDITORIAL_DEFAULTS.intervalMinutes,
       deezerEditorialMaxReleases:
         updates.maxReleases ?? DEEZER_EDITORIAL_DEFAULTS.maxReleases,
-      deezerEditorialGenres:
-        updates.genres ?? DEEZER_EDITORIAL_DEFAULTS.genres,
+      deezerEditorialGenres: updates.genres ?? DEEZER_EDITORIAL_DEFAULTS.genres,
       deezerEditorialFilterDeluxe:
         updates.filterDeluxe ?? DEEZER_EDITORIAL_DEFAULTS.filterDeluxe,
     },
@@ -185,7 +188,9 @@ export async function getSchedulerEnabled(
 
   if (scheduler === 'spotify') return config.spotifySchedulerEnabled;
   if (scheduler === 'musicbrainz') return config.musicbrainzSchedulerEnabled;
-  if (scheduler === 'deezer-editorial') return config.deezerEditorialSchedulerEnabled;
+  if (scheduler === 'deezer-editorial')
+    return config.deezerEditorialSchedulerEnabled;
+  if (scheduler === 'lastfm') return config.lastfmSchedulerEnabled;
   return config.listenbrainzSchedulerEnabled;
 }
 
@@ -202,6 +207,7 @@ export async function setSchedulerEnabled(
     musicbrainz: 'musicbrainzSchedulerEnabled',
     listenbrainz: 'listenbrainzSchedulerEnabled',
     'deezer-editorial': 'deezerEditorialSchedulerEnabled',
+    lastfm: 'lastfmSchedulerEnabled',
   };
 
   const field = fieldMap[scheduler];
@@ -218,6 +224,7 @@ export async function setSchedulerEnabled(
         scheduler === 'listenbrainz' ? enabled : false,
       deezerEditorialSchedulerEnabled:
         scheduler === 'deezer-editorial' ? enabled : false,
+      lastfmSchedulerEnabled: scheduler === 'lastfm' ? enabled : false,
     },
   });
 }

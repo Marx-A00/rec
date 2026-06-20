@@ -55,6 +55,9 @@ export const JOB_TYPES = {
   LASTFM_ARTIST_INFO: 'lastfm:artist-info',
   LASTFM_SEARCH_ARTISTS: 'lastfm:search-artists',
   LISTENBRAINZ_SIMILAR_ARTISTS: 'listenbrainz:similar-artists',
+  // Last.fm User Sync Jobs
+  LASTFM_SYNC_USER: 'lastfm:sync-user',
+  LASTFM_DISPATCH_SYNC: 'lastfm:dispatch-sync',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -381,6 +384,15 @@ export interface ListenBrainzSimilarArtistsJobData {
   algorithm?: string;
 }
 
+export interface LastFmSyncUserJobData {
+  userId: string;
+  lastfmUsername: string;
+}
+
+export interface LastFmDispatchSyncJobData {
+  source?: 'scheduled' | 'manual';
+}
+
 // ============================================================================
 // Job Data Union Type
 // ============================================================================
@@ -417,7 +429,9 @@ export type MusicBrainzJobData =
   | LastFmSimilarArtistsJobData
   | LastFmArtistInfoJobData
   | LastFmSearchArtistsJobData
-  | ListenBrainzSimilarArtistsJobData;
+  | ListenBrainzSimilarArtistsJobData
+  | LastFmSyncUserJobData
+  | LastFmDispatchSyncJobData;
 
 // ============================================================================
 // Job Result Interfaces

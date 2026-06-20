@@ -43,6 +43,11 @@ import {
   deezerEditorialScheduler,
 } from '@/lib/deezer/editorial-sync/scheduler';
 import {
+  initializeLastfmScheduler,
+  shutdownLastfmScheduler,
+  lastfmScheduler,
+} from '@/lib/lastfm/sync-scheduler';
+import {
   healthChecker,
   metricsCollector,
   alertManager,
@@ -126,6 +131,14 @@ class MusicBrainzWorkerService {
       console.log('  ✅ Deezer Editorial scheduler enabled');
     } else {
       console.log('  ⏸️  Deezer Editorial scheduler disabled');
+    }
+
+    // Last.fm user sync scheduler
+    const lastfmStarted = await initializeLastfmScheduler();
+    if (lastfmStarted) {
+      console.log('  ✅ Last.fm scheduler enabled');
+    } else {
+      console.log('  ⏸️  Last.fm scheduler disabled');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
@@ -768,6 +781,68 @@ class MusicBrainzWorkerService {
       }
     });
 
+    // ─── Last.fm Scheduler ──────────────────────────────────────────
+
+    app.get('/lastfm/metrics', async (_req, res) => {
+      const status = await lastfmScheduler.getStatus();
+      res.json({
+        scheduler: {
+          isRunning: status.isRunning,
+          activeSchedules: status.activeSchedules,
+          config: status.config,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    app.post('/lastfm/:action', async (req, res) => {
+      const { action } = req.params;
+
+      try {
+        switch (action) {
+          case 'start': {
+            await setSchedulerEnabled('lastfm', true);
+            const started = await initializeLastfmScheduler();
+            res.json({
+              success: started,
+              message: started
+                ? 'Last.fm scheduler started'
+                : 'Failed to start Last.fm scheduler',
+            });
+            break;
+          }
+
+          case 'stop': {
+            await lastfmScheduler.stop();
+            res.json({
+              success: true,
+              message: 'Last.fm scheduler stopped',
+            });
+            break;
+          }
+
+          case 'sync': {
+            await lastfmScheduler.triggerSync();
+            res.json({
+              success: true,
+              message: 'Last.fm user sync triggered',
+            });
+            break;
+          }
+
+          default:
+            res.status(400).json({
+              error: 'Invalid action. Use: start, stop, or sync',
+            });
+        }
+      } catch (error) {
+        res.status(500).json({
+          error: 'Last.fm action failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
     // ─── Job History ───────────────────────────────────────────────
 
     app.get('/jobs/history', async (req, res) => {
@@ -967,6 +1042,10 @@ class MusicBrainzWorkerService {
           'POST /deezer-editorial/start - Start Deezer Editorial Scheduler',
           'POST /deezer-editorial/stop - Stop Deezer Editorial Scheduler',
           'POST /deezer-editorial/sync - Trigger Deezer Editorial Sync',
+          '/lastfm/metrics - Last.fm Scheduler Metrics',
+          'POST /lastfm/start - Start Last.fm Scheduler',
+          'POST /lastfm/stop - Stop Last.fm Scheduler',
+          'POST /lastfm/sync - Trigger Last.fm User Sync',
         ],
       });
     });
@@ -1067,6 +1146,10 @@ class MusicBrainzWorkerService {
         // Stop Deezer Editorial scheduler
         console.log('🛑 Stopping Deezer Editorial scheduler...');
         await shutdownDeezerEditorialScheduler();
+
+        // Stop Last.fm scheduler
+        console.log('🛑 Stopping Last.fm scheduler...');
+        await shutdownLastfmScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');

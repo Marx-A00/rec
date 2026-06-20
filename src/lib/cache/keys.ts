@@ -25,6 +25,7 @@ export const CACHE_KEYS = {
     `cache:count:collection-albums:${collectionId}`,
   userCollections: (userId: string) => `cache:user:collections:${userId}`,
   userRecs: (userId: string) => `cache:user:recs:${userId}`,
+  lastfmUserStats: (userId: string) => `cache:lastfm:userstats:${userId}`,
 };
 
 /** TTL values in seconds */

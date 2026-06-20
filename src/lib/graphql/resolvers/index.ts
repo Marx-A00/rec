@@ -349,7 +349,11 @@ export const resolvers: Resolvers = {
     },
 
     // Similar artists (Last.fm + ListenBrainz, merged)
-    similarArtists: async (_, { id, source, artistName, limit = 15 }, { prisma }) => {
+    similarArtists: async (
+      _,
+      { id, source, artistName, limit = 15 },
+      { prisma }
+    ) => {
       const normalizedSource = source.toLowerCase();
 
       if (normalizedSource === 'local') {
@@ -409,9 +413,15 @@ export const resolvers: Resolvers = {
       const cacheTag = orange('[CACHE LAYER]');
 
       const cacheKey = CACHE_KEYS.similarArtists(id);
-      const cached = await cache.get<
-        Array<{ name: string; mbid: string; similarity: number; source: string }>
-      >(cacheKey);
+      const cached =
+        await cache.get<
+          Array<{
+            name: string;
+            mbid: string;
+            similarity: number;
+            source: string;
+          }>
+        >(cacheKey);
 
       // Cache miss — queue background job and return empty (frontend polls)
       if (cached === null) {
@@ -438,45 +448,48 @@ export const resolvers: Resolvers = {
 
       // Cache hit — enrich with local artist data
       const mbids = cached.map(r => r.mbid);
-      const localArtists = mbids.length > 0
-        ? await prisma.artist.findMany({
-            where: { musicbrainzId: { in: mbids } },
-            select: {
-              id: true,
-              musicbrainzId: true,
-              imageUrl: true,
-              cloudflareImageId: true,
-            },
-          })
-        : [];
+      const localArtists =
+        mbids.length > 0
+          ? await prisma.artist.findMany({
+              where: { musicbrainzId: { in: mbids } },
+              select: {
+                id: true,
+                musicbrainzId: true,
+                imageUrl: true,
+                cloudflareImageId: true,
+              },
+            })
+          : [];
 
-      const mbidToLocal = new Map(
-        localArtists.map(a => [a.musicbrainzId, a])
-      );
+      const mbidToLocal = new Map(localArtists.map(a => [a.musicbrainzId, a]));
 
       // Check Redis image cache for artists without local images
-      const enriched = await Promise.all(cached.map(async r => {
-        const local = mbidToLocal.get(r.mbid);
-        let imageUrl = local?.imageUrl || null;
+      const enriched = await Promise.all(
+        cached.map(async r => {
+          const local = mbidToLocal.get(r.mbid);
+          let imageUrl = local?.imageUrl || null;
 
-        // Fallback: check Redis image cache if no local image
-        if (!imageUrl) {
-          const cachedImage = await cache.get<{ imageUrl: string }>(CACHE_KEYS.spotifyImage(r.mbid));
-          if (cachedImage && !cache.isMiss(cachedImage)) {
-            imageUrl = cachedImage.imageUrl;
+          // Fallback: check Redis image cache if no local image
+          if (!imageUrl) {
+            const cachedImage = await cache.get<{ imageUrl: string }>(
+              CACHE_KEYS.spotifyImage(r.mbid)
+            );
+            if (cachedImage && !cache.isMiss(cachedImage)) {
+              imageUrl = cachedImage.imageUrl;
+            }
           }
-        }
 
-        return {
-          name: r.name,
-          musicbrainzId: r.mbid,
-          similarity: r.similarity,
-          imageUrl,
-          cloudflareImageId: local?.cloudflareImageId || null,
-          localArtistId: local?.id || null,
-          source: r.source,
-        };
-      }));
+          return {
+            name: r.name,
+            musicbrainzId: r.mbid,
+            similarity: r.similarity,
+            imageUrl,
+            cloudflareImageId: local?.cloudflareImageId || null,
+            localArtistId: local?.id || null,
+            source: r.source,
+          };
+        })
+      );
 
       // Sort: artists with images first, then by similarity
       return enriched
@@ -1255,11 +1268,11 @@ export const resolvers: Resolvers = {
       return trackArtists.map(ta => ta.track);
     },
     // Computed fields with simple implementations
-    albumCount: async (parent) => {
+    albumCount: async parent => {
       const { getArtistAlbumCount } = await import('@/lib/cache/count-cache');
       return getArtistAlbumCount(parent.id);
     },
-    trackCount: async (parent) => {
+    trackCount: async parent => {
       const { getArtistTrackCount } = await import('@/lib/cache/count-cache');
       return getArtistTrackCount(parent.id);
     },
@@ -1310,8 +1323,10 @@ export const resolvers: Resolvers = {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     },
     averageRating: () => null, // Placeholder
-    inCollectionsCount: async (parent) => {
-      const { getAlbumCollectionCount } = await import('@/lib/cache/count-cache');
+    inCollectionsCount: async parent => {
+      const { getAlbumCollectionCount } = await import(
+        '@/lib/cache/count-cache'
+      );
       return getAlbumCollectionCount(parent.id);
     },
     recommendationScore: () => null, // Placeholder
@@ -1472,6 +1487,127 @@ export const resolvers: Resolvers = {
         recommendations: 0,
       };
     },
+
+    lastfmStats: async (parent, _, { user, prisma }) => {
+      // Check if user has Last.fm connected
+      const settings = await prisma.userSettings.findUnique({
+        where: { userId: parent.id },
+        select: { lastfmUsername: true, showLastfmStats: true },
+      });
+
+      if (!settings?.lastfmUsername) return null;
+
+      // Visibility: own profile always shows, others respect showLastfmStats
+      const isOwnProfile = user?.id === parent.id;
+      if (!isOwnProfile && !settings.showLastfmStats) return null;
+
+      // Fetch synced data from persistent model
+      const lastfmData = await prisma.userLastfmData.findUnique({
+        where: { userId: parent.id },
+      });
+
+      if (!lastfmData) {
+        return {
+          username: settings.lastfmUsername,
+          totalPlaycount: null,
+          totalArtists: null,
+          totalAlbums: null,
+          topArtists: [],
+          topAlbums: [],
+          lastSyncedAt: null,
+        };
+      }
+
+      // Parse JSON data and resolve local IDs
+      const topArtistsRaw = (lastfmData.topArtists || {}) as Record<
+        string,
+        Array<{ name: string; playcount: number; mbid: string }>
+      >;
+      const topAlbumsRaw = (lastfmData.topAlbums || {}) as Record<
+        string,
+        Array<{
+          name: string;
+          artistName: string;
+          playcount: number;
+          mbid: string;
+        }>
+      >;
+
+      // Use 'overall' period by default, fallback to first available
+      const artistEntries =
+        topArtistsRaw['overall'] || Object.values(topArtistsRaw)[0] || [];
+      const albumEntries =
+        topAlbumsRaw['overall'] || Object.values(topAlbumsRaw)[0] || [];
+
+      // Batch resolve artist MBIDs to local IDs
+      const artistMbids = artistEntries.filter(a => a.mbid).map(a => a.mbid);
+      const matchedArtists =
+        artistMbids.length > 0
+          ? await prisma.artist.findMany({
+              where: { musicbrainzId: { in: artistMbids } },
+              select: { id: true, musicbrainzId: true },
+            })
+          : [];
+      const artistMbidMap = new Map(
+        matchedArtists.map(a => [a.musicbrainzId, a.id])
+      );
+
+      // Batch resolve album MBIDs to local IDs
+      const albumMbids = albumEntries.filter(a => a.mbid).map(a => a.mbid);
+      const matchedAlbums =
+        albumMbids.length > 0
+          ? await prisma.album.findMany({
+              where: { musicbrainzId: { in: albumMbids } },
+              select: { id: true, musicbrainzId: true },
+            })
+          : [];
+      const albumMbidMap = new Map(
+        matchedAlbums.map(a => [a.musicbrainzId, a.id])
+      );
+
+      return {
+        username: settings.lastfmUsername,
+        totalPlaycount: lastfmData.totalPlaycount,
+        totalArtists: lastfmData.totalArtists,
+        totalAlbums: lastfmData.totalAlbums,
+        topArtists: artistEntries.slice(0, 10).map(a => ({
+          name: a.name,
+          playcount: a.playcount,
+          mbid: a.mbid || null,
+          artistId: a.mbid ? artistMbidMap.get(a.mbid) || null : null,
+        })),
+        topAlbums: albumEntries.slice(0, 10).map(a => ({
+          name: a.name,
+          artistName: a.artistName,
+          playcount: a.playcount,
+          mbid: a.mbid || null,
+          albumId: a.mbid ? albumMbidMap.get(a.mbid) || null : null,
+        })),
+        lastSyncedAt: lastfmData.lastSyncedAt,
+      };
+    },
+
+    tasteProfile: async (parent, _, { user, prisma }) => {
+      // Check visibility for non-owner
+      if (user?.id !== parent.id) {
+        const settings = await prisma.userSettings.findUnique({
+          where: { userId: parent.id },
+          select: { showTasteProfile: true },
+        });
+        if (settings && !settings.showTasteProfile) return [];
+      }
+
+      const favorites = await prisma.userFavoriteArtist.findMany({
+        where: { userId: parent.id },
+        orderBy: { position: 'asc' },
+        include: { artist: true },
+      });
+
+      return favorites.map(f => ({
+        position: f.position,
+        artist: f.artist,
+      }));
+    },
   },
 
   Collection: {
@@ -1499,8 +1635,10 @@ export const resolvers: Resolvers = {
       return collectionAlbums;
     },
     // Simplified computed fields
-    albumCount: async (parent) => {
-      const { getCollectionAlbumCount } = await import('@/lib/cache/count-cache');
+    albumCount: async parent => {
+      const { getCollectionAlbumCount } = await import(
+        '@/lib/cache/count-cache'
+      );
       return getCollectionAlbumCount(parent.id);
     },
     totalDuration: () => 0, // Placeholder

@@ -172,4 +172,10 @@ _with_header.csv
 PROMPT.md
 ralph-prompt.txt
 docs/social-feed-*.md
-docs/
+docs/.planning/
+.planning/
+
+# GSD workflow files (installed locally, don't need tracking)
+.claude/agents/gsd-*.md
+.claude/commands/gsd/
+.claude/hooks/gsd-*.js
