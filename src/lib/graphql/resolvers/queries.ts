@@ -1319,18 +1319,22 @@ export const queryResolvers: QueryResolvers = {
 
   userCollections: async (_, { userId }, { prisma }) => {
     try {
+      const { cache, CACHE_KEYS, CACHE_TTLS } = await import('@/lib/cache');
+      const cacheKey = CACHE_KEYS.userCollections(userId);
+      const cached = await cache.get(cacheKey);
+      if (cached !== null) return cached;
+
       const collections = await prisma.collection.findMany({
         where: {
           userId,
           OR: [
             { isPublic: true },
-            // Note: In the future, we might want to add logic here
-            // to show private collections if the requesting user
-            // is the owner or has permission to view them
           ],
         },
         orderBy: { updatedAt: 'desc' },
       });
+
+      await cache.set(cacheKey, collections, CACHE_TTLS.USER_COLLECTIONS);
       return collections;
     } catch (error) {
       throw new GraphQLError(`Failed to fetch user collections: ${error}`);
