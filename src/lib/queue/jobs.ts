@@ -28,9 +28,6 @@ export const JOB_TYPES = {
   ENRICH_ALBUM: 'enrichment:album',
   ENRICH_ARTIST: 'enrichment:artist',
   ENRICH_TRACK: 'enrichment:track',
-  // Spotify Sync Jobs (batch processing)
-  SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
-  SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
   DEEZER_IMPORT_PLAYLIST: 'deezer:import-playlist',
   // MusicBrainz Sync Jobs (batch processing)
   MUSICBRAINZ_SYNC_NEW_RELEASES: 'musicbrainz:sync-new-releases',
@@ -214,35 +211,6 @@ export interface EnrichTrackJobData {
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;
-}
-
-// ============================================================================
-// Spotify Sync Job Data Interfaces
-// ============================================================================
-
-export interface SpotifySyncNewReleasesJobData {
-  limit?: number; // Number of releases to fetch per page (default: 50)
-  country?: string; // Country code (default: 'US')
-  priority?: 'low' | 'medium' | 'high';
-  requestId?: string;
-  source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
-
-  // Tag-based filtering for Spotify Search API
-  genreTags?: string[]; // e.g., ['rock', 'metal', 'pop']
-  year?: number; // e.g., 2025 (defaults to current year)
-
-  // Pagination and follower filtering (Task 11)
-  pages?: number; // Number of pages to fetch (default: 1, max: 4 for 200 albums)
-  minFollowers?: number; // Minimum artist followers to include album (default: undefined = no filtering)
-}
-
-export interface SpotifySyncFeaturedPlaylistsJobData {
-  limit?: number; // Number of playlists to process (default: 10)
-  country?: string; // Country code (default: 'US')
-  extractAlbums?: boolean; // Whether to extract albums from playlist tracks (default: true)
-  priority?: 'low' | 'medium' | 'high';
-  requestId?: string;
-  source?: 'scheduled' | 'manual' | 'graphql';
 }
 
 // ============================================================================
@@ -432,8 +400,6 @@ export type MusicBrainzJobData =
   | EnrichAlbumJobData
   | EnrichArtistJobData
   | EnrichTrackJobData
-  | SpotifySyncNewReleasesJobData
-  | SpotifySyncFeaturedPlaylistsJobData
   | DeezerImportPlaylistJobData
   | MusicBrainzSyncNewReleasesJobData
   | RunDiscogsMigrationJobData

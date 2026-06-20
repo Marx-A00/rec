@@ -66,7 +66,6 @@ function formatDistanceToNow(date: Date): string {
 
 /** Filter values that should query the SyncJob Postgres table */
 const SYNC_FILTERS: Record<string, SyncJobType | undefined> = {
-  spotify: SyncJobType.SpotifyNewReleases,
   musicbrainz: SyncJobType.MusicbrainzNewReleases,
   listenbrainz: SyncJobType.ListenbrainzFreshReleases,
   'deezer-editorial': SyncJobType.DeezerEditorialReleases,
@@ -76,8 +75,6 @@ type SyncJobRecord = GetSyncJobsQuery['syncJobs']['jobs'][number];
 
 function syncJobTypeToName(jobType: SyncJobType): string {
   switch (jobType) {
-    case SyncJobType.SpotifyNewReleases:
-      return 'spotify:sync-new-releases';
     case SyncJobType.MusicbrainzNewReleases:
       return 'musicbrainz:sync-new-releases';
     case SyncJobType.ListenbrainzFreshReleases:
@@ -382,7 +379,6 @@ export function JobHistoryPanel() {
                 </SelectTrigger>
                 <SelectContent className='bg-zinc-800 border-zinc-700'>
                   <SelectItem value='all'>All Job Types</SelectItem>
-                  <SelectItem value='spotify'>Spotify Sync</SelectItem>
                   <SelectItem value='musicbrainz'>MusicBrainz Sync</SelectItem>
                   <SelectItem value='enrichment'>Enrichment</SelectItem>
                   <SelectItem value='cache'>Cache</SelectItem>

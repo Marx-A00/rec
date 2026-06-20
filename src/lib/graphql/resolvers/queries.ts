@@ -529,45 +529,7 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  // Spotify trending data from cache
-  spotifyTrending: async (_, __, { prisma }) => {
-    try {
-      // Get cached Spotify data
-      const cached = await prisma.cacheData.findUnique({
-        where: { key: 'spotify_trending' },
-      });
-
-      // If no cache or expired, trigger a sync
-      if (!cached || cached.expires < new Date()) {
-        // Return empty data with a flag to trigger client-side sync
-        return {
-          newReleases: [],
-          featuredPlaylists: [],
-          topCharts: [],
-          popularArtists: [],
-          needsSync: true,
-          expires: null,
-          lastUpdated: cached?.updatedAt || null,
-        };
-      }
-
-      // Return cached data
-      const data = cached.data as any;
-      return {
-        newReleases: data.newReleases || [],
-        featuredPlaylists: data.featuredPlaylists || [],
-        topCharts: data.topCharts || [],
-        popularArtists: data.popularArtists || [],
-        needsSync: false,
-        expires: cached.expires,
-        lastUpdated: cached.updatedAt,
-      };
-    } catch (error) {
-      throw new GraphQLError(`Failed to fetch Spotify trending data: ${error}`);
-    }
-  },
-
-  // Entity retrieval queries (placeholders)
+  // Entity retrieval queries
   artist: async (_, { id }, { prisma, activityTracker }) => {
     try {
       // Track entity interaction for priority management

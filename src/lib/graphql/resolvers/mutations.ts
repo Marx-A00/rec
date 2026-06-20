@@ -21,8 +21,6 @@ import type {
   CheckAlbumEnrichmentJobData,
   CheckArtistEnrichmentJobData,
   CheckTrackEnrichmentJobData,
-  SpotifySyncNewReleasesJobData,
-  SpotifySyncFeaturedPlaylistsJobData,
   DeezerImportPlaylistJobData,
   UncoverResetChallengesJobData,
 } from '@/lib/queue/jobs';
@@ -279,107 +277,6 @@ export const mutationResolvers: MutationResolvers = {
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to clear failed jobs: ${error}`);
-    }
-  },
-
-  // Spotify Sync mutation
-  triggerSpotifySync: async (_, { type }, { user }) => {
-    if (!user) {
-      throw new GraphQLError('Authentication required', {
-        extensions: { code: 'UNAUTHENTICATED' },
-      });
-    }
-    if (!isAdmin(user.role)) {
-      throw new GraphQLError('Admin access required', {
-        extensions: { code: 'FORBIDDEN' },
-      });
-    }
-    try {
-      const queue = getMusicBrainzQueue();
-      const results = {
-        success: true,
-        jobId: null as string | null,
-        message: '',
-        stats: {
-          albumsQueued: 0,
-          albumsCreated: 0,
-          albumsUpdated: 0,
-          enrichmentJobsQueued: 0,
-        },
-      };
-
-      // Queue the appropriate job(s) based on type
-      if (type === 'NEW_RELEASES' || type === 'BOTH') {
-        // Parse pagination setting (Task 11)
-        const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
-          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
-          : 3; // Default to 3 pages
-
-        // Parse follower filter (Task 11)
-        const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
-          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
-          : 100000; // Default to 100k+ followers
-
-        const jobData: SpotifySyncNewReleasesJobData = {
-          limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
-          country: process.env.SPOTIFY_COUNTRY || 'US',
-          priority: 'high',
-          source: 'graphql',
-          requestId: `manual_new_releases_${Date.now()}`,
-          // Pagination and follower filtering (Task 11)
-          pages,
-          minFollowers,
-        };
-
-        const job = await queue.addJob(
-          JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES,
-          jobData,
-          {
-            priority: 1, // High priority for manual triggers
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 5000 },
-          }
-        );
-
-        results.jobId = job.id;
-        results.message = `Queued Spotify new releases sync (Job ID: ${job.id}, ${pages} pages, ${minFollowers.toLocaleString()}+ followers)`;
-        console.log(`📀 Triggered Spotify new releases sync: Job ${job.id}`);
-      }
-
-      if (type === 'FEATURED_PLAYLISTS' || type === 'BOTH') {
-        const jobData: SpotifySyncFeaturedPlaylistsJobData = {
-          limit: 10,
-          country: process.env.SPOTIFY_COUNTRY || 'US',
-          extractAlbums: true,
-          priority: 'high',
-          source: 'manual_trigger',
-          requestId: `manual_playlists_${Date.now()}`,
-        };
-
-        const job = await queue.addJob(
-          JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS,
-          jobData,
-          {
-            priority: 1,
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 5000 },
-          }
-        );
-
-        if (type === 'FEATURED_PLAYLISTS') {
-          results.jobId = job.id;
-          results.message = `Queued Spotify featured playlists sync (Job ID: ${job.id})`;
-        } else {
-          results.message = `Queued both Spotify sync jobs`;
-        }
-        console.log(
-          `🎧 Triggered Spotify featured playlists sync: Job ${job.id}`
-        );
-      }
-
-      return results;
-    } catch (error) {
-      throw new GraphQLError(`Failed to trigger Spotify sync: ${error}`);
     }
   },
 

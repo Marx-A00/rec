@@ -163,7 +163,7 @@ class SpotifyClient {
 
   /**
    * Access the underlying SDK for advanced operations
-   * (e.g. browse.getNewReleases, search with tag:new).
+   * (e.g. search with tag:new).
    * Callers should wrap with withSpotifyRetry themselves.
    */
   get raw(): SpotifyApi {

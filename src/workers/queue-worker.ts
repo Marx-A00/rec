@@ -24,11 +24,6 @@ import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/processors';
 import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
 import {
-  initializeSpotifyScheduler,
-  shutdownSpotifyScheduler,
-  spotifyScheduler,
-} from '@/lib/spotify/scheduler';
-import {
   initializeMusicBrainzScheduler,
   shutdownMusicBrainzScheduler,
   musicBrainzScheduler,
@@ -100,14 +95,6 @@ class MusicBrainzWorkerService {
     console.log('');
     console.log(chalk.gray('  ── Schedulers ──'));
     console.log('');
-
-    // Spotify scheduler
-    const spotifySchedulerStarted = await initializeSpotifyScheduler();
-    if (spotifySchedulerStarted) {
-      console.log('  ✅ Spotify scheduler enabled');
-    } else {
-      console.log('  ⏸️  Spotify scheduler disabled');
-    }
 
     // MusicBrainz scheduler
     const mbSchedulerStarted = await initializeMusicBrainzScheduler();
@@ -571,81 +558,6 @@ class MusicBrainzWorkerService {
       }
     });
 
-    // ─── Spotify Scheduler ─────────────────────────────────────────
-
-    app.get('/spotify/metrics', async (_req, res) => {
-      try {
-        const { spotifyMetrics } = await import('@/lib/spotify/error-handling');
-        const metrics = spotifyMetrics.getMetrics();
-        const status = await spotifyScheduler.getStatus();
-
-        res.json({
-          scheduler: {
-            isRunning: status.isRunning,
-            activeSchedules: status.activeSchedules,
-            config: status.config,
-          },
-          metrics: {
-            ...metrics,
-            successRate: spotifyMetrics.getSuccessRate(),
-          },
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        res.status(500).json({
-          error: 'Failed to get Spotify metrics',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    });
-
-    app.post('/spotify/:action', async (req, res) => {
-      const { action } = req.params;
-
-      try {
-        switch (action) {
-          case 'start': {
-            // setSchedulerEnabled('spotify', true) is called inside start()
-            // so initializeSpotifyScheduler will see it as enabled
-            await setSchedulerEnabled('spotify', true);
-            const started = await initializeSpotifyScheduler();
-            res.json({
-              success: started,
-              message: started
-                ? 'Spotify scheduler started'
-                : 'Failed to start (check credentials)',
-            });
-            break;
-          }
-
-          case 'stop': {
-            await spotifyScheduler.stop();
-            res.json({ success: true, message: 'Spotify scheduler stopped' });
-            break;
-          }
-
-          case 'sync': {
-            await spotifyScheduler.triggerSync();
-            res.json({
-              success: true,
-              message: 'New releases sync triggered',
-            });
-            break;
-          }
-
-          default:
-            res.status(400).json({
-              error: 'Invalid action. Use: start, stop, or sync',
-            });
-        }
-      } catch (error) {
-        res.status(500).json({
-          error: 'Spotify action failed',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    });
-
     // ─── MusicBrainz Scheduler ─────────────────────────────────────
 
     app.get('/musicbrainz/metrics', async (_req, res) => {
@@ -1037,16 +949,12 @@ class MusicBrainzWorkerService {
           '/queue/metrics - Queue Metrics',
           '/jobs/history - Job History with Stats',
           '/alerts - Active & Historical Alerts',
-          '/spotify/metrics - Spotify Metrics',
           'POST /queue/pause - Pause Queue',
           'POST /queue/resume - Resume Queue',
           'POST /queue/cleanup - Cleanup Old Jobs',
           'POST /jobs/:id/retry - Retry Failed Job',
           'POST /alerts/:id/acknowledge - Acknowledge Alert',
           'POST /alerts/:id/resolve - Resolve Alert',
-          'POST /spotify/start - Start Spotify Scheduler',
-          'POST /spotify/stop - Stop Spotify Scheduler',
-          'POST /spotify/sync - Trigger Spotify Sync',
           '/musicbrainz/metrics - MusicBrainz Metrics',
           'POST /musicbrainz/start - Start MusicBrainz Scheduler',
           'POST /musicbrainz/stop - Stop MusicBrainz Scheduler',
@@ -1143,10 +1051,6 @@ class MusicBrainzWorkerService {
           console.log('🛑 Closing HTTP server...');
           this.server.close();
         }
-
-        // Stop Spotify scheduler
-        console.log('🛑 Stopping Spotify scheduler...');
-        shutdownSpotifyScheduler();
 
         // Stop MusicBrainz scheduler
         console.log('🛑 Stopping MusicBrainz scheduler...');

@@ -1698,7 +1698,6 @@ export type Mutation = {
   triggerArtistEnrichment: EnrichmentResult;
   triggerDeezerEditorialSync: DeezerEditorialSyncResult;
   triggerListenBrainzSync: ListenBrainzSyncResult;
-  triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   /** Admin: Unpin a curated challenge (remove date override) */
   unpinCuratedChallenge: CuratedChallengeEntry;
@@ -1905,10 +1904,6 @@ export type MutationTriggerArtistEnrichmentArgs = {
   force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
-};
-
-export type MutationTriggerSpotifySyncArgs = {
-  type: SpotifySyncType;
 };
 
 export type MutationUnfollowUserArgs = {
@@ -2198,7 +2193,6 @@ export type Query = {
   searchTracks: Array<Track>;
   similarArtists: Array<SimilarArtist>;
   socialFeed: ActivityFeed;
-  spotifyTrending: SpotifyTrendingData;
   suggestedGameAlbums: SuggestedGameAlbumsResult;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
@@ -2813,100 +2807,6 @@ export type SourceStat = {
   successRate: Scalars['Float']['output'];
 };
 
-export type SpotifyAlbum = {
-  __typename?: 'SpotifyAlbum';
-  artistIds: Array<Scalars['String']['output']>;
-  artists: Scalars['String']['output'];
-  id: Scalars['String']['output'];
-  image?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  releaseDate: Scalars['String']['output'];
-  spotifyUrl: Scalars['String']['output'];
-  totalTracks: Scalars['Int']['output'];
-  type: Scalars['String']['output'];
-};
-
-export type SpotifyArtist = {
-  __typename?: 'SpotifyArtist';
-  followers: Scalars['Int']['output'];
-  genres: Array<Scalars['String']['output']>;
-  id: Scalars['String']['output'];
-  image?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  popularity: Scalars['Int']['output'];
-  spotifyUrl: Scalars['String']['output'];
-};
-
-export type SpotifyPlaylist = {
-  __typename?: 'SpotifyPlaylist';
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['String']['output'];
-  image?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  owner: Scalars['String']['output'];
-  spotifyUrl: Scalars['String']['output'];
-  tracksTotal: Scalars['Int']['output'];
-};
-
-export type SpotifyPopularArtists = {
-  __typename?: 'SpotifyPopularArtists';
-  artists: Array<SpotifyArtist>;
-  searchTerm: Scalars['String']['output'];
-};
-
-export type SpotifySyncResult = {
-  __typename?: 'SpotifySyncResult';
-  jobId?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  stats?: Maybe<SpotifySyncStats>;
-  success: Scalars['Boolean']['output'];
-};
-
-export type SpotifySyncStats = {
-  __typename?: 'SpotifySyncStats';
-  albumsCreated: Scalars['Int']['output'];
-  albumsQueued: Scalars['Int']['output'];
-  albumsUpdated: Scalars['Int']['output'];
-  enrichmentJobsQueued: Scalars['Int']['output'];
-};
-
-export enum SpotifySyncType {
-  Both = 'BOTH',
-  FeaturedPlaylists = 'FEATURED_PLAYLISTS',
-  NewReleases = 'NEW_RELEASES',
-}
-
-export type SpotifyTopChart = {
-  __typename?: 'SpotifyTopChart';
-  playlistId: Scalars['String']['output'];
-  playlistImage?: Maybe<Scalars['String']['output']>;
-  playlistName: Scalars['String']['output'];
-  tracks: Array<SpotifyTrack>;
-};
-
-export type SpotifyTrack = {
-  __typename?: 'SpotifyTrack';
-  album?: Maybe<Scalars['String']['output']>;
-  albumId?: Maybe<Scalars['String']['output']>;
-  artistIds?: Maybe<Array<Scalars['String']['output']>>;
-  artists: Scalars['String']['output'];
-  id: Scalars['String']['output'];
-  image?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  popularity?: Maybe<Scalars['Int']['output']>;
-};
-
-export type SpotifyTrendingData = {
-  __typename?: 'SpotifyTrendingData';
-  expires?: Maybe<Scalars['DateTime']['output']>;
-  featuredPlaylists: Array<SpotifyPlaylist>;
-  lastUpdated?: Maybe<Scalars['DateTime']['output']>;
-  needsSync: Scalars['Boolean']['output'];
-  newReleases: Array<SpotifyAlbum>;
-  popularArtists: Array<SpotifyPopularArtists>;
-  topCharts: Array<SpotifyTopChart>;
-};
-
 /** Input for submitting a completed game result to the server */
 export type SubmitGameResultInput = {
   attemptCount: Scalars['Int']['input'];
@@ -2992,8 +2892,6 @@ export enum SyncJobType {
   ListenbrainzFreshReleases = 'LISTENBRAINZ_FRESH_RELEASES',
   MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
   MusicbrainzSync = 'MUSICBRAINZ_SYNC',
-  SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
-  SpotifyNewReleases = 'SPOTIFY_NEW_RELEASES',
 }
 
 export type SyncJobsConnection = {

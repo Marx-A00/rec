@@ -9,25 +9,7 @@ import {
 } from '@/lib/config/app-config';
 import { createRedisConnection } from '@/lib/queue/redis';
 
-interface SpotifyConfig {
-  limit: number;
-  pages: number;
-  country: string;
-  minFollowers: number;
-  genreTags: string[];
-  year: number;
-  maxAlbums: number; // limit * pages
-}
-
 interface SchedulerStatus {
-  spotify: {
-    enabled: boolean;
-    nextRunAt: string | null;
-    lastRunAt: string | null;
-    intervalMinutes: number;
-    jobKey: string | null;
-    config: SpotifyConfig;
-  };
   musicbrainz: {
     enabled: boolean;
     nextRunAt: string | null;
@@ -80,10 +62,7 @@ export async function GET() {
     // Get repeatable jobs (scheduled syncs)
     const repeatableJobs = await queue.getRepeatableJobs();
 
-    // Find Spotify and MusicBrainz scheduled jobs
-    const spotifyJob = repeatableJobs.find(job =>
-      job.key.includes('spotify-new-releases')
-    );
+    // Find scheduled jobs
     const musicbrainzJob = repeatableJobs.find(job =>
       job.key.includes('musicbrainz-new-releases')
     );
@@ -94,16 +73,14 @@ export async function GET() {
       job.key.includes('deezer-editorial-releases')
     );
 
-    // Read scheduler enabled state and LB/Deezer config from database (source of truth)
+    // Read scheduler enabled state and config from database (source of truth)
     const [
-      spotifyEnabled,
       musicbrainzEnabled,
       listenbrainzEnabled,
       deezerEditorialEnabled,
       lbConfig,
       deezerConfig,
     ] = await Promise.all([
-      getSchedulerEnabled('spotify'),
       getSchedulerEnabled('musicbrainz'),
       getSchedulerEnabled('listenbrainz'),
       getSchedulerEnabled('deezer-editorial'),
@@ -114,10 +91,6 @@ export async function GET() {
     // Get delayed jobs to find next scheduled runs
     const delayedJobs = await queue.getDelayed();
 
-    // Find next Spotify sync
-    const nextSpotifyJob = delayedJobs.find(job =>
-      job.name.includes('spotify')
-    );
     const nextMusicbrainzJob = delayedJobs.find(
       job =>
         job.name.includes('musicbrainz') && job.name.includes('new-releases')
@@ -131,9 +104,6 @@ export async function GET() {
 
     // Get recent completed jobs to find last run times
     const completedJobs = await queue.getCompleted(0, 50);
-    const lastSpotifySync = completedJobs.find(job =>
-      job.name.includes('spotify-sync-new-releases')
-    );
     const lastMusicbrainzSync = completedJobs.find(job =>
       job.name.includes('musicbrainz-sync-new-releases')
     );
@@ -161,8 +131,10 @@ export async function GET() {
       nextJob: (typeof delayedJobs)[0] | undefined
     ): string | null => {
       // BullMQ provides 'next' timestamp directly on repeatable jobs
-      if (job && (job as any).next) {
-        return new Date((job as any).next).toISOString();
+      if (job && (job as Record<string, unknown>).next) {
+        return new Date(
+          (job as Record<string, unknown>).next as number
+        ).toISOString();
       }
 
       // Fallback: check delayed queue
@@ -182,7 +154,9 @@ export async function GET() {
       if (!job) return 0;
 
       // Extract from pattern field (format: ':604800000')
-      const pattern = (job as any).pattern;
+      const pattern = (job as Record<string, unknown>).pattern as
+        | string
+        | undefined;
       if (pattern && pattern.startsWith(':')) {
         const ms = parseInt(pattern.slice(1), 10);
         if (!isNaN(ms) && ms > 0) {
@@ -191,7 +165,7 @@ export async function GET() {
       }
 
       // Fallback: extract from key (ends with :::milliseconds)
-      const key = (job as any).key;
+      const key = (job as Record<string, unknown>).key as string | undefined;
       if (key) {
         const match = key.match(/:::(\d+)$/);
         if (match) {
@@ -205,42 +179,7 @@ export async function GET() {
       return 0;
     };
 
-    // Read Spotify config from env vars (same source as scheduler)
-    const limit = parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50');
-    const pages = parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES || '3');
-    const country = process.env.SPOTIFY_COUNTRY || 'US';
-    const minFollowers = parseInt(
-      process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS || '100000'
-    );
-    const genreTagsRaw = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS || '';
-    const genreTags = genreTagsRaw
-      ? genreTagsRaw.split(',').map(t => t.trim())
-      : [];
-    const year = parseInt(
-      process.env.SPOTIFY_NEW_RELEASES_YEAR || String(new Date().getFullYear())
-    );
-
-    const spotifyConfig: SpotifyConfig = {
-      limit,
-      pages,
-      country,
-      minFollowers,
-      genreTags,
-      year,
-      maxAlbums: limit * pages,
-    };
-
     const status: SchedulerStatus = {
-      spotify: {
-        enabled: spotifyEnabled,
-        nextRunAt: getNextRunTime(spotifyJob, nextSpotifyJob),
-        lastRunAt: lastSpotifySync?.finishedOn
-          ? new Date(lastSpotifySync.finishedOn).toISOString()
-          : null,
-        intervalMinutes: getIntervalMinutes(spotifyJob),
-        jobKey: spotifyJob?.key || null,
-        config: spotifyConfig,
-      },
       musicbrainz: {
         enabled: musicbrainzEnabled,
         nextRunAt: getNextRunTime(musicbrainzJob, nextMusicbrainzJob),

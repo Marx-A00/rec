@@ -21,8 +21,6 @@ import {
   type EnrichAlbumJobData,
   type EnrichArtistJobData,
   type EnrichTrackJobData,
-  type SpotifySyncNewReleasesJobData,
-  type SpotifySyncFeaturedPlaylistsJobData,
   type DeezerImportPlaylistJobData,
   type MusicBrainzSyncNewReleasesJobData,
   type CacheAlbumCoverArtJobData,
@@ -63,10 +61,6 @@ import {
   handleEnrichArtist,
   handleEnrichTrack,
 } from './enrichment-processor';
-import {
-  handleSpotifySyncNewReleases,
-  handleSpotifySyncFeaturedPlaylists,
-} from './spotify-processor';
 import {
   handleCacheAlbumCoverArt,
   handleCacheArtistImage,
@@ -226,21 +220,6 @@ export async function processMusicBrainzJob(
 
       case JOB_TYPES.ENRICH_TRACK:
         result = await handleEnrichTrack(job as Job<EnrichTrackJobData>);
-        break;
-
-      // Spotify sync handlers
-      case JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES:
-        result = await handleSpotifySyncNewReleases(
-          job.data as SpotifySyncNewReleasesJobData,
-          job.id
-        );
-        break;
-
-      case JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS:
-        result = await handleSpotifySyncFeaturedPlaylists(
-          job.data as SpotifySyncFeaturedPlaylistsJobData,
-          job.id
-        );
         break;
 
       case JOB_TYPES.DEEZER_IMPORT_PLAYLIST:

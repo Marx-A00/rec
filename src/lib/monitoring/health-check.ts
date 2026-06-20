@@ -325,10 +325,8 @@ export class HealthChecker {
       // Check for registered repeatable jobs (the actual schedules)
       const queue = getMusicBrainzQueue();
       const repeatableJobs = await queue.getQueue().getRepeatableJobs();
-      const spotifySchedules = repeatableJobs.filter(
-        job =>
-          job.key.includes('spotify-new-releases-schedule') ||
-          job.key.includes('spotify-featured-playlists-schedule')
+      const spotifySchedules = repeatableJobs.filter(job =>
+        job.key.includes('spotify-new-releases-schedule')
       );
       const schedulerConfigured = spotifySchedules.length > 0;
 
