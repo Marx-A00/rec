@@ -397,23 +397,32 @@ export const resolvers: Resolvers = {
         // Fall through to the live fetch path below
       }
 
-      // MUSICBRAINZ/DISCOGS or LOCAL fallback: fetch live from APIs
+      // MUSICBRAINZ/DISCOGS or LOCAL fallback: check Redis cache, queue on miss
       if (!artistName) {
         throw new GraphQLError('artistName is required for non-LOCAL source');
       }
 
-      const { fetchSimilarArtistsFromAPIs } = await import(
-        '@/lib/api/similar-artists-service'
-      );
+      const { cache, CACHE_KEYS } = await import('@/lib/cache');
 
-      const results = await fetchSimilarArtistsFromAPIs(
-        artistName,
-        id, // id is the MBID for external artists
-        limit
-      );
+      const cacheKey = CACHE_KEYS.similarArtists(id);
+      const cached = await cache.get<
+        Array<{ name: string; mbid: string; similarity: number; source: string }>
+      >(cacheKey);
 
-      // Enrich with local artist data
-      const mbids = results.map(r => r.musicbrainzId);
+      // Cache miss — queue background job and return empty (frontend polls)
+      if (cached === null) {
+        const { getMusicBrainzQueue, JOB_TYPES } = await import('@/lib/queue');
+        const queue = getMusicBrainzQueue();
+        await queue.addJob(JOB_TYPES.FETCH_SIMILAR_ARTISTS, {
+          artistId: id,
+          mbid: id,
+          artistName,
+        });
+        return [];
+      }
+
+      // Cache hit — enrich with local artist data
+      const mbids = cached.map(r => r.mbid);
       const localArtists = mbids.length > 0
         ? await prisma.artist.findMany({
             where: { musicbrainzId: { in: mbids } },
@@ -430,11 +439,11 @@ export const resolvers: Resolvers = {
         localArtists.map(a => [a.musicbrainzId, a])
       );
 
-      return results.map(r => {
-        const local = mbidToLocal.get(r.musicbrainzId);
+      const enriched = cached.map(r => {
+        const local = mbidToLocal.get(r.mbid);
         return {
           name: r.name,
-          musicbrainzId: r.musicbrainzId,
+          musicbrainzId: r.mbid,
           similarity: r.similarity,
           imageUrl: local?.imageUrl || null,
           cloudflareImageId: local?.cloudflareImageId || null,
@@ -442,6 +451,15 @@ export const resolvers: Resolvers = {
           source: r.source,
         };
       });
+
+      // Sort: artists with images first, then by similarity
+      return enriched
+        .sort((a, b) => {
+          if (a.imageUrl && !b.imageUrl) return -1;
+          if (!a.imageUrl && b.imageUrl) return 1;
+          return b.similarity - a.similarity;
+        })
+        .slice(0, limit);
     },
 
     // Enhanced search using SearchOrchestrator
