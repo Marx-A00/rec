@@ -10,6 +10,9 @@ mutation UpdateUserSettings(
   $showArcadeButton: Boolean
   $arcadeButtonColor: String
   $arcadeButtonSound: String
+  $showLastfmStats: Boolean
+  $lastfmSyncEnabled: Boolean
+  $showTasteProfile: Boolean
 ) {
   updateUserSettings(
     theme: $theme
@@ -23,6 +26,9 @@ mutation UpdateUserSettings(
     showArcadeButton: $showArcadeButton
     arcadeButtonColor: $arcadeButtonColor
     arcadeButtonSound: $arcadeButtonSound
+    showLastfmStats: $showLastfmStats
+    lastfmSyncEnabled: $lastfmSyncEnabled
+    showTasteProfile: $showTasteProfile
   ) {
     id
     userId
@@ -42,6 +48,11 @@ mutation UpdateUserSettings(
     showArcadeButton
     arcadeButtonColor
     arcadeButtonSound
+    lastfmUsername
+    lastfmConnectedAt
+    showLastfmStats
+    lastfmSyncEnabled
+    showTasteProfile
     createdAt
     updatedAt
   }

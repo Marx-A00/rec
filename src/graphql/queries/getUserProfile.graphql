@@ -15,6 +15,17 @@ query GetUserProfile($userId: String!) {
       showArcadeButton
       arcadeButtonColor
       arcadeButtonSound
+      showLastfmStats
+    }
+    lastfmStats {
+      username
+      totalPlaycount
+      topArtists {
+        name
+        playcount
+        artistId
+      }
+      lastSyncedAt
     }
   }
 }

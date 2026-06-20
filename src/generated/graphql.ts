@@ -3898,6 +3898,9 @@ export type UpdateUserSettingsMutationVariables = Exact<{
   showArcadeButton?: InputMaybe<Scalars['Boolean']['input']>;
   arcadeButtonColor?: InputMaybe<Scalars['String']['input']>;
   arcadeButtonSound?: InputMaybe<Scalars['String']['input']>;
+  showLastfmStats?: InputMaybe<Scalars['Boolean']['input']>;
+  lastfmSyncEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  showTasteProfile?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type UpdateUserSettingsMutation = {
@@ -3922,6 +3925,11 @@ export type UpdateUserSettingsMutation = {
     showArcadeButton: boolean;
     arcadeButtonColor: string;
     arcadeButtonSound: string;
+    lastfmUsername?: string | null;
+    lastfmConnectedAt?: Date | null;
+    showLastfmStats: boolean;
+    lastfmSyncEnabled: boolean;
+    showTasteProfile: boolean;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -5868,6 +5876,19 @@ export type GetUserProfileQuery = {
       showArcadeButton: boolean;
       arcadeButtonColor: string;
       arcadeButtonSound: string;
+      showLastfmStats: boolean;
+    } | null;
+    lastfmStats?: {
+      __typename?: 'LastfmStats';
+      username: string;
+      totalPlaycount?: number | null;
+      lastSyncedAt?: Date | null;
+      topArtists: Array<{
+        __typename?: 'LastfmTopArtist';
+        name: string;
+        playcount: number;
+        artistId?: string | null;
+      }>;
     } | null;
   } | null;
 };
@@ -5983,6 +6004,41 @@ export type TriggerLastfmSyncMutationVariables = Exact<{
 export type TriggerLastfmSyncMutation = {
   __typename?: 'Mutation';
   triggerLastfmSync: boolean;
+};
+
+export type GetUserLastfmStatsQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type GetUserLastfmStatsQuery = {
+  __typename?: 'Query';
+  user?: {
+    __typename?: 'User';
+    id: string;
+    lastfmStats?: {
+      __typename?: 'LastfmStats';
+      username: string;
+      totalPlaycount?: number | null;
+      totalArtists?: number | null;
+      totalAlbums?: number | null;
+      lastSyncedAt?: Date | null;
+      topArtists: Array<{
+        __typename?: 'LastfmTopArtist';
+        name: string;
+        playcount: number;
+        mbid?: string | null;
+        artistId?: string | null;
+      }>;
+      topAlbums: Array<{
+        __typename?: 'LastfmTopAlbum';
+        name: string;
+        artistName: string;
+        playcount: number;
+        mbid?: string | null;
+        albumId?: string | null;
+      }>;
+    } | null;
+  } | null;
 };
 
 export type GetLatestReleasesQueryVariables = Exact<{
@@ -6144,6 +6200,11 @@ export type GetMySettingsQuery = {
     showArcadeButton: boolean;
     arcadeButtonColor: string;
     arcadeButtonSound: string;
+    lastfmUsername?: string | null;
+    lastfmConnectedAt?: Date | null;
+    showLastfmStats: boolean;
+    lastfmSyncEnabled: boolean;
+    showTasteProfile: boolean;
     createdAt: Date;
     updatedAt: Date;
   } | null;
@@ -8096,7 +8157,7 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const UpdateUserSettingsDocument = `
-    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean, $showArcadeButton: Boolean, $arcadeButtonColor: String, $arcadeButtonSound: String) {
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean, $showArcadeButton: Boolean, $arcadeButtonColor: String, $arcadeButtonSound: String, $showLastfmStats: Boolean, $lastfmSyncEnabled: Boolean, $showTasteProfile: Boolean) {
   updateUserSettings(
     theme: $theme
     language: $language
@@ -8109,6 +8170,9 @@ export const UpdateUserSettingsDocument = `
     showArcadeButton: $showArcadeButton
     arcadeButtonColor: $arcadeButtonColor
     arcadeButtonSound: $arcadeButtonSound
+    showLastfmStats: $showLastfmStats
+    lastfmSyncEnabled: $lastfmSyncEnabled
+    showTasteProfile: $showTasteProfile
   ) {
     id
     userId
@@ -8128,6 +8192,11 @@ export const UpdateUserSettingsDocument = `
     showArcadeButton
     arcadeButtonColor
     arcadeButtonSound
+    lastfmUsername
+    lastfmConnectedAt
+    showLastfmStats
+    lastfmSyncEnabled
+    showTasteProfile
     createdAt
     updatedAt
   }
@@ -13275,6 +13344,17 @@ export const GetUserProfileDocument = `
       showArcadeButton
       arcadeButtonColor
       arcadeButtonSound
+      showLastfmStats
+    }
+    lastfmStats {
+      username
+      totalPlaycount
+      topArtists {
+        name
+        playcount
+        artistId
+      }
+      lastSyncedAt
     }
   }
 }
@@ -13662,6 +13742,100 @@ export const useTriggerLastfmSyncMutation = <
 };
 
 useTriggerLastfmSyncMutation.getKey = () => ['TriggerLastfmSync'];
+
+export const GetUserLastfmStatsDocument = `
+    query GetUserLastfmStats($userId: String!) {
+  user(id: $userId) {
+    id
+    lastfmStats {
+      username
+      totalPlaycount
+      totalArtists
+      totalAlbums
+      topArtists {
+        name
+        playcount
+        mbid
+        artistId
+      }
+      topAlbums {
+        name
+        artistName
+        playcount
+        mbid
+        albumId
+      }
+      lastSyncedAt
+    }
+  }
+}
+    `;
+
+export const useGetUserLastfmStatsQuery = <
+  TData = GetUserLastfmStatsQuery,
+  TError = unknown,
+>(
+  variables: GetUserLastfmStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserLastfmStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserLastfmStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetUserLastfmStatsQuery, TError, TData>({
+    queryKey: ['GetUserLastfmStats', variables],
+    queryFn: fetcher<GetUserLastfmStatsQuery, GetUserLastfmStatsQueryVariables>(
+      GetUserLastfmStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetUserLastfmStatsQuery.getKey = (
+  variables: GetUserLastfmStatsQueryVariables
+) => ['GetUserLastfmStats', variables];
+
+export const useInfiniteGetUserLastfmStatsQuery = <
+  TData = InfiniteData<GetUserLastfmStatsQuery>,
+  TError = unknown,
+>(
+  variables: GetUserLastfmStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserLastfmStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserLastfmStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserLastfmStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetUserLastfmStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetUserLastfmStatsQuery, GetUserLastfmStatsQueryVariables>(
+            GetUserLastfmStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserLastfmStatsQuery.getKey = (
+  variables: GetUserLastfmStatsQueryVariables
+) => ['GetUserLastfmStats.infinite', variables];
 
 export const GetLatestReleasesDocument = `
     query GetLatestReleases($source: String = "all", $sortBy: String = "releaseDate", $sortOrder: String = "desc", $limit: Int = 200) {
@@ -14106,6 +14280,11 @@ export const GetMySettingsDocument = `
     showArcadeButton
     arcadeButtonColor
     arcadeButtonSound
+    lastfmUsername
+    lastfmConnectedAt
+    showLastfmStats
+    lastfmSyncEnabled
+    showTasteProfile
     createdAt
     updatedAt
   }

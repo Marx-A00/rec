@@ -13,6 +13,7 @@ import {
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
 import { uploadAvatar } from '@/lib/upload-avatar';
+
 import ProfileTab from './components/ProfileTab';
 import PreferencesTab from './components/PreferencesTab';
 import PrivacyTab from './components/PrivacyTab';
@@ -51,17 +52,6 @@ export default function SettingsPage() {
   // Arcade button toggle (admin only) — instant-save
   const [showArcadeButton, setShowArcadeButton] = useState(true);
 
-  // Preferences state
-  const [preferences, setPreferences] = useState({
-    profileVisibility: 'public',
-    followersVisible: true,
-    collectionsVisible: true,
-    recommendationsVisible: true,
-    allowFollows: true,
-    emailNotifications: true,
-    pushNotifications: false,
-  });
-
   // Update form when data loads
   useEffect(() => {
     if (userData?.user) {
@@ -89,9 +79,6 @@ export default function SettingsPage() {
     setAvatarBlob(null);
     setAvatarCleared(true);
   };
-
-  // Dirty state detection for preferences/privacy
-  const _hasPreferencesChanges = false; // TODO: implement when we load actual settings
 
   // Reset profile form to original values
   const handleDiscardProfileChanges = () => {
@@ -156,25 +143,6 @@ export default function SettingsPage() {
     } catch {
       setShowArcadeButton(!value);
       showToast('Failed to update arcade button', 'error');
-    }
-  };
-
-  const handlePreferencesSave = async () => {
-    try {
-      setIsLoading(true);
-
-      // Use GraphQL mutation for user settings
-      await updateSettingsMutation.mutateAsync({
-        profileVisibility: preferences.profileVisibility,
-        showRecentActivity: true,
-        showCollections: preferences.collectionsVisible,
-      });
-
-      showToast('Preferences saved successfully', 'success');
-    } catch {
-      showToast('Failed to save preferences', 'error');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -284,12 +252,7 @@ export default function SettingsPage() {
             onAvatarClear={handleAvatarClear}
           />
 
-          <PreferencesTab
-            preferences={preferences}
-            setPreferences={setPreferences}
-            isLoading={isLoading}
-            onSave={handlePreferencesSave}
-          />
+          <PreferencesTab />
 
           <PrivacyTab />
 

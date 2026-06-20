@@ -15,6 +15,7 @@ import ProfileImageLightbox from '@/components/ui/ProfileImageLightbox';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
 import ArcadeButton from '@/components/ui/ArcadeButton';
+import LastfmTopArtists from '@/components/lastfm/LastfmTopArtists';
 import { useNavigation } from '@/hooks/useNavigation';
 import ContextualHint from '@/components/ui/ContextualHint';
 import { CollectionAlbum } from '@/types/collection';
@@ -58,8 +59,7 @@ export default function ProfileClient({
   const isCollectionEditorEnabled =
     process.env.NEXT_PUBLIC_ENABLE_COLLECTION_EDITOR === 'true';
 
-  const { prefetchRoute, navigateTo, navigateToAlbum } =
-    useNavigation();
+  const { prefetchRoute, navigateTo, navigateToAlbum } = useNavigation();
 
   // Use the collection data passed from server component
   const allAlbums = useMemo(() => {
@@ -443,8 +443,34 @@ export default function ProfileClient({
             </section>
           ) : (
             <>
-              {/* Collection Section */}
-              {/* TODO: add in DnD grid with varying sizes or whatever */}
+              {/* Listening Activity Section */}
+              {user.lastfmStats && user.lastfmStats.topArtists.length > 0 && (
+                <section className='border-t border-zinc-800 pt-8'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <h2 className='text-xl font-semibold text-white'>
+                      Listening Activity
+                    </h2>
+                    <a
+                      href={`https://www.last.fm/user/${user.lastfmStats.username}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-xs text-zinc-500 hover:text-zinc-400 transition-colors'
+                    >
+                      Powered by Last.fm
+                    </a>
+                  </div>
+                  {user.lastfmStats.totalPlaycount != null && (
+                    <p className='text-sm text-zinc-400 mb-3'>
+                      {user.lastfmStats.totalPlaycount.toLocaleString()} total
+                      scrobbles
+                    </p>
+                  )}
+                  <LastfmTopArtists
+                    artists={user.lastfmStats.topArtists}
+                    limit={5}
+                  />
+                </section>
+              )}
 
               {/* Arcade Button - shown on admin/owner profiles, visible to everyone */}
               {(user.role === 'ADMIN' || user.role === 'OWNER') &&

@@ -32,3 +32,30 @@ mutation DisconnectLastfm {
 mutation TriggerLastfmSync {
   triggerLastfmSync
 }
+
+# Last.fm Stats Query
+query GetUserLastfmStats($userId: String!) {
+  user(id: $userId) {
+    id
+    lastfmStats {
+      username
+      totalPlaycount
+      totalArtists
+      totalAlbums
+      topArtists {
+        name
+        playcount
+        mbid
+        artistId
+      }
+      topAlbums {
+        name
+        artistName
+        playcount
+        mbid
+        albumId
+      }
+      lastSyncedAt
+    }
+  }
+}
