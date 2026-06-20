@@ -2,6 +2,10 @@ import { redis } from '@/lib/queue/redis';
 
 const MISS_SENTINEL = '__MISS__';
 
+function isCacheEnabled(): boolean {
+  return process.env.REDIS_CACHE_ENABLED !== 'false';
+}
+
 interface CacheMetrics {
   hits: number;
   misses: number;
@@ -24,6 +28,7 @@ class RedisCache {
   }
 
   async get<T>(key: string): Promise<T | null> {
+    if (!isCacheEnabled()) return null;
     try {
       const raw = await redis.get(key);
       if (raw === null) {
@@ -40,6 +45,7 @@ class RedisCache {
   }
 
   async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
+    if (!isCacheEnabled()) return;
     try {
       await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
     } catch (error) {
@@ -48,6 +54,7 @@ class RedisCache {
   }
 
   async setMiss(key: string, ttlSeconds: number): Promise<void> {
+    if (!isCacheEnabled()) return;
     try {
       await redis.set(key, JSON.stringify(MISS_SENTINEL), 'EX', ttlSeconds);
     } catch (error) {
