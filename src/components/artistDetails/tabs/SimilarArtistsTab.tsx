@@ -38,15 +38,15 @@ export default function SimilarArtistsTab({
       enabled: !!artistId,
       refetchInterval: (query) => {
         const results = query.state.data?.similarArtists;
-        // Poll every 3s for external sources until results arrive
-        return isExternal && (!results || results.length === 0) ? 3000 : false;
+        // Poll every 3s until results arrive (covers both local fallback and external)
+        return !results || results.length === 0 ? 3000 : false;
       },
     }
   );
 
   const [showAll, setShowAll] = useState(false);
   const similarArtists = data?.similarArtists || [];
-  const isFetching = isExternal && similarArtists.length === 0 && !error;
+  const isFetching = similarArtists.length === 0 && !error;
   const hasMore = similarArtists.length > INITIAL_COUNT;
   const displayedArtists = showAll ? similarArtists : similarArtists.slice(0, INITIAL_COUNT);
 
