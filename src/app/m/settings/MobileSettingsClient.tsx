@@ -17,6 +17,7 @@ import {
   User,
   RefreshCw,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
@@ -25,6 +26,10 @@ import {
   useGetUserProfileQuery,
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
+  useConnectLastfmMutation,
+  useConfirmLastfmConnectionMutation,
+  useDisconnectLastfmMutation,
+  useTriggerLastfmSyncMutation,
 } from '@/generated/graphql';
 
 interface PrivacySettings {
@@ -68,6 +73,25 @@ export default function MobileSettingsClient({
   } = useGetMySettingsQuery();
 
   const updateMutation = useUpdateUserSettingsMutation();
+  const connectLastfm = useConnectLastfmMutation();
+  const confirmConnection = useConfirmLastfmConnectionMutation();
+  const disconnectLastfm = useDisconnectLastfmMutation();
+  const triggerSync = useTriggerLastfmSyncMutation();
+
+  // Last.fm connection flow state
+  const [lastfmInput, setLastfmInput] = useState('');
+  const [lastfmPreview, setLastfmPreview] = useState<{
+    username: string;
+    profileImage?: string | null;
+    totalPlaycount?: number | null;
+    registeredAt?: string | null;
+  } | null>(null);
+  const [lastfmConnectError, setLastfmConnectError] = useState('');
+  const [showLastfmStats, setShowLastfmStats] = useState(true);
+  const [lastfmSyncEnabled, setLastfmSyncEnabled] = useState(true);
+
+  const isLastfmConnected = !!settingsData?.mySettings?.lastfmUsername;
+  const lastfmConnectedUsername = settingsData?.mySettings?.lastfmUsername;
 
   const [settings, setSettings] = useState<PrivacySettings>({
     profileVisibility: 'public',
@@ -90,6 +114,8 @@ export default function MobileSettingsClient({
         showCollectionAddsInFeed:
           settingsData.mySettings.showCollectionAddsInFeed ?? true,
       });
+      setShowLastfmStats(settingsData.mySettings.showLastfmStats ?? true);
+      setLastfmSyncEnabled(settingsData.mySettings.lastfmSyncEnabled ?? true);
     }
   }, [settingsData]);
 
@@ -129,6 +155,86 @@ export default function MobileSettingsClient({
       showToast('Settings updated', 'success');
     } catch {
       setSettings(previousSettings);
+      showToast('Failed to update settings', 'error');
+    }
+  };
+
+  // Last.fm handlers
+  const handleLastfmConnect = async () => {
+    if (!lastfmInput.trim()) return;
+    setLastfmConnectError('');
+    setLastfmPreview(null);
+
+    try {
+      const result = await connectLastfm.mutateAsync({
+        username: lastfmInput.trim(),
+      });
+      const conn = result.connectLastfm;
+      if (conn.success) {
+        setLastfmPreview({
+          username: conn.username!,
+          profileImage: conn.profileImage,
+          totalPlaycount: conn.totalPlaycount,
+          registeredAt: conn.registeredAt ? String(conn.registeredAt) : null,
+        });
+      } else {
+        setLastfmConnectError(conn.error || 'Could not find that Last.fm user');
+      }
+    } catch {
+      setLastfmConnectError('Failed to connect. Please try again.');
+    }
+  };
+
+  const handleLastfmConfirm = async () => {
+    if (!lastfmPreview) return;
+    try {
+      await confirmConnection.mutateAsync({
+        username: lastfmPreview.username,
+      });
+      queryClient.invalidateQueries({ queryKey: ['GetMySettings'] });
+      setLastfmPreview(null);
+      setLastfmInput('');
+      showToast(`Connected to Last.fm as ${lastfmPreview.username}`, 'success');
+    } catch {
+      showToast('Failed to confirm connection', 'error');
+    }
+  };
+
+  const handleLastfmDisconnect = async () => {
+    try {
+      await disconnectLastfm.mutateAsync({});
+      queryClient.invalidateQueries({ queryKey: ['GetMySettings'] });
+      showToast('Last.fm disconnected', 'success');
+    } catch {
+      showToast('Failed to disconnect', 'error');
+    }
+  };
+
+  const handleLastfmSync = async () => {
+    try {
+      await triggerSync.mutateAsync({});
+      showToast('Sync started', 'success');
+    } catch {
+      showToast('Failed to start sync', 'error');
+    }
+  };
+
+  const handleLastfmToggle = async (
+    field: 'showLastfmStats' | 'lastfmSyncEnabled',
+    value: boolean
+  ) => {
+    const prev = { showLastfmStats, lastfmSyncEnabled };
+    if (field === 'showLastfmStats') setShowLastfmStats(value);
+    if (field === 'lastfmSyncEnabled') setLastfmSyncEnabled(value);
+
+    try {
+      await updateMutation.mutateAsync({ [field]: value });
+      queryClient.invalidateQueries({ queryKey: ['GetMySettings'] });
+      showToast('Settings updated', 'success');
+    } catch {
+      if (field === 'showLastfmStats') setShowLastfmStats(prev.showLastfmStats);
+      if (field === 'lastfmSyncEnabled')
+        setLastfmSyncEnabled(prev.lastfmSyncEnabled);
       showToast('Failed to update settings', 'error');
     }
   };
@@ -352,10 +458,185 @@ export default function MobileSettingsClient({
             <div className='px-4 py-3 bg-zinc-800/50'>
               <p className='text-xs text-zinc-400'>
                 <span className='text-cosmic-latte font-medium'>Note:</span>{' '}
-                Activity feed is disabled, so individual feed settings won't
-                apply.
+                Activity feed is disabled, so individual feed settings
+                won&apos;t apply.
               </p>
             </div>
+          )}
+        </div>
+
+        {/* Integrations Section */}
+        <div className='bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden'>
+          <div className='px-4 py-3 border-b border-zinc-800'>
+            <h3 className='text-sm font-semibold text-zinc-400 uppercase tracking-wider'>
+              Integrations
+            </h3>
+          </div>
+
+          {isLastfmConnected ? (
+            <>
+              {/* Connected state */}
+              <div className='px-4 py-4 border-b border-zinc-800'>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-3'>
+                    <div className='w-8 h-8 rounded-full bg-[#D51007] flex items-center justify-center'>
+                      <span className='text-white text-xs font-bold'>fm</span>
+                    </div>
+                    <div>
+                      <p className='text-white font-medium'>
+                        Connected as{' '}
+                        <a
+                          href={`https://www.last.fm/user/${lastfmConnectedUsername}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='text-cosmic-latte inline-flex items-center gap-1'
+                        >
+                          {lastfmConnectedUsername}
+                          <ExternalLink className='w-3 h-3' />
+                        </a>
+                      </p>
+                      {settingsData?.mySettings?.lastfmConnectedAt && (
+                        <p className='text-xs text-zinc-500'>
+                          Connected{' '}
+                          {new Date(
+                            settingsData.mySettings.lastfmConnectedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={handleLastfmDisconnect}
+                    disabled={disconnectLastfm.isPending}
+                    className='text-sm text-red-400 min-h-[44px] px-3 disabled:opacity-50'
+                  >
+                    {disconnectLastfm.isPending
+                      ? 'Disconnecting...'
+                      : 'Disconnect'}
+                  </button>
+                </div>
+              </div>
+
+              <ToggleRow
+                title='Show Listening Stats'
+                description='Display scrobble stats on your profile'
+                checked={showLastfmStats}
+                onChange={v => handleLastfmToggle('showLastfmStats', v)}
+                disabled={updateMutation.isPending}
+              />
+
+              <ToggleRow
+                title='Auto-sync'
+                description='Automatically sync your Last.fm data'
+                checked={lastfmSyncEnabled}
+                onChange={v => handleLastfmToggle('lastfmSyncEnabled', v)}
+                disabled={updateMutation.isPending}
+              />
+
+              {/* Refresh Now button */}
+              <div className='px-4 py-4'>
+                <div className='flex items-center justify-between'>
+                  <div className='flex-1 pr-4'>
+                    <h4 className='font-medium text-white'>Refresh data</h4>
+                    <p className='text-sm text-zinc-400 mt-0.5'>
+                      Manually sync your latest listening data
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={handleLastfmSync}
+                    disabled={triggerSync.isPending}
+                    className='flex items-center gap-2 px-4 min-h-[44px] text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300 transition-colors disabled:opacity-50'
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${triggerSync.isPending ? 'animate-spin' : ''}`}
+                    />
+                    {triggerSync.isPending ? 'Syncing...' : 'Refresh Now'}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Disconnected state */}
+              <div className='px-4 py-4 space-y-4'>
+                <div className='flex items-center gap-3'>
+                  <div className='w-8 h-8 rounded-full bg-[#D51007] flex items-center justify-center'>
+                    <span className='text-white text-xs font-bold'>fm</span>
+                  </div>
+                  <div>
+                    <h4 className='font-medium text-white'>Last.fm</h4>
+                    <p className='text-sm text-zinc-400'>
+                      Import listening history and display stats
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex gap-3'>
+                  <input
+                    type='text'
+                    placeholder='Last.fm username'
+                    value={lastfmInput}
+                    onChange={e => {
+                      setLastfmInput(e.target.value);
+                      setLastfmConnectError('');
+                      setLastfmPreview(null);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleLastfmConnect();
+                    }}
+                    className='flex-1 px-4 min-h-[44px] bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-transparent text-sm'
+                  />
+                  <button
+                    type='button'
+                    onClick={handleLastfmConnect}
+                    disabled={!lastfmInput.trim() || connectLastfm.isPending}
+                    className='px-5 min-h-[44px] bg-cosmic-latte text-black font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
+                  >
+                    {connectLastfm.isPending ? (
+                      <Loader2 className='w-4 h-4 animate-spin' />
+                    ) : (
+                      'Connect'
+                    )}
+                  </button>
+                </div>
+
+                {lastfmConnectError && (
+                  <p className='text-sm text-red-400'>{lastfmConnectError}</p>
+                )}
+
+                {/* Preview card */}
+                {lastfmPreview && (
+                  <div className='bg-zinc-800/50 border border-green-700/30 rounded-lg p-4 space-y-3'>
+                    <div className='flex items-center gap-3'>
+                      <div className='w-10 h-10 rounded-full bg-zinc-700' />
+                      <div>
+                        <p className='text-white font-semibold'>
+                          {lastfmPreview.username}
+                        </p>
+                        <p className='text-sm text-zinc-400'>
+                          {lastfmPreview.totalPlaycount?.toLocaleString() ?? 0}{' '}
+                          scrobbles
+                          {lastfmPreview.registeredAt &&
+                            ` · Member since ${new Date(lastfmPreview.registeredAt).getFullYear()}`}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={handleLastfmConfirm}
+                      disabled={confirmConnection.isPending}
+                      className='w-full min-h-[44px] bg-cosmic-latte text-black font-medium rounded-lg disabled:opacity-50 transition-colors text-sm'
+                    >
+                      {confirmConnection.isPending
+                        ? 'Saving...'
+                        : 'Confirm Connection'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

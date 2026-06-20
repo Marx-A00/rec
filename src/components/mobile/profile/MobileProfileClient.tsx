@@ -24,6 +24,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileImageLightbox from '@/components/ui/ProfileImageLightbox';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import FollowButton from '@/components/profile/FollowButton';
+import LastfmTopArtists from '@/components/lastfm/LastfmTopArtists';
+import { useGetUserLastfmStatsQuery } from '@/generated/graphql';
 import { cn } from '@/lib/utils';
 
 interface UserData {
@@ -90,6 +92,12 @@ export default function MobileProfileClient({
   const [activeTab, setActiveTab] = useState<TabType>('recs');
   const [followerCountDelta, setFollowerCountDelta] = useState(0);
   const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
+
+  const { data: lastfmData } = useGetUserLastfmStatsQuery(
+    { userId: user.id },
+    { enabled: !!user.id }
+  );
+  const lastfmStats = lastfmData?.user?.lastfmStats;
 
   const displayedFollowersCount = user.followersCount + followerCountDelta;
 
@@ -239,6 +247,31 @@ export default function MobileProfileClient({
           </div>
         )}
       </section>
+
+      {/* Listening Activity */}
+      {lastfmStats && lastfmStats.topArtists.length > 0 && (
+        <div className='px-4 border-t border-zinc-800 pt-4 mt-2 mb-4'>
+          <div className='flex items-center justify-between mb-3'>
+            <h3 className='text-base font-semibold text-white'>
+              Listening Activity
+            </h3>
+            <a
+              href={`https://www.last.fm/user/${lastfmStats.username}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-xs text-zinc-500'
+            >
+              Powered by Last.fm
+            </a>
+          </div>
+          {lastfmStats.totalPlaycount != null && (
+            <p className='text-sm text-zinc-400 mb-3'>
+              {lastfmStats.totalPlaycount.toLocaleString()} total scrobbles
+            </p>
+          )}
+          <LastfmTopArtists artists={lastfmStats.topArtists} limit={5} />
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className='px-4 mb-4'>

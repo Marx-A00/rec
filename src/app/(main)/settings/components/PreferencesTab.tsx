@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 
 import { TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/toast';
+import ArtistPicker from '@/components/taste/ArtistPicker';
+import { SelectedArtist } from '@/components/taste/SortableArtistItem';
 import {
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
@@ -13,9 +16,12 @@ import {
   useConfirmLastfmConnectionMutation,
   useDisconnectLastfmMutation,
   useTriggerLastfmSyncMutation,
+  useGetUserTasteProfileQuery,
+  useSetTasteProfileMutation,
 } from '@/generated/graphql';
 
 export default function PreferencesTab() {
+  const { data: session } = useSession();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -40,6 +46,17 @@ export default function PreferencesTab() {
   const [showLastfmStats, setShowLastfmStats] = useState(true);
   const [lastfmSyncEnabled, setLastfmSyncEnabled] = useState(true);
 
+  // Taste profile state
+  const setTasteProfile = useSetTasteProfileMutation();
+  const userId = session?.user?.id ?? '';
+  const { data: tasteData } = useGetUserTasteProfileQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+  const [tasteArtists, setTasteArtists] = useState<SelectedArtist[]>([]);
+  const [showTasteProfile, setShowTasteProfile] = useState(true);
+  const [tasteDirty, setTasteDirty] = useState(false);
+
   const isConnected = !!data?.mySettings?.lastfmUsername;
   const connectedUsername = data?.mySettings?.lastfmUsername;
 
@@ -47,8 +64,24 @@ export default function PreferencesTab() {
     if (data?.mySettings) {
       setShowLastfmStats(data.mySettings.showLastfmStats ?? true);
       setLastfmSyncEnabled(data.mySettings.lastfmSyncEnabled ?? true);
+      setShowTasteProfile(data.mySettings.showTasteProfile ?? true);
     }
   }, [data]);
+
+  // Populate taste artists from loaded profile
+  useEffect(() => {
+    if (tasteData?.userTasteProfile) {
+      const mapped: SelectedArtist[] = tasteData.userTasteProfile.map(fav => ({
+        id: fav.artist.id,
+        name: fav.artist.name,
+        imageUrl: fav.artist.imageUrl,
+        cloudflareImageId: fav.artist.cloudflareImageId,
+        source: 'local' as const,
+      }));
+      setTasteArtists(mapped);
+      setTasteDirty(false);
+    }
+  }, [tasteData]);
 
   const handleConnect = async () => {
     if (!lastfmInput.trim()) return;
@@ -123,6 +156,35 @@ export default function PreferencesTab() {
       if (field === 'showLastfmStats') setShowLastfmStats(prev.showLastfmStats);
       if (field === 'lastfmSyncEnabled')
         setLastfmSyncEnabled(prev.lastfmSyncEnabled);
+      showToast('Failed to update settings', 'error');
+    }
+  };
+
+  const handleTasteSave = async () => {
+    if (tasteArtists.length === 0) return;
+    try {
+      await setTasteProfile.mutateAsync({
+        artistIds: tasteArtists.map(a => a.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['GetUserTasteProfile'],
+      });
+      setTasteDirty(false);
+      showToast('Taste profile updated', 'success');
+    } catch {
+      showToast('Failed to update taste profile', 'error');
+    }
+  };
+
+  const handleTasteToggle = async (value: boolean) => {
+    const prev = showTasteProfile;
+    setShowTasteProfile(value);
+    try {
+      await updateSettings.mutateAsync({ showTasteProfile: value });
+      queryClient.invalidateQueries({ queryKey: ['GetMySettings'] });
+      showToast('Settings updated', 'success');
+    } catch {
+      setShowTasteProfile(prev);
       showToast('Failed to update settings', 'error');
     }
   };
@@ -305,6 +367,46 @@ export default function PreferencesTab() {
               </div>
             )}
           </>
+        )}
+      </div>
+      {/* Taste Profile */}
+      <div className='space-y-4'>
+        <div>
+          <h3 className='text-xl font-semibold text-white'>Taste Profile</h3>
+          <p className='text-zinc-400 text-sm mt-1'>
+            Pick your favorite artists to help us match you with like-minded
+            listeners
+          </p>
+        </div>
+
+        <ToggleRow
+          title='Show taste profile on your profile'
+          description='Let others see your favorite artists'
+          checked={showTasteProfile}
+          onChange={handleTasteToggle}
+          disabled={updateSettings.isPending}
+        />
+
+        <ArtistPicker
+          preSelectedArtists={tasteArtists}
+          onSelectionChange={artists => {
+            setTasteArtists(artists);
+            setTasteDirty(true);
+          }}
+        />
+
+        {tasteDirty && tasteArtists.length > 0 && (
+          <button
+            type='button'
+            onClick={handleTasteSave}
+            disabled={setTasteProfile.isPending}
+            className='px-6 py-2.5 bg-cosmic-latte text-black font-semibold rounded-lg hover:bg-cosmic-latte/90 disabled:opacity-50 transition-colors text-sm'
+          >
+            {setTasteProfile.isPending ? (
+              <Loader2 className='w-4 h-4 animate-spin inline mr-2' />
+            ) : null}
+            Save Taste Profile
+          </button>
         )}
       </div>
     </TabsContent>

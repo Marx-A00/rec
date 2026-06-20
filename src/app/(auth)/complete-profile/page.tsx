@@ -18,6 +18,7 @@ import {
   useConfirmLastfmConnectionMutation,
   useSetTasteProfileMutation,
   useGetTasteMatchesQuery,
+  useGetUserLastfmStatsQuery,
 } from '@/generated/graphql';
 
 const STEPS = ['Profile', 'Integrations', 'Taste', 'Follow'] as const;
@@ -47,8 +48,49 @@ export default function CompleteProfilePage() {
   } | null>(null);
   const [lastfmError, setLastfmError] = useState('');
   const [lastfmConnected, setLastfmConnected] = useState(false);
+  const [lastfmSyncing, setLastfmSyncing] = useState(false);
   const connectLastfm = useConnectLastfmMutation();
   const confirmLastfm = useConfirmLastfmConnectionMutation();
+
+  // === Step 2b: Poll for sync completion ===
+  const { data: lastfmSyncData } = useGetUserLastfmStatsQuery(
+    { userId: session?.user?.id ?? '' },
+    {
+      enabled: lastfmSyncing && !!session?.user?.id,
+      refetchInterval: lastfmSyncing ? 2000 : false,
+    }
+  );
+
+  // When sync delivers top artists, pre-fill and advance
+  useEffect(() => {
+    if (!lastfmSyncing) return;
+
+    const topArtists = lastfmSyncData?.user?.lastfmStats?.topArtists;
+    if (topArtists && topArtists.length > 0) {
+      setLastfmSyncing(false);
+      const preFilled: SelectedArtist[] = topArtists
+        .filter(a => a.artistId)
+        .slice(0, 5)
+        .map(a => ({
+          id: a.artistId!,
+          name: a.name,
+          source: 'local' as const,
+          preFilledFromLastfm: true,
+        }));
+      setSelectedArtists(preFilled);
+      setCurrentStep(2);
+      return;
+    }
+
+    // Timeout: if sync takes >15s, advance with empty picker
+    const timeout = setTimeout(() => {
+      if (lastfmSyncing) {
+        setLastfmSyncing(false);
+        setCurrentStep(2);
+      }
+    }, 15000);
+    return () => clearTimeout(timeout);
+  }, [lastfmSyncing, lastfmSyncData]);
 
   // === Step 3: Taste ===
   const [selectedArtists, setSelectedArtists] = useState<SelectedArtist[]>([]);
@@ -195,8 +237,8 @@ export default function CompleteProfilePage() {
     try {
       await confirmLastfm.mutateAsync({ username: lastfmPreview.username });
       setLastfmConnected(true);
-      // TODO: fetch top artists and pre-fill ArtistPicker (Task 16)
-      setCurrentStep(2);
+      setLastfmSyncing(true);
+      // Polling effect will advance to Step 3 once topArtists arrive
     } catch {
       setLastfmError('Failed to confirm connection');
     }
@@ -461,32 +503,41 @@ export default function CompleteProfilePage() {
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className='space-y-3 pt-2'>
-              {lastfmPreview ? (
-                <Button
+            {/* Action buttons / syncing state */}
+            {lastfmSyncing ? (
+              <div className='flex flex-col items-center gap-3 py-6'>
+                <Loader2 className='w-6 h-6 animate-spin text-cosmic-latte' />
+                <p className='text-sm text-zinc-400'>
+                  Syncing your listening history...
+                </p>
+              </div>
+            ) : (
+              <div className='space-y-3 pt-2'>
+                {lastfmPreview ? (
+                  <Button
+                    type='button'
+                    onClick={handleLastfmConfirmAndContinue}
+                    disabled={confirmLastfm.isPending}
+                    className='w-full py-3 bg-cosmic-latte text-black font-semibold rounded-lg hover:bg-cosmic-latte/90 disabled:opacity-50'
+                  >
+                    {confirmLastfm.isPending ? (
+                      <Loader2 className='w-5 h-5 animate-spin' />
+                    ) : (
+                      'Connect & Continue'
+                    )}
+                  </Button>
+                ) : (
+                  <div />
+                )}
+                <button
                   type='button'
-                  onClick={handleLastfmConfirmAndContinue}
-                  disabled={confirmLastfm.isPending}
-                  className='w-full py-3 bg-cosmic-latte text-black font-semibold rounded-lg hover:bg-cosmic-latte/90 disabled:opacity-50'
+                  onClick={() => setCurrentStep(2)}
+                  className='w-full text-center text-sm text-zinc-500 hover:text-zinc-400 transition-colors py-2'
                 >
-                  {confirmLastfm.isPending ? (
-                    <Loader2 className='w-5 h-5 animate-spin' />
-                  ) : (
-                    'Connect & Continue'
-                  )}
-                </Button>
-              ) : (
-                <div />
-              )}
-              <button
-                type='button'
-                onClick={() => setCurrentStep(2)}
-                className='w-full text-center text-sm text-zinc-500 hover:text-zinc-400 transition-colors py-2'
-              >
-                Skip this step
-              </button>
-            </div>
+                  Skip this step
+                </button>
+              </div>
+            )}
           </div>
         )}
 
