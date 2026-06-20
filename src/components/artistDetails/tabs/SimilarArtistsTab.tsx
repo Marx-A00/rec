@@ -22,17 +22,27 @@ export default function SimilarArtistsTab({
         ? DataSource.Musicbrainz
         : DataSource.Discogs;
 
+  const isExternal = source !== 'local';
+
   const { data, isLoading, error } = useSimilarArtistsQuery(
     {
       id: artistId,
       source: sourceEnum,
-      artistName: source !== 'local' ? artistName : undefined,
+      artistName: isExternal ? artistName : undefined,
       limit: 15,
     },
-    { enabled: !!artistId }
+    {
+      enabled: !!artistId,
+      refetchInterval: (query) => {
+        const results = query.state.data?.similarArtists;
+        // Poll every 3s for external sources until results arrive
+        return isExternal && (!results || results.length === 0) ? 3000 : false;
+      },
+    }
   );
 
   const similarArtists = data?.similarArtists || [];
+  const isFetching = isExternal && similarArtists.length === 0 && !error;
 
   if (isLoading) {
     return (
@@ -68,7 +78,14 @@ export default function SimilarArtistsTab({
           <Users className='w-5 h-5' />
           Similar Artists
         </h3>
-        <p className='text-zinc-400'>No similar artists found</p>
+        {isFetching ? (
+          <div className='flex items-center justify-center h-32'>
+            <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-green'></div>
+            <span className='ml-3 text-zinc-400'>Fetching similar artists...</span>
+          </div>
+        ) : (
+          <p className='text-zinc-400'>No similar artists found</p>
+        )}
       </div>
     );
   }
