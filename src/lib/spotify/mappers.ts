@@ -4,7 +4,7 @@
  * Follows "Add First → Enrich Later" pattern for immediate user feedback
  */
 
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { spotifyClient } from '@/lib/spotify/client';
 import { getInitialQuality } from '@/lib/db';
 
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
@@ -511,17 +511,10 @@ export async function fetchSpotifyAlbumTracks(
   albumId: string
 ): Promise<SpotifyTrackData[]> {
   try {
-    // Create Spotify client with client credentials
-    const spotifyClient = SpotifyApi.withClientCredentials(
-      process.env.SPOTIFY_CLIENT_ID!,
-      process.env.SPOTIFY_CLIENT_SECRET!
-    );
-
-    // Fetch album tracks (up to 50 tracks per request)
-    const albumTracks = await spotifyClient.albums.tracks(albumId, 'US', 50);
+    const trackItems = await spotifyClient.getAlbumTracks(albumId);
 
     // Transform to our SpotifyTrackData format
-    const tracks: SpotifyTrackData[] = albumTracks.items.map(track => ({
+    const tracks: SpotifyTrackData[] = trackItems.map(track => ({
       id: track.id,
       name: track.name,
       track_number: track.track_number,

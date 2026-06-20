@@ -2,15 +2,8 @@
 
 import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
-
 import prisma from '@/lib/prisma';
-
-// Initialize Spotify client
-const spotifyClient = SpotifyApi.withClientCredentials(
-  process.env.SPOTIFY_CLIENT_ID!,
-  process.env.SPOTIFY_CLIENT_SECRET!
-);
+import { spotifyClient } from '@/lib/spotify/client';
 
 // Cache duration in milliseconds (1 week)
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -105,7 +98,7 @@ export async function GET() {
     // (Replaces deprecated browse.getNewReleases which returns stale data)
     try {
       const currentYear = new Date().getFullYear();
-      const searchResults = await spotifyClient.search(
+      const searchResults = await spotifyClient.raw.search(
         `tag:new year:${currentYear}`,
         ['album'],
         'US',
@@ -141,7 +134,7 @@ export async function GET() {
     // 2. Get Featured Playlists
     // Note: This endpoint may return 404 (deprecated Nov 2024)
     try {
-      const featured = await spotifyClient.browse.getFeaturedPlaylists(
+      const featured = await spotifyClient.raw.browse.getFeaturedPlaylists(
         'US',
         'en_US',
         undefined,
@@ -167,14 +160,14 @@ export async function GET() {
 
     // 3. Get Top Charts (if category exists)
     try {
-      const topLists = await spotifyClient.browse.getPlaylistsForCategory(
+      const topLists = await spotifyClient.raw.browse.getPlaylistsForCategory(
         'toplists',
         'US',
         5
       );
       for (const playlist of topLists.playlists.items.slice(0, 2)) {
         try {
-          const tracks = await spotifyClient.playlists.getPlaylistItems(
+          const tracks = await spotifyClient.raw.playlists.getPlaylistItems(
             playlist.id,
             'US',
             undefined,
@@ -214,7 +207,7 @@ export async function GET() {
       const searchTerms = ['viral', '2025', 'trending', 'hot'];
       for (const term of searchTerms) {
         try {
-          const results = await spotifyClient.search(term, ['artist'], 'US', 5);
+          const results = await spotifyClient.raw.search(term, ['artist'], 'US', 5);
           if (results.artists.items.length > 0) {
             data.popularArtists.push({
               searchTerm: term,

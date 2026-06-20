@@ -1,12 +1,9 @@
 // @ts-nocheck - Minor Spotify API type issues, needs cleanup
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { NextResponse } from 'next/server';
 
-// Initialize Spotify client with credentials
-const client = SpotifyApi.withClientCredentials(
-  process.env.SPOTIFY_CLIENT_ID!,
-  process.env.SPOTIFY_CLIENT_SECRET!
-);
+import { spotifyClient } from '@/lib/spotify/client';
+
+const client = spotifyClient.raw;
 
 export async function GET() {
   try {

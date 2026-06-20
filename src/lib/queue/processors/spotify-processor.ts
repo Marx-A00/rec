@@ -36,12 +36,7 @@ export interface SpotifyNewReleasesResult {
 export async function searchSpotifyNewReleases(
   data: SpotifySyncNewReleasesJobData
 ): Promise<SpotifyNewReleasesResult> {
-  const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
-
-  const spotifyClient = SpotifyApi.withClientCredentials(
-    process.env.SPOTIFY_CLIENT_ID!,
-    process.env.SPOTIFY_CLIENT_SECRET!
-  );
+  const { spotifyClient } = await import('../../spotify/client');
 
   // Build search query
   const queryParts = ['tag:new'];
@@ -90,10 +85,10 @@ export async function searchSpotifyNewReleases(
     console.log(`   📄 Fetching page ${page + 1}/${pages} (offset: ${offset})`);
 
     // Execute search with offset
-    const searchResults = await spotifyClient.search(
+    const searchResults = await spotifyClient.raw.search(
       query,
       ['album'],
-      country as Parameters<typeof spotifyClient.search>[2],
+      country as Parameters<typeof spotifyClient.raw.search>[2],
       limit as 0 | 10 | 1 | 25 | 50 | 5 | 20,
       offset
     );
@@ -393,33 +388,25 @@ export async function handleSpotifySyncFeaturedPlaylists(
   );
 
   try {
-    // Import Spotify client, mappers, and error handling
-    const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
+    // Import mappers and error handling
+    const { spotifyClient: spotify } = await import('../../spotify/client');
     const { processSpotifyAlbums } = await import('../../spotify/mappers');
     const { withSpotifyRetry, withSpotifyMetrics } = await import(
       '../../spotify/error-handling'
     );
 
-    // Initialize Spotify client with retry wrapper
-    const createSpotifyClient = () =>
-      SpotifyApi.withClientCredentials(
-        process.env.SPOTIFY_CLIENT_ID!,
-        process.env.SPOTIFY_CLIENT_SECRET!
-      );
-
     // Fetch featured playlists with retry logic and metrics
     const featured = await withSpotifyMetrics(
       () =>
         withSpotifyRetry(async () => {
-          const spotifyClient = createSpotifyClient();
-          return await spotifyClient.browse.getFeaturedPlaylists(
+          return await spotify.raw.browse.getFeaturedPlaylists(
             (data.country || 'US') as Parameters<
-              typeof spotifyClient.browse.getFeaturedPlaylists
+              typeof spotify.raw.browse.getFeaturedPlaylists
             >[0],
             'en_US', // Locale parameter (required)
             undefined, // Timestamp (optional)
             (data.limit || 10) as Parameters<
-              typeof spotifyClient.browse.getFeaturedPlaylists
+              typeof spotify.raw.browse.getFeaturedPlaylists
             >[3]
           );
         }, 'Spotify getFeaturedPlaylists API call'),
@@ -449,11 +436,10 @@ export async function handleSpotifySyncFeaturedPlaylists(
         console.log(`🎧 Processing playlist: "${playlist.name}"`);
 
         // Get playlist tracks (limit to first 50 tracks per playlist)
-        const playlistClient = createSpotifyClient();
-        const tracks = await playlistClient.playlists.getPlaylistItems(
+        const tracks = await spotify.raw.playlists.getPlaylistItems(
           playlist.id,
           (data.country || 'US') as Parameters<
-            typeof playlistClient.playlists.getPlaylistItems
+            typeof spotify.raw.playlists.getPlaylistItems
           >[1],
           undefined,
           50, // limit
