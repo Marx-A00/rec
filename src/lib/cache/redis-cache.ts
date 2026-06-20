@@ -2,13 +2,38 @@ import { redis } from '@/lib/queue/redis';
 
 const MISS_SENTINEL = '__MISS__';
 
+interface CacheMetrics {
+  hits: number;
+  misses: number;
+  errors: number;
+}
+
 class RedisCache {
+  private metrics: CacheMetrics = { hits: 0, misses: 0, errors: 0 };
+
+  getMetrics(): CacheMetrics & { hitRate: number } {
+    const total = this.metrics.hits + this.metrics.misses;
+    return {
+      ...this.metrics,
+      hitRate: total > 0 ? this.metrics.hits / total : 0,
+    };
+  }
+
+  resetMetrics(): void {
+    this.metrics = { hits: 0, misses: 0, errors: 0 };
+  }
+
   async get<T>(key: string): Promise<T | null> {
     try {
       const raw = await redis.get(key);
-      if (raw === null) return null;
+      if (raw === null) {
+        this.metrics.misses++;
+        return null;
+      }
+      this.metrics.hits++;
       return JSON.parse(raw) as T;
     } catch (error) {
+      this.metrics.errors++;
       console.error(`[cache] get error for key=${key}:`, error);
       return null;
     }

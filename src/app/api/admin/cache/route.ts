@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       keyCount,
       memoryUsed: memMatch?.[1] || 'unknown',
       memoryPeak: peakMatch?.[1] || 'unknown',
+      cacheMetrics: cache.getMetrics(),
     });
   }
 
