@@ -14,8 +14,9 @@ interface CachedSimilarArtist {
   source: string;
 }
 
-const border = () => chalk.blue('─'.repeat(60));
-const tag = chalk.blue('[CACHE LAYER]');
+const orange = chalk.hex('#E67E22');
+const border = () => orange('─'.repeat(60));
+const tag = orange('[CACHE LAYER]');
 
 export async function handleFetchSimilarArtists(
   job: Job<FetchSimilarArtistsJobData>
@@ -28,7 +29,7 @@ export async function handleFetchSimilarArtists(
   if (cached !== null) {
     console.log(border());
     console.log(
-      `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
+      `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
     );
     console.log(border());
     return { success: true, cached: true, count: cached.length };
@@ -37,9 +38,9 @@ export async function handleFetchSimilarArtists(
   // Cache miss — fetch from Last.fm + ListenBrainz APIs
   console.log(border());
   console.log(
-    `${chalk.blue('❄ CACHE MISS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
+    `${orange('❄ CACHE MISS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
   );
-  console.log(`  ${chalk.blue('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`);
+  console.log(`  ${orange('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`);
   console.log(border());
 
   const results = await fetchSimilarArtistsFromAPIs(artistName, mbid);
@@ -47,7 +48,7 @@ export async function handleFetchSimilarArtists(
   if (results.length === 0) {
     console.log(border());
     console.log(
-      `${chalk.blue('📭 NO RESULTS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— caching empty result')}`
+      `${orange('📭 NO RESULTS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— caching empty result')}`
     );
     console.log(border());
     await cache.set(cacheKey, [], CACHE_TTLS.SIMILAR_ARTISTS);
@@ -78,11 +79,11 @@ export async function handleFetchSimilarArtists(
 
   console.log(border());
   console.log(
-    `${chalk.blue('💾 CACHED')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
+    `${orange('💾 CACHED')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
   );
-  console.log(`  ${chalk.blue('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`);
-  console.log(`  ${chalk.blue('Artists:')} ${chalk.white(artistNames + suffix)}`);
-  console.log(`  ${chalk.blue('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`);
+  console.log(`  ${orange('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`);
+  console.log(`  ${orange('Artists:')} ${chalk.white(artistNames + suffix)}`);
+  console.log(`  ${orange('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`);
   console.log(border());
 
   return { success: true, cached: false, count: toCache.length };

@@ -404,8 +404,9 @@ export const resolvers: Resolvers = {
 
       const { cache, CACHE_KEYS } = await import('@/lib/cache');
 
-      const cacheBorder = chalk.blue('─'.repeat(60));
-      const cacheTag = chalk.blue('[CACHE LAYER]');
+      const orange = chalk.hex('#E67E22');
+      const cacheBorder = orange('─'.repeat(60));
+      const cacheTag = orange('[CACHE LAYER]');
 
       const cacheKey = CACHE_KEYS.similarArtists(id);
       const cached = await cache.get<
@@ -416,7 +417,7 @@ export const resolvers: Resolvers = {
       if (cached === null) {
         console.log(cacheBorder);
         console.log(
-          `${chalk.blue('❄ CACHE MISS')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— queuing background fetch')}`
+          `${orange('❄ CACHE MISS')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— queuing background fetch')}`
         );
         console.log(cacheBorder);
         const { getMusicBrainzQueue, JOB_TYPES } = await import('@/lib/queue');
@@ -431,7 +432,7 @@ export const resolvers: Resolvers = {
 
       console.log(cacheBorder);
       console.log(
-        `${chalk.blue('⚡ CACHE HIT')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
+        `${orange('⚡ CACHE HIT')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
       );
       console.log(cacheBorder);
 

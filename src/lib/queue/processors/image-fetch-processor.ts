@@ -7,7 +7,8 @@ import prisma from '@/lib/prisma';
 
 import type { FetchArtistImageJobData } from '../jobs';
 
-const tag = chalk.blue('[CACHE LAYER]');
+const orange = chalk.hex('#E67E22');
+const tag = orange('[CACHE LAYER]');
 
 export async function handleFetchArtistImage(
   job: Job<FetchArtistImageJobData>
@@ -20,7 +21,7 @@ export async function handleFetchArtistImage(
   if (cached !== null) {
     if (cache.isMiss(cached)) {
       console.log(
-        `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(no image — sentinel)')}`
+        `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(no image — sentinel)')}`
       );
       return { success: true, cached: true, imageUrl: null };
     }
@@ -33,14 +34,14 @@ export async function handleFetchArtistImage(
     }
 
     console.log(
-      `${chalk.blue('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(image found)')}`
+      `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(image found)')}`
     );
     return { success: true, cached: true, imageUrl: cached.imageUrl };
   }
 
   // Cache miss — fetch from Spotify
   console.log(
-    `${chalk.blue('❄ CACHE MISS')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— fetching from Spotify')}`
+    `${orange('❄ CACHE MISS')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— fetching from Spotify')}`
   );
 
   const result = await tryFetchSpotifyArtistImage(artistName, mbid);
