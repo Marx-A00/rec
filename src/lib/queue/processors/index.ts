@@ -33,6 +33,8 @@ import {
   type DiscogsGetMasterJobData,
   type UncoverCreateDailyChallengeJobData,
   type UncoverResetChallengesJobData,
+  type FetchSimilarArtistsJobData,
+  type FetchArtistImageJobData,
 } from '../jobs';
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
@@ -78,6 +80,8 @@ import {
   handleResetChallenges,
 } from './uncover-processor';
 import { handleListenBrainzSyncFreshReleases } from './listenbrainz-processor';
+import { handleFetchSimilarArtists } from './similar-artists-processor';
+import { handleFetchArtistImage } from './image-fetch-processor';
 
 // Re-export JOB_TYPES for convenience
 export { JOB_TYPES } from '../jobs';
@@ -299,6 +303,19 @@ export async function processMusicBrainzJob(
         result = await handleDeezerSyncEditorialReleases(
           job.data as DeezerEditorialSyncJobData,
           job.id
+        );
+        break;
+
+      // Similar artists & image fetching
+      case JOB_TYPES.FETCH_SIMILAR_ARTISTS:
+        result = await handleFetchSimilarArtists(
+          job as Job<FetchSimilarArtistsJobData>
+        );
+        break;
+
+      case JOB_TYPES.FETCH_ARTIST_IMAGE:
+        result = await handleFetchArtistImage(
+          job as Job<FetchArtistImageJobData>
         );
         break;
 
