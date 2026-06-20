@@ -454,18 +454,29 @@ export const resolvers: Resolvers = {
         localArtists.map(a => [a.musicbrainzId, a])
       );
 
-      const enriched = cached.map(r => {
+      // Check Redis image cache for artists without local images
+      const enriched = await Promise.all(cached.map(async r => {
         const local = mbidToLocal.get(r.mbid);
+        let imageUrl = local?.imageUrl || null;
+
+        // Fallback: check Redis image cache if no local image
+        if (!imageUrl) {
+          const cachedImage = await cache.get<{ imageUrl: string }>(CACHE_KEYS.spotifyImage(r.mbid));
+          if (cachedImage && !cache.isMiss(cachedImage)) {
+            imageUrl = cachedImage.imageUrl;
+          }
+        }
+
         return {
           name: r.name,
           musicbrainzId: r.mbid,
           similarity: r.similarity,
-          imageUrl: local?.imageUrl || null,
+          imageUrl,
           cloudflareImageId: local?.cloudflareImageId || null,
           localArtistId: local?.id || null,
           source: r.source,
         };
-      });
+      }));
 
       // Sort: artists with images first, then by similarity
       return enriched
