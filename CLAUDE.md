@@ -183,6 +183,29 @@ The original `browse.getNewReleases()` endpoint was restricted by Spotify. The s
 the Search API with `tag:new` queries (e.g., `tag:new year:2025`) which provides similar functionality
 with additional filtering capabilities. See `/src/lib/spotify/new-releases-service.ts` for implementation.
 
+### Redis Cache Layer
+
+The app uses Redis (same instance as BullMQ) for caching API responses and expensive queries.
+
+**Key files:**
+- `src/lib/cache/redis-cache.ts` - Generic cache helper (get/set/invalidate)
+- `src/lib/cache/keys.ts` - Cache key builders and TTL constants
+- `src/lib/cache/count-cache.ts` - Cached COUNT query helpers
+- `src/lib/cache/invalidation.ts` - Cache invalidation helpers per entity type
+- `src/app/api/admin/cache/route.ts` - Admin cache inspection/invalidation endpoint
+
+**Cache key format:** `cache:{namespace}:{identifier}` (e.g. `cache:spotify:image:mbid-123`)
+
+**TTLs:**
+- 7 days: Spotify images, similar artists, Last.fm, ListenBrainz, discography
+- 1 hour: Spotify search, COUNT queries
+- 15 min: User collections
+- 5 min: Search results
+
+**Invalidation:** Mutations and enrichment processors call invalidation helpers from `src/lib/cache/invalidation.ts` to clear stale data after writes.
+
+**Admin endpoint:** `GET /api/admin/cache?action=stats` or `?action=keys&pattern=cache:*` and `DELETE /api/admin/cache?pattern=cache:spotify:*`
+
 ### Component Patterns
 
 #### Data Fetching with Generated Hooks
