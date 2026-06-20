@@ -7,6 +7,8 @@
 
 import { SpotifyApi, type Market, type MaxInt } from '@spotify/web-api-ts-sdk';
 
+import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
+
 import {
   withSpotifyRetry,
   DEFAULT_RETRY_CONFIG,
@@ -43,7 +45,11 @@ class SpotifyClient {
     query: string,
     limit: MaxInt<50> = 5
   ): Promise<SpotifySearchResult[]> {
-    return withSpotifyRetry(
+    const cacheKey = CACHE_KEYS.spotifySearch(query);
+    const cached = await cache.get<SpotifySearchResult[]>(cacheKey);
+    if (cached !== null) return cached;
+
+    const results = await withSpotifyRetry(
       async () => {
         const response = await this.sdk.search(query, ['artist'], undefined, limit);
         const artists = response.artists?.items ?? [];
@@ -61,6 +67,12 @@ class SpotifyClient {
       `Spotify searchArtists("${query}")`,
       this.retryConfig
     );
+
+    if (results.length > 0) {
+      await cache.set(cacheKey, results, CACHE_TTLS.SPOTIFY_SEARCH);
+    }
+
+    return results;
   }
 
   /**
