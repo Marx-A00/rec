@@ -1,10 +1,13 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Users } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { useSimilarArtistsQuery, DataSource } from '@/generated/graphql';
+
+const INITIAL_COUNT = 4;
 
 export default function SimilarArtistsTab({
   artistId,
@@ -41,8 +44,11 @@ export default function SimilarArtistsTab({
     }
   );
 
+  const [showAll, setShowAll] = useState(false);
   const similarArtists = data?.similarArtists || [];
   const isFetching = isExternal && similarArtists.length === 0 && !error;
+  const hasMore = similarArtists.length > INITIAL_COUNT;
+  const displayedArtists = showAll ? similarArtists : similarArtists.slice(0, INITIAL_COUNT);
 
   if (isLoading) {
     return (
@@ -98,7 +104,7 @@ export default function SimilarArtistsTab({
       </h3>
 
       <div className='flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900'>
-        {similarArtists.map(artist => {
+        {displayedArtists.map(artist => {
           const href = artist.localArtistId
             ? `/artists/${artist.localArtistId}?source=local`
             : `/artists/${artist.musicbrainzId}?source=musicbrainz`;
@@ -135,6 +141,25 @@ export default function SimilarArtistsTab({
           );
         })}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className='mt-3 flex items-center gap-1 text-sm text-zinc-400 hover:text-emerald-green transition-colors'
+        >
+          {showAll ? (
+            <>
+              <ChevronUp className='w-4 h-4' />
+              Show Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className='w-4 h-4' />
+              Show All ({similarArtists.length})
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }
