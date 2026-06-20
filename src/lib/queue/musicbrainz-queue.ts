@@ -104,7 +104,7 @@ export class MusicBrainzQueue {
       console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
       console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
       console.log(
-        `  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`
+        `  ${chalk.cyan('Request ID:')} ${chalk.white('requestId' in jobData ? jobData.requestId : 'n/a')}`
       );
       console.log(
         `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`

@@ -51,6 +51,13 @@ export const JOB_TYPES = {
   LISTENBRAINZ_SYNC_FRESH_RELEASES: 'listenbrainz:sync-fresh-releases',
   // Deezer Editorial Sync Jobs
   DEEZER_SYNC_EDITORIAL_RELEASES: 'deezer:sync-editorial-releases',
+  // Similar Artists & Image Fetching
+  FETCH_SIMILAR_ARTISTS: 'fetch:similar-artists',
+  FETCH_ARTIST_IMAGE: 'fetch:artist-image',
+  LASTFM_SIMILAR_ARTISTS: 'lastfm:similar-artists',
+  LASTFM_ARTIST_INFO: 'lastfm:artist-info',
+  LASTFM_SEARCH_ARTISTS: 'lastfm:search-artists',
+  LISTENBRAINZ_SIMILAR_ARTISTS: 'listenbrainz:similar-artists',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -369,6 +376,44 @@ export interface DiscogsGetMasterJobData {
 }
 
 // ============================================================================
+// Similar Artists & Image Fetching Job Data
+// ============================================================================
+
+export interface FetchSimilarArtistsJobData {
+  artistId: string;
+  mbid: string;
+  artistName: string;
+  parentJobId?: string;
+}
+
+export interface FetchArtistImageJobData {
+  artistId?: string;
+  mbid: string;
+  artistName: string;
+  parentJobId?: string;
+}
+
+export interface LastFmSimilarArtistsJobData {
+  artistName: string;
+  mbid?: string;
+  limit?: number;
+}
+
+export interface LastFmArtistInfoJobData {
+  artistName: string;
+}
+
+export interface LastFmSearchArtistsJobData {
+  query: string;
+  limit?: number;
+}
+
+export interface ListenBrainzSimilarArtistsJobData {
+  mbid: string;
+  algorithm?: string;
+}
+
+// ============================================================================
 // Job Data Union Type
 // ============================================================================
 
@@ -400,7 +445,13 @@ export type MusicBrainzJobData =
   | DiscogsGetArtistJobData
   | DiscogsSearchAlbumJobData
   | DiscogsGetMasterJobData
-  | ListenBrainzSyncFreshReleasesJobData;
+  | ListenBrainzSyncFreshReleasesJobData
+  | FetchSimilarArtistsJobData
+  | FetchArtistImageJobData
+  | LastFmSimilarArtistsJobData
+  | LastFmArtistInfoJobData
+  | LastFmSearchArtistsJobData
+  | ListenBrainzSimilarArtistsJobData;
 
 // ============================================================================
 // Job Result Interfaces
