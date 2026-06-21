@@ -43,6 +43,38 @@ mutation EnsureArtistsFromMbids($artists: [ArtistMbidInput!]!) {
   }
 }
 
+# Last.fm Album Import Match
+query AlbumImportMatch($collectionId: String!) {
+  albumImportMatch(collectionId: $collectionId) {
+    readyNow {
+      id
+      title
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      artistName
+    }
+    canBeFetched {
+      mbid
+      name
+      artistName
+      playcount
+    }
+    alreadyAdded {
+      id
+      title
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      artistName
+    }
+    skipped {
+      name
+      artistName
+    }
+  }
+}
+
 # Last.fm Stats Query
 query GetUserLastfmStats($userId: String!) {
   user(id: $userId) {

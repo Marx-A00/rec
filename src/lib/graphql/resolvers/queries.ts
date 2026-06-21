@@ -4863,6 +4863,97 @@ export const queryResolvers: QueryResolvers = {
     }));
   },
 
+  albumImportMatch: async (_, { collectionId }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Get user's Last.fm data
+    const lastfmData = await prisma.userLastfmData.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!lastfmData?.topAlbums) {
+      return { readyNow: [], canBeFetched: [], alreadyAdded: [], skipped: [] };
+    }
+
+    // Parse top albums (use 'overall' period)
+    const topAlbumsRaw = lastfmData.topAlbums as Record<string, unknown[]>;
+    const topAlbums = (topAlbumsRaw['overall'] ||
+      Object.values(topAlbumsRaw)[0] ||
+      []) as Array<{
+      name: string;
+      artistName: string;
+      playcount: number;
+      mbid: string;
+    }>;
+
+    if (topAlbums.length === 0) {
+      return { readyNow: [], canBeFetched: [], alreadyAdded: [], skipped: [] };
+    }
+
+    // Run the matching service
+    const { matchAlbumsForImport } = await import(
+      '@/lib/lastfm/album-import-matcher'
+    );
+    const result = await matchAlbumsForImport(
+      topAlbums.map(a => ({
+        ...a,
+        artistMbid: '',
+        rank: 0,
+      })),
+      collectionId
+    );
+
+    // Enrich readyNow and alreadyAdded with cover art and artist names
+    const allDbIds = [
+      ...result.readyNow.map(a => a.id),
+      ...result.alreadyAdded.map(a => a.id),
+    ];
+
+    const enriched =
+      allDbIds.length > 0
+        ? await prisma.album.findMany({
+            where: { id: { in: allDbIds } },
+            select: {
+              id: true,
+              title: true,
+              musicbrainzId: true,
+              coverArtUrl: true,
+              cloudflareImageId: true,
+              artists: {
+                select: { artist: { select: { name: true } } },
+                where: { role: 'PRIMARY' },
+                take: 1,
+              },
+            },
+          })
+        : [];
+
+    const enrichedMap = new Map(enriched.map(a => [a.id, a]));
+
+    const mapAlbum = (a: { id: string; title: string; musicbrainzId: string | null }) => {
+      const e = enrichedMap.get(a.id);
+      return {
+        id: a.id,
+        title: e?.title ?? a.title,
+        musicbrainzId: a.musicbrainzId,
+        coverArtUrl: e?.coverArtUrl ?? null,
+        cloudflareImageId: e?.cloudflareImageId ?? null,
+        artistName: e?.artists?.[0]?.artist?.name ?? null,
+      };
+    };
+
+    return {
+      readyNow: result.readyNow.map(mapAlbum),
+      canBeFetched: result.canBeFetched,
+      alreadyAdded: result.alreadyAdded.map(mapAlbum),
+      skipped: result.skipped,
+    };
+  },
+
   tasteMatches: async (_, { limit = 10 }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required', {

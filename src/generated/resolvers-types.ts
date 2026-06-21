@@ -173,6 +173,18 @@ export enum AlbumGameStatus {
   None = 'NONE',
 }
 
+export type AlbumImportMatch = {
+  __typename?: 'AlbumImportMatch';
+  /** Already in the target collection */
+  alreadyAdded: Array<ImportReadyAlbum>;
+  /** Have MBID but not in DB — need MusicBrainz fetch first */
+  canBeFetched: Array<ImportFetchableAlbum>;
+  /** Albums in DB, not yet in collection — can add immediately */
+  readyNow: Array<ImportReadyAlbum>;
+  /** No MBID from Last.fm — can't match */
+  skipped: Array<ImportSkippedAlbum>;
+};
+
 export type AlbumInput = {
   albumType?: InputMaybe<Scalars['String']['input']>;
   appleMusicId?: InputMaybe<Scalars['String']['input']>;
@@ -1346,6 +1358,30 @@ export type ImportAlbumResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export type ImportFetchableAlbum = {
+  __typename?: 'ImportFetchableAlbum';
+  artistName: Scalars['String']['output'];
+  mbid: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  playcount: Scalars['Int']['output'];
+};
+
+export type ImportReadyAlbum = {
+  __typename?: 'ImportReadyAlbum';
+  artistName?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverArtUrl?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  musicbrainzId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+};
+
+export type ImportSkippedAlbum = {
+  __typename?: 'ImportSkippedAlbum';
+  artistName: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type JobRecord = {
   __typename?: 'JobRecord';
   attempts: Scalars['Int']['output'];
@@ -2151,6 +2187,7 @@ export type Query = {
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
   albumByMusicBrainzId?: Maybe<Album>;
+  albumImportMatch: AlbumImportMatch;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   albumsByGameStatus: Array<Album>;
@@ -2290,6 +2327,10 @@ export type QueryAlbumArgs = {
 
 export type QueryAlbumByMusicBrainzIdArgs = {
   musicbrainzId: Scalars['String']['input'];
+};
+
+export type QueryAlbumImportMatchArgs = {
+  collectionId: Scalars['String']['input'];
 };
 
 export type QueryAlbumRecommendationsArgs = {
@@ -3736,6 +3777,7 @@ export type ResolversTypes = ResolversObject<{
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumGameStatus: AlbumGameStatus;
+  AlbumImportMatch: ResolverTypeWrapper<AlbumImportMatch>;
   AlbumInput: AlbumInput;
   AlbumRecommendation: ResolverTypeWrapper<AlbumRecommendation>;
   AlbumRecommendationsResponse: ResolverTypeWrapper<AlbumRecommendationsResponse>;
@@ -3844,6 +3886,9 @@ export type ResolversTypes = ResolversObject<{
   HealthStatus: HealthStatus;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   ImportAlbumResult: ResolverTypeWrapper<ImportAlbumResult>;
+  ImportFetchableAlbum: ResolverTypeWrapper<ImportFetchableAlbum>;
+  ImportReadyAlbum: ResolverTypeWrapper<ImportReadyAlbum>;
+  ImportSkippedAlbum: ResolverTypeWrapper<ImportSkippedAlbum>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
   JobRecord: ResolverTypeWrapper<JobRecord>;
@@ -3983,6 +4028,7 @@ export type ResolversParentTypes = ResolversObject<{
   AddToMarqueeResult: AddToMarqueeResult;
   AdminUpdateUserSettingsPayload: AdminUpdateUserSettingsPayload;
   Album: Album;
+  AlbumImportMatch: AlbumImportMatch;
   AlbumInput: AlbumInput;
   AlbumRecommendation: AlbumRecommendation;
   AlbumRecommendationsResponse: AlbumRecommendationsResponse;
@@ -4073,6 +4119,9 @@ export type ResolversParentTypes = ResolversObject<{
   HealthMetrics: HealthMetrics;
   ID: Scalars['ID']['output'];
   ImportAlbumResult: ImportAlbumResult;
+  ImportFetchableAlbum: ImportFetchableAlbum;
+  ImportReadyAlbum: ImportReadyAlbum;
+  ImportSkippedAlbum: ImportSkippedAlbum;
   Int: Scalars['Int']['output'];
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
@@ -4439,6 +4488,34 @@ export type AlbumResolvers<
   trackCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AlbumImportMatchResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['AlbumImportMatch'] = ResolversParentTypes['AlbumImportMatch'],
+> = ResolversObject<{
+  alreadyAdded?: Resolver<
+    Array<ResolversTypes['ImportReadyAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  canBeFetched?: Resolver<
+    Array<ResolversTypes['ImportFetchableAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  readyNow?: Resolver<
+    Array<ResolversTypes['ImportReadyAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  skipped?: Resolver<
+    Array<ResolversTypes['ImportSkippedAlbum']>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5889,6 +5966,58 @@ export type ImportAlbumResultResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ImportFetchableAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ImportFetchableAlbum'] = ResolversParentTypes['ImportFetchableAlbum'],
+> = ResolversObject<{
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mbid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  playcount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ImportReadyAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ImportReadyAlbum'] = ResolversParentTypes['ImportReadyAlbum'],
+> = ResolversObject<{
+  artistName?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  coverArtUrl?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  musicbrainzId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ImportSkippedAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ImportSkippedAlbum'] = ResolversParentTypes['ImportSkippedAlbum'],
+> = ResolversObject<{
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export interface JsonScalarConfig
   extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
   name: 'JSON';
@@ -6864,6 +6993,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryAlbumByMusicBrainzIdArgs, 'musicbrainzId'>
+  >;
+  albumImportMatch?: Resolver<
+    ResolversTypes['AlbumImportMatch'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryAlbumImportMatchArgs, 'collectionId'>
   >;
   albumRecommendations?: Resolver<
     Array<ResolversTypes['Album']>,
@@ -8838,6 +8973,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AddToMarqueeResult?: AddToMarqueeResultResolvers<ContextType>;
   AdminUpdateUserSettingsPayload?: AdminUpdateUserSettingsPayloadResolvers<ContextType>;
   Album?: AlbumResolvers<ContextType>;
+  AlbumImportMatch?: AlbumImportMatchResolvers<ContextType>;
   AlbumRecommendation?: AlbumRecommendationResolvers<ContextType>;
   AlbumRecommendationsResponse?: AlbumRecommendationsResponseResolvers<ContextType>;
   Alert?: AlertResolvers<ContextType>;
@@ -8907,6 +9043,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   HealthComponents?: HealthComponentsResolvers<ContextType>;
   HealthMetrics?: HealthMetricsResolvers<ContextType>;
   ImportAlbumResult?: ImportAlbumResultResolvers<ContextType>;
+  ImportFetchableAlbum?: ImportFetchableAlbumResolvers<ContextType>;
+  ImportReadyAlbum?: ImportReadyAlbumResolvers<ContextType>;
+  ImportSkippedAlbum?: ImportSkippedAlbumResolvers<ContextType>;
   JSON?: GraphQLScalarType;
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;

@@ -2416,6 +2416,9 @@ type Query {
   userTasteProfile(userId: String!): [UserFavoriteArtist!]!
   tasteMatches(limit: Int = 10): [TasteMatch!]!
 
+  # Last.fm album import
+  albumImportMatch(collectionId: String!): AlbumImportMatch!
+
   # Artist Recommendations (recommendations featuring an artist's albums)
   artistRecommendations(
     artistId: ID!
@@ -4030,6 +4033,42 @@ type LastfmConnectionResult {
   profileImage: String
   totalPlaycount: Int
   registeredAt: DateTime
+}
+
+# ============================================================================
+# Last.fm Album Import Types
+# ============================================================================
+
+type AlbumImportMatch {
+  """Albums in DB, not yet in collection — can add immediately"""
+  readyNow: [ImportReadyAlbum!]!
+  """Have MBID but not in DB — need MusicBrainz fetch first"""
+  canBeFetched: [ImportFetchableAlbum!]!
+  """Already in the target collection"""
+  alreadyAdded: [ImportReadyAlbum!]!
+  """No MBID from Last.fm — can't match"""
+  skipped: [ImportSkippedAlbum!]!
+}
+
+type ImportReadyAlbum {
+  id: String!
+  title: String!
+  musicbrainzId: String
+  coverArtUrl: String
+  cloudflareImageId: String
+  artistName: String
+}
+
+type ImportFetchableAlbum {
+  mbid: String!
+  name: String!
+  artistName: String!
+  playcount: Int!
+}
+
+type ImportSkippedAlbum {
+  name: String!
+  artistName: String!
 }
 
 # ============================================================================

@@ -199,6 +199,18 @@ export enum AlbumGameStatus {
   None = 'NONE',
 }
 
+export type AlbumImportMatch = {
+  __typename?: 'AlbumImportMatch';
+  /** Already in the target collection */
+  alreadyAdded: Array<ImportReadyAlbum>;
+  /** Have MBID but not in DB — need MusicBrainz fetch first */
+  canBeFetched: Array<ImportFetchableAlbum>;
+  /** Albums in DB, not yet in collection — can add immediately */
+  readyNow: Array<ImportReadyAlbum>;
+  /** No MBID from Last.fm — can't match */
+  skipped: Array<ImportSkippedAlbum>;
+};
+
 export type AlbumInput = {
   albumType?: InputMaybe<Scalars['String']['input']>;
   appleMusicId?: InputMaybe<Scalars['String']['input']>;
@@ -1372,6 +1384,30 @@ export type ImportAlbumResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export type ImportFetchableAlbum = {
+  __typename?: 'ImportFetchableAlbum';
+  artistName: Scalars['String']['output'];
+  mbid: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  playcount: Scalars['Int']['output'];
+};
+
+export type ImportReadyAlbum = {
+  __typename?: 'ImportReadyAlbum';
+  artistName?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  coverArtUrl?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  musicbrainzId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+};
+
+export type ImportSkippedAlbum = {
+  __typename?: 'ImportSkippedAlbum';
+  artistName: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type JobRecord = {
   __typename?: 'JobRecord';
   attempts: Scalars['Int']['output'];
@@ -2177,6 +2213,7 @@ export type Query = {
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
   albumByMusicBrainzId?: Maybe<Album>;
+  albumImportMatch: AlbumImportMatch;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   albumsByGameStatus: Array<Album>;
@@ -2316,6 +2353,10 @@ export type QueryAlbumArgs = {
 
 export type QueryAlbumByMusicBrainzIdArgs = {
   musicbrainzId: Scalars['String']['input'];
+};
+
+export type QueryAlbumImportMatchArgs = {
+  collectionId: Scalars['String']['input'];
 };
 
 export type QueryAlbumRecommendationsArgs = {
@@ -6041,6 +6082,47 @@ export type EnsureArtistsFromMbidsMutation = {
     imageUrl?: string | null;
     cloudflareImageId?: string | null;
   }>;
+};
+
+export type AlbumImportMatchQueryVariables = Exact<{
+  collectionId: Scalars['String']['input'];
+}>;
+
+export type AlbumImportMatchQuery = {
+  __typename?: 'Query';
+  albumImportMatch: {
+    __typename?: 'AlbumImportMatch';
+    readyNow: Array<{
+      __typename?: 'ImportReadyAlbum';
+      id: string;
+      title: string;
+      musicbrainzId?: string | null;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artistName?: string | null;
+    }>;
+    canBeFetched: Array<{
+      __typename?: 'ImportFetchableAlbum';
+      mbid: string;
+      name: string;
+      artistName: string;
+      playcount: number;
+    }>;
+    alreadyAdded: Array<{
+      __typename?: 'ImportReadyAlbum';
+      id: string;
+      title: string;
+      musicbrainzId?: string | null;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artistName?: string | null;
+    }>;
+    skipped: Array<{
+      __typename?: 'ImportSkippedAlbum';
+      name: string;
+      artistName: string;
+    }>;
+  };
 };
 
 export type GetUserLastfmStatsQueryVariables = Exact<{
@@ -13823,6 +13905,105 @@ export const useEnsureArtistsFromMbidsMutation = <
 };
 
 useEnsureArtistsFromMbidsMutation.getKey = () => ['EnsureArtistsFromMbids'];
+
+export const AlbumImportMatchDocument = `
+    query AlbumImportMatch($collectionId: String!) {
+  albumImportMatch(collectionId: $collectionId) {
+    readyNow {
+      id
+      title
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      artistName
+    }
+    canBeFetched {
+      mbid
+      name
+      artistName
+      playcount
+    }
+    alreadyAdded {
+      id
+      title
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      artistName
+    }
+    skipped {
+      name
+      artistName
+    }
+  }
+}
+    `;
+
+export const useAlbumImportMatchQuery = <
+  TData = AlbumImportMatchQuery,
+  TError = unknown,
+>(
+  variables: AlbumImportMatchQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumImportMatchQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      AlbumImportMatchQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<AlbumImportMatchQuery, TError, TData>({
+    queryKey: ['AlbumImportMatch', variables],
+    queryFn: fetcher<AlbumImportMatchQuery, AlbumImportMatchQueryVariables>(
+      AlbumImportMatchDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useAlbumImportMatchQuery.getKey = (
+  variables: AlbumImportMatchQueryVariables
+) => ['AlbumImportMatch', variables];
+
+export const useInfiniteAlbumImportMatchQuery = <
+  TData = InfiniteData<AlbumImportMatchQuery>,
+  TError = unknown,
+>(
+  variables: AlbumImportMatchQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumImportMatchQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumImportMatchQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumImportMatchQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['AlbumImportMatch.infinite', variables],
+        queryFn: metaData =>
+          fetcher<AlbumImportMatchQuery, AlbumImportMatchQueryVariables>(
+            AlbumImportMatchDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumImportMatchQuery.getKey = (
+  variables: AlbumImportMatchQueryVariables
+) => ['AlbumImportMatch.infinite', variables];
 
 export const GetUserLastfmStatsDocument = `
     query GetUserLastfmStats($userId: String!) {
