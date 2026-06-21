@@ -577,6 +577,11 @@ export type ArtistInput = {
   name: Scalars['String']['input'];
 };
 
+export type ArtistMbidInput = {
+  mbid: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+};
+
 /** Artist metadata field selections. */
 export type ArtistMetadataSelectionsInput = {
   area?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1412,6 +1417,11 @@ export type LastfmConnectionResult = {
 
 export type LastfmStats = {
   __typename?: 'LastfmStats';
+  /**
+   * True when every top artist's image lookup has completed (found image or confirmed none exists).
+   * False while image fetch jobs are still processing.
+   */
+  allImagesResolved: Scalars['Boolean']['output'];
   lastSyncedAt?: Maybe<Scalars['DateTime']['output']>;
   topAlbums: Array<LastfmTopAlbum>;
   topArtists: Array<LastfmTopArtist>;
@@ -1688,6 +1698,11 @@ export type Mutation = {
   deleteTrack: Scalars['Boolean']['output'];
   disconnectLastfm: UserSettings;
   dismissUserSuggestion: Scalars['Boolean']['output'];
+  /**
+   * Find or create artists by MusicBrainz ID.
+   * Used during onboarding to persist non-local Last.fm top artists before saving taste profile.
+   */
+  ensureArtistsFromMbids: Array<Artist>;
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
   /** Admin: Import an external album into the database for review. No pool addition. */
@@ -1866,6 +1881,10 @@ export type MutationDeleteTrackArgs = {
 
 export type MutationDismissUserSuggestionArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationEnsureArtistsFromMbidsArgs = {
+  artists: Array<ArtistMbidInput>;
 };
 
 export type MutationFollowUserArgs = {
@@ -6008,6 +6027,22 @@ export type TriggerLastfmSyncMutation = {
   triggerLastfmSync: boolean;
 };
 
+export type EnsureArtistsFromMbidsMutationVariables = Exact<{
+  artists: Array<ArtistMbidInput> | ArtistMbidInput;
+}>;
+
+export type EnsureArtistsFromMbidsMutation = {
+  __typename?: 'Mutation';
+  ensureArtistsFromMbids: Array<{
+    __typename?: 'Artist';
+    id: string;
+    name: string;
+    musicbrainzId?: string | null;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+  }>;
+};
+
 export type GetUserLastfmStatsQueryVariables = Exact<{
   userId: Scalars['String']['input'];
 }>;
@@ -6024,6 +6059,7 @@ export type GetUserLastfmStatsQuery = {
       totalArtists?: number | null;
       totalAlbums?: number | null;
       lastSyncedAt?: Date | null;
+      allImagesResolved: boolean;
       topArtists: Array<{
         __typename?: 'LastfmTopArtist';
         name: string;
@@ -13747,6 +13783,47 @@ export const useTriggerLastfmSyncMutation = <
 
 useTriggerLastfmSyncMutation.getKey = () => ['TriggerLastfmSync'];
 
+export const EnsureArtistsFromMbidsDocument = `
+    mutation EnsureArtistsFromMbids($artists: [ArtistMbidInput!]!) {
+  ensureArtistsFromMbids(artists: $artists) {
+    id
+    name
+    musicbrainzId
+    imageUrl
+    cloudflareImageId
+  }
+}
+    `;
+
+export const useEnsureArtistsFromMbidsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    EnsureArtistsFromMbidsMutation,
+    TError,
+    EnsureArtistsFromMbidsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    EnsureArtistsFromMbidsMutation,
+    TError,
+    EnsureArtistsFromMbidsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['EnsureArtistsFromMbids'],
+    mutationFn: (variables?: EnsureArtistsFromMbidsMutationVariables) =>
+      fetcher<
+        EnsureArtistsFromMbidsMutation,
+        EnsureArtistsFromMbidsMutationVariables
+      >(EnsureArtistsFromMbidsDocument, variables)(),
+    ...options,
+  });
+};
+
+useEnsureArtistsFromMbidsMutation.getKey = () => ['EnsureArtistsFromMbids'];
+
 export const GetUserLastfmStatsDocument = `
     query GetUserLastfmStats($userId: String!) {
   user(id: $userId) {
@@ -13772,6 +13849,7 @@ export const GetUserLastfmStatsDocument = `
         albumId
       }
       lastSyncedAt
+      allImagesResolved
     }
   }
 }

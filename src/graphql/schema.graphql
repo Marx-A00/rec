@@ -3558,6 +3558,17 @@ type Mutation {
 
   # Taste profile
   setTasteProfile(artistIds: [String!]!): [UserFavoriteArtist!]!
+
+  """
+  Find or create artists by MusicBrainz ID.
+  Used during onboarding to persist non-local Last.fm top artists before saving taste profile.
+  """
+  ensureArtistsFromMbids(artists: [ArtistMbidInput!]!): [Artist!]!
+}
+
+input ArtistMbidInput {
+  name: String!
+  mbid: String!
 }
 
 type FollowUserPayload {
@@ -3982,6 +3993,11 @@ type LastfmStats {
   topArtists: [LastfmTopArtist!]!
   topAlbums: [LastfmTopAlbum!]!
   lastSyncedAt: DateTime
+  """
+  True when every top artist's image lookup has completed (found image or confirmed none exists).
+  False while image fetch jobs are still processing.
+  """
+  allImagesResolved: Boolean!
 }
 
 type LastfmTopArtist {

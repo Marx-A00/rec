@@ -48,6 +48,8 @@ export async function tryFetchSpotifyArtistImage(
     await cache.setMiss(cacheKey, CACHE_TTLS.SPOTIFY_IMAGE);
     return null;
   } catch {
+    // Cache sentinel on error so allImagesResolved can resolve
+    await cache.setMiss(cacheKey, CACHE_TTLS.SPOTIFY_IMAGE).catch(() => {});
     return null;
   }
 }

@@ -1,22 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-  UniqueIdentifier,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
 import { Search, Plus } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -27,7 +11,7 @@ import {
 import { UnifiedSearchResult } from '@/types/search';
 import AlbumImage from '@/components/ui/AlbumImage';
 
-import { SortableArtistItem, SelectedArtist } from './SortableArtistItem';
+import { ArtistItem, SelectedArtist } from './SortableArtistItem';
 
 const MAX_ARTISTS = 5;
 
@@ -44,7 +28,6 @@ export default function ArtistPicker({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   // Pre-fill from Last.fm on mount
   useEffect(() => {
@@ -90,13 +73,6 @@ export default function ArtistPicker({
       r.type === 'artist' && !selectedArtists.some(s => s.id === r.id)
   );
 
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    })
-  );
-
   const handleSelect = useCallback(
     (result: UnifiedSearchResult) => {
       if (selectedArtists.length >= MAX_ARTISTS) return;
@@ -128,26 +104,6 @@ export default function ArtistPicker({
     [selectedArtists, onSelectionChange]
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = selectedArtists.findIndex(a => a.id === active.id);
-      const newIndex = selectedArtists.findIndex(a => a.id === over.id);
-      const reordered = arrayMove(selectedArtists, oldIndex, newIndex);
-      setSelectedArtists(reordered);
-      onSelectionChange?.(reordered);
-    }
-    setActiveId(null);
-  };
-
-  const activeArtist = activeId
-    ? selectedArtists.find(a => a.id === activeId)
-    : null;
-
   const isFull = selectedArtists.length >= MAX_ARTISTS;
   const emptySlotCount = MAX_ARTISTS - selectedArtists.length;
 
@@ -160,7 +116,6 @@ export default function ArtistPicker({
         </h3>
         <p className='text-sm text-zinc-400 mt-1'>
           {selectedArtists.length} / {MAX_ARTISTS} selected
-          {selectedArtists.length > 1 && ' · Drag to reorder'}
         </p>
       </div>
 
@@ -256,81 +211,48 @@ export default function ArtistPicker({
       )}
 
       {/* Artist grid */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={selectedArtists.map(a => a.id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className='grid grid-cols-4 gap-2.5 auto-rows-auto'>
-            {selectedArtists.map((artist, index) => (
-              <SortableArtistItem
-                key={artist.id}
-                artist={artist}
-                isLarge={index === 0 && selectedArtists.length > 1}
-                onRemoveAction={handleRemove}
-              />
-            ))}
+      <div className='grid grid-cols-4 gap-2.5 auto-rows-auto'>
+        {selectedArtists.map((artist, index) => (
+          <ArtistItem
+            key={artist.id}
+            artist={artist}
+            isLarge={index === 0 && selectedArtists.length > 1}
+            onRemoveAction={handleRemove}
+          />
+        ))}
 
-            {/* Empty slots */}
-            {Array.from({ length: emptySlotCount }).map((_, i) => {
-              const slotIndex = selectedArtists.length + i;
-              const isLargeSlot =
-                slotIndex === 0 && selectedArtists.length === 0;
-              return (
-                <div
-                  key={`empty-${i}`}
-                  className={`${
-                    isLargeSlot ? 'col-span-2 row-span-2' : 'col-span-1'
-                  }`}
-                >
-                  <div
-                    className='aspect-square rounded-lg border-2 border-dashed border-zinc-700/50 bg-zinc-800/50 flex items-center justify-center cursor-pointer hover:border-zinc-600 hover:bg-zinc-800 transition-colors'
-                    onClick={() => {
-                      if (!isFull) {
-                        const input = document.querySelector<HTMLInputElement>(
-                          'input[placeholder*="Search artists"]'
-                        );
-                        input?.focus();
-                      }
-                    }}
-                  >
-                    <Plus className='w-5 h-5 text-zinc-600' />
-                  </div>
-                  <p className='mt-1.5 text-[11px] font-medium text-zinc-600'>
-                    #{slotIndex + 1}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </SortableContext>
-
-        {/* Drag overlay */}
-        <DragOverlay>
-          {activeArtist ? (
-            <div className='opacity-80 rotate-3 scale-105'>
-              <div className='aspect-square overflow-hidden rounded-lg'>
-                <AlbumImage
-                  src={activeArtist.imageUrl}
-                  cloudflareImageId={activeArtist.cloudflareImageId}
-                  alt={activeArtist.name}
-                  className='w-full h-full object-cover'
-                  fill
-                  sizes='100px'
-                />
+        {/* Empty slots */}
+        {Array.from({ length: emptySlotCount }).map((_, i) => {
+          const slotIndex = selectedArtists.length + i;
+          const isLargeSlot =
+            slotIndex === 0 && selectedArtists.length === 0;
+          return (
+            <div
+              key={`empty-${i}`}
+              className={`${
+                isLargeSlot ? 'col-span-2 row-span-2' : 'col-span-1'
+              }`}
+            >
+              <div
+                className='aspect-square rounded-lg border-2 border-dashed border-zinc-700/50 bg-zinc-800/50 flex items-center justify-center cursor-pointer hover:border-zinc-600 hover:bg-zinc-800 transition-colors'
+                onClick={() => {
+                  if (!isFull) {
+                    const input = document.querySelector<HTMLInputElement>(
+                      'input[placeholder*="Search artists"]'
+                    );
+                    input?.focus();
+                  }
+                }}
+              >
+                <Plus className='w-5 h-5 text-zinc-600' />
               </div>
-              <p className='mt-1.5 text-white font-medium text-xs truncate'>
-                {activeArtist.name}
+              <p className='mt-1.5 text-[11px] font-medium text-zinc-600'>
+                #{slotIndex + 1}
               </p>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          );
+        })}
+      </div>
     </div>
   );
 }

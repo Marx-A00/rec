@@ -33,6 +33,16 @@ mutation TriggerLastfmSync {
   triggerLastfmSync
 }
 
+mutation EnsureArtistsFromMbids($artists: [ArtistMbidInput!]!) {
+  ensureArtistsFromMbids(artists: $artists) {
+    id
+    name
+    musicbrainzId
+    imageUrl
+    cloudflareImageId
+  }
+}
+
 # Last.fm Stats Query
 query GetUserLastfmStats($userId: String!) {
   user(id: $userId) {
@@ -58,6 +68,7 @@ query GetUserLastfmStats($userId: String!) {
         albumId
       }
       lastSyncedAt
+      allImagesResolved
     }
   }
 }

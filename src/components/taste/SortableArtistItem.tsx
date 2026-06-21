@@ -1,8 +1,6 @@
 'use client';
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 
@@ -13,52 +11,27 @@ export interface SelectedArtist {
   cloudflareImageId?: string | null;
   source?: 'local' | 'musicbrainz' | 'discogs' | 'spotify';
   preFilledFromLastfm?: boolean;
+  /** MusicBrainz ID — set for non-local Last.fm artists that need creation on save */
+  mbid?: string;
 }
 
-interface SortableArtistItemProps {
+interface ArtistItemProps {
   artist: SelectedArtist;
   isLarge: boolean;
   onRemoveAction: (id: string) => void;
 }
 
-export function SortableArtistItem({
+export function ArtistItem({
   artist,
   isLarge,
   onRemoveAction,
-}: SortableArtistItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: artist.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+}: ArtistItemProps) {
   const sizeClass = isLarge ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1';
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`
-        ${sizeClass}
-        ${isDragging ? 'opacity-50 z-50' : 'opacity-100'}
-        cursor-grab active:cursor-grabbing
-        transition-opacity duration-200
-      `}
-      {...attributes}
-      {...listeners}
-    >
+    <div className={sizeClass}>
       <div className='group relative'>
-        <div
-          className={`relative ${isLarge ? 'aspect-square' : 'aspect-square'} overflow-hidden rounded-lg`}
-        >
+        <div className='relative aspect-square overflow-hidden rounded-lg'>
           <AlbumImage
             src={artist.imageUrl}
             cloudflareImageId={artist.cloudflareImageId}
@@ -68,18 +41,10 @@ export function SortableArtistItem({
             sizes={isLarge ? '200px' : '100px'}
           />
 
-          {/* Grip handle */}
-          <div className='absolute top-1.5 left-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded p-1'>
-            <GripVertical className='w-3.5 h-3.5 text-white' />
-          </div>
-
           {/* Remove button */}
           <button
             type='button'
-            onClick={e => {
-              e.stopPropagation();
-              onRemoveAction(artist.id);
-            }}
+            onClick={() => onRemoveAction(artist.id)}
             className='absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 rounded-full p-1'
           >
             <X className='w-3 h-3 text-white' />

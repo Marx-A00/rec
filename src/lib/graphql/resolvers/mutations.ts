@@ -5029,7 +5029,6 @@ export const mutationResolvers: MutationResolvers = {
           lastfmConnectedAt: new Date(),
         },
       });
-
       // Enqueue initial sync job
       try {
         const queue = getMusicBrainzQueue();
@@ -5179,5 +5178,43 @@ export const mutationResolvers: MutationResolvers = {
     } catch (error) {
       throw new GraphQLError(`Failed to update taste profile: ${error}`);
     }
+  },
+
+  ensureArtistsFromMbids: async (
+    _,
+    { artists }: { artists: Array<{ name: string; mbid: string }> },
+    { user, prisma }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    if (artists.length > 10) {
+      throw new GraphQLError('Maximum 10 artists per call');
+    }
+
+    const { findOrCreateArtist } = await import('@/lib/artists/find-or-create');
+
+    const results = [];
+    for (const input of artists) {
+      const { artist } = await findOrCreateArtist({
+        db: prisma,
+        identity: {
+          name: input.name,
+          musicbrainzId: input.mbid,
+        },
+        enrichment: 'queue-check',
+        queueCheckOptions: {
+          source: 'manual',
+          priority: 'medium',
+        },
+        caller: 'ensureArtistsFromMbids',
+      });
+      results.push(artist);
+    }
+
+    return results;
   },
 };

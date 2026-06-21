@@ -19,6 +19,7 @@ import {
   useSetTasteProfileMutation,
   useGetTasteMatchesQuery,
   useGetUserLastfmStatsQuery,
+  useEnsureArtistsFromMbidsMutation,
 } from '@/generated/graphql';
 
 const STEPS = ['Profile', 'Integrations', 'Taste', 'Follow'] as const;
@@ -51,38 +52,57 @@ export default function CompleteProfilePage() {
   const [lastfmError, setLastfmError] = useState('');
   const [lastfmConnected, setLastfmConnected] = useState(false);
   const [lastfmSyncing, setLastfmSyncing] = useState(false);
+  const [lastfmPollingImages, setLastfmPollingImages] = useState(false);
   const connectLastfm = useConnectLastfmMutation();
   const confirmLastfm = useConfirmLastfmConnectionMutation();
 
-  // === Step 2b: Poll for sync completion ===
+  // === Step 2b: Poll for sync completion + image resolution ===
+  const isPolling = lastfmSyncing || lastfmPollingImages;
   const { data: lastfmSyncData } = useGetUserLastfmStatsQuery(
     { userId: session?.user?.id ?? '' },
     {
-      enabled: lastfmSyncing && !!session?.user?.id,
-      refetchInterval: lastfmSyncing ? 2000 : false,
+      enabled: isPolling && !!session?.user?.id,
+      refetchInterval: isPolling ? 2000 : false,
     }
   );
 
-  // When sync delivers top artists, pre-fill and advance
+  // When sync delivers top artists, pre-fill and advance.
+  // Keep polling until allImagesResolved is true.
   useEffect(() => {
-    if (!lastfmSyncing) return;
+    if (!isPolling) return;
 
-    const topArtists = lastfmSyncData?.user?.lastfmStats?.topArtists;
+    const lastfmStats = lastfmSyncData?.user?.lastfmStats;
+    const topArtists = lastfmStats?.topArtists;
+
     if (topArtists && topArtists.length > 0) {
-      setLastfmSyncing(false);
+      // Build/update pre-filled artists with latest image data
       const preFilled: SelectedArtist[] = topArtists
-        .filter(a => a.artistId)
+        .filter(a => a.mbid || a.artistId)
         .slice(0, 5)
         .map(a => ({
-          id: a.artistId!,
+          id: a.artistId || `lastfm:${a.mbid}`,
           name: a.name,
           imageUrl: a.imageUrl,
           cloudflareImageId: a.cloudflareImageId,
           source: 'local' as const,
           preFilledFromLastfm: true,
+          mbid: a.mbid ?? undefined,
         }));
       setSelectedArtists(preFilled);
-      setCurrentStep(2);
+
+      // Advance to taste step (only on first arrival)
+      if (lastfmSyncing) {
+        setLastfmSyncing(false);
+        setLastfmPollingImages(true);
+        setCurrentStep(2);
+        // Safety: stop image polling after 20s max
+        setTimeout(() => setLastfmPollingImages(false), 20000);
+      }
+
+      // Stop polling once all image lookups are done
+      if (lastfmStats?.allImagesResolved) {
+        setLastfmPollingImages(false);
+      }
       return;
     }
 
@@ -90,15 +110,17 @@ export default function CompleteProfilePage() {
     const timeout = setTimeout(() => {
       if (lastfmSyncing) {
         setLastfmSyncing(false);
+        setLastfmPollingImages(false);
         setCurrentStep(2);
       }
     }, 15000);
     return () => clearTimeout(timeout);
-  }, [lastfmSyncing, lastfmSyncData]);
+  }, [isPolling, lastfmSyncing, lastfmSyncData]);
 
   // === Step 3: Taste ===
   const [selectedArtists, setSelectedArtists] = useState<SelectedArtist[]>([]);
   const setTasteProfile = useSetTasteProfileMutation();
+  const ensureArtists = useEnsureArtistsFromMbidsMutation();
 
   // === Step 4: Follow ===
   const { data: matchesData } = useGetTasteMatchesQuery(
@@ -258,9 +280,29 @@ export default function CompleteProfilePage() {
   const handleTasteContinue = async () => {
     if (selectedArtists.length > 0) {
       try {
-        await setTasteProfile.mutateAsync({
-          artistIds: selectedArtists.map(a => a.id),
-        });
+        // Separate local (real DB IDs) from non-local (lastfm:mbid temp IDs)
+        const localArtists = selectedArtists.filter(
+          a => !a.id.startsWith('lastfm:')
+        );
+        const nonLocalArtists = selectedArtists.filter(
+          a => a.id.startsWith('lastfm:') && a.mbid
+        );
+
+        let allArtistIds = localArtists.map(a => a.id);
+
+        // Create DB records for non-local artists
+        if (nonLocalArtists.length > 0) {
+          const result = await ensureArtists.mutateAsync({
+            artists: nonLocalArtists.map(a => ({
+              name: a.name,
+              mbid: a.mbid!,
+            })),
+          });
+          const createdIds = result.ensureArtistsFromMbids.map(a => a.id);
+          allArtistIds = [...allArtistIds, ...createdIds];
+        }
+
+        await setTasteProfile.mutateAsync({ artistIds: allArtistIds });
       } catch {
         // Non-blocking — still advance
       }

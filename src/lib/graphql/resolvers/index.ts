@@ -1565,19 +1565,56 @@ export const resolvers: Resolvers = {
         matchedAlbums.map(a => [a.musicbrainzId, a.id])
       );
 
+      // Check Redis cache for Spotify images for artists missing images
+      // (both unmatched artists and matched artists with null imageUrl)
+      const { cache, CACHE_KEYS: cacheKeys } = await import('@/lib/cache');
+      const top10 = artistEntries.slice(0, 10);
+      const needsImageFromCache = top10.filter(a => {
+        if (!a.mbid) return false;
+        const matched = artistMbidMap.get(a.mbid);
+        // Unmatched artist, or matched but no image
+        return !matched || !matched.imageUrl;
+      });
+
+      const cachedImages = new Map<string, string>();
+      const resolvedMbids = new Set<string>(); // MBIDs where lookup is complete (image or sentinel)
+      if (needsImageFromCache.length > 0) {
+        const results = await Promise.all(
+          needsImageFromCache.map(async a => {
+            const cached = await cache.get<{ imageUrl: string }>(
+              cacheKeys.spotifyImage(a.mbid)
+            );
+            if (cached !== null) {
+              resolvedMbids.add(a.mbid);
+              if (!cache.isMiss(cached) && cached.imageUrl) {
+                return [a.mbid, cached.imageUrl] as const;
+              }
+              // Sentinel — definitively no image, but resolved
+              return null;
+            }
+            // Not in cache at all — still being fetched
+            return null;
+          })
+        );
+        for (const r of results) {
+          if (r) cachedImages.set(r[0], r[1]);
+        }
+      }
+
       return {
         username: settings.lastfmUsername,
         totalPlaycount: lastfmData.totalPlaycount,
         totalArtists: lastfmData.totalArtists,
         totalAlbums: lastfmData.totalAlbums,
-        topArtists: artistEntries.slice(0, 10).map(a => {
+        topArtists: top10.map(a => {
           const matched = a.mbid ? artistMbidMap.get(a.mbid) : undefined;
+          const cachedImageUrl = a.mbid ? cachedImages.get(a.mbid) : undefined;
           return {
             name: a.name,
             playcount: a.playcount,
             mbid: a.mbid || null,
             artistId: matched?.id || null,
-            imageUrl: matched?.imageUrl || null,
+            imageUrl: matched?.imageUrl || cachedImageUrl || null,
             cloudflareImageId: matched?.cloudflareImageId || null,
           };
         }),
@@ -1589,6 +1626,14 @@ export const resolvers: Resolvers = {
           albumId: a.mbid ? albumMbidMap.get(a.mbid) || null : null,
         })),
         lastSyncedAt: lastfmData.lastSyncedAt,
+        allImagesResolved: top10.every(a => {
+          if (!a.mbid) return true;
+          const matched = artistMbidMap.get(a.mbid);
+          if (matched?.imageUrl) return true;
+          if (cachedImages.has(a.mbid)) return true;
+          if (resolvedMbids.has(a.mbid)) return true;
+          return false;
+        }),
       };
     },
 
