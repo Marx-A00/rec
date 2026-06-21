@@ -5033,7 +5033,7 @@ export const mutationResolvers: MutationResolvers = {
       // Enqueue initial sync job
       try {
         const queue = getMusicBrainzQueue();
-        await queue.add(
+        await queue.addJob(
           JOB_TYPES.LASTFM_SYNC_USER,
           { userId: user.id, lastfmUsername: username },
           { priority: 5, removeOnComplete: 100, removeOnFail: 50 }
@@ -5121,7 +5121,7 @@ export const mutationResolvers: MutationResolvers = {
     // Enqueue sync job
     try {
       const queue = getMusicBrainzQueue();
-      await queue.add(
+      await queue.addJob(
         JOB_TYPES.LASTFM_SYNC_USER,
         { userId: user.id, lastfmUsername: settings.lastfmUsername },
         { priority: 5, removeOnComplete: 100, removeOnFail: 50 }

@@ -1545,11 +1545,11 @@ export const resolvers: Resolvers = {
         artistMbids.length > 0
           ? await prisma.artist.findMany({
               where: { musicbrainzId: { in: artistMbids } },
-              select: { id: true, musicbrainzId: true },
+              select: { id: true, musicbrainzId: true, imageUrl: true, cloudflareImageId: true },
             })
           : [];
       const artistMbidMap = new Map(
-        matchedArtists.map(a => [a.musicbrainzId, a.id])
+        matchedArtists.map(a => [a.musicbrainzId, { id: a.id, imageUrl: a.imageUrl, cloudflareImageId: a.cloudflareImageId }])
       );
 
       // Batch resolve album MBIDs to local IDs
@@ -1570,12 +1570,17 @@ export const resolvers: Resolvers = {
         totalPlaycount: lastfmData.totalPlaycount,
         totalArtists: lastfmData.totalArtists,
         totalAlbums: lastfmData.totalAlbums,
-        topArtists: artistEntries.slice(0, 10).map(a => ({
-          name: a.name,
-          playcount: a.playcount,
-          mbid: a.mbid || null,
-          artistId: a.mbid ? artistMbidMap.get(a.mbid) || null : null,
-        })),
+        topArtists: artistEntries.slice(0, 10).map(a => {
+          const matched = a.mbid ? artistMbidMap.get(a.mbid) : undefined;
+          return {
+            name: a.name,
+            playcount: a.playcount,
+            mbid: a.mbid || null,
+            artistId: matched?.id || null,
+            imageUrl: matched?.imageUrl || null,
+            cloudflareImageId: matched?.cloudflareImageId || null,
+          };
+        }),
         topAlbums: albumEntries.slice(0, 10).map(a => ({
           name: a.name,
           artistName: a.artistName,

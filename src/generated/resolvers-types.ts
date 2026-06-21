@@ -1409,6 +1409,8 @@ export type LastfmTopArtist = {
   __typename?: 'LastfmTopArtist';
   /** Resolved local artist ID (null if not in DB) */
   artistId?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
   mbid?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   playcount: Scalars['Int']['output'];
@@ -5992,6 +5994,12 @@ export type LastfmTopArtistResolvers<
     ResolversParentTypes['LastfmTopArtist'] = ResolversParentTypes['LastfmTopArtist'],
 > = ResolversObject<{
   artistId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   mbid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   playcount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;

@@ -47,6 +47,8 @@ query GetUserLastfmStats($userId: String!) {
         playcount
         mbid
         artistId
+        imageUrl
+        cloudflareImageId
       }
       topAlbums {
         name

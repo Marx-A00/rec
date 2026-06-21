@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ const STEPS = ['Profile', 'Integrations', 'Taste', 'Follow'] as const;
 export default function CompleteProfilePage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const devMode = searchParams.get('dev') === 'true';
   const [currentStep, setCurrentStep] = useState(0);
 
   // === Step 1: Profile ===
@@ -74,6 +76,8 @@ export default function CompleteProfilePage() {
         .map(a => ({
           id: a.artistId!,
           name: a.name,
+          imageUrl: a.imageUrl,
+          cloudflareImageId: a.cloudflareImageId,
           source: 'local' as const,
           preFilledFromLastfm: true,
         }));
@@ -103,12 +107,18 @@ export default function CompleteProfilePage() {
   );
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
 
-  // Redirect if already onboarded
+  // Redirect if already onboarded (only on initial load, not mid-stepper)
+  // ?dev=true skips the redirect for testing
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.profileUpdatedAt) {
+    if (
+      status === 'authenticated' &&
+      session?.user?.profileUpdatedAt &&
+      currentStep === 0 &&
+      !devMode
+    ) {
       router.replace('/home-mosaic');
     }
-  }, [status, session, router]);
+  }, [status, session, router, currentStep, devMode]);
 
   // Username availability check
   useEffect(() => {

@@ -3992,6 +3992,8 @@ type LastfmTopArtist {
   Resolved local artist ID (null if not in DB)
   """
   artistId: String
+  imageUrl: String
+  cloudflareImageId: String
 }
 
 type LastfmTopAlbum {

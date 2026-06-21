@@ -1435,6 +1435,8 @@ export type LastfmTopArtist = {
   __typename?: 'LastfmTopArtist';
   /** Resolved local artist ID (null if not in DB) */
   artistId?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
   mbid?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   playcount: Scalars['Int']['output'];
@@ -6028,6 +6030,8 @@ export type GetUserLastfmStatsQuery = {
         playcount: number;
         mbid?: string | null;
         artistId?: string | null;
+        imageUrl?: string | null;
+        cloudflareImageId?: string | null;
       }>;
       topAlbums: Array<{
         __typename?: 'LastfmTopAlbum';
@@ -13757,6 +13761,8 @@ export const GetUserLastfmStatsDocument = `
         playcount
         mbid
         artistId
+        imageUrl
+        cloudflareImageId
       }
       topAlbums {
         name

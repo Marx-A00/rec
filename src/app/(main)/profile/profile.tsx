@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Lock, Pencil, Settings, UserCog } from 'lucide-react';
+import { Lock, Pencil, Plus, Settings, UserCog } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +16,7 @@ import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
 import ArcadeButton from '@/components/ui/ArcadeButton';
 import LastfmTopArtists from '@/components/lastfm/LastfmTopArtists';
+import InlineAlbumPicker from '@/components/collections/InlineAlbumPicker';
 import { useNavigation } from '@/hooks/useNavigation';
 import ContextualHint from '@/components/ui/ContextualHint';
 import { CollectionAlbum } from '@/types/collection';
@@ -36,6 +37,8 @@ interface ProfileClientProps {
   showCollections?: boolean;
   isFollowingUser?: boolean;
   isPrivateProfile?: boolean;
+  listenLaterCollectionId?: string | null;
+  defaultCollectionId?: string | null;
 }
 
 export default function ProfileClient({
@@ -48,6 +51,8 @@ export default function ProfileClient({
   showCollections = true,
   isFollowingUser = false,
   isPrivateProfile = false,
+  listenLaterCollectionId,
+  defaultCollectionId,
 }: ProfileClientProps) {
   // Fetch user profile data via React Query
   const { data: profileData, isLoading: isProfileLoading } =
@@ -78,6 +83,11 @@ export default function ProfileClient({
 
   // Add state for profile image lightbox
   const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
+
+  // Inline album picker state
+  const [addingTo, setAddingTo] = useState<'listenLater' | 'collection' | null>(
+    null
+  );
 
   // State for optimistic follow count updates — reset when server data refreshes
   const [followersCountDelta, setFollowersCountDelta] = useState(0);
@@ -483,12 +493,45 @@ export default function ProfileClient({
               {/* Listen Later Section */}
               {showCollections && (
                 <section className='border-t border-zinc-800 pt-8'>
-                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte flex items-center gap-2'>
-                    <span>Listen Later</span>
-                    <span className='text-sm font-normal text-zinc-400'>
-                      ({listenLater.length})
-                    </span>
-                  </h2>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h2 className='text-2xl font-semibold text-cosmic-latte flex items-center gap-2'>
+                      <span>Listen Later</span>
+                      <span className='text-sm font-normal text-zinc-400'>
+                        ({listenLater.length})
+                      </span>
+                    </h2>
+                    {isOwnProfile && listenLaterCollectionId && (
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setAddingTo(
+                            addingTo === 'listenLater' ? null : 'listenLater'
+                          )
+                        }
+                        className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors'
+                      >
+                        <Plus className='w-4 h-4' />
+                        Add Albums
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline Album Picker */}
+                  {addingTo === 'listenLater' && listenLaterCollectionId && (
+                    <div className='mb-6'>
+                      <InlineAlbumPicker
+                        collectionId={listenLaterCollectionId}
+                        existingAlbumIds={
+                          new Set(listenLater.map(a => a.albumId))
+                        }
+                        onClose={() => setAddingTo(null)}
+                        onAlbumsAdded={() => {
+                          setAddingTo(null);
+                          window.location.reload();
+                        }}
+                      />
+                    </div>
+                  )}
                   {listenLater.length > 0 ? (
                     <>
                       <SortableAlbumGrid
@@ -526,9 +569,42 @@ export default function ProfileClient({
 
               {showCollections && (
                 <section className='border-t border-zinc-800 pt-8'>
-                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-                    Record Collection
-                  </h2>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h2 className='text-2xl font-semibold text-cosmic-latte'>
+                      Record Collection
+                    </h2>
+                    {isOwnProfile && defaultCollectionId && (
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setAddingTo(
+                            addingTo === 'collection' ? null : 'collection'
+                          )
+                        }
+                        className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors'
+                      >
+                        <Plus className='w-4 h-4' />
+                        Add Albums
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline Album Picker */}
+                  {addingTo === 'collection' && defaultCollectionId && (
+                    <div className='mb-6'>
+                      <InlineAlbumPicker
+                        collectionId={defaultCollectionId}
+                        existingAlbumIds={
+                          new Set(allAlbums.map(a => a.albumId))
+                        }
+                        onClose={() => setAddingTo(null)}
+                        onAlbumsAdded={() => {
+                          setAddingTo(null);
+                          window.location.reload();
+                        }}
+                      />
+                    </div>
+                  )}
                   {allAlbums.length > 0 ? (
                     <div>
                       {/* Collection Stats */}

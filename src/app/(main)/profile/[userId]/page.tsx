@@ -69,7 +69,9 @@ async function getUserRecommendations(userId: string) {
 }
 
 // Helper function to get user collections (excluding Listen Later)
-async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
+async function getUserCollections(
+  userId: string
+): Promise<{ albums: CollectionAlbum[]; defaultCollectionId: string | null }> {
   const collections = await prisma.collection.findMany({
     where: {
       userId,
@@ -98,7 +100,7 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
     orderBy: { updatedAt: 'desc' },
   });
 
-  return collections.flatMap(collection =>
+  const albums = collections.flatMap(collection =>
     collection.albums.map(
       (album): CollectionAlbum => ({
         id: album.id,
@@ -119,10 +121,14 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
       })
     )
   );
+
+  return { albums, defaultCollectionId: collections[0]?.id ?? null };
 }
 
 // Helper function to get Listen Later collection
-async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
+async function getListenLater(
+  userId: string
+): Promise<{ albums: CollectionAlbum[]; collectionId: string | null }> {
   const listenLater = await prisma.collection.findFirst({
     where: {
       userId,
@@ -150,9 +156,9 @@ async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
     },
   });
 
-  if (!listenLater) return [];
+  if (!listenLater) return { albums: [], collectionId: null };
 
-  return listenLater.albums
+  const albums = listenLater.albums
     .filter(album => album.album) // Filter out albums that couldn't be loaded
     .map(
       (album): CollectionAlbum => ({
@@ -176,6 +182,8 @@ async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
         position: album.position,
       })
     );
+
+  return { albums, collectionId: listenLater.id };
 }
 
 interface ProfilePageProps {
@@ -239,25 +247,42 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       : null;
 
   // Get collections, listen later, and recommendations (skip for private profiles)
-  const [collection, listenLater, recommendations] = isPrivateProfile
-    ? [[], [], []]
-    : await Promise.all([
-        showCollections ? getUserCollections(userId) : Promise.resolve([]),
-        showCollections ? getListenLater(userId) : Promise.resolve([]),
-        getUserRecommendations(userId),
-      ]);
+  const [collectionResult, listenLaterResult, recommendations] =
+    isPrivateProfile
+      ? [
+          { albums: [] as CollectionAlbum[], defaultCollectionId: null },
+          { albums: [] as CollectionAlbum[], collectionId: null },
+          [] as Awaited<ReturnType<typeof getUserRecommendations>>,
+        ]
+      : await Promise.all([
+          showCollections
+            ? getUserCollections(userId)
+            : Promise.resolve({
+                albums: [] as CollectionAlbum[],
+                defaultCollectionId: null,
+              }),
+          showCollections
+            ? getListenLater(userId)
+            : Promise.resolve({
+                albums: [] as CollectionAlbum[],
+                collectionId: null,
+              }),
+          getUserRecommendations(userId),
+        ]);
 
   return (
     <Profile
       userId={userId}
-      collection={collection}
-      listenLater={listenLater}
+      collection={collectionResult.albums}
+      listenLater={listenLaterResult.albums}
       recommendations={recommendations}
       isOwnProfile={isOwnProfile}
       isAuthenticated={!!session?.user?.id}
       showCollections={showCollections}
       isFollowingUser={!!isFollowingUser}
       isPrivateProfile={isPrivateProfile}
+      listenLaterCollectionId={listenLaterResult.collectionId}
+      defaultCollectionId={collectionResult.defaultCollectionId}
     />
   );
 }

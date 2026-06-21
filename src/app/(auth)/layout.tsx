@@ -32,7 +32,11 @@ export default async function AuthLayout({
   // Redirect authenticated users who completed onboarding to home mosaic
   // Users without profileUpdatedAt stay on auth pages to complete their profile
   // Skip redirect for password reset pages (user may be signed in on the device)
-  if (session?.user && !shouldBypass) {
+  // ?dev=true bypasses the redirect for testing onboarding
+  const search = headersList.get('x-search') || '';
+  const isDevMode = search.includes('dev=true');
+
+  if (session?.user && !shouldBypass && !isDevMode) {
     const hasCompletedOnboarding = session.user.profileUpdatedAt !== null;
 
     if (hasCompletedOnboarding) {
