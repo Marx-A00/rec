@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ArtistPicker from '@/components/taste/ArtistPicker';
+import AlbumImportDialog from '@/components/lastfm/AlbumImportDialog';
 import { SelectedArtist } from '@/components/taste/SortableArtistItem';
 import { uploadAvatar } from '@/lib/upload-avatar';
 import { validateUsernameForRegistration } from '@/lib/validations';
@@ -128,6 +129,7 @@ export default function CompleteProfilePage() {
     { enabled: currentStep === 3 && selectedArtists.length > 0 }
   );
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
+  const [showAlbumImport, setShowAlbumImport] = useState(false);
 
   // Redirect if already onboarded (only on initial load, not mid-stepper)
   // ?dev=true skips the redirect for testing
@@ -322,7 +324,11 @@ export default function CompleteProfilePage() {
 
   const handleFinish = async () => {
     await update();
-    router.replace('/home-mosaic');
+    if (lastfmConnected) {
+      setShowAlbumImport(true);
+    } else {
+      router.replace('/home-mosaic');
+    }
   };
 
   // === Step navigation ===
@@ -709,6 +715,16 @@ export default function CompleteProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Album import dialog (shown after Finish if Last.fm connected) */}
+      <AlbumImportDialog
+        open={showAlbumImport}
+        onOpenChange={open => {
+          setShowAlbumImport(open);
+          if (!open) router.replace('/home-mosaic');
+        }}
+        onComplete={() => {}}
+      />
     </div>
   );
 }

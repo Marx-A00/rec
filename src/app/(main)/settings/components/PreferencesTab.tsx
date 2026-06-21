@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { Loader2, ExternalLink, RefreshCw, Download } from 'lucide-react';
 
 import { TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/toast';
 import ArtistPicker from '@/components/taste/ArtistPicker';
+import AlbumImportDialog from '@/components/lastfm/AlbumImportDialog';
 import { SelectedArtist } from '@/components/taste/SortableArtistItem';
 import {
   useGetMySettingsQuery,
@@ -45,6 +46,7 @@ export default function PreferencesTab() {
   // Settings state
   const [showLastfmStats, setShowLastfmStats] = useState(true);
   const [lastfmSyncEnabled, setLastfmSyncEnabled] = useState(true);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Taste profile state
   const setTasteProfile = useSetTasteProfileMutation();
@@ -295,6 +297,32 @@ export default function PreferencesTab() {
                 {triggerSync.isPending ? 'Syncing...' : 'Refresh Now'}
               </button>
             </div>
+
+            {/* Import Albums */}
+            <div className='flex items-center justify-between py-3 border-b border-zinc-800'>
+              <div>
+                <h4 className='font-medium text-white'>Import albums</h4>
+                <p className='text-sm text-zinc-400'>
+                  Add your most-played Last.fm albums to your collection
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowImportDialog(true)}
+                className='flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-zinc-300 transition-colors'
+              >
+                <Download className='w-3.5 h-3.5' />
+                Import Albums
+              </button>
+            </div>
+
+            <AlbumImportDialog
+              open={showImportDialog}
+              onOpenChange={setShowImportDialog}
+              onComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['GetMyCollections'] });
+              }}
+            />
           </>
         ) : (
           <>
