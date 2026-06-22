@@ -54,7 +54,7 @@ describe('escapeLuceneSpecialChars', () => {
 
 describe('buildDualInputQuery', () => {
   const FILTERS =
-    'AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix';
+    'AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"';
 
   describe('both album and artist provided', () => {
     it('should build query with both fields', () => {

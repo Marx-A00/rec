@@ -620,24 +620,6 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  searchTracks: async (_: any, { query, limit = 20 }: any, { prisma }: any) => {
-    try {
-      const tracks = await prisma.track.findMany({
-        where: {
-          title: {
-            contains: query,
-            mode: 'insensitive',
-          },
-        },
-        take: limit,
-        orderBy: { title: 'asc' },
-      });
-      return tracks;
-    } catch (error) {
-      throw new GraphQLError(`Failed to search tracks: ${error}`);
-    }
-  },
-
   user: async (_, { id }, { prisma }) => {
     try {
       const user = await prisma.user.findUnique({ where: { id } });

@@ -422,7 +422,7 @@ describe('findOrCreateArtist', () => {
       expect(db.artist.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           dataQuality: 'LOW',
-          enrichmentStatus: 'PENDING',
+          enrichmentStatus: 'UNENRICHED',
         }),
       });
     });
