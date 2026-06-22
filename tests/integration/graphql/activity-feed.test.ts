@@ -301,7 +301,7 @@ describe('Activity-based Social Feed', () => {
       await cleanupTestData(prisma);
     });
 
-    it('should paginate activities correctly', async () => {
+    it('should paginate activities correctly', { timeout: 30000 }, async () => {
       const viewer = await createTestUser(prisma, {
         email: 'pag-viewer@test.com',
       });

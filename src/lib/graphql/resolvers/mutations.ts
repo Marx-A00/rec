@@ -1297,7 +1297,7 @@ export const mutationResolvers: MutationResolvers = {
       );
       await Promise.all([
         invalidateCollectionCache(collectionId, user.id),
-        invalidateAlbumCache(albumId),
+        invalidateAlbumCache(input.albumId),
       ]);
       return result.collectionAlbum;
     } catch (error) {
