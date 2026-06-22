@@ -240,6 +240,17 @@ export async function cleanupTestData(prisma: PrismaClient): Promise<void> {
     await prisma.recommendation.deleteMany({
       where: { userId: { in: testUserIds } },
     });
+
+    // Delete Last.fm and taste profile data for test users
+    await prisma.userFavoriteArtist.deleteMany({
+      where: { userId: { in: testUserIds } },
+    });
+    await prisma.userLastfmData.deleteMany({
+      where: { userId: { in: testUserIds } },
+    });
+    await prisma.userSettings.deleteMany({
+      where: { userId: { in: testUserIds } },
+    });
   }
 
   // Get test album IDs (matches the [TEST] prefix from createTestAlbum)
