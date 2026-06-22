@@ -47,6 +47,7 @@ export interface UseUncoverGameOptions {
  * - Puzzle data (including correct answer) loads upfront via query
  * - Guesses are validated instantly on the client
  * - Server is notified once at game end (fire-and-forget)
+ * - Completed results persist in a local map (survives navigation)
  * - Failed submissions are retried on next mount
  *
  * Call with no args for daily mode: `useUncoverGame()`
@@ -64,6 +65,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
   const [localError, setLocalError] = useState<string | null>(null);
   const hasReset = useRef(false);
   const retryAttempted = useRef(false);
+  const devResetPending = useRef(false);
 
   // ISO date string for archive store persistence
   const dateString = challengeDate?.toISOString() ?? null;
@@ -86,10 +88,12 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
   const submitResultMutation = useSubmitGameResultMutation();
   const correctAlbumId = puzzle?.correctAlbumId ?? null;
 
-  // Archive: reset shared store on mount so stale daily-game state doesn't interfere
+  // Archive: reset active session on mount so stale daily-game state doesn't interfere.
+  // Stash in-progress daily first so it can be restored when returning to /game/play.
   useEffect(() => {
     if (isArchive && !hasReset.current) {
-      gameStore.resetSession();
+      gameStore.suspendDailySession();
+      gameStore.resetActiveSession();
       gameStore.clearGuesses();
       gameStore.clearError();
       hasReset.current = true;
@@ -127,7 +131,9 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
           },
         });
 
-        gameStore.markResultSubmitted();
+        // Mark submitted in both the active session and the persistent map
+        gameStore.markActiveResultSubmitted();
+        gameStore.markCompletedSessionSubmitted(challengeId);
 
         // Archive: invalidate calendar query so it shows the new completion
         if (isArchive) {
@@ -152,26 +158,19 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
 
   useEffect(() => {
     if (retryAttempted.current) return;
+    retryAttempted.current = true;
 
-    const {
-      challengeId,
-      status,
-      resultSubmitted,
-      guesses,
-      won,
-      attemptCount,
-      mode: storeMode,
-    } = gameStore;
-
-    if (
-      challengeId &&
-      (status === 'WON' || status === 'LOST') &&
-      !resultSubmitted &&
-      // Archive: only retry if store mode matches
-      (!isArchive || storeMode === 'archive')
-    ) {
-      retryAttempted.current = true;
-      submitResultToServer(challengeId, guesses, won, attemptCount);
+    // Scan completed sessions map for any unsubmitted results
+    const { completedSessions } = gameStore;
+    for (const [challengeId, completed] of Object.entries(completedSessions)) {
+      if (!completed.resultSubmitted) {
+        submitResultToServer(
+          challengeId,
+          completed.guesses,
+          completed.won,
+          completed.attemptCount
+        );
+      }
     }
     // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -204,31 +203,24 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
         );
       }
 
-      // Check if server has an existing completed result
-      if (puzzleData.existingResult) {
-        const existing = puzzleData.existingResult;
-
-        gameStore.setSession({
+      // 1. Check local completed sessions map (instant, no network)
+      const localResult = gameStore.completedSessions[puzzleData.challengeId];
+      if (localResult) {
+        gameStore.setActiveSession({
           id: generateId(),
           challengeId: puzzleData.challengeId,
           mode,
           ...(isArchive && dateString ? { archiveDate: dateString } : {}),
         });
 
-        // Restore guesses from server
         gameStore.clearGuesses();
-        existing.guesses.forEach(g => {
-          gameStore.addGuess({
-            guessNumber: g.guessNumber,
-            guessedText: g.albumTitle ?? null,
-            isCorrect: g.isCorrect,
-            guessedAlbumId: g.albumId ?? undefined,
-          });
+        localResult.guesses.forEach((g: Guess) => {
+          gameStore.addGuess(g);
         });
 
-        gameStore.updateAttemptCount(existing.attemptCount);
-        gameStore.endSession(existing.won);
-        gameStore.markResultSubmitted();
+        gameStore.updateAttemptCount(localResult.attemptCount);
+        gameStore.endActiveSession(localResult.won);
+        gameStore.markActiveResultSubmitted();
 
         return {
           imageUrl: puzzleData.imageUrl ?? '',
@@ -236,22 +228,84 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
         };
       }
 
-      // Daily: check if localStorage has an in-progress session for this challenge
+      // 2. Daily: restore suspended session (stashed when user visited archive mid-game)
+      if (!isArchive) {
+        const suspended = gameStore.restoreDailySession();
+        if (suspended && suspended.challengeId === puzzleData.challengeId) {
+          gameStore.setActiveSession({
+            id: suspended.sessionId,
+            challengeId: suspended.challengeId,
+            mode: 'daily',
+          });
+          gameStore.clearGuesses();
+          suspended.guesses.forEach(g => gameStore.addGuess(g));
+          gameStore.updateAttemptCount(suspended.attemptCount);
+
+          return {
+            imageUrl: puzzleData.imageUrl ?? '',
+            cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
+          };
+        }
+      }
+
+      // 3. Daily: check if active session is in-progress for this challenge
       if (
         !isArchive &&
         gameStore.challengeId === puzzleData.challengeId &&
         gameStore.status === 'IN_PROGRESS' &&
         gameStore.sessionId
       ) {
-        // Resume existing session — store already has the state
         return {
           imageUrl: puzzleData.imageUrl ?? '',
           cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
         };
       }
 
-      // Fresh session
-      gameStore.setSession({
+      // 4. Check server's existingResult (free fallback — new device / cleared storage)
+      //    Skip if a DEV reset just happened — the server still has the old result.
+      if (puzzleData.existingResult && !devResetPending.current) {
+        const existing = puzzleData.existingResult;
+
+        gameStore.setActiveSession({
+          id: generateId(),
+          challengeId: puzzleData.challengeId,
+          mode,
+          ...(isArchive && dateString ? { archiveDate: dateString } : {}),
+        });
+
+        const restoredGuesses: Guess[] = existing.guesses.map(
+          (g: { guessNumber: number; albumTitle?: string | null; albumId?: string | null; isCorrect: boolean }) => ({
+            guessNumber: g.guessNumber,
+            guessedText: g.albumTitle ?? null,
+            isCorrect: g.isCorrect,
+            guessedAlbumId: g.albumId ?? undefined,
+          })
+        );
+
+        gameStore.clearGuesses();
+        restoredGuesses.forEach(g => gameStore.addGuess(g));
+
+        gameStore.updateAttemptCount(existing.attemptCount);
+        gameStore.endActiveSession(existing.won);
+        gameStore.markActiveResultSubmitted();
+
+        // Save to local map so future visits don't need the server
+        gameStore.saveCompletedSession(puzzleData.challengeId, {
+          won: existing.won,
+          attemptCount: existing.attemptCount,
+          guesses: restoredGuesses,
+          resultSubmitted: true,
+        });
+
+        return {
+          imageUrl: puzzleData.imageUrl ?? '',
+          cloudflareImageId: puzzleData.cloudflareImageId ?? undefined,
+        };
+      }
+
+      // 5. Fresh session
+      devResetPending.current = false;
+      gameStore.setActiveSession({
         id: generateId(),
         challengeId: puzzleData.challengeId,
         mode,
@@ -273,7 +327,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
       if (isArchive) return null;
       throw error;
     }
-  }, [gameStore, puzzle, puzzleQuery, mode, isArchive, dateString]);
+  }, [gameStore, puzzle, mode, isArchive, dateString, archiveQuery, dailyQuery]);
 
   // ----- Submit guess (instant) -----
 
@@ -351,7 +405,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
       const result = getGameResult(updatedGuesses, MAX_ATTEMPTS);
 
       if (result.gameOver) {
-        gameStore.endSession(result.won);
+        gameStore.endActiveSession(result.won);
 
         // Build the complete guess list including the one we just added.
         // We can't rely on gameStore.guesses here because the Zustand
@@ -367,6 +421,14 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
             guessedYear: releaseYear,
           },
         ];
+
+        // Save to completed sessions map (persists across navigation)
+        gameStore.saveCompletedSession(gameStore.challengeId, {
+          won: result.won,
+          attemptCount: newAttemptCount,
+          guesses: allGuesses,
+          resultSubmitted: false,
+        });
 
         submitResultToServer(
           gameStore.challengeId,
@@ -430,7 +492,7 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
     const result = getGameResult(updatedGuesses, MAX_ATTEMPTS);
 
     if (result.gameOver) {
-      gameStore.endSession(result.won);
+      gameStore.endActiveSession(result.won);
 
       // Build complete guess list — same stale-closure fix as submitGuess
       const allGuesses: Guess[] = [
@@ -441,6 +503,14 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
           isCorrect: false,
         },
       ];
+
+      // Save to completed sessions map (persists across navigation)
+      gameStore.saveCompletedSession(gameStore.challengeId, {
+        won: result.won,
+        attemptCount: newAttemptCount,
+        guesses: allGuesses,
+        resultSubmitted: false,
+      });
 
       submitResultToServer(
         gameStore.challengeId,
@@ -495,7 +565,13 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
     startGame,
     submitGuess,
     skipGuess,
-    resetGame: gameStore.resetSession,
+    resetGame: () => {
+      const cid = gameStore.challengeId;
+      if (cid) gameStore.removeCompletedSession(cid);
+      gameStore.resetActiveSession();
+      gameStore.clearGuesses();
+      devResetPending.current = true;
+    },
     clearError: () => {
       gameStore.clearError();
       setLocalError(null);

@@ -16,9 +16,24 @@ export interface Guess {
 
 export type GameMode = 'daily' | 'archive';
 
-// ----- Session Slice -----
+export interface CompletedSession {
+  won: boolean;
+  attemptCount: number;
+  guesses: Guess[];
+  resultSubmitted: boolean;
+}
 
-interface SessionSlice {
+export interface SuspendedSession {
+  sessionId: string;
+  challengeId: string;
+  attemptCount: number;
+  guesses: Guess[];
+}
+
+// ----- Store -----
+
+export interface UncoverGameStore {
+  // Active session
   sessionId: string | null;
   challengeId: string | null;
   status: SessionStatus;
@@ -28,130 +43,169 @@ interface SessionSlice {
   archiveDate: string | null;
   resultSubmitted: boolean;
 
-  setSession: (session: {
+  setActiveSession: (session: {
     id: string;
     challengeId: string;
     mode?: GameMode;
     archiveDate?: string | null;
   }) => void;
   updateAttemptCount: (count: number) => void;
-  endSession: (won: boolean) => void;
-  markResultSubmitted: () => void;
-  resetSession: () => void;
-}
+  endActiveSession: (won: boolean) => void;
+  markActiveResultSubmitted: () => void;
+  resetActiveSession: () => void;
 
-const createSessionSlice = (set: unknown): SessionSlice => ({
-  sessionId: null,
-  challengeId: null,
-  status: 'IN_PROGRESS',
-  attemptCount: 0,
-  won: false,
-  mode: 'daily',
-  archiveDate: null,
-  resultSubmitted: false,
-
-  setSession: session =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      sessionId: session.id,
-      challengeId: session.challengeId,
-      status: 'IN_PROGRESS' as const,
-      mode: session.mode ?? 'daily',
-      archiveDate: session.archiveDate ?? null,
-      resultSubmitted: false,
-    }),
-  updateAttemptCount: count =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      attemptCount: count,
-    }),
-  endSession: won =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      status: (won ? 'WON' : 'LOST') as SessionStatus,
-      won,
-    }),
-  markResultSubmitted: () =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      resultSubmitted: true,
-    }),
-  resetSession: () =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      sessionId: null,
-      challengeId: null,
-      status: 'IN_PROGRESS' as const,
-      attemptCount: 0,
-      won: false,
-      mode: 'daily',
-      archiveDate: null,
-      resultSubmitted: false,
-    }),
-});
-
-// ----- Guesses Slice -----
-
-interface GuessesSlice {
+  // Guesses (tied to active session)
   guesses: Guess[];
-
   addGuess: (guess: Guess) => void;
   setGuesses: (guesses: Guess[]) => void;
   clearGuesses: () => void;
-}
 
-const createGuessesSlice = (set: unknown): GuessesSlice => ({
-  guesses: [],
+  // Completed sessions (persistent history — survives resets)
+  completedSessions: Record<string, CompletedSession>;
+  saveCompletedSession: (challengeId: string, session: CompletedSession) => void;
+  markCompletedSessionSubmitted: (challengeId: string) => void;
+  removeCompletedSession: (challengeId: string) => void;
 
-  addGuess: guess =>
-    (
-      set as (
-        fn: (state: UncoverGameStore) => Partial<UncoverGameStore>
-      ) => void
-    )((state: UncoverGameStore) => ({
-      guesses: [...state.guesses, guess],
-    })),
-  setGuesses: guesses =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({ guesses }),
-  clearGuesses: () =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({ guesses: [] }),
-});
+  // Suspended daily session (stashed when visiting archive mid-game)
+  suspendedDailySession: SuspendedSession | null;
+  suspendDailySession: () => void;
+  restoreDailySession: () => SuspendedSession | null;
 
-// ----- UI Slice -----
-
-interface UISlice {
+  // UI (transient — not persisted)
   isSubmitting: boolean;
   error: string | null;
-
   setSubmitting: (submitting: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
 }
 
-const createUISlice = (set: unknown): UISlice => ({
-  isSubmitting: false,
-  error: null,
-
-  setSubmitting: submitting =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({
-      isSubmitting: submitting,
-    }),
-  setError: error =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({ error }),
-  clearError: () =>
-    (set as (partial: Partial<UncoverGameStore>) => void)({ error: null }),
-});
-
-// ----- Combined Store -----
-
-export type UncoverGameStore = SessionSlice & GuessesSlice & UISlice;
-
 export const useUncoverGameStore = create<UncoverGameStore>()(
   persist(
     (set, get) => ({
-      ...createSessionSlice(set),
-      ...createGuessesSlice(set),
-      ...createUISlice(set),
+      // --- Active Session ---
+      sessionId: null,
+      challengeId: null,
+      status: 'IN_PROGRESS' as SessionStatus,
+      attemptCount: 0,
+      won: false,
+      mode: 'daily' as GameMode,
+      archiveDate: null,
+      resultSubmitted: false,
+
+      setActiveSession: session =>
+        set({
+          sessionId: session.id,
+          challengeId: session.challengeId,
+          status: 'IN_PROGRESS' as SessionStatus,
+          mode: session.mode ?? 'daily',
+          archiveDate: session.archiveDate ?? null,
+          resultSubmitted: false,
+        }),
+
+      updateAttemptCount: count => set({ attemptCount: count }),
+
+      endActiveSession: won =>
+        set({
+          status: (won ? 'WON' : 'LOST') as SessionStatus,
+          won,
+        }),
+
+      markActiveResultSubmitted: () => set({ resultSubmitted: true }),
+
+      resetActiveSession: () =>
+        set({
+          sessionId: null,
+          challengeId: null,
+          status: 'IN_PROGRESS' as SessionStatus,
+          attemptCount: 0,
+          won: false,
+          mode: 'daily' as GameMode,
+          archiveDate: null,
+          resultSubmitted: false,
+        }),
+
+      // --- Guesses ---
+      guesses: [],
+
+      addGuess: guess =>
+        set(state => ({ guesses: [...state.guesses, guess] })),
+
+      setGuesses: guesses => set({ guesses }),
+
+      clearGuesses: () => set({ guesses: [] }),
+
+      // --- Completed Sessions ---
+      completedSessions: {},
+
+      saveCompletedSession: (challengeId, session) =>
+        set(state => ({
+          completedSessions: {
+            ...state.completedSessions,
+            [challengeId]: session,
+          },
+        })),
+
+      markCompletedSessionSubmitted: challengeId =>
+        set(state => {
+          const existing = state.completedSessions[challengeId];
+          if (!existing) return {};
+          return {
+            completedSessions: {
+              ...state.completedSessions,
+              [challengeId]: { ...existing, resultSubmitted: true },
+            },
+          };
+        }),
+
+      removeCompletedSession: challengeId =>
+        set(state => {
+          const { [challengeId]: _, ...rest } = state.completedSessions;
+          return { completedSessions: rest };
+        }),
+
+      // --- Suspended Daily Session ---
+      suspendedDailySession: null,
+
+      suspendDailySession: () =>
+        set(state => {
+          if (
+            state.mode !== 'daily' ||
+            state.status !== 'IN_PROGRESS' ||
+            !state.sessionId ||
+            !state.challengeId
+          ) {
+            return {};
+          }
+          return {
+            suspendedDailySession: {
+              sessionId: state.sessionId,
+              challengeId: state.challengeId,
+              attemptCount: state.attemptCount,
+              guesses: state.guesses,
+            },
+          };
+        }),
+
+      restoreDailySession: () => {
+        const suspended = get().suspendedDailySession;
+        if (suspended) {
+          set({ suspendedDailySession: null });
+        }
+        return suspended;
+      },
+
+      // --- UI ---
+      isSubmitting: false,
+      error: null,
+
+      setSubmitting: submitting => set({ isSubmitting: submitting }),
+      setError: error => set({ error }),
+      clearError: () => set({ error: null }),
     }),
     {
       name: 'uncover-game-state',
       storage: createJSONStorage(() => localStorage),
-      // Only persist session and guesses, NOT UI state
+      // Persist session, guesses, and completed history — NOT UI state
       partialize: state => ({
         sessionId: state.sessionId,
         challengeId: state.challengeId,
@@ -162,6 +216,8 @@ export const useUncoverGameStore = create<UncoverGameStore>()(
         mode: state.mode,
         archiveDate: state.archiveDate,
         resultSubmitted: state.resultSubmitted,
+        completedSessions: state.completedSessions,
+        suspendedDailySession: state.suspendedDailySession,
       }),
     }
   )
