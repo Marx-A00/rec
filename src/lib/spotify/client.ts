@@ -171,12 +171,18 @@ class SpotifyClient {
   }
 }
 
-export const spotifyClient =
-  globalForSpotify.spotifyClient ||
-  new SpotifyClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForSpotify.spotifyClient = spotifyClient;
+export function getSpotifyClient(): SpotifyClient {
+  if (!globalForSpotify.spotifyClient) {
+    globalForSpotify.spotifyClient = new SpotifyClient();
+  }
+  return globalForSpotify.spotifyClient;
 }
+
+/** @deprecated Use getSpotifyClient() instead — lazy initialization avoids build-time crashes when env vars are missing */
+export const spotifyClient = new Proxy({} as SpotifyClient, {
+  get(_, prop) {
+    return (getSpotifyClient() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 export { SpotifyClient };
