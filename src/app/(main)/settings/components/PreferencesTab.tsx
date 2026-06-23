@@ -19,6 +19,7 @@ import {
   useTriggerLastfmSyncMutation,
   useGetUserTasteProfileQuery,
   useSetTasteProfileMutation,
+  useGetUserLastfmStatsQuery,
 } from '@/generated/graphql';
 
 export default function PreferencesTab() {
@@ -58,6 +59,12 @@ export default function PreferencesTab() {
   const [tasteArtists, setTasteArtists] = useState<SelectedArtist[]>([]);
   const [showTasteProfile, setShowTasteProfile] = useState(true);
   const [tasteDirty, setTasteDirty] = useState(false);
+
+  // Last.fm top artists for taste profile population
+  const { data: lastfmData } = useGetUserLastfmStatsQuery(
+    { userId },
+    { enabled: !!userId && !!data?.mySettings?.lastfmUsername }
+  );
 
   const isConnected = !!data?.mySettings?.lastfmUsername;
   const connectedUsername = data?.mySettings?.lastfmUsername;
@@ -175,6 +182,24 @@ export default function PreferencesTab() {
       showToast('Taste profile updated', 'success');
     } catch {
       showToast('Failed to update taste profile', 'error');
+    }
+  };
+
+  const lastfmTopArtists = lastfmData?.user?.lastfmStats?.topArtists ?? [];
+  const lastfmArtistsWithIds = lastfmTopArtists.filter(a => a.artistId);
+
+  const handlePopulateFromLastfm = () => {
+    const mapped: SelectedArtist[] = lastfmArtistsWithIds.slice(0, 5).map(a => ({
+      id: a.artistId!,
+      name: a.name,
+      imageUrl: a.imageUrl ?? undefined,
+      cloudflareImageId: a.cloudflareImageId ?? undefined,
+      source: 'local' as const,
+    }));
+    if (mapped.length > 0) {
+      setTasteArtists(mapped);
+      setTasteDirty(true);
+      showToast(`Populated ${mapped.length} artists from Last.fm`, 'success');
     }
   };
 
@@ -414,6 +439,27 @@ export default function PreferencesTab() {
           onChange={handleTasteToggle}
           disabled={updateSettings.isPending}
         />
+
+        {isConnected && lastfmArtistsWithIds.length > 0 && (
+          <div className='bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 flex items-center justify-between'>
+            <div>
+              <h4 className='font-medium text-white text-sm'>
+                Populate from Last.fm
+              </h4>
+              <p className='text-xs text-zinc-400 mt-0.5'>
+                Use your top {Math.min(lastfmArtistsWithIds.length, 5)} Last.fm artists as your taste profile
+              </p>
+            </div>
+            <button
+              type='button'
+              onClick={handlePopulateFromLastfm}
+              className='flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-zinc-300 transition-colors'
+            >
+              <Download className='w-3.5 h-3.5' />
+              Populate
+            </button>
+          </div>
+        )}
 
         <ArtistPicker
           preSelectedArtists={tasteArtists}

@@ -29,12 +29,12 @@ export default function ArtistPicker({
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
 
-  // Pre-fill from Last.fm on mount
+  // Sync when preSelectedArtists changes (initial load, Last.fm populate, etc.)
   useEffect(() => {
     if (preSelectedArtists?.length) {
       setSelectedArtists(preSelectedArtists);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [preSelectedArtists]);
 
   // Debounce search input
   useEffect(() => {
