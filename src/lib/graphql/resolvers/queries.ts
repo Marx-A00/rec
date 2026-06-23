@@ -4956,11 +4956,11 @@ export const queryResolvers: QueryResolvers = {
     const existingFollows = await prisma.userFollow.findMany({
       where: {
         followerId: user.id,
-        followingId: { in: matchedUserIds },
+        followedId: { in: matchedUserIds },
       },
-      select: { followingId: true },
+      select: { followedId: true },
     });
-    const followingSet = new Set(existingFollows.map(f => f.followingId));
+    const followingSet = new Set(existingFollows.map(f => f.followedId));
 
     return matches.map(match => {
       const context = match.sharedContext as Array<{
