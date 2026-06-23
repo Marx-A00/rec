@@ -2416,6 +2416,9 @@ type Query {
   userTasteProfile(userId: String!): [UserFavoriteArtist!]!
   tasteMatches(limit: Int = 10): [TasteMatch!]!
 
+  # Browse - recent recommendations
+  recentRecommendations(limit: Int = 10): [Recommendation!]!
+
   # Last.fm album import
   albumImportMatch(collectionId: String!): AlbumImportMatch!
 
@@ -4082,6 +4085,13 @@ type UserFavoriteArtist {
 
 type TasteMatch {
   user: User!
-  sharedArtists: [Artist!]!
+  score: Int!
+  sharedArtists: [SharedArtistContext!]!
   overlapCount: Int!
+  isFollowing: Boolean!
+}
+
+type SharedArtistContext {
+  artist: Artist!
+  sources: [String!]!
 }

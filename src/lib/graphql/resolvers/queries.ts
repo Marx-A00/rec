@@ -4943,55 +4943,85 @@ export const queryResolvers: QueryResolvers = {
       });
     }
 
-    // Get current user's favorite artist IDs
-    const myFavorites = await prisma.userFavoriteArtist.findMany({
+    const matches = await prisma.tasteMatch.findMany({
       where: { userId: user.id },
-      select: { artistId: true },
-    });
-
-    if (myFavorites.length === 0) {
-      return [];
-    }
-
-    const myArtistIds = myFavorites.map(f => f.artistId);
-
-    // Find users with overlapping favorites
-    const matches = await prisma.userFavoriteArtist.groupBy({
-      by: ['userId'],
-      where: {
-        artistId: { in: myArtistIds },
-        userId: { not: user.id },
-      },
-      _count: { artistId: true },
-      orderBy: { _count: { artistId: 'desc' } },
+      orderBy: { score: 'desc' },
       take: limit,
+      include: {
+        matchedUser: true,
+      },
     });
 
-    // Build full match objects
-    const results = await Promise.all(
-      matches.map(async match => {
-        const matchUser = await prisma.user.findUnique({
-          where: { id: match.userId },
-        });
-        if (!matchUser || matchUser.deletedAt) return null;
+    const matchedUserIds = matches.map(m => m.matchedUserId);
+    const existingFollows = await prisma.userFollow.findMany({
+      where: {
+        followerId: user.id,
+        followingId: { in: matchedUserIds },
+      },
+      select: { followingId: true },
+    });
+    const followingSet = new Set(existingFollows.map(f => f.followingId));
 
-        const sharedFavorites = await prisma.userFavoriteArtist.findMany({
-          where: {
-            userId: match.userId,
-            artistId: { in: myArtistIds },
+    return matches.map(match => {
+      const context = match.sharedContext as Array<{
+        artistId: string;
+        artistName: string;
+        sources: string[];
+      }>;
+
+      return {
+        user: match.matchedUser,
+        score: match.score,
+        sharedArtists: context.map(c => ({
+          artist: { id: c.artistId, name: c.artistName },
+          sources: c.sources,
+        })),
+        overlapCount: context.length,
+        isFollowing: followingSet.has(match.matchedUserId),
+      };
+    });
+  },
+
+  recentRecommendations: async (_, { limit = 10 }, { prisma }) => {
+    const clampedLimit = Math.min(limit, 20);
+
+    const recommendations = await prisma.recommendation.findMany({
+      where: {
+        basisAlbum: {
+          OR: [
+            { coverArtUrl: { not: null } },
+            { cloudflareImageId: { not: null } },
+          ],
+        },
+        recommendedAlbum: {
+          OR: [
+            { coverArtUrl: { not: null } },
+            { cloudflareImageId: { not: null } },
+          ],
+        },
+      },
+      include: {
+        basisAlbum: {
+          include: {
+            artists: {
+              include: { artist: true },
+            },
           },
-          include: { artist: true },
-        });
+        },
+        recommendedAlbum: {
+          include: {
+            artists: {
+              include: { artist: true },
+            },
+          },
+        },
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: clampedLimit,
+    });
 
-        return {
-          user: matchUser,
-          sharedArtists: sharedFavorites.map(f => f.artist),
-          overlapCount: match._count.artistId,
-        };
-      })
-    );
-
-    return results.filter(Boolean);
+    return recommendations;
   },
 
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects

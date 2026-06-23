@@ -95,18 +95,18 @@ function TopAlbumCard({
 
   return (
     <Link href={`/albums/${album.id}?source=local`}>
-      <div className='shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-xs border border-zinc-800/80 rounded-xl p-5 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
-        <div className='relative aspect-square mb-4'>
+      <div className='shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-xs border border-zinc-800/80 rounded-xl overflow-hidden hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
+        <div className='relative aspect-square'>
           <AlbumImage
             src={album.coverArtUrl}
             alt={album.title}
             cloudflareImageId={album.cloudflareImageId}
-            className='w-full h-full object-cover rounded-lg shadow-xl'
+            className='w-full h-full object-cover shadow-xl'
             showSkeleton={false}
           />
         </div>
 
-        <div className='space-y-2'>
+        <div className='space-y-1 px-3 py-2.5'>
           <h3 className='font-semibold text-white text-sm line-clamp-1 group-hover:text-cosmic-latte transition-colors'>
             {album.title}
           </h3>
@@ -123,12 +123,12 @@ function LoadingSkeleton({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className='shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-5'
+          className='shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl overflow-hidden'
         >
-          <div className='relative aspect-square rounded-lg overflow-hidden mb-4'>
+          <div className='relative aspect-square overflow-hidden'>
             <VinylPlaceholder animated />
           </div>
-          <div className='animate-pulse space-y-2'>
+          <div className='animate-pulse space-y-1 px-3 py-2.5'>
             <div className='h-4 bg-zinc-700/60 rounded w-3/4' />
             <div className='h-3 bg-zinc-800/60 rounded w-1/2' />
           </div>

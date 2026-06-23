@@ -2272,6 +2272,7 @@ export type Query = {
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
   queueStatus: QueueStatus;
+  recentRecommendations: Array<Recommendation>;
   recommendation?: Maybe<Recommendation>;
   recommendationFeed: RecommendationFeed;
   search: SearchResults;
@@ -2503,6 +2504,10 @@ export type QueryPublicCollectionsArgs = {
 
 export type QueryQueueMetricsArgs = {
   timeRange?: InputMaybe<TimeRange>;
+};
+
+export type QueryRecentRecommendationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryRecommendationArgs = {
@@ -2890,6 +2895,12 @@ export type SelectionEntry = {
   selected: Scalars['Boolean']['input'];
 };
 
+export type SharedArtistContext = {
+  __typename?: 'SharedArtistContext';
+  artist: Artist;
+  sources: Array<Scalars['String']['output']>;
+};
+
 export type SimilarArtist = {
   __typename?: 'SimilarArtist';
   cloudflareImageId?: Maybe<Scalars['String']['output']>;
@@ -3028,8 +3039,10 @@ export type SystemHealth = {
 
 export type TasteMatch = {
   __typename?: 'TasteMatch';
+  isFollowing: Scalars['Boolean']['output'];
   overlapCount: Scalars['Int']['output'];
-  sharedArtists: Array<Artist>;
+  score: Scalars['Int']['output'];
+  sharedArtists: Array<SharedArtistContext>;
   user: User;
 };
 
@@ -3946,6 +3959,7 @@ export type ResolversTypes = ResolversObject<{
   SearchResults: ResolverTypeWrapper<SearchResults>;
   SearchType: SearchType;
   SelectionEntry: SelectionEntry;
+  SharedArtistContext: ResolverTypeWrapper<SharedArtistContext>;
   SimilarArtist: ResolverTypeWrapper<SimilarArtist>;
   SortOrder: SortOrder;
   SourceStat: ResolverTypeWrapper<SourceStat>;
@@ -4170,6 +4184,7 @@ export type ResolversParentTypes = ResolversObject<{
   SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
   SearchResults: SearchResults;
   SelectionEntry: SelectionEntry;
+  SharedArtistContext: SharedArtistContext;
   SimilarArtist: SimilarArtist;
   SourceStat: SourceStat;
   String: Scalars['String']['output'];
@@ -7270,6 +7285,12 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  recentRecommendations?: Resolver<
+    Array<ResolversTypes['Recommendation']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryRecentRecommendationsArgs, 'limit'>
+  >;
   recommendation?: Resolver<
     Maybe<ResolversTypes['Recommendation']>,
     ParentType,
@@ -7760,6 +7781,16 @@ export type SearchResultsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SharedArtistContextResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SharedArtistContext'] = ResolversParentTypes['SharedArtistContext'],
+> = ResolversObject<{
+  artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SimilarArtistResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -7949,9 +7980,11 @@ export type TasteMatchResolvers<
   ParentType extends
     ResolversParentTypes['TasteMatch'] = ResolversParentTypes['TasteMatch'],
 > = ResolversObject<{
+  isFollowing?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   overlapCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   sharedArtists?: Resolver<
-    Array<ResolversTypes['Artist']>,
+    Array<ResolversTypes['SharedArtistContext']>,
     ParentType,
     ContextType
   >;
@@ -9088,6 +9121,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ScoredSearchResult?: ScoredSearchResultResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
+  SharedArtistContext?: SharedArtistContextResolvers<ContextType>;
   SimilarArtist?: SimilarArtistResolvers<ContextType>;
   SourceStat?: SourceStatResolvers<ContextType>;
   SubmitGameResultResponse?: SubmitGameResultResponseResolvers<ContextType>;

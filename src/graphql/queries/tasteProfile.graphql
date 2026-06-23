@@ -20,14 +20,21 @@ query GetTasteMatches($limit: Int) {
       username
       image
       bio
+      followersCount
+      recommendationsCount
     }
+    score
     sharedArtists {
-      id
-      name
-      imageUrl
-      cloudflareImageId
+      artist {
+        id
+        name
+        imageUrl
+        cloudflareImageId
+      }
+      sources
     }
     overlapCount
+    isFollowing
   }
 }
 

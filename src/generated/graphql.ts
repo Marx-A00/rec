@@ -2298,6 +2298,7 @@ export type Query = {
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
   queueStatus: QueueStatus;
+  recentRecommendations: Array<Recommendation>;
   recommendation?: Maybe<Recommendation>;
   recommendationFeed: RecommendationFeed;
   search: SearchResults;
@@ -2529,6 +2530,10 @@ export type QueryPublicCollectionsArgs = {
 
 export type QueryQueueMetricsArgs = {
   timeRange?: InputMaybe<TimeRange>;
+};
+
+export type QueryRecentRecommendationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryRecommendationArgs = {
@@ -2916,6 +2921,12 @@ export type SelectionEntry = {
   selected: Scalars['Boolean']['input'];
 };
 
+export type SharedArtistContext = {
+  __typename?: 'SharedArtistContext';
+  artist: Artist;
+  sources: Array<Scalars['String']['output']>;
+};
+
 export type SimilarArtist = {
   __typename?: 'SimilarArtist';
   cloudflareImageId?: Maybe<Scalars['String']['output']>;
@@ -3054,8 +3065,10 @@ export type SystemHealth = {
 
 export type TasteMatch = {
   __typename?: 'TasteMatch';
+  isFollowing: Scalars['Boolean']['output'];
   overlapCount: Scalars['Int']['output'];
-  sharedArtists: Array<Artist>;
+  score: Scalars['Int']['output'];
+  sharedArtists: Array<SharedArtistContext>;
   user: User;
 };
 
@@ -4648,6 +4661,48 @@ export type DeleteArtistMutation = {
     message?: string | null;
     deletedId?: string | null;
   };
+};
+
+export type GetRecentRecommendationsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetRecentRecommendationsQuery = {
+  __typename?: 'Query';
+  recentRecommendations: Array<{
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+    createdAt: Date;
+    user: {
+      __typename?: 'User';
+      id: string;
+      username?: string | null;
+      image?: string | null;
+    };
+    basisAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    recommendedAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
 };
 
 export type AddAlbumToCollectionWithCreateMutationVariables = Exact<{
@@ -7194,20 +7249,28 @@ export type GetTasteMatchesQuery = {
   __typename?: 'Query';
   tasteMatches: Array<{
     __typename?: 'TasteMatch';
+    score: number;
     overlapCount: number;
+    isFollowing: boolean;
     user: {
       __typename?: 'User';
       id: string;
       username?: string | null;
       image?: string | null;
       bio?: string | null;
+      followersCount: number;
+      recommendationsCount: number;
     };
     sharedArtists: Array<{
-      __typename?: 'Artist';
-      id: string;
-      name: string;
-      imageUrl?: string | null;
-      cloudflareImageId?: string | null;
+      __typename?: 'SharedArtistContext';
+      sources: Array<string>;
+      artist: {
+        __typename?: 'Artist';
+        id: string;
+        name: string;
+        imageUrl?: string | null;
+        cloudflareImageId?: string | null;
+      };
     }>;
   }>;
 };
@@ -9997,6 +10060,95 @@ export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
 };
 
 useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
+
+export const GetRecentRecommendationsDocument = `
+    query GetRecentRecommendations($limit: Int) {
+  recentRecommendations(limit: $limit) {
+    ...RecommendationFields
+  }
+}
+    ${RecommendationFieldsFragmentDoc}`;
+
+export const useGetRecentRecommendationsQuery = <
+  TData = GetRecentRecommendationsQuery,
+  TError = unknown,
+>(
+  variables?: GetRecentRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetRecentRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetRecentRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetRecentRecommendationsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetRecentRecommendations']
+        : ['GetRecentRecommendations', variables],
+    queryFn: fetcher<
+      GetRecentRecommendationsQuery,
+      GetRecentRecommendationsQueryVariables
+    >(GetRecentRecommendationsDocument, variables),
+    ...options,
+  });
+};
+
+useGetRecentRecommendationsQuery.getKey = (
+  variables?: GetRecentRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetRecentRecommendations']
+    : ['GetRecentRecommendations', variables];
+
+export const useInfiniteGetRecentRecommendationsQuery = <
+  TData = InfiniteData<GetRecentRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetRecentRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetRecentRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetRecentRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetRecentRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetRecentRecommendations.infinite']
+            : ['GetRecentRecommendations.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetRecentRecommendationsQuery,
+            GetRecentRecommendationsQueryVariables
+          >(GetRecentRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetRecentRecommendationsQuery.getKey = (
+  variables?: GetRecentRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetRecentRecommendations.infinite']
+    : ['GetRecentRecommendations.infinite', variables];
 
 export const AddAlbumToCollectionWithCreateDocument = `
     mutation AddAlbumToCollectionWithCreate($input: AddAlbumToCollectionWithCreateInput!) {
@@ -16648,14 +16800,21 @@ export const GetTasteMatchesDocument = `
       username
       image
       bio
+      followersCount
+      recommendationsCount
     }
+    score
     sharedArtists {
-      id
-      name
-      imageUrl
-      cloudflareImageId
+      artist {
+        id
+        name
+        imageUrl
+        cloudflareImageId
+      }
+      sources
     }
     overlapCount
+    isFollowing
   }
 }
     `;
