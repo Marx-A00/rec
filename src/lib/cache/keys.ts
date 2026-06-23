@@ -26,6 +26,7 @@ export const CACHE_KEYS = {
   userCollections: (userId: string) => `cache:user:collections:${userId}`,
   userRecs: (userId: string) => `cache:user:recs:${userId}`,
   lastfmUserStats: (userId: string) => `cache:lastfm:userstats:${userId}`,
+  userTasteProfile: (userId: string) => `cache:user:tasteProfile:${userId}`,
 };
 
 /** TTL values in seconds */

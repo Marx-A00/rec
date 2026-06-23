@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
@@ -320,9 +320,126 @@ export default function AdminUsersPage() {
     return filters.sortOrder === SortOrder.Asc ? '↑' : '↓';
   };
 
+  // Threshold indicator for browse section visibility
+  const ThresholdPill = ({
+    label,
+    met,
+    detail,
+    threshold,
+  }: {
+    label: string;
+    met: boolean;
+    detail: string;
+    threshold?: string;
+  }) => (
+    <div
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+        met
+          ? 'bg-emeraled-green/10 border border-emeraled-green/20'
+          : 'bg-red-500/10 border border-red-500/20'
+      }`}
+    >
+      <span className={met ? 'text-emeraled-green' : 'text-red-400'}>
+        {met ? '✓' : '✗'}
+      </span>
+      <div>
+        <div className={met ? 'text-emeraled-green font-medium' : 'text-red-400 font-medium'}>
+          {label}
+        </div>
+        <div className='text-zinc-500'>
+          {detail}
+          {threshold && !met && ` (${threshold})`}
+        </div>
+      </div>
+    </div>
+  );
+
   // Component for expanded user details
   const UserExpandedContent = ({ user }: { user: AdminUser }) => {
     const isSoftDeleted = !!user.deletedAt;
+
+    // Taste profile state
+    const [favorites, setFavorites] = useState<
+      Array<{
+        position: number;
+        artist: { id: string; name: string; imageUrl: string | null };
+      }>
+    >([]);
+    const [tasteLoading, setTasteLoading] = useState(false);
+    const [thresholds, setThresholds] = useState<{
+      hasTasteProfile: boolean;
+      recentRecsCount: number;
+      recentRecsMet: boolean;
+      tasteMatchCount: number;
+      tasteMatchesMet: boolean;
+      similarArtistsAvailable: boolean;
+    } | null>(null);
+
+    const fetchTasteProfile = useCallback(async () => {
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/taste-profile`);
+        if (res.ok) {
+          const data = (await res.json()) as {
+            favorites: Array<{
+              position: number;
+              artist: { id: string; name: string; imageUrl: string | null };
+            }>;
+            thresholds?: {
+              hasTasteProfile: boolean;
+              recentRecsCount: number;
+              recentRecsMet: boolean;
+              tasteMatchCount: number;
+              tasteMatchesMet: boolean;
+              similarArtistsAvailable: boolean;
+            };
+          };
+          setFavorites(data.favorites || []);
+          if (data.thresholds) setThresholds(data.thresholds);
+        }
+      } catch {
+        /* ignore */
+      }
+    }, [user.id]);
+
+    useEffect(() => {
+      fetchTasteProfile();
+    }, [fetchTasteProfile]);
+
+    const handleGenerate = async () => {
+      setTasteLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/taste-profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate', count: 3 }),
+        });
+        if (res.ok) {
+          await fetchTasteProfile();
+          toast.success(`Generated taste profile for ${user.username}`);
+        }
+      } catch {
+        toast.error('Failed to generate taste profile');
+      }
+      setTasteLoading(false);
+    };
+
+    const handleClear = async () => {
+      setTasteLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/taste-profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ artistIds: [] }),
+        });
+        if (res.ok) {
+          setFavorites([]);
+          toast.success(`Cleared taste profile for ${user.username}`);
+        }
+      } catch {
+        toast.error('Failed to clear taste profile');
+      }
+      setTasteLoading(false);
+    };
 
     return (
       <tr className='hover:bg-transparent'>
@@ -494,6 +611,94 @@ export default function AdminUsersPage() {
                     Hard Delete
                   </Button>
                 </>
+              )}
+            </div>
+
+            {/* Taste Profile (Dev) */}
+            <div className='pt-4 border-t border-zinc-800'>
+              <div className='flex items-center justify-between mb-3'>
+                <div className='text-xs text-zinc-500 uppercase'>
+                  Taste Profile
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onClick={handleGenerate}
+                    disabled={tasteLoading}
+                  >
+                    Generate Random
+                  </Button>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onClick={handleClear}
+                    disabled={tasteLoading || favorites.length === 0}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+              {favorites.length > 0 ? (
+                <div className='flex gap-3 flex-wrap'>
+                  {favorites.map(fav => (
+                    <div
+                      key={fav.artist.id}
+                      className='flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-2'
+                    >
+                      {fav.artist.imageUrl ? (
+                        <img
+                          src={fav.artist.imageUrl}
+                          alt={fav.artist.name}
+                          className='w-8 h-8 rounded-full object-cover'
+                        />
+                      ) : (
+                        <div className='w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center'>
+                          <Music className='w-4 h-4 text-zinc-500' />
+                        </div>
+                      )}
+                      <span className='text-sm text-zinc-300'>
+                        {fav.artist.name}
+                      </span>
+                      <span className='text-xs text-zinc-600'>
+                        #{fav.position}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className='text-sm text-zinc-500 italic'>
+                  No taste profile set
+                </p>
+              )}
+
+              {/* Browse Section Thresholds */}
+              {thresholds && (
+                <div className='mt-4 grid grid-cols-2 md:grid-cols-4 gap-2'>
+                  <ThresholdPill
+                    label='Taste Profile'
+                    met={thresholds.hasTasteProfile}
+                    detail={thresholds.hasTasteProfile ? `${favorites.length} artists` : 'none'}
+                  />
+                  <ThresholdPill
+                    label='Similar Artists'
+                    met={thresholds.similarArtistsAvailable}
+                    detail={thresholds.similarArtistsAvailable ? 'cached' : 'no cache'}
+                    threshold='4+ needed'
+                  />
+                  <ThresholdPill
+                    label='Recent Recs'
+                    met={thresholds.recentRecsMet}
+                    detail={`${thresholds.recentRecsCount} found`}
+                    threshold='3+ needed'
+                  />
+                  <ThresholdPill
+                    label='Taste Matches'
+                    met={thresholds.tasteMatchesMet}
+                    detail={`${thresholds.tasteMatchCount} users`}
+                    threshold='2+ needed'
+                  />
+                </div>
               )}
             </div>
           </div>

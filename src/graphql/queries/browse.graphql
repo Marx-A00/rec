@@ -1,0 +1,5 @@
+query GetRecentRecommendations($limit: Int) {
+  recentRecommendations(limit: $limit) {
+    ...RecommendationFields
+  }
+}

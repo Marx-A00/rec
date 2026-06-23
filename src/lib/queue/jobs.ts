@@ -58,6 +58,8 @@ export const JOB_TYPES = {
   // Last.fm User Sync Jobs
   LASTFM_SYNC_USER: 'lastfm:sync-user',
   LASTFM_DISPATCH_SYNC: 'lastfm:dispatch-sync',
+  // Taste Match Computation
+  COMPUTE_TASTE_MATCHES: 'compute:taste-matches',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -393,6 +395,11 @@ export interface LastFmDispatchSyncJobData {
   source?: 'scheduled' | 'manual';
 }
 
+export interface ComputeTasteMatchesJobData {
+  source: 'scheduled' | 'manual';
+  userId?: string; // if set, only recompute for this user
+}
+
 // ============================================================================
 // Job Data Union Type
 // ============================================================================
@@ -431,7 +438,8 @@ export type MusicBrainzJobData =
   | LastFmSearchArtistsJobData
   | ListenBrainzSimilarArtistsJobData
   | LastFmSyncUserJobData
-  | LastFmDispatchSyncJobData;
+  | LastFmDispatchSyncJobData
+  | ComputeTasteMatchesJobData;
 
 // ============================================================================
 // Job Result Interfaces

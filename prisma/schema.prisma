@@ -68,6 +68,8 @@ model User {
   uncoverArchiveStats UncoverArchiveStats?
   lastfmData         UserLastfmData?
   favoriteArtists    UserFavoriteArtist[]
+  tasteMatches       TasteMatch[] @relation("tasteMatchUser")
+  tasteMatchedBy     TasteMatch[] @relation("tasteMatchMatchedUser")
 }
 
 model UserSettings {
@@ -890,5 +892,22 @@ model UserFavoriteArtist {
   @@index([userId])
   @@index([artistId])
   @@map("user_favorite_artists")
+}
+
+model TasteMatch {
+  id            String   @id @default(cuid())
+  userId        String
+  matchedUserId String
+  score         Int
+  sharedContext Json     // [{ artistId, artistName, sources: ["taste_profile"|"collections"] }]
+  computedAt    DateTime @default(now())
+
+  user        User @relation("tasteMatchUser", fields: [userId], references: [id], onDelete: Cascade)
+  matchedUser User @relation("tasteMatchMatchedUser", fields: [matchedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchedUserId])
+  @@index([userId])
+  @@index([matchedUserId])
+  @@map("taste_matches")
 }
 

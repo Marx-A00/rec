@@ -5171,6 +5171,13 @@ export const mutationResolvers: MutationResolvers = {
         include: { artist: true },
       });
 
+      // Invalidate taste profile cache + queue taste match recompute
+      const { invalidateTasteProfile, queueTasteMatchRecompute } = await import(
+        '@/lib/cache/invalidation'
+      );
+      await invalidateTasteProfile(user.id);
+      await queueTasteMatchRecompute(user.id);
+
       return favorites.map(f => ({
         position: f.position,
         artist: f.artist,

@@ -3,23 +3,20 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDateOnly } from '@/lib/date-utils';
-import { ArrowLeft, Users, TrendingUp, Music } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Music } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  PersonalizedSimilarArtists,
+  RecentRecommendations,
+  TasteMatchedUsers,
+} from '@/components/browse';
 import {
   useGetTopRecommendedAlbumsQuery,
   useGetTopRecommendedArtistsQuery,
 } from '@/generated/graphql';
 
 // ---------- Types ----------
-
-interface NewUser {
-  id: string;
-  username: string | null;
-  image: string | null;
-  recommendationsCount: number;
-}
 
 interface LatestRelease {
   id: string;
@@ -31,14 +28,12 @@ interface LatestRelease {
 }
 
 interface MobileBrowseClientProps {
-  newUsers: NewUser[];
   latestReleases: LatestRelease[];
 }
 
 // ---------- Main Component ----------
 
 export default function MobileBrowseClient({
-  newUsers,
   latestReleases,
 }: MobileBrowseClientProps) {
   const router = useRouter();
@@ -61,27 +56,18 @@ export default function MobileBrowseClient({
       </div>
 
       <div className='space-y-8 py-4'>
-        {/* New Users */}
-        <BrowseSection
-          title='New Music Lovers'
-          icon={<Users className='w-4 h-4' />}
-        >
-          {newUsers.length > 0 ? (
-            <ScrollRow>
-              {newUsers.map(user => (
-                <UserCard key={user.id} user={user} />
-              ))}
-            </ScrollRow>
-          ) : (
-            <EmptyState message='No new users yet.' />
-          )}
-        </BrowseSection>
+        {/* Personalized Sections (self-conditional) */}
+        <div className='px-4'>
+          <PersonalizedSimilarArtists />
+        </div>
 
-        {/* Top Recommended Artists */}
-        <TopArtistsSection />
+        <div className='px-4'>
+          <RecentRecommendations />
+        </div>
 
-        {/* Top Recommended Albums */}
-        <TopAlbumsSection />
+        <div className='px-4'>
+          <TasteMatchedUsers />
+        </div>
 
         {/* Latest Releases */}
         <BrowseSection
@@ -98,6 +84,12 @@ export default function MobileBrowseClient({
             <EmptyState message='No releases yet.' />
           )}
         </BrowseSection>
+
+        {/* Top Recommended Artists */}
+        <TopArtistsSection />
+
+        {/* Top Recommended Albums */}
+        <TopAlbumsSection />
       </div>
     </div>
   );
@@ -214,33 +206,6 @@ function EmptyState({ message }: { message: string }) {
 }
 
 // ---------- Card Components ----------
-
-function UserCard({ user }: { user: NewUser }) {
-  return (
-    <Link
-      href={`/m/profile/${user.id}`}
-      className='shrink-0 w-[130px] bg-zinc-900 border border-zinc-800 rounded-xl p-3 active:scale-[0.97] transition-transform'
-    >
-      <div className='flex flex-col items-center text-center gap-2'>
-        <Avatar className='w-14 h-14 border border-zinc-700'>
-          <AvatarImage
-            src={user.image || undefined}
-            alt={user.username || 'User'}
-          />
-          <AvatarFallback className='bg-zinc-800 text-lg'>
-            {(user.username || 'U')[0].toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <p className='text-sm font-medium text-white truncate w-full'>
-          {user.username || 'Anonymous'}
-        </p>
-        <span className='text-[10px] text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5'>
-          New
-        </span>
-      </div>
-    </Link>
-  );
-}
 
 function ArtistCard({
   artist,

@@ -38,6 +38,7 @@ import {
   type LastFmArtistInfoJobData,
   type ListenBrainzSimilarArtistsJobData,
   type LastFmSyncUserJobData,
+  type ComputeTasteMatchesJobData,
 } from '../jobs';
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
@@ -356,6 +357,19 @@ export async function processMusicBrainzJob(
           job.id
         );
         break;
+
+      // Taste match computation
+      case JOB_TYPES.COMPUTE_TASTE_MATCHES: {
+        const { computeAllTasteMatches, computeTasteMatchesForUser } = await import('@/lib/taste-match/compute');
+        const tmData = job.data as ComputeTasteMatchesJobData;
+        if (tmData.userId) {
+          await computeTasteMatchesForUser(tmData.userId);
+        } else {
+          await computeAllTasteMatches();
+        }
+        result = { success: true };
+        break;
+      }
 
       default:
         throw new Error(`Unknown job type: ${job.name}`);

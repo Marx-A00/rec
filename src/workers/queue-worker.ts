@@ -48,6 +48,10 @@ import {
   lastfmScheduler,
 } from '@/lib/lastfm/sync-scheduler';
 import {
+  initializeTasteMatchScheduler,
+  shutdownTasteMatchScheduler,
+} from '@/lib/taste-match/scheduler';
+import {
   healthChecker,
   metricsCollector,
   alertManager,
@@ -139,6 +143,14 @@ class MusicBrainzWorkerService {
       console.log('  ✅ Last.fm scheduler enabled');
     } else {
       console.log('  ⏸️  Last.fm scheduler disabled');
+    }
+
+    // Taste match scheduler
+    const tasteMatchStarted = await initializeTasteMatchScheduler();
+    if (tasteMatchStarted) {
+      console.log('  ✅ Taste match scheduler enabled (every 12h)');
+    } else {
+      console.log('  ⏸️  Taste match scheduler failed to start');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
@@ -1150,6 +1162,10 @@ class MusicBrainzWorkerService {
         // Stop Last.fm scheduler
         console.log('🛑 Stopping Last.fm scheduler...');
         await shutdownLastfmScheduler();
+
+        // Stop Taste match scheduler
+        console.log('🛑 Stopping Taste match scheduler...');
+        await shutdownTasteMatchScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');

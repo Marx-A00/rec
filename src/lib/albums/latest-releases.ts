@@ -21,6 +21,10 @@ export async function getLatestReleases(
   const albums = await prisma.album.findMany({
     where: {
       releaseDate: { not: null },
+      OR: [
+        { coverArtUrl: { not: null } },
+        { cloudflareImageId: { not: null } },
+      ],
     },
     orderBy: { releaseDate: { sort: 'desc', nulls: 'last' } },
     take: limit,

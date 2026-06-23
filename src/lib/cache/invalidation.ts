@@ -28,3 +28,23 @@ export async function invalidateCollectionCache(
 export async function invalidateUserRecsCache(userId: string): Promise<void> {
   await cache.invalidate(CACHE_KEYS.userRecs(userId));
 }
+
+export async function invalidateTasteProfile(userId: string): Promise<void> {
+  await cache.invalidate(CACHE_KEYS.userTasteProfile(userId));
+}
+
+/** Queue a targeted taste match recompute for a user */
+export async function queueTasteMatchRecompute(userId: string): Promise<void> {
+  try {
+    const { getMusicBrainzQueue } = await import('@/lib/queue');
+    const { JOB_TYPES } = await import('@/lib/queue/jobs');
+    const queue = getMusicBrainzQueue();
+    await queue.addJob(
+      JOB_TYPES.COMPUTE_TASTE_MATCHES,
+      { source: 'manual' as const, userId },
+      { priority: 10, attempts: 2, removeOnComplete: 1, removeOnFail: 1 }
+    );
+  } catch {
+    // Queue may not be available in all environments
+  }
+}
