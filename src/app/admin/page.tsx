@@ -132,6 +132,29 @@ export default function AdminDashboard() {
     null
   ); // 'spotify-start' | 'spotify-stop' | 'musicbrainz-start' | etc.
 
+  // Taste match trigger state
+  const [tasteMatchTriggering, setTasteMatchTriggering] = useState(false);
+  const [tasteMatchMessage, setTasteMatchMessage] = useState<string | null>(null);
+
+  const handleTriggerTasteMatches = async () => {
+    setTasteMatchTriggering(true);
+    setTasteMatchMessage(null);
+    try {
+      const res = await fetch('/api/admin/taste-matches', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setTasteMatchMessage(`Queued: ${data.jobId}`);
+      } else {
+        setTasteMatchMessage(`Error: ${data.error}`);
+      }
+    } catch {
+      setTasteMatchMessage('Failed to trigger');
+    } finally {
+      setTasteMatchTriggering(false);
+      setTimeout(() => setTasteMatchMessage(null), 5000);
+    }
+  };
+
   // ListenBrainz editable config state
   const [lbConfigEdits, setLbConfigEdits] = useState<{
     days: number;
@@ -1220,6 +1243,49 @@ export default function AdminDashboard() {
                   <p className='text-xs text-zinc-500'>
                     MusicBrainz sync is currently disabled.
                   </p>
+                </div>
+
+                {/* Taste Match Computation */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Users className='h-4 w-4 text-cosmic-latte' />
+                      <h4 className='text-sm font-medium text-white'>
+                        Taste Match Computation
+                      </h4>
+                    </div>
+                    <Badge className='bg-zinc-700 text-zinc-300'>
+                      On-demand
+                    </Badge>
+                  </div>
+                  <p className='text-xs text-zinc-400 mb-3'>
+                    Recompute taste match scores for all users. Runs automatically every 12 hours via scheduler.
+                  </p>
+                  {tasteMatchMessage && (
+                    <div
+                      className={`text-xs px-2 py-1.5 rounded mb-3 ${
+                        tasteMatchMessage.startsWith('Error') || tasteMatchMessage.startsWith('Failed')
+                          ? 'bg-red-950/50 text-red-400'
+                          : 'bg-green-950/50 text-green-400'
+                      }`}
+                    >
+                      {tasteMatchMessage}
+                    </div>
+                  )}
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='text-white border-zinc-700 hover:bg-zinc-700'
+                    onClick={handleTriggerTasteMatches}
+                    disabled={tasteMatchTriggering}
+                  >
+                    {tasteMatchTriggering ? (
+                      <Activity className='mr-2 h-3 w-3 animate-spin' />
+                    ) : (
+                      <RefreshCw className='mr-2 h-3 w-3' />
+                    )}
+                    {tasteMatchTriggering ? 'Queuing...' : 'Compute Now'}
+                  </Button>
                 </div>
 
                 {/* Quick Links */}
