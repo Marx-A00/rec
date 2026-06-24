@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import GroupedActivityItem from './PlaygroundGroupedActivityItem';
 import type { GroupedActivity } from '@/utils/activity-grouping';
@@ -100,8 +101,11 @@ const ALBUMS = [
   },
 ];
 
+// Use a fixed reference time to avoid SSR/client hydration mismatch from Date.now()
+const REFERENCE_TIME = new Date('2025-06-24T12:00:00Z').getTime();
+
 function minutesAgo(n: number): string {
-  return new Date(Date.now() - n * 60 * 1000).toISOString();
+  return new Date(REFERENCE_TIME - n * 60 * 1000).toISOString();
 }
 
 function makeRecActivity(
@@ -319,6 +323,7 @@ export default function FeedPlaygroundPage() {
     };
   }, []);
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [enabled, setEnabled] = useState<Set<string>>(
     new Set(PRESETS['Mixed feed'])
   );
@@ -341,18 +346,40 @@ export default function FeedPlaygroundPage() {
   const applyPreset = (keys: string[]) => setEnabled(new Set(keys));
 
   return (
-    <div className='flex h-[calc(100vh-5rem)] overflow-hidden'>
+    <div className='flex h-[calc(100vh-5rem)] overflow-hidden relative'>
+      {/* Toggle button in top bar area */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className='fixed top-4 right-4 z-[60] p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors'
+        aria-label={sidebarOpen ? 'Hide settings' : 'Show settings'}
+      >
+        {sidebarOpen ? (
+          <PanelLeftClose className='w-5 h-5' />
+        ) : (
+          <PanelLeftOpen className='w-5 h-5' />
+        )}
+      </button>
+
       {/* Controls sidebar */}
-      <div className='w-72 shrink-0 border-r border-zinc-800 bg-zinc-950 p-4 pl-6 space-y-6 overflow-y-auto'>
-        <div>
-          <h2 className='text-lg font-bold text-white mb-1'>
-            Feed Playground
-          </h2>
-          <p className='text-xs text-zinc-500'>
+      <div
+        className={`shrink-0 border-r border-zinc-800 bg-zinc-950 overflow-y-auto overflow-x-hidden transition-all duration-300 ${
+          sidebarOpen ? 'w-72 p-4 pl-6' : 'w-0'
+        }`}
+      >
+        {sidebarOpen && (
+          <div className='mb-1'>
+            <h2 className='text-lg font-bold text-white'>
+              Feed Playground
+            </h2>
+          </div>
+        )}
+        {sidebarOpen && (
+          <p className='text-xs text-zinc-500 mb-6'>
             Toggle items to control what appears in the feed.
           </p>
-        </div>
+        )}
 
+        {sidebarOpen && (<div className='space-y-6'>
         {/* Presets */}
         <div>
           <h3 className='text-xs text-zinc-500 uppercase tracking-wider mb-2'>
@@ -458,11 +485,12 @@ export default function FeedPlaygroundPage() {
             {enabled.size} of {ALL_KEYS.length} items shown
           </p>
         </div>
+        </div>)}
       </div>
 
       {/* Feed preview */}
       <div className='flex-1 bg-zinc-950 overflow-y-auto custom-scrollbar'>
-        <div className='max-w-2xl mx-auto py-8 px-6'>
+        <div className='mx-auto py-8 px-6'>
           <div className='mb-6 text-center'>
             <h2 className='text-xl font-semibold text-cosmic-latte'>
               Social Activity

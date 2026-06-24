@@ -605,7 +605,7 @@ function SingleActivityDisplay({
         <div className='flex justify-center relative'>
           <div className='relative inline-block'>
             {/* Stacked Album Container */}
-            <div className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'>
+            <div className='relative w-[420px] h-[260px]'>
               {/* Basis Album (back) */}
               {(activity.metadata as TransformedActivityMetadata)
                 ?.basisAlbum && (
@@ -639,7 +639,7 @@ function SingleActivityDisplay({
               {/* Recommended Album (front) */}
               <Link
                 href={`/albums/${activity.albumId}?source=local`}
-                className='rec-album absolute left-14 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                className='rec-album absolute left-[200px] top-0 cursor-pointer hover:scale-105 transition-transform'
                 title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
               >
                 <div className='relative'>
@@ -656,7 +656,7 @@ function SingleActivityDisplay({
 
               {/* Score indicator with heart - visible on hover between albums */}
               {(activity.metadata as TransformedActivityMetadata)?.score && (
-                <div className='arrow-indicator absolute left-[155px] top-[75px] opacity-0 transition-all duration-300 z-20'>
+                <div className='arrow-indicator absolute left-[155px] top-[75px] z-20'>
                   <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                     <div
                       className={`flex items-center justify-center w-16 h-16 bg-linear-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
@@ -682,7 +682,7 @@ function SingleActivityDisplay({
               {/* Basis album text - shows on hover with the albums */}
               {(activity.metadata as TransformedActivityMetadata)
                 ?.basisAlbum && (
-                <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
+                <div className='basis-text absolute bottom-0 left-0 w-[420px] pointer-events-none'>
                   <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1 line-clamp-1'>
                     if you like{' '}
                     <span className='text-zinc-400'>
