@@ -187,7 +187,7 @@ export class MusicBrainzService {
         // - primarytype:album (only albums, no singles/EPs)
         // - status:official (exclude bootlegs and promotional)
         // - NOT secondarytype:* (exclude compilations, DJ mixes, live, remixes, soundtracks, mixtapes)
-        finalQuery = `(artist:"${query}" OR releasegroup:"${query}") AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"`;
+        finalQuery = `(artist:"${query}" OR releasegroup:"${query}" OR (${query})) AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix AND NOT secondarytype:live AND NOT secondarytype:remix AND NOT secondarytype:soundtrack AND NOT secondarytype:"mixtape/street"`;
       }
 
       const response = await this.api.search('release-group', {
