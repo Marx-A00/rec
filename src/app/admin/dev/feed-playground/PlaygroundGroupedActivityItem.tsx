@@ -231,40 +231,49 @@ export default function GroupedActivityItem({
             </div>
           )}
 
-          {/* Expanded view - Horizontal layout with stacked hover effect */}
+          {/* Expanded view */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
+            <div className='flex flex-wrap justify-center items-start gap-x-8 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
                 <div key={activity.id} className='shrink-0'>
-                  {/* Recommendation: Stacked albums that separate on hover */}
+                  {/* Recommendation: Album pair with side labels */}
                   {group.type === 'recommendation' && activity.albumImage && (
-                    <div className='relative inline-block'>
-                      {/* Stacked Album Container - smaller version */}
-                      <div className='relative w-[210px] h-[130px]'>
-                        {/* Basis Album (back) */}
+                    <div className='flex items-center gap-3'>
+                      {/* Basis album details - left */}
+                      {(activity.metadata as TransformedActivityMetadata)
+                        ?.basisAlbum && (
+                        <div className='max-w-28 text-right'>
+                          <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+                            {(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}
+                          </p>
+                          <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+                            {(activity.metadata as TransformedActivityMetadata).basisAlbum!.artists?.[0]?.artist?.name}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Album pair */}
+                      <div className='relative shrink-0 w-[210px] h-[120px]'>
+                        {/* Basis Album */}
                         {(activity.metadata as TransformedActivityMetadata)
                           ?.basisAlbum && (
                           <Link
                             href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
-                            className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                            className='absolute left-0 top-0 cursor-pointer hover:scale-105 transition-transform'
                             title={`View ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}`}
                           >
                             <AlbumImage
                               src={
-                                (
-                                  activity.metadata as TransformedActivityMetadata
-                                ).basisAlbum!.coverArtUrl ||
-                                '/placeholder-album.png'
+                                (activity.metadata as TransformedActivityMetadata)
+                                  .basisAlbum!.coverArtUrl || '/placeholder-album.png'
                               }
                               cloudflareImageId={
-                                (
-                                  activity.metadata as TransformedActivityMetadata
-                                ).basisAlbum!.cloudflareImageId
+                                (activity.metadata as TransformedActivityMetadata)
+                                  .basisAlbum!.cloudflareImageId
                               }
                               alt={
-                                (
-                                  activity.metadata as TransformedActivityMetadata
-                                ).basisAlbum!.title
+                                (activity.metadata as TransformedActivityMetadata)
+                                  .basisAlbum!.title
                               }
                               width={90}
                               height={90}
@@ -273,10 +282,10 @@ export default function GroupedActivityItem({
                           </Link>
                         )}
 
-                        {/* Recommended Album (front) */}
+                        {/* Recommended Album */}
                         <Link
                           href={`/albums/${activity.albumId}?source=local`}
-                          className='rec-album absolute left-[100px] top-0 cursor-pointer hover:scale-105 transition-transform'
+                          className='absolute left-[100px] top-0 cursor-pointer hover:scale-105 transition-transform'
                           title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
                         >
                           <AlbumImage
@@ -289,10 +298,10 @@ export default function GroupedActivityItem({
                           />
                         </Link>
 
-                        {/* Score indicator with heart - visible on hover between albums */}
+                        {/* Score indicator */}
                         {(activity.metadata as TransformedActivityMetadata)
                           ?.score && (
-                          <div className='arrow-indicator absolute left-[77px] top-[37px] z-20'>
+                          <div className='absolute left-[77px] top-[37px] z-20'>
                             <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                               <div
                                 className={`flex items-center justify-center w-12 h-12 bg-linear-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
@@ -304,17 +313,23 @@ export default function GroupedActivityItem({
                                   <span
                                     className={`text-[10px] font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor} tabular-nums leading-none`}
                                   >
-                                    {
-                                      (
-                                        activity.metadata as TransformedActivityMetadata
-                                      ).score
-                                    }
+                                    {(activity.metadata as TransformedActivityMetadata).score}
                                   </span>
                                 </div>
                               </div>
                             </div>
                           </div>
                         )}
+                      </div>
+
+                      {/* Recommended album details - right */}
+                      <div className='max-w-28'>
+                        <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+                          {activity.albumTitle}
+                        </p>
+                        <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+                          {activity.albumArtist}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -602,61 +617,70 @@ function SingleActivityDisplay({
 
       {/* Recommendation Visual - Stacked Albums */}
       {activity.type === 'recommendation' && activity.albumImage && (
-        <div className='flex justify-center relative'>
-          <div className='relative inline-block'>
-            {/* Stacked Album Container */}
-            <div className='relative w-[420px] h-[260px]'>
+        <div className='flex justify-center items-center gap-6 relative px-4'>
+          {/* Basis album details - left side */}
+          {(activity.metadata as TransformedActivityMetadata)
+            ?.basisAlbum && (
+            <div className='flex-1 text-right min-w-0'>
+              <p className='text-sm text-zinc-300 font-medium line-clamp-2 leading-tight'>
+                {(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}
+              </p>
+              <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+                {(activity.metadata as TransformedActivityMetadata).basisAlbum!.artists?.[0]?.artist?.name}
+              </p>
+            </div>
+          )}
+
+          {/* Album pair container */}
+          <div className='relative shrink-0'>
+            <div className='relative w-[420px] h-[240px]'>
               {/* Basis Album (back) */}
               {(activity.metadata as TransformedActivityMetadata)
                 ?.basisAlbum && (
                 <Link
                   href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
-                  className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                  className='absolute left-0 top-0 cursor-pointer hover:scale-105 transition-transform'
                   title={`View ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}`}
                 >
-                  <div className='relative'>
-                    <AlbumImage
-                      src={
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.coverArtUrl || '/placeholder-album.png'
-                      }
-                      cloudflareImageId={
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.cloudflareImageId
-                      }
-                      alt={
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.title
-                      }
-                      width={180}
-                      height={180}
-                      className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
-                    />
-                  </div>
+                  <AlbumImage
+                    src={
+                      (activity.metadata as TransformedActivityMetadata)
+                        .basisAlbum!.coverArtUrl || '/placeholder-album.png'
+                    }
+                    cloudflareImageId={
+                      (activity.metadata as TransformedActivityMetadata)
+                        .basisAlbum!.cloudflareImageId
+                    }
+                    alt={
+                      (activity.metadata as TransformedActivityMetadata)
+                        .basisAlbum!.title
+                    }
+                    width={180}
+                    height={180}
+                    className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+                  />
                 </Link>
               )}
 
               {/* Recommended Album (front) */}
               <Link
                 href={`/albums/${activity.albumId}?source=local`}
-                className='rec-album absolute left-[200px] top-0 cursor-pointer hover:scale-105 transition-transform'
+                className='absolute left-[200px] top-0 cursor-pointer hover:scale-105 transition-transform'
                 title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
               >
-                <div className='relative'>
-                  <AlbumImage
-                    src={activity.albumImage}
-                    cloudflareImageId={activity.albumCloudflareImageId}
-                    alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-                    width={220}
-                    height={220}
-                    className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
-                  />
-                </div>
+                <AlbumImage
+                  src={activity.albumImage}
+                  cloudflareImageId={activity.albumCloudflareImageId}
+                  alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                  width={220}
+                  height={220}
+                  className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
+                />
               </Link>
 
-              {/* Score indicator with heart - visible on hover between albums */}
+              {/* Score indicator with heart */}
               {(activity.metadata as TransformedActivityMetadata)?.score && (
-                <div className='arrow-indicator absolute left-[155px] top-[75px] z-20'>
+                <div className='absolute left-[155px] top-[75px] z-20'>
                   <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                     <div
                       className={`flex items-center justify-center w-16 h-16 bg-linear-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
@@ -678,30 +702,17 @@ function SingleActivityDisplay({
                   </div>
                 </div>
               )}
-
-              {/* Basis album text - shows on hover with the albums */}
-              {(activity.metadata as TransformedActivityMetadata)
-                ?.basisAlbum && (
-                <div className='basis-text absolute bottom-0 left-0 w-[420px] pointer-events-none'>
-                  <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1 line-clamp-1'>
-                    if you like{' '}
-                    <span className='text-zinc-400'>
-                      {
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.title
-                      }
-                    </span>{' '}
-                    by{' '}
-                    <span className='text-zinc-400'>
-                      {
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.artists?.[0]?.artist?.name
-                      }
-                    </span>
-                  </p>
-                </div>
-              )}
             </div>
+          </div>
+
+          {/* Recommended album details - right side */}
+          <div className='flex-1 min-w-0'>
+            <p className='text-sm text-zinc-300 font-medium line-clamp-2 leading-tight'>
+              {activity.albumTitle}
+            </p>
+            <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+              {activity.albumArtist}
+            </p>
           </div>
         </div>
       )}

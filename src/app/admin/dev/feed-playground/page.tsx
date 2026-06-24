@@ -101,6 +101,20 @@ const ALBUMS = [
   },
 ];
 
+// Albums with longer names for stress-testing side labels
+const LONG_ALBUMS = [
+  { id: 'long-1', title: 'To Pimp a Butterfly', artist: 'Kendrick Lamar', artistId: 'la-1', coverArtUrl: ALBUMS[0].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-2', title: 'My Beautiful Dark Twisted Fantasy', artist: 'Kanye West', artistId: 'la-2', coverArtUrl: ALBUMS[1].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-3', title: 'The Miseducation of Lauryn Hill', artist: 'Lauryn Hill', artistId: 'la-3', coverArtUrl: ALBUMS[2].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-4', title: 'good kid, m.A.A.d city', artist: 'Kendrick Lamar', artistId: 'la-1', coverArtUrl: ALBUMS[3].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-5', title: "Sgt. Pepper's Lonely Hearts Club Band", artist: 'The Beatles', artistId: 'la-4', coverArtUrl: ALBUMS[4].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-6', title: 'The Rise and Fall of Ziggy Stardust', artist: 'David Bowie', artistId: 'la-5', coverArtUrl: ALBUMS[5].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-7', title: 'Wish You Were Here', artist: 'Pink Floyd', artistId: 'la-6', coverArtUrl: ALBUMS[6].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-8', title: "What's Going On", artist: 'Marvin Gaye', artistId: 'la-7', coverArtUrl: ALBUMS[7].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-9', title: 'Songs in the Key of Life', artist: 'Stevie Wonder', artistId: 'la-8', coverArtUrl: ALBUMS[8].coverArtUrl, cloudflareImageId: '' },
+  { id: 'long-10', title: 'The Low End Theory', artist: 'A Tribe Called Quest', artistId: 'la-9', coverArtUrl: ALBUMS[9].coverArtUrl, cloudflareImageId: '' },
+];
+
 // Use a fixed reference time to avoid SSR/client hydration mismatch from Date.now()
 const REFERENCE_TIME = new Date('2025-06-24T12:00:00Z').getTime();
 
@@ -256,6 +270,54 @@ const MOCK_GROUPS: Record<string, { label: string; group: GroupedActivity }> = {
       makeRecActivity('rg6f', USERS[1], ALBUMS[0], ALBUMS[9], 5, 20),
     ]),
   },
+  rec_grouped_11: {
+    label: 'Grouped Recs (11)',
+    group: toGroup([
+      makeRecActivity('rg11a', USERS[3], ALBUMS[0], ALBUMS[1], 10, 30),
+      makeRecActivity('rg11b', USERS[3], ALBUMS[2], ALBUMS[3], 9, 32),
+      makeRecActivity('rg11c', USERS[3], ALBUMS[4], ALBUMS[5], 8, 34),
+      makeRecActivity('rg11d', USERS[3], ALBUMS[6], ALBUMS[7], 7, 36),
+      makeRecActivity('rg11e', USERS[3], ALBUMS[8], ALBUMS[9], 10, 38),
+      makeRecActivity('rg11f', USERS[3], ALBUMS[1], ALBUMS[0], 6, 40),
+      makeRecActivity('rg11g', USERS[3], ALBUMS[3], ALBUMS[2], 9, 42),
+      makeRecActivity('rg11h', USERS[3], ALBUMS[5], ALBUMS[4], 5, 44),
+      makeRecActivity('rg11i', USERS[3], ALBUMS[7], ALBUMS[6], 8, 46),
+      makeRecActivity('rg11j', USERS[3], ALBUMS[9], ALBUMS[8], 7, 48),
+      makeRecActivity('rg11k', USERS[3], ALBUMS[0], ALBUMS[9], 10, 50),
+    ]),
+  },
+  rec_grouped_long: {
+    label: 'Grouped Recs (long names)',
+    group: toGroup([
+      makeRecActivity('rgl1', USERS[1], LONG_ALBUMS[0], LONG_ALBUMS[1], 10, 55),
+      makeRecActivity('rgl2', USERS[1], LONG_ALBUMS[2], LONG_ALBUMS[3], 8, 57),
+      makeRecActivity('rgl3', USERS[1], LONG_ALBUMS[4], LONG_ALBUMS[5], 7, 59),
+      makeRecActivity('rgl4', USERS[1], LONG_ALBUMS[6], LONG_ALBUMS[7], 9, 61),
+      makeRecActivity('rgl5', USERS[1], LONG_ALBUMS[8], LONG_ALBUMS[9], 6, 63),
+      makeRecActivity('rgl6', USERS[1], LONG_ALBUMS[1], LONG_ALBUMS[0], 10, 65),
+      makeRecActivity('rgl7', USERS[1], LONG_ALBUMS[3], LONG_ALBUMS[2], 5, 67),
+      makeRecActivity('rgl8', USERS[1], LONG_ALBUMS[5], LONG_ALBUMS[4], 8, 69),
+      makeRecActivity('rgl9', USERS[1], LONG_ALBUMS[7], LONG_ALBUMS[6], 7, 71),
+      makeRecActivity('rgl10', USERS[1], LONG_ALBUMS[9], LONG_ALBUMS[8], 9, 73),
+      makeRecActivity('rgl11', USERS[1], LONG_ALBUMS[0], LONG_ALBUMS[9], 10, 75),
+    ]),
+  },
+  rec_carousel_11: {
+    label: 'Carousel Recs (11)',
+    group: toGroup([
+      makeRecActivity('rc1', USERS[2], LONG_ALBUMS[0], LONG_ALBUMS[1], 10, 80),
+      makeRecActivity('rc2', USERS[2], LONG_ALBUMS[2], LONG_ALBUMS[3], 8, 82),
+      makeRecActivity('rc3', USERS[2], LONG_ALBUMS[4], LONG_ALBUMS[5], 7, 84),
+      makeRecActivity('rc4', USERS[2], LONG_ALBUMS[6], LONG_ALBUMS[7], 9, 86),
+      makeRecActivity('rc5', USERS[2], LONG_ALBUMS[8], LONG_ALBUMS[9], 6, 88),
+      makeRecActivity('rc6', USERS[2], LONG_ALBUMS[1], LONG_ALBUMS[0], 10, 90),
+      makeRecActivity('rc7', USERS[2], LONG_ALBUMS[3], LONG_ALBUMS[2], 5, 92),
+      makeRecActivity('rc8', USERS[2], LONG_ALBUMS[5], LONG_ALBUMS[4], 8, 94),
+      makeRecActivity('rc9', USERS[2], LONG_ALBUMS[7], LONG_ALBUMS[6], 7, 96),
+      makeRecActivity('rc10', USERS[2], LONG_ALBUMS[9], LONG_ALBUMS[8], 9, 98),
+      makeRecActivity('rc11', USERS[2], LONG_ALBUMS[0], LONG_ALBUMS[9], 10, 100),
+    ]),
+  },
   coll_single: {
     label: 'Single Collection Add',
     group: toGroup([
@@ -305,6 +367,9 @@ const PRESETS: Record<string, string[]> = {
     'coll_grouped_4',
     'follow_single',
     'rec_grouped_3',
+    'rec_grouped_11',
+    'rec_grouped_long',
+    'rec_carousel_11',
     'coll_single',
     'rec_single_6',
     'follow_grouped_3',
@@ -507,7 +572,7 @@ export default function FeedPlaygroundPage() {
             <div className='space-y-4'>
               {groups.map((group, i) => (
                 <div key={group.id} className='relative'>
-                  <span className='absolute -left-8 top-2 text-xs text-zinc-600 font-mono'>
+                  <span className='absolute left-3 top-2 text-[10px] text-zinc-600 font-mono z-10'>
                     {i + 1}
                   </span>
                   <GroupedActivityItem group={group} />
