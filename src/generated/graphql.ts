@@ -143,6 +143,13 @@ export type AddToMarqueeResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export enum AdminRecommendationSortField {
+  CreatedAt = 'CREATED_AT',
+  Score = 'SCORE',
+  UpdatedAt = 'UPDATED_AT',
+  User = 'USER',
+}
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -1709,6 +1716,8 @@ export type Mutation = {
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
+  adminDeleteRecommendation: Scalars['Boolean']['output'];
+  adminUpdateRecommendation: UpdateRecommendationPayload;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1845,6 +1854,15 @@ export type MutationAddAlbumToPoolArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
+};
+
+export type MutationAdminDeleteRecommendationArgs = {
+  id: Scalars['String']['input'];
+};
+
+export type MutationAdminUpdateRecommendationArgs = {
+  id: Scalars['String']['input'];
+  score: Scalars['Int']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -2211,6 +2229,8 @@ export type PreviewSummary = {
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
+  adminRecommendations: Array<Recommendation>;
+  adminRecommendationsCount: Scalars['Int']['output'];
   album?: Maybe<Album>;
   albumByMusicBrainzId?: Maybe<Album>;
   albumImportMatch: AlbumImportMatch;
@@ -2346,6 +2366,24 @@ export type Query = {
   userTasteProfile: Array<UserFavoriteArtist>;
   users: Array<User>;
   usersCount: Scalars['Int']['output'];
+};
+
+export type QueryAdminRecommendationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  maxScore?: InputMaybe<Scalars['Int']['input']>;
+  minScore?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<AdminRecommendationSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
+  userId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryAdminRecommendationsCountArgs = {
+  maxScore?: InputMaybe<Scalars['Int']['input']>;
+  minScore?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  userId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAlbumArgs = {
@@ -4048,6 +4086,79 @@ export type DeleteAlbumMutation = {
     message?: string | null;
     deletedId?: string | null;
   };
+};
+
+export type GetAdminRecommendationsQueryVariables = Exact<{
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  userId?: InputMaybe<Scalars['String']['input']>;
+  minScore?: InputMaybe<Scalars['Int']['input']>;
+  maxScore?: InputMaybe<Scalars['Int']['input']>;
+  sortBy?: InputMaybe<AdminRecommendationSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
+}>;
+
+export type GetAdminRecommendationsQuery = {
+  __typename?: 'Query';
+  totalCount: number;
+  adminRecommendations: Array<{
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+    createdAt: Date;
+    updatedAt: Date;
+    user: {
+      __typename?: 'User';
+      id: string;
+      username?: string | null;
+      image?: string | null;
+    };
+    basisAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    recommendedAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type AdminUpdateRecommendationMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  score: Scalars['Int']['input'];
+}>;
+
+export type AdminUpdateRecommendationMutation = {
+  __typename?: 'Mutation';
+  adminUpdateRecommendation: {
+    __typename?: 'UpdateRecommendationPayload';
+    id: string;
+  };
+};
+
+export type AdminDeleteRecommendationMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type AdminDeleteRecommendationMutation = {
+  __typename?: 'Mutation';
+  adminDeleteRecommendation: boolean;
 };
 
 export type GetAdminUsersQueryVariables = Exact<{
@@ -8500,6 +8611,218 @@ export const useDeleteAlbumMutation = <TError = unknown, TContext = unknown>(
 };
 
 useDeleteAlbumMutation.getKey = () => ['DeleteAlbum'];
+
+export const GetAdminRecommendationsDocument = `
+    query GetAdminRecommendations($offset: Int = 0, $limit: Int = 20, $search: String, $userId: String, $minScore: Int, $maxScore: Int, $sortBy: AdminRecommendationSortField = CREATED_AT, $sortOrder: SortOrder = DESC) {
+  adminRecommendations(
+    offset: $offset
+    limit: $limit
+    search: $search
+    userId: $userId
+    minScore: $minScore
+    maxScore: $maxScore
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+  ) {
+    id
+    score
+    createdAt
+    updatedAt
+    user {
+      id
+      username
+      image
+    }
+    basisAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    recommendedAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+  totalCount: adminRecommendationsCount(
+    search: $search
+    userId: $userId
+    minScore: $minScore
+    maxScore: $maxScore
+  )
+}
+    `;
+
+export const useGetAdminRecommendationsQuery = <
+  TData = GetAdminRecommendationsQuery,
+  TError = unknown,
+>(
+  variables?: GetAdminRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAdminRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetAdminRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetAdminRecommendationsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetAdminRecommendations']
+        : ['GetAdminRecommendations', variables],
+    queryFn: fetcher<
+      GetAdminRecommendationsQuery,
+      GetAdminRecommendationsQueryVariables
+    >(GetAdminRecommendationsDocument, variables),
+    ...options,
+  });
+};
+
+useGetAdminRecommendationsQuery.getKey = (
+  variables?: GetAdminRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetAdminRecommendations']
+    : ['GetAdminRecommendations', variables];
+
+export const useInfiniteGetAdminRecommendationsQuery = <
+  TData = InfiniteData<GetAdminRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetAdminRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetAdminRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetAdminRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetAdminRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetAdminRecommendations.infinite']
+            : ['GetAdminRecommendations.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetAdminRecommendationsQuery,
+            GetAdminRecommendationsQueryVariables
+          >(GetAdminRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetAdminRecommendationsQuery.getKey = (
+  variables?: GetAdminRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetAdminRecommendations.infinite']
+    : ['GetAdminRecommendations.infinite', variables];
+
+export const AdminUpdateRecommendationDocument = `
+    mutation AdminUpdateRecommendation($id: String!, $score: Int!) {
+  adminUpdateRecommendation(id: $id, score: $score) {
+    id
+  }
+}
+    `;
+
+export const useAdminUpdateRecommendationMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AdminUpdateRecommendationMutation,
+    TError,
+    AdminUpdateRecommendationMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AdminUpdateRecommendationMutation,
+    TError,
+    AdminUpdateRecommendationMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AdminUpdateRecommendation'],
+    mutationFn: (variables?: AdminUpdateRecommendationMutationVariables) =>
+      fetcher<
+        AdminUpdateRecommendationMutation,
+        AdminUpdateRecommendationMutationVariables
+      >(AdminUpdateRecommendationDocument, variables)(),
+    ...options,
+  });
+};
+
+useAdminUpdateRecommendationMutation.getKey = () => [
+  'AdminUpdateRecommendation',
+];
+
+export const AdminDeleteRecommendationDocument = `
+    mutation AdminDeleteRecommendation($id: String!) {
+  adminDeleteRecommendation(id: $id)
+}
+    `;
+
+export const useAdminDeleteRecommendationMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AdminDeleteRecommendationMutation,
+    TError,
+    AdminDeleteRecommendationMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AdminDeleteRecommendationMutation,
+    TError,
+    AdminDeleteRecommendationMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AdminDeleteRecommendation'],
+    mutationFn: (variables?: AdminDeleteRecommendationMutationVariables) =>
+      fetcher<
+        AdminDeleteRecommendationMutation,
+        AdminDeleteRecommendationMutationVariables
+      >(AdminDeleteRecommendationDocument, variables)(),
+    ...options,
+  });
+};
+
+useAdminDeleteRecommendationMutation.getKey = () => [
+  'AdminDeleteRecommendation',
+];
 
 export const GetAdminUsersDocument = `
     query GetAdminUsers($offset: Int = 0, $limit: Int = 20, $search: String, $role: UserRole, $sortBy: UserSortField = CREATED_AT, $sortOrder: SortOrder = DESC, $createdAfter: DateTime, $createdBefore: DateTime, $lastActiveAfter: DateTime, $lastActiveBefore: DateTime, $hasActivity: Boolean) {

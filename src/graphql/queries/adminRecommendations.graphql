@@ -1,0 +1,71 @@
+query GetAdminRecommendations(
+  $offset: Int = 0
+  $limit: Int = 20
+  $search: String
+  $userId: String
+  $minScore: Int
+  $maxScore: Int
+  $sortBy: AdminRecommendationSortField = CREATED_AT
+  $sortOrder: SortOrder = DESC
+) {
+  adminRecommendations(
+    offset: $offset
+    limit: $limit
+    search: $search
+    userId: $userId
+    minScore: $minScore
+    maxScore: $maxScore
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+  ) {
+    id
+    score
+    createdAt
+    updatedAt
+    user {
+      id
+      username
+      image
+    }
+    basisAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    recommendedAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+  totalCount: adminRecommendationsCount(
+    search: $search
+    userId: $userId
+    minScore: $minScore
+    maxScore: $maxScore
+  )
+}
+
+mutation AdminUpdateRecommendation($id: String!, $score: Int!) {
+  adminUpdateRecommendation(id: $id, score: $score) {
+    id
+  }
+}
+
+mutation AdminDeleteRecommendation($id: String!) {
+  adminDeleteRecommendation(id: $id)
+}

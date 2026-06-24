@@ -11,7 +11,6 @@
 // add them to the type resolver sections below (e.g., Artist: { ... })
 
 import chalk from 'chalk';
-
 import { GraphQLError } from 'graphql';
 
 import { Resolvers } from '@/generated/graphql';
@@ -232,6 +231,166 @@ export const resolvers: Resolvers = {
 
       return prisma.user.count({ where });
     },
+
+    // Admin recommendations query
+    adminRecommendations: async (
+      _,
+      {
+        offset = 0,
+        limit = 20,
+        search,
+        userId,
+        minScore,
+        maxScore,
+        sortBy = 'CREATED_AT',
+        sortOrder = 'DESC',
+      },
+      { prisma, user }
+    ) => {
+      if (!user) {
+        throw new GraphQLError('Authentication required', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+      if (!isAdmin(user.role)) {
+        throw new GraphQLError('Admin access required', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      const whereConditions: Record<string, unknown>[] = [];
+
+      if (search) {
+        whereConditions.push({
+          OR: [
+            {
+              basisAlbum: {
+                title: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+            {
+              recommendedAlbum: {
+                title: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+            {
+              user: {
+                username: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+          ],
+        });
+      }
+
+      if (userId) {
+        whereConditions.push({ userId });
+      }
+
+      if (minScore != null) {
+        whereConditions.push({ score: { gte: minScore } });
+      }
+      if (maxScore != null) {
+        whereConditions.push({ score: { lte: maxScore } });
+      }
+
+      const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+      const order = sortOrder === 'ASC' ? 'asc' : 'desc';
+      type OrderByType = Record<string, 'asc' | 'desc' | Record<string, 'asc' | 'desc'>>;
+      let orderBy: OrderByType = { createdAt: 'desc' };
+
+      switch (sortBy) {
+        case 'CREATED_AT':
+          orderBy = { createdAt: order };
+          break;
+        case 'UPDATED_AT':
+          orderBy = { updatedAt: order };
+          break;
+        case 'SCORE':
+          orderBy = { score: order };
+          break;
+        case 'USER':
+          orderBy = { user: { username: order } };
+          break;
+      }
+
+      return prisma.recommendation.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: { include: { artist: true } },
+            },
+          },
+          recommendedAlbum: {
+            include: {
+              artists: { include: { artist: true } },
+            },
+          },
+        },
+        orderBy,
+      });
+    },
+
+    adminRecommendationsCount: async (
+      _,
+      { search, userId, minScore, maxScore },
+      { prisma, user }
+    ) => {
+      if (!user) {
+        throw new GraphQLError('Authentication required', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+      if (!isAdmin(user.role)) {
+        throw new GraphQLError('Admin access required', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      const whereConditions: Record<string, unknown>[] = [];
+
+      if (search) {
+        whereConditions.push({
+          OR: [
+            {
+              basisAlbum: {
+                title: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+            {
+              recommendedAlbum: {
+                title: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+            {
+              user: {
+                username: { contains: search, mode: 'insensitive' as const },
+              },
+            },
+          ],
+        });
+      }
+
+      if (userId) {
+        whereConditions.push({ userId });
+      }
+
+      if (minScore != null) {
+        whereConditions.push({ score: { gte: minScore } });
+      }
+      if (maxScore != null) {
+        whereConditions.push({ score: { lte: maxScore } });
+      }
+
+      const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+      return prisma.recommendation.count({ where });
+    },
+
     health: () => `GraphQL server running at ${new Date().toISOString()}`,
 
     // Basic entity queries using DataLoaders
@@ -413,15 +572,14 @@ export const resolvers: Resolvers = {
       const cacheTag = orange('[CACHE LAYER]');
 
       const cacheKey = CACHE_KEYS.similarArtists(id);
-      const cached =
-        await cache.get<
-          Array<{
-            name: string;
-            mbid: string;
-            similarity: number;
-            source: string;
-          }>
-        >(cacheKey);
+      const cached = await cache.get<
+        Array<{
+          name: string;
+          mbid: string;
+          similarity: number;
+          source: string;
+        }>
+      >(cacheKey);
 
       // Cache miss — queue background job and return empty (frontend polls)
       if (cached === null) {
@@ -1545,11 +1703,23 @@ export const resolvers: Resolvers = {
         artistMbids.length > 0
           ? await prisma.artist.findMany({
               where: { musicbrainzId: { in: artistMbids } },
-              select: { id: true, musicbrainzId: true, imageUrl: true, cloudflareImageId: true },
+              select: {
+                id: true,
+                musicbrainzId: true,
+                imageUrl: true,
+                cloudflareImageId: true,
+              },
             })
           : [];
       const artistMbidMap = new Map(
-        matchedArtists.map(a => [a.musicbrainzId, { id: a.id, imageUrl: a.imageUrl, cloudflareImageId: a.cloudflareImageId }])
+        matchedArtists.map(a => [
+          a.musicbrainzId,
+          {
+            id: a.id,
+            imageUrl: a.imageUrl,
+            cloudflareImageId: a.cloudflareImageId,
+          },
+        ])
       );
 
       // Batch resolve album MBIDs to local IDs

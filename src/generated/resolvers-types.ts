@@ -117,6 +117,13 @@ export type AddToMarqueeResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export enum AdminRecommendationSortField {
+  CreatedAt = 'CREATED_AT',
+  Score = 'SCORE',
+  UpdatedAt = 'UPDATED_AT',
+  User = 'USER',
+}
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -1683,6 +1690,8 @@ export type Mutation = {
    */
   addAlbumToPool: AddAlbumToPoolResult;
   addArtist: Artist;
+  adminDeleteRecommendation: Scalars['Boolean']['output'];
+  adminUpdateRecommendation: UpdateRecommendationPayload;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1819,6 +1828,15 @@ export type MutationAddAlbumToPoolArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
+};
+
+export type MutationAdminDeleteRecommendationArgs = {
+  id: Scalars['String']['input'];
+};
+
+export type MutationAdminUpdateRecommendationArgs = {
+  id: Scalars['String']['input'];
+  score: Scalars['Int']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -2185,6 +2203,8 @@ export type PreviewSummary = {
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
+  adminRecommendations: Array<Recommendation>;
+  adminRecommendationsCount: Scalars['Int']['output'];
   album?: Maybe<Album>;
   albumByMusicBrainzId?: Maybe<Album>;
   albumImportMatch: AlbumImportMatch;
@@ -2320,6 +2340,24 @@ export type Query = {
   userTasteProfile: Array<UserFavoriteArtist>;
   users: Array<User>;
   usersCount: Scalars['Int']['output'];
+};
+
+export type QueryAdminRecommendationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  maxScore?: InputMaybe<Scalars['Int']['input']>;
+  minScore?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<AdminRecommendationSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
+  userId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryAdminRecommendationsCountArgs = {
+  maxScore?: InputMaybe<Scalars['Int']['input']>;
+  minScore?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  userId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAlbumArgs = {
@@ -3787,6 +3825,7 @@ export type ResolversTypes = ResolversObject<{
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
   AddAlbumToPoolResult: ResolverTypeWrapper<AddAlbumToPoolResult>;
   AddToMarqueeResult: ResolverTypeWrapper<AddToMarqueeResult>;
+  AdminRecommendationSortField: AdminRecommendationSortField;
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumGameStatus: AlbumGameStatus;
@@ -6434,6 +6473,18 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddArtistArgs, 'input'>
   >;
+  adminDeleteRecommendation?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAdminDeleteRecommendationArgs, 'id'>
+  >;
+  adminUpdateRecommendation?: Resolver<
+    ResolversTypes['UpdateRecommendationPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAdminUpdateRecommendationArgs, 'id' | 'score'>
+  >;
   adminUpdateUserShowTour?: Resolver<
     ResolversTypes['AdminUpdateUserSettingsPayload'],
     ParentType,
@@ -6996,6 +7047,21 @@ export type QueryResolvers<
     Array<ResolversTypes['JobRecord']>,
     ParentType,
     ContextType
+  >;
+  adminRecommendations?: Resolver<
+    Array<ResolversTypes['Recommendation']>,
+    ParentType,
+    ContextType,
+    RequireFields<
+      QueryAdminRecommendationsArgs,
+      'limit' | 'offset' | 'sortBy' | 'sortOrder'
+    >
+  >;
+  adminRecommendationsCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType,
+    Partial<QueryAdminRecommendationsCountArgs>
   >;
   album?: Resolver<
     Maybe<ResolversTypes['Album']>,

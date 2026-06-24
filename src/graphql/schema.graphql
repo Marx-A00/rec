@@ -700,7 +700,7 @@ input CreateRecommendationWithAlbumsInput {
   """
   recommendedAlbumData: AlbumInput
   """
-  Recommendation score (1-10)
+  Recommendation score (5-10)
   """
   score: Int!
 }
@@ -799,6 +799,13 @@ enum RecommendationSort {
   DATE_DESC
   DATE_ASC
   POPULARITY_DESC
+}
+
+enum AdminRecommendationSortField {
+  CREATED_AT
+  UPDATED_AT
+  SCORE
+  USER
 }
 
 enum CollectionSort {
@@ -2506,6 +2513,25 @@ type Query {
     lastActiveBefore: DateTime
     hasActivity: Boolean
   ): Int!
+
+  # Admin recommendations management
+  adminRecommendations(
+    offset: Int = 0
+    limit: Int = 20
+    search: String
+    userId: String
+    minScore: Int
+    maxScore: Int
+    sortBy: AdminRecommendationSortField = CREATED_AT
+    sortOrder: SortOrder = DESC
+  ): [Recommendation!]!
+  adminRecommendationsCount(
+    search: String
+    userId: String
+    minScore: Int
+    maxScore: Int
+  ): Int!
+
   mySettings: UserSettings
 
   # Sync Job queries
@@ -3384,6 +3410,10 @@ type Mutation {
   ): CreateRecommendationPayload!
   updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
   deleteRecommendation(id: String!): Boolean!
+
+  # Admin recommendation management (bypasses ownership check)
+  adminUpdateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
+  adminDeleteRecommendation(id: String!): Boolean!
 
   # Social features
   followUser(userId: String!): FollowUserPayload!

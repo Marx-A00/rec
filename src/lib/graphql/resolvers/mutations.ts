@@ -1576,6 +1576,10 @@ export const mutationResolvers: MutationResolvers = {
       finalScore = score;
     }
 
+    if (finalScore < 5 || finalScore > 10) {
+      throw new GraphQLError('Score must be between 5 and 10');
+    }
+
     try {
       const recommendation = await prisma.$transaction(async tx => {
         // Helper to resolve album data through shared find-or-create
@@ -1850,6 +1854,9 @@ export const mutationResolvers: MutationResolvers = {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
+    if (score < 5 || score > 10) {
+      throw new GraphQLError('Score must be between 5 and 10');
+    }
 
     try {
       // Update recommendation and activity in a transaction
@@ -1929,6 +1936,99 @@ export const mutationResolvers: MutationResolvers = {
         '@/lib/cache/invalidation'
       );
       await invalidateUserRecsCache(user.id);
+
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to delete recommendation: ${error}`);
+    }
+  },
+
+  // Admin recommendation mutations (bypass ownership check)
+  adminUpdateRecommendation: async (_, { id, score }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+    if (score < 5 || score > 10) {
+      throw new GraphQLError('Score must be between 5 and 10');
+    }
+
+    try {
+      const recommendation = await prisma.recommendation.findUnique({
+        where: { id },
+      });
+
+      if (!recommendation) {
+        throw new GraphQLError('Recommendation not found');
+      }
+
+      const rec = await prisma.recommendation.update({
+        where: { id },
+        data: { score },
+      });
+
+      // Update Activity metadata score field
+      const activity = await prisma.activity.findFirst({
+        where: { recommendationId: id, deletedAt: null },
+      });
+      if (activity && activity.metadata) {
+        const metadata =
+          typeof activity.metadata === 'object' ? activity.metadata : {};
+        await prisma.activity.update({
+          where: { id: activity.id },
+          data: {
+            metadata: { ...(metadata as Record<string, unknown>), score },
+          },
+        });
+      }
+
+      return { id: rec.id };
+    } catch (error) {
+      throw new GraphQLError(`Failed to update recommendation: ${error}`);
+    }
+  },
+
+  adminDeleteRecommendation: async (_, { id }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const recommendation = await prisma.recommendation.findUnique({
+        where: { id },
+        select: { userId: true },
+      });
+
+      if (!recommendation) {
+        throw new GraphQLError('Recommendation not found');
+      }
+
+      await prisma.$transaction(async tx => {
+        // Soft-delete the Activity first (before deleting recommendation due to FK)
+        await tx.activity.updateMany({
+          where: { recommendationId: id, deletedAt: null },
+          data: { deletedAt: new Date() },
+        });
+
+        // Delete the recommendation
+        await tx.recommendation.delete({
+          where: { id },
+        });
+      });
+
+      const { invalidateUserRecsCache } = await import(
+        '@/lib/cache/invalidation'
+      );
+      await invalidateUserRecsCache(recommendation.userId);
 
       return true;
     } catch (error) {
