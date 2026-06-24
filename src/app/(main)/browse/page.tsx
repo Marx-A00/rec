@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function BrowsePage() {
   return (
-    <div className='py-8'>
+    <div className='py-8 overflow-x-hidden'>
       {/* Page Header */}
       <div className='px-4 md:px-8 lg:px-12 mb-16'>
         <div id='browse-page-header' data-tour-step='browse-header'>
