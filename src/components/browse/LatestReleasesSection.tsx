@@ -16,7 +16,7 @@ function isToday(dateStr: string): boolean {
 }
 
 export async function LatestReleasesSection() {
-  const { releases } = await getLatestReleases(15);
+  const { releases, newestReleaseDate } = await getLatestReleases(15);
 
   if (releases.length === 0) {
     return (
@@ -42,6 +42,16 @@ export async function LatestReleasesSection() {
           <h2 className='text-2xl font-extrabold text-white'>
             Latest Releases
           </h2>
+          {newestReleaseDate && (
+            <p className='text-xs text-zinc-500 mt-1'>
+              Last synced:{' '}
+              {new Date(newestReleaseDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+          )}
         </div>
         <Link
           href='/latest'
@@ -70,7 +80,9 @@ export async function LatestReleasesSection() {
           <ReleaseCard
             key={album.id}
             album={album}
-            isNew={idx === 0 && !!album.releaseDate && isToday(album.releaseDate)}
+            isNew={
+              idx === 0 && !!album.releaseDate && isToday(album.releaseDate)
+            }
           />
         ))}
       </div>
@@ -110,11 +122,12 @@ function ReleaseCard({
           <p className='font-semibold text-white text-sm line-clamp-1 group-hover:text-cosmic-latte transition-colors'>
             {album.title}
           </p>
-          <p className='text-xs text-zinc-400 line-clamp-1'>
-            {album.artists}
-          </p>
+          <p className='text-xs text-zinc-400 line-clamp-1'>{album.artists}</p>
         </div>
-        <SourceIcon source={album.source} className='w-5 h-5 shrink-0 ml-2 opacity-60 group-hover:opacity-100 transition-opacity' />
+        <SourceIcon
+          source={album.source}
+          className='w-5 h-5 shrink-0 ml-2 opacity-60 group-hover:opacity-100 transition-opacity'
+        />
       </div>
     </Link>
   );
