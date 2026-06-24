@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 
-import GroupedActivityItem from '@/components/feed/GroupedActivityItem';
+import GroupedActivityItem from './PlaygroundGroupedActivityItem';
 import type { GroupedActivity } from '@/utils/activity-grouping';
 import type { TransformedActivity } from '@/utils/transform-activity';
 
@@ -461,7 +461,7 @@ export default function FeedPlaygroundPage() {
       </div>
 
       {/* Feed preview */}
-      <div className='flex-1 bg-zinc-950 overflow-y-auto'>
+      <div className='flex-1 bg-zinc-950 overflow-y-auto custom-scrollbar'>
         <div className='max-w-2xl mx-auto py-8 px-6'>
           <div className='mb-6 text-center'>
             <h2 className='text-xl font-semibold text-cosmic-latte'>
@@ -477,8 +477,13 @@ export default function FeedPlaygroundPage() {
             </div>
           ) : (
             <div className='space-y-4'>
-              {groups.map(group => (
-                <GroupedActivityItem key={group.id} group={group} />
+              {groups.map((group, i) => (
+                <div key={group.id} className='relative'>
+                  <span className='absolute -left-8 top-2 text-xs text-zinc-600 font-mono'>
+                    {i + 1}
+                  </span>
+                  <GroupedActivityItem group={group} />
+                </div>
               ))}
             </div>
           )}
