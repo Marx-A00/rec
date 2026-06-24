@@ -5,7 +5,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Home, Compass, Eye, Settings, LogOut, X } from 'lucide-react';
+import {
+  Home,
+  Compass,
+  Eye,
+  Settings,
+  LogOut,
+  X,
+  HelpCircle,
+  Mail,
+  Info,
+  FileText,
+  Coffee,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -43,6 +55,13 @@ const mainNavItems: DrawerNavItem[] = [
   // TODO: Add back when mobile routes exist
   // { icon: Disc3, label: 'Recommend', href: '/m/recommend', ... },
   // { icon: Library, label: 'Collections', href: '/m/collections', ... },
+];
+
+const infoNavItems = [
+  { icon: HelpCircle, label: 'Help', href: '/m/help' },
+  { icon: Mail, label: 'Contact', href: '/m/contact' },
+  { icon: Info, label: 'About', href: '/m/about' },
+  { icon: FileText, label: 'Changelog', href: '/m/changelog' },
 ];
 
 const bottomNavItems: DrawerNavItem[] = [
@@ -207,7 +226,43 @@ export function MobileSideDrawer({
           })}
         </nav>
 
-        {/* Bottom Section */}
+        {/* Info Links */}
+        <div className='px-3'>
+          <div className='h-px bg-zinc-800 mx-2 mb-2' />
+
+          {infoNavItems.map(item => {
+            const Icon = item.icon;
+            const active = pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-4 px-3 h-11 rounded-xl transition-colors',
+                  active
+                    ? 'bg-emerald-500/15 text-emerald-400'
+                    : 'text-zinc-400 active:bg-zinc-800'
+                )}
+              >
+                <Icon className='h-5 w-5 shrink-0' strokeWidth={2} />
+                <span className='text-[15px]'>{item.label}</span>
+              </Link>
+            );
+          })}
+
+          <a
+            href='https://ko-fi.com/mrxdev'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='flex items-center gap-4 px-3 h-11 w-full rounded-xl text-zinc-400 active:bg-zinc-800 transition-colors'
+          >
+            <Coffee className='h-5 w-5 shrink-0' strokeWidth={2} />
+            <span className='text-[15px]'>Support</span>
+          </a>
+        </div>
+
+        {/* Settings & Log Out */}
         <div className='px-3 pb-2'>
           <div className='h-px bg-zinc-800 mx-2 mb-2' />
 
@@ -232,7 +287,6 @@ export function MobileSideDrawer({
             );
           })}
 
-          {/* Log Out */}
           <button
             type='button'
             onClick={() => signOut({ callbackUrl: '/m/auth/signin' })}

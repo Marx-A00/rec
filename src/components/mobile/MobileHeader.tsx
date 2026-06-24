@@ -91,9 +91,13 @@ export default function MobileHeader() {
             <Menu className='h-6 w-6 text-white' strokeWidth={2} />
           </button>
 
-          <span className='text-2xl font-bold text-white font-serif tracking-tight select-none'>
+          <button
+            type='button'
+            onClick={() => router.push('/m')}
+            className='text-2xl font-bold text-white font-serif tracking-tight select-none'
+          >
             rec
-          </span>
+          </button>
 
           <div className='flex items-center gap-1'>
             {/* Search toggle button */}
