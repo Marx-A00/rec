@@ -143,7 +143,9 @@ export function DesktopHomeClient() {
   return (
     <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
       {/* Title */}
-      <h1 className='relative z-10 text-[36px] font-bold text-white'>Uncover</h1>
+      <h1 className='relative z-10 text-[36px] font-bold text-white'>
+        Uncover
+      </h1>
 
       {/* Puzzle info */}
       <div className='relative z-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.15em] text-zinc-400'>
@@ -152,9 +154,7 @@ export function DesktopHomeClient() {
           <>
             <span className='text-zinc-600'>&middot;</span>
             <span
-              className={
-                mySession?.won ? 'text-emerald-400' : 'text-red-400'
-              }
+              className={mySession?.won ? 'text-emerald-400' : 'text-red-400'}
             >
               {mySession?.won ? 'SOLVED' : 'MISSED'}
             </span>

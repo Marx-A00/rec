@@ -209,10 +209,7 @@ class DeezerEditorialScheduler {
         );
       }
     } catch (error) {
-      console.warn(
-        '⚠️  Failed to drain queued Deezer Editorial jobs:',
-        error
-      );
+      console.warn('⚠️  Failed to drain queued Deezer Editorial jobs:', error);
     }
   }
 
@@ -264,7 +261,8 @@ async function readDeezerEditorialConfig(): Promise<DeezerEditorialScheduleConfi
   return {
     enabled: true, // Populated by caller based on DB state
     intervalMinutes:
-      dbConfig?.intervalMinutes ?? DEFAULT_DEEZER_EDITORIAL_CONFIG.intervalMinutes,
+      dbConfig?.intervalMinutes ??
+      DEFAULT_DEEZER_EDITORIAL_CONFIG.intervalMinutes,
     maxReleases:
       dbConfig?.maxReleases ?? DEFAULT_DEEZER_EDITORIAL_CONFIG.maxReleases,
     genres: dbConfig?.genres ?? DEFAULT_DEEZER_EDITORIAL_CONFIG.genres,

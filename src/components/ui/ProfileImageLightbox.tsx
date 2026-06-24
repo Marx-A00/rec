@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ProfileImageLightboxProps {

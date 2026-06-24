@@ -13,9 +13,14 @@ interface GuessListProps {
 }
 
 /** Case-insensitive artist name comparison */
-function isArtistMatch(guessedArtist?: string, correctArtist?: string | null): boolean {
+function isArtistMatch(
+  guessedArtist?: string,
+  correctArtist?: string | null
+): boolean {
   if (!guessedArtist || !correctArtist) return false;
-  return guessedArtist.toLowerCase().trim() === correctArtist.toLowerCase().trim();
+  return (
+    guessedArtist.toLowerCase().trim() === correctArtist.toLowerCase().trim()
+  );
 }
 
 /** Get the decade label for a year: 1997 → "90s", 2003 → "2000s" */
@@ -26,7 +31,10 @@ function getDecade(year: number): string {
 }
 
 /** Check if two years fall in the same decade */
-function isDecadeMatch(guessedYear?: number, correctYear?: number | null): boolean {
+function isDecadeMatch(
+  guessedYear?: number,
+  correctYear?: number | null
+): boolean {
   if (!guessedYear || !correctYear) return false;
   return Math.floor(guessedYear / 10) === Math.floor(correctYear / 10);
 }
@@ -38,7 +46,11 @@ function isDecadeMatch(guessedYear?: number, correctYear?: number | null): boole
  * - Amber: wrong album but correct artist and/or same decade
  * - Red: no match
  */
-export function GuessList({ guesses, correctArtist, correctYear }: GuessListProps) {
+export function GuessList({
+  guesses,
+  correctArtist,
+  correctYear,
+}: GuessListProps) {
   if (guesses.length === 0) {
     return null;
   }
@@ -54,14 +66,14 @@ export function GuessList({ guesses, correctArtist, correctYear }: GuessListProp
             !guess.isCorrect &&
             isArtistMatch(guess.guessedArtistName, correctArtist);
           const decadeMatch =
-            !guess.isCorrect &&
-            isDecadeMatch(guess.guessedYear, correctYear);
+            !guess.isCorrect && isDecadeMatch(guess.guessedYear, correctYear);
           const hasPartialMatch = artistMatch || decadeMatch;
 
           // Build hint chips
           const hints: string[] = [];
           if (artistMatch) hints.push('Correct artist');
-          if (decadeMatch && guess.guessedYear) hints.push(`${getDecade(guess.guessedYear)}`);
+          if (decadeMatch && guess.guessedYear)
+            hints.push(`${getDecade(guess.guessedYear)}`);
 
           return (
             <div
@@ -81,10 +93,7 @@ export function GuessList({ guesses, correctArtist, correctYear }: GuessListProp
                 {hints.length > 0 && (
                   <div className='flex items-center gap-2 pt-0.5'>
                     {hints.map(hint => (
-                      <span
-                        key={hint}
-                        className='text-xs text-amber-400/80'
-                      >
+                      <span key={hint} className='text-xs text-amber-400/80'>
                         {hint}
                       </span>
                     ))}
@@ -93,11 +102,17 @@ export function GuessList({ guesses, correctArtist, correctYear }: GuessListProp
               </div>
               <div className='ml-3 shrink-0'>
                 {guess.isCorrect ? (
-                  <span className='text-sm text-emerald-400' aria-label='Correct'>
+                  <span
+                    className='text-sm text-emerald-400'
+                    aria-label='Correct'
+                  >
                     ✓
                   </span>
                 ) : hasPartialMatch ? (
-                  <span className='text-sm text-amber-400' aria-label='Partial match'>
+                  <span
+                    className='text-sm text-amber-400'
+                    aria-label='Partial match'
+                  >
                     ~
                   </span>
                 ) : (

@@ -67,43 +67,50 @@ export default function MobileFollowListClient({
     }
   }, [showSearch]);
 
-  const variables = { userId, limit: 20, search: debouncedSearch || undefined, sort: 'recent' };
+  const variables = {
+    userId,
+    limit: 20,
+    search: debouncedSearch || undefined,
+    sort: 'recent',
+  };
 
-  const followersQuery = useInfiniteGetUserFollowersQuery(
-    variables,
-    {
-      initialPageParam: undefined,
-      getNextPageParam: (lastPage: GetUserFollowersQuery) =>
-        lastPage.userFollowers?.cursor
-          ? { cursor: lastPage.userFollowers.cursor }
-          : undefined,
-      enabled: type === 'followers',
-    }
-  );
+  const followersQuery = useInfiniteGetUserFollowersQuery(variables, {
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage: GetUserFollowersQuery) =>
+      lastPage.userFollowers?.cursor
+        ? { cursor: lastPage.userFollowers.cursor }
+        : undefined,
+    enabled: type === 'followers',
+  });
 
-  const followingQuery = useInfiniteGetUserFollowingQuery(
-    variables,
-    {
-      initialPageParam: undefined,
-      getNextPageParam: (lastPage: GetUserFollowingQuery) =>
-        lastPage.userFollowing?.cursor
-          ? { cursor: lastPage.userFollowing.cursor }
-          : undefined,
-      enabled: type === 'following',
-    }
-  );
+  const followingQuery = useInfiniteGetUserFollowingQuery(variables, {
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage: GetUserFollowingQuery) =>
+      lastPage.userFollowing?.cursor
+        ? { cursor: lastPage.userFollowing.cursor }
+        : undefined,
+    enabled: type === 'following',
+  });
 
   const query = type === 'followers' ? followersQuery : followingQuery;
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    refetch,
+  } = query;
 
   const users: UserItem[] =
     type === 'followers'
-      ? (data as InfiniteData<GetUserFollowersQuery> | undefined)?.pages.flatMap(
-          page => page.userFollowers.users
-        ) || []
-      : (data as InfiniteData<GetUserFollowingQuery> | undefined)?.pages.flatMap(
-          page => page.userFollowing.users
-        ) || [];
+      ? (
+          data as InfiniteData<GetUserFollowersQuery> | undefined
+        )?.pages.flatMap(page => page.userFollowers.users) || []
+      : (
+          data as InfiniteData<GetUserFollowingQuery> | undefined
+        )?.pages.flatMap(page => page.userFollowing.users) || [];
 
   // Infinite scroll handler — listens on the mobile scroll container, not window
   const handleScroll = useCallback(() => {
@@ -240,7 +247,6 @@ export default function MobileFollowListClient({
 
         {/* Empty State */}
         {!isLoading && !error && users.length === 0 && (
-
           <div className='flex flex-col items-center justify-center py-16 text-center'>
             <p className='text-white font-medium mb-2'>
               {debouncedSearch

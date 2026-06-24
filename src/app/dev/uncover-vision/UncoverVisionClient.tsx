@@ -15,7 +15,6 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { useSuggestedGameAlbumsQuery } from '@/generated/graphql';
-
 import type {
   TextRegion,
   FilteredTextResult,

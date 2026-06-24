@@ -67,9 +67,7 @@ export async function handleDeezerSyncEditorialReleases(
     let releases = await fetchAllGenreReleases(data.genres, data.maxReleases);
 
     console.log(
-      chalk.cyan(
-        `[Deezer Editorial] Fetched ${releases.length} releases`
-      )
+      chalk.cyan(`[Deezer Editorial] Fetched ${releases.length} releases`)
     );
 
     // 4. Optional filtering of suspicious titles

@@ -222,7 +222,9 @@ export function FieldComparison({
         <div className='text-zinc-400 min-w-0 wrap-break-word'>
           {currentDisplay}
         </div>
-        <div className='text-zinc-200 min-w-0 wrap-break-word'>{sourceDisplay}</div>
+        <div className='text-zinc-200 min-w-0 wrap-break-word'>
+          {sourceDisplay}
+        </div>
       </div>
     </div>
   );

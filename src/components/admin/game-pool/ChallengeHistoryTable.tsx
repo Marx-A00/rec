@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { isToday } from 'date-fns';
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
-import { parseDateOnly, formatDateOnly } from '@/lib/date-utils';
 
+import { parseDateOnly, formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
   Table,

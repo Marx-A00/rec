@@ -211,10 +211,12 @@ function TimelineLogItem({
             {formatOperationTitle(log.operation, log.entityType)}
             {(() => {
               const meta = log.metadata as Record<string, unknown> | null;
-              const name = meta?.artistName || meta?.albumTitle || meta?.trackTitle;
+              const name =
+                meta?.artistName || meta?.albumTitle || meta?.trackTitle;
               return name ? (
                 <span className='text-zinc-500 font-normal'>
-                  {' — '}{String(name)}
+                  {' — '}
+                  {String(name)}
                 </span>
               ) : null;
             })()}
@@ -234,80 +236,80 @@ function TimelineLogItem({
         </TimelineHeader>
 
         <TimelineContent className={cn(compact && 'mt-1 p-2')}>
-        {(!compact || isExpanded) && (
-          <TimelineDescription>{getItemDescription(log)}</TimelineDescription>
-        )}
+          {(!compact || isExpanded) && (
+            <TimelineDescription>{getItemDescription(log)}</TimelineDescription>
+          )}
 
-        {/* Inline error preview (not expanded) */}
-        {hasError && !isExpanded && log.errorMessage && (
-          <p
-            className={cn(
-              'mt-1 text-xs text-red-400',
-              compact && 'text-[10px]'
-            )}
-          >
-            {truncateError(log.errorMessage)}
-          </p>
-        )}
+          {/* Inline error preview (not expanded) */}
+          {hasError && !isExpanded && log.errorMessage && (
+            <p
+              className={cn(
+                'mt-1 text-xs text-red-400',
+                compact && 'text-[10px]'
+              )}
+            >
+              {truncateError(log.errorMessage)}
+            </p>
+          )}
 
-        {/* Expanded details */}
-        <AnimatePresence>
-          {isExpanded && <ExpandedDetails log={log} />}
-        </AnimatePresence>
+          {/* Expanded details */}
+          <AnimatePresence>
+            {isExpanded && <ExpandedDetails log={log} />}
+          </AnimatePresence>
 
-        {/* Children timeline (nested) */}
-        {hasChildren && (
-          <div className={cn('mt-4', compact && 'mt-2')}>
-            <Timeline size={compact ? 'sm' : 'md'} animate={false}>
-              {displayedChildren?.map(child => (
-                <TimelineLogItem
-                  key={child.id}
-                  log={child}
-                  isExpanded={false}
-                  onToggleExpand={() => {}}
-                  showAllChildren={true}
-                  onToggleShowAll={() => {}}
-                  isChild
-                  compact={compact}
-                  truncationThreshold={truncationThreshold}
-                />
-              ))}
-            </Timeline>
+          {/* Children timeline (nested) */}
+          {hasChildren && (
+            <div className={cn('mt-4', compact && 'mt-2')}>
+              <Timeline size={compact ? 'sm' : 'md'} animate={false}>
+                {displayedChildren?.map(child => (
+                  <TimelineLogItem
+                    key={child.id}
+                    log={child}
+                    isExpanded={false}
+                    onToggleExpand={() => {}}
+                    showAllChildren={true}
+                    onToggleShowAll={() => {}}
+                    isChild
+                    compact={compact}
+                    truncationThreshold={truncationThreshold}
+                  />
+                ))}
+              </Timeline>
 
-            {/* Show more button for truncated children */}
-            {!showAllChildren && hiddenCount > 0 && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={e => {
-                  e.stopPropagation();
-                  onToggleShowAll();
-                }}
-                className='mt-2 h-8 text-xs text-zinc-400 hover:text-zinc-200'
-              >
-                <ChevronDown className='mr-1 h-3 w-3' />
-                Show {hiddenCount} more...
-              </Button>
-            )}
+              {/* Show more button for truncated children */}
+              {!showAllChildren && hiddenCount > 0 && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleShowAll();
+                  }}
+                  className='mt-2 h-8 text-xs text-zinc-400 hover:text-zinc-200'
+                >
+                  <ChevronDown className='mr-1 h-3 w-3' />
+                  Show {hiddenCount} more...
+                </Button>
+              )}
 
-            {/* Collapse button when expanded */}
-            {showAllChildren && hiddenCount > 0 && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={e => {
-                  e.stopPropagation();
-                  onToggleShowAll();
-                }}
-                className='mt-2 h-8 text-xs text-zinc-400 hover:text-zinc-200'
-              >
-                <ChevronUp className='mr-1 h-3 w-3' />
-                Show less
-              </Button>
-            )}
-          </div>
-        )}
-      </TimelineContent>
+              {/* Collapse button when expanded */}
+              {showAllChildren && hiddenCount > 0 && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleShowAll();
+                  }}
+                  className='mt-2 h-8 text-xs text-zinc-400 hover:text-zinc-200'
+                >
+                  <ChevronUp className='mr-1 h-3 w-3' />
+                  Show less
+                </Button>
+              )}
+            </div>
+          )}
+        </TimelineContent>
       </div>
     </TimelineItem>
   );

@@ -244,7 +244,7 @@ export function SyncJobExpandedContent({
                   >
                     <div className='flex gap-2'>
                       <div className='w-10 h-10 bg-zinc-700 rounded shrink-0 overflow-hidden'>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {}
                         {album.coverArtUrl && (
                           <img
                             src={album.coverArtUrl}

@@ -62,7 +62,9 @@ export function ArcadeButtonPlayground() {
 
         {/* Color picker */}
         <div className='space-y-3'>
-          <span className='text-sm font-medium text-zinc-200'>Button color</span>
+          <span className='text-sm font-medium text-zinc-200'>
+            Button color
+          </span>
 
           <div className='flex items-center gap-3'>
             <input

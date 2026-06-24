@@ -39,7 +39,13 @@ export interface ArtistFields {
   cloudflareImageId?: string | null;
   source?: ContentSource;
   dataQuality?: DataQuality;
-  enrichmentStatus?: 'UNENRICHED' | 'QUEUED' | 'COMPLETED' | 'IN_PROGRESS' | 'FAILED' | 'BASIC';
+  enrichmentStatus?:
+    | 'UNENRICHED'
+    | 'QUEUED'
+    | 'COMPLETED'
+    | 'IN_PROGRESS'
+    | 'FAILED'
+    | 'BASIC';
   lastEnriched?: Date | null;
   biography?: string | null;
   genres?: string[];

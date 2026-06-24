@@ -1,9 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import type { CorrectionPreview } from '@/lib/correction/preview/types';
+
 import { AppliedSuccessState } from '../shared';
 import { FieldComparisonList } from '../preview/FieldComparisonList';
-import type { CorrectionPreview } from '@/lib/correction/preview/types';
 
 interface ManualPreviewApplyStepProps {
   previewData: CorrectionPreview;

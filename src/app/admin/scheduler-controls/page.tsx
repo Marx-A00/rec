@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Play, Square, CheckCircle, XCircle, Clock, Loader2, Activity } from 'lucide-react';
+import {
+  RefreshCw,
+  Play,
+  Square,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  Activity,
+} from 'lucide-react';
 
 const MONITORING_API =
   process.env.NODE_ENV === 'development'
@@ -71,43 +80,50 @@ function SchedulerCard({
   const disabled = schedulerKey === 'musicbrainz';
 
   return (
-    <div className={`bg-zinc-900 border border-zinc-800 rounded-lg p-4 ${disabled ? 'opacity-40' : ''}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-white">{name}</h3>
+    <div
+      className={`bg-zinc-900 border border-zinc-800 rounded-lg p-4 ${disabled ? 'opacity-40' : ''}`}
+    >
+      <div className='flex items-center justify-between mb-3'>
+        <h3 className='text-sm font-semibold text-white'>{name}</h3>
         {disabled ? (
-          <span className="text-xs text-zinc-600">Not in use</span>
+          <span className='text-xs text-zinc-600'>Not in use</span>
         ) : info.enabled ? (
-          <span className="flex items-center gap-1 text-xs text-emerald-400">
-            <CheckCircle className="w-3 h-3" /> Running
+          <span className='flex items-center gap-1 text-xs text-emerald-400'>
+            <CheckCircle className='w-3 h-3' /> Running
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-xs text-zinc-500">
-            <XCircle className="w-3 h-3" /> Stopped
+          <span className='flex items-center gap-1 text-xs text-zinc-500'>
+            <XCircle className='w-3 h-3' /> Stopped
           </span>
         )}
       </div>
 
-      <div className="space-y-1.5 text-xs text-zinc-400 mb-3">
-        <div className="flex items-center gap-1.5">
-          <Clock className="w-3 h-3 text-zinc-500" />
-          <span>Interval: {info.intervalMinutes > 0 ? `${Math.round(info.intervalMinutes / 1440)}d` : 'N/A'}</span>
+      <div className='space-y-1.5 text-xs text-zinc-400 mb-3'>
+        <div className='flex items-center gap-1.5'>
+          <Clock className='w-3 h-3 text-zinc-500' />
+          <span>
+            Interval:{' '}
+            {info.intervalMinutes > 0
+              ? `${Math.round(info.intervalMinutes / 1440)}d`
+              : 'N/A'}
+          </span>
         </div>
         <div>Last run: {formatRelativeTime(info.lastRunAt)}</div>
         <div>Next run: {formatRelativeTime(info.nextRunAt)}</div>
       </div>
 
       {!disabled && (
-        <div className="flex gap-2">
+        <div className='flex gap-2'>
           {info.enabled ? (
             <button
               onClick={() => onToggle(schedulerKey, 'stop')}
               disabled={isToggling}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-900 rounded-lg hover:bg-red-950 transition-colors disabled:opacity-50"
+              className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-900 rounded-lg hover:bg-red-950 transition-colors disabled:opacity-50'
             >
               {togglingAction === `${schedulerKey}-stop` ? (
-                <Activity className="w-3 h-3 animate-spin" />
+                <Activity className='w-3 h-3 animate-spin' />
               ) : (
-                <Square className="w-3 h-3" />
+                <Square className='w-3 h-3' />
               )}
               Stop
             </button>
@@ -115,12 +131,12 @@ function SchedulerCard({
             <button
               onClick={() => onToggle(schedulerKey, 'start')}
               disabled={isToggling}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 border border-emerald-900 rounded-lg hover:bg-emerald-950 transition-colors disabled:opacity-50"
+              className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 border border-emerald-900 rounded-lg hover:bg-emerald-950 transition-colors disabled:opacity-50'
             >
               {togglingAction === `${schedulerKey}-start` ? (
-                <Activity className="w-3 h-3 animate-spin" />
+                <Activity className='w-3 h-3 animate-spin' />
               ) : (
-                <Play className="w-3 h-3" />
+                <Play className='w-3 h-3' />
               )}
               Start
             </button>
@@ -128,12 +144,12 @@ function SchedulerCard({
           <button
             onClick={() => onSync(schedulerKey)}
             disabled={isToggling}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50'
           >
             {togglingAction === `${schedulerKey}-sync` ? (
-              <Activity className="w-3 h-3 animate-spin" />
+              <Activity className='w-3 h-3 animate-spin' />
             ) : (
-              <RefreshCw className="w-3 h-3" />
+              <RefreshCw className='w-3 h-3' />
             )}
             Sync Now
           </button>
@@ -180,7 +196,10 @@ export default function SchedulerControlsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleToggle = async (scheduler: SchedulerKey, action: 'start' | 'stop') => {
+  const handleToggle = async (
+    scheduler: SchedulerKey,
+    action: 'start' | 'stop'
+  ) => {
     const key = `${scheduler}-${action}`;
     setTogglingAction(key);
     setActionMessage(null);
@@ -196,14 +215,28 @@ export default function SchedulerControlsPage() {
         'deezer-editorial': 'Deezer Editorial',
       };
       if (data.success) {
-        setActionMessage(`${labelMap[scheduler]} scheduler ${action === 'start' ? 'started' : 'stopped'}`);
-        setStatus(prev => prev ? { ...prev, [scheduler]: { ...prev[scheduler], enabled: action === 'start' } } : prev);
+        setActionMessage(
+          `${labelMap[scheduler]} scheduler ${action === 'start' ? 'started' : 'stopped'}`
+        );
+        setStatus(prev =>
+          prev
+            ? {
+                ...prev,
+                [scheduler]: {
+                  ...prev[scheduler],
+                  enabled: action === 'start',
+                },
+              }
+            : prev
+        );
         setTimeout(fetchStatus, 1500);
       } else {
         setActionMessage(`Failed: ${data.message || data.error}`);
       }
     } catch (err) {
-      setActionMessage(`Error: ${err instanceof Error ? err.message : 'Request failed'}`);
+      setActionMessage(
+        `Error: ${err instanceof Error ? err.message : 'Request failed'}`
+      );
     } finally {
       setTogglingAction(null);
       setTimeout(() => setActionMessage(null), 5000);
@@ -231,7 +264,9 @@ export default function SchedulerControlsPage() {
         setActionMessage(`Failed: ${data.message || data.error}`);
       }
     } catch (err) {
-      setActionMessage(`Error: ${err instanceof Error ? err.message : 'Request failed'}`);
+      setActionMessage(
+        `Error: ${err instanceof Error ? err.message : 'Request failed'}`
+      );
     } finally {
       setTogglingAction(null);
       setTimeout(() => setActionMessage(null), 5000);
@@ -257,18 +292,18 @@ export default function SchedulerControlsPage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className='p-8 max-w-4xl'>
+      <div className='flex items-center justify-between mb-8'>
         <div>
-          <h1 className="text-2xl font-bold text-white">Scheduler Controls</h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <h1 className='text-2xl font-bold text-white'>Scheduler Controls</h1>
+          <p className='text-sm text-zinc-500 mt-1'>
             Monitor scheduled jobs and trigger manual runs
           </p>
         </div>
         <button
           onClick={fetchStatus}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50"
+          className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50'
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -276,47 +311,50 @@ export default function SchedulerControlsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-950/50 border border-red-800 rounded-lg p-3 mb-6 text-sm text-red-400">
+        <div className='bg-red-950/50 border border-red-800 rounded-lg p-3 mb-6 text-sm text-red-400'>
           {error}
         </div>
       )}
 
       {actionMessage && (
-        <div className={`rounded-lg p-3 mb-6 text-sm ${
-          actionMessage.startsWith('Failed') || actionMessage.startsWith('Error')
-            ? 'bg-red-950/50 border border-red-800 text-red-400'
-            : 'bg-green-950/50 border border-green-800 text-green-400'
-        }`}>
+        <div
+          className={`rounded-lg p-3 mb-6 text-sm ${
+            actionMessage.startsWith('Failed') ||
+            actionMessage.startsWith('Error')
+              ? 'bg-red-950/50 border border-red-800 text-red-400'
+              : 'bg-green-950/50 border border-green-800 text-green-400'
+          }`}
+        >
           {actionMessage}
         </div>
       )}
 
       {/* Scheduler Cards with Controls */}
       {status && (
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
+        <section className='mb-8'>
+          <h2 className='text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3'>
             Release Sync Schedulers
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
             <SchedulerCard
-              name="ListenBrainz"
-              schedulerKey="listenbrainz"
+              name='ListenBrainz'
+              schedulerKey='listenbrainz'
               info={status.listenbrainz}
               togglingAction={togglingAction}
               onToggle={handleToggle}
               onSync={handleSync}
             />
             <SchedulerCard
-              name="Deezer Editorial"
-              schedulerKey="deezer-editorial"
+              name='Deezer Editorial'
+              schedulerKey='deezer-editorial'
               info={status['deezer-editorial']}
               togglingAction={togglingAction}
               onToggle={handleToggle}
               onSync={handleSync}
             />
             <SchedulerCard
-              name="MusicBrainz"
-              schedulerKey="musicbrainz"
+              name='MusicBrainz'
+              schedulerKey='musicbrainz'
               info={status.musicbrainz}
               togglingAction={togglingAction}
               onToggle={handleToggle}
@@ -328,35 +366,47 @@ export default function SchedulerControlsPage() {
 
       {/* Queue Stats */}
       {status && (
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
+        <section className='mb-8'>
+          <h2 className='text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3'>
             Queue Stats
           </h2>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-            <div className="flex flex-wrap gap-6 text-sm">
+          <div className='bg-zinc-900 border border-zinc-800 rounded-lg p-4'>
+            <div className='flex flex-wrap gap-6 text-sm'>
               <div>
-                <span className="text-zinc-500">Waiting:</span>{' '}
-                <span className="text-white font-medium">{status.queue.waiting}</span>
+                <span className='text-zinc-500'>Waiting:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.waiting}
+                </span>
               </div>
               <div>
-                <span className="text-zinc-500">Active:</span>{' '}
-                <span className="text-white font-medium">{status.queue.active}</span>
+                <span className='text-zinc-500'>Active:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.active}
+                </span>
               </div>
               <div>
-                <span className="text-zinc-500">Completed:</span>{' '}
-                <span className="text-white font-medium">{status.queue.completed}</span>
+                <span className='text-zinc-500'>Completed:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.completed}
+                </span>
               </div>
               <div>
-                <span className="text-zinc-500">Failed:</span>{' '}
-                <span className="text-white font-medium">{status.queue.failed}</span>
+                <span className='text-zinc-500'>Failed:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.failed}
+                </span>
               </div>
               <div>
-                <span className="text-zinc-500">Delayed:</span>{' '}
-                <span className="text-white font-medium">{status.queue.delayed}</span>
+                <span className='text-zinc-500'>Delayed:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.delayed}
+                </span>
               </div>
               <div>
-                <span className="text-zinc-500">Paused:</span>{' '}
-                <span className="text-white font-medium">{status.queue.paused ? 'Yes' : 'No'}</span>
+                <span className='text-zinc-500'>Paused:</span>{' '}
+                <span className='text-white font-medium'>
+                  {status.queue.paused ? 'Yes' : 'No'}
+                </span>
               </div>
             </div>
           </div>
@@ -365,19 +415,23 @@ export default function SchedulerControlsPage() {
 
       {/* Manual Triggers */}
       <section>
-        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
+        <h2 className='text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3'>
           Manual Triggers
         </h2>
-        <div className="space-y-3">
+        <div className='space-y-3'>
           {/* Taste Matches */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between">
+          <div className='bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between'>
             <div>
-              <h3 className="text-sm font-semibold text-white">Compute Taste Matches</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <h3 className='text-sm font-semibold text-white'>
+                Compute Taste Matches
+              </h3>
+              <p className='text-xs text-zinc-500 mt-0.5'>
                 Recompute taste match scores for all users
               </p>
               {tasteMatchResult && (
-                <p className={`text-xs mt-1 ${tasteMatchResult.startsWith('Error') ? 'text-red-400' : 'text-emerald-400'}`}>
+                <p
+                  className={`text-xs mt-1 ${tasteMatchResult.startsWith('Error') ? 'text-red-400' : 'text-emerald-400'}`}
+                >
                   {tasteMatchResult}
                 </p>
               )}
@@ -385,12 +439,12 @@ export default function SchedulerControlsPage() {
             <button
               onClick={triggerTasteMatches}
               disabled={tasteMatchPending}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-black bg-cosmic-latte rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-black bg-cosmic-latte rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50'
             >
               {tasteMatchPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className='w-4 h-4 animate-spin' />
               ) : (
-                <Play className="w-4 h-4" />
+                <Play className='w-4 h-4' />
               )}
               {tasteMatchPending ? 'Queuing...' : 'Run Now'}
             </button>

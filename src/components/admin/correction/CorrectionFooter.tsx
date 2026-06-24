@@ -1,13 +1,12 @@
 'use client';
 
 import { Loader2, Pencil, Search } from 'lucide-react';
+
 import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  calculateHasSelections,
-  type UIFieldSelections,
-} from './apply';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
+
+import { calculateHasSelections, type UIFieldSelections } from './apply';
 
 interface CorrectionFooterProps {
   step: number;
@@ -24,7 +23,10 @@ interface CorrectionFooterProps {
   onBack: () => void;
   onNext: () => void;
   onApplyClick: () => void;
-  onConfirmApply: (selections: UIFieldSelections, triggerEnrichment: boolean) => void;
+  onConfirmApply: (
+    selections: UIFieldSelections,
+    triggerEnrichment: boolean
+  ) => void;
   onEnterSearch: () => void;
   onEnterManualEdit: () => void;
 }
@@ -64,14 +66,11 @@ export function CorrectionFooter({
               </Button>
             )}
           {/* Next button */}
-          {!isManualEditMode &&
-            step !== 0 &&
-            step !== 2 &&
-            step < maxStep && (
-              <Button variant='primary' onClick={onNext}>
-                Next
-              </Button>
-            )}
+          {!isManualEditMode && step !== 0 && step !== 2 && step < maxStep && (
+            <Button variant='primary' onClick={onNext}>
+              Next
+            </Button>
+          )}
           {!isManualEditMode &&
             step === 2 &&
             previewData &&

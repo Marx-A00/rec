@@ -14,11 +14,17 @@
       "mcp__task-master-ai__list_tags",
       "mcp__task-master-ai__validate_dependencies",
       "Bash(railway variables:*)",
-      "Bash(pnpm prisma migrate dev:*)"
+      "Bash(pnpm prisma migrate dev:*)",
+      "mcp__taskmaster-ai__delete_tag",
+      "mcp__taskmaster-ai__get_tasks",
+      "mcp__taskmaster-ai__remove_task",
+      "mcp__taskmaster-ai__get_task"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["taskmaster-ai"]
+  "enabledMcpjsonServers": [
+    "taskmaster-ai"
+  ]
 }

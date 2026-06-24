@@ -249,7 +249,6 @@ export default function MobileDiscography({
                     width={160}
                     height={160}
                     className='w-full h-full object-cover rounded-md'
-
                   />
                   {/* Type badge */}
                   {release.primaryType && release.primaryType !== 'Album' && (

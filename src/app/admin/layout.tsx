@@ -1,14 +1,172 @@
 // src/app/admin/layout.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  LayoutDashboard,
+  ListTodo,
+  Database,
+  Megaphone,
+  Gamepad2,
+  Users,
+  Star,
+  Clock,
+  BarChart3,
+  FlaskConical,
+  HelpCircle,
+  Code2,
+  Palette,
+  BadgeCheck,
+  Rss,
+  Drama,
+} from 'lucide-react';
 
 import { isAdmin } from '@/lib/permissions';
-import { UserAvatar } from '@/components/navigation/UserAvatar';
+import Sidebar from '@/components/navigation/Sidebar';
+import TopBar from '@/components/navigation/TopBar';
+import MainContent from '@/components/navigation/MainContent';
+import { HeaderProvider } from '@/contexts/HeaderContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
+import { RecommendationDrawerProvider } from '@/contexts/RecommendationDrawerContext';
+import GlobalRecommendationDrawer from '@/components/GlobalRecommendationDrawer';
+import ConditionalMosaicProvider from '@/components/dashboard/ConditionalMosaicProvider';
+import type { NavItem } from '@/config/navigation';
+import { getDefaultNavItems } from '@/config/navigation';
+
+const adminNavItems: NavItem[] = [
+  ...getDefaultNavItems(),
+  {
+    id: 'admin-section',
+    icon: LayoutDashboard,
+    label: 'Admin',
+    tooltip: 'Admin Dashboard',
+    children: [
+      {
+        id: 'admin-overview',
+        href: '/admin',
+        icon: LayoutDashboard,
+        label: 'Overview',
+        tooltip: 'Admin Overview',
+      },
+      {
+        id: 'admin-queue',
+        href: '/admin/queue',
+        icon: ListTodo,
+        label: 'Queue',
+        tooltip: 'Queue Dashboard',
+      },
+      {
+        id: 'admin-music-db',
+        href: '/admin/music-database',
+        icon: Database,
+        label: 'Music Database',
+        tooltip: 'Music Database',
+      },
+      {
+        id: 'admin-marquee',
+        href: '/admin/marquee',
+        icon: Megaphone,
+        label: 'Marquee',
+        tooltip: 'Marquee',
+      },
+      {
+        id: 'admin-dailies',
+        icon: Gamepad2,
+        label: 'Dailies',
+        tooltip: 'Dailies',
+        children: [
+          {
+            id: 'admin-dailies-uncover',
+            href: '/admin/dailies/uncover',
+            icon: Drama,
+            label: 'Uncover',
+            tooltip: 'Uncover Admin',
+          },
+        ],
+      },
+      {
+        id: 'admin-users',
+        href: '/admin/users',
+        icon: Users,
+        label: 'Users',
+        tooltip: 'Users Management',
+      },
+      {
+        id: 'admin-recommendations',
+        href: '/admin/recommendations',
+        icon: Star,
+        label: 'Recommendations',
+        tooltip: 'Recommendations Management',
+      },
+      {
+        id: 'admin-scheduler',
+        href: '/admin/scheduler-controls',
+        icon: Clock,
+        label: 'Scheduler Controls',
+        tooltip: 'Scheduler Controls',
+      },
+      {
+        id: 'admin-analytics',
+        href: '/admin/analytics',
+        icon: BarChart3,
+        label: 'Analytics',
+        tooltip: 'Analytics',
+      },
+      {
+        id: 'admin-testing',
+        href: '/admin/testing',
+        icon: FlaskConical,
+        label: 'Testing',
+        tooltip: 'Testing',
+      },
+      {
+        id: 'admin-help',
+        href: '/admin/help',
+        icon: HelpCircle,
+        label: 'Help',
+        tooltip: 'Help',
+      },
+      {
+        id: 'admin-dev',
+        icon: Code2,
+        label: 'Dev Pages',
+        tooltip: 'Dev Pages',
+        children: [
+          {
+            id: 'admin-dev-score-colors',
+            href: '/admin/dev/score-colors',
+            icon: Palette,
+            label: 'Score Colors (Live)',
+            tooltip: 'Score Colors',
+          },
+          {
+            id: 'admin-dev-score-badges',
+            href: '/admin/dev/score-badges',
+            icon: BadgeCheck,
+            label: 'Score Badges',
+            tooltip: 'Score Badges',
+          },
+          {
+            id: 'admin-dev-feed-playground',
+            href: '/admin/dev/feed-playground',
+            icon: Rss,
+            label: 'Feed Playground',
+            tooltip: 'Feed Playground',
+          },
+          {
+            id: 'admin-dev-game-test',
+            href: '/admin/dev/game-test',
+            icon: Gamepad2,
+            label: 'Uncover Game Test',
+            tooltip: 'Uncover Game Test',
+          },
+        ],
+      },
+    ],
+  },
+];
 
 export default function AdminLayout({
   children,
@@ -17,36 +175,20 @@ export default function AdminLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
-  const isDailiesRoute = pathname?.startsWith('/admin/dailies');
-  const isDevRoute = pathname?.startsWith('/admin/dev');
-  const [dailiesOpen, setDailiesOpen] = useState(isDailiesRoute);
-  const [devOpen, setDevOpen] = useState(isDevRoute);
-
-  useEffect(() => {
-    if (isDailiesRoute) setDailiesOpen(true);
-  }, [isDailiesRoute]);
-
-  useEffect(() => {
-    if (isDevRoute) setDevOpen(true);
-  }, [isDevRoute]);
 
   useEffect(() => {
     if (status === 'loading') return;
 
-    // Check if user is authenticated
     if (!session?.user) {
       router.push('/signin');
       return;
     }
 
-    // Admin access restricted to ADMIN and OWNER roles
     if (!isAdmin(session.user.role)) {
-      router.push('/home-mosaic'); // Redirect to home if not admin or owner
+      router.push('/home-mosaic');
     }
   }, [session, status, router]);
 
-  // Show loading state while checking auth
   if (status === 'loading') {
     return (
       <div className='min-h-screen bg-black flex items-center justify-center'>
@@ -55,206 +197,28 @@ export default function AdminLayout({
     );
   }
 
-  // Don't render admin UI if not authenticated
   if (!session?.user) {
     return null;
   }
 
   return (
-    <div className='min-h-screen bg-black'>
-      <div className='flex min-h-screen'>
-        {/* Sidebar */}
-        <aside className='w-64 bg-zinc-950 border-r border-zinc-800'>
-          <div className='p-6 border-b border-zinc-800 space-y-4'>
-            <h2 className='text-xl font-bold text-white'>Admin Dashboard</h2>
-            <UserAvatar />
-          </div>
-          <nav className='px-4 py-6'>
-            <Link
-              href='/admin'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Overview</span>
-            </Link>
-            <Link
-              href='/admin/queue'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/queue'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Queue</span>
-            </Link>
-            <Link
-              href='/admin/music-database'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/music-database'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Music Database</span>
-            </Link>
-            <Link
-              href='/admin/marquee'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/marquee'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Marquee</span>
-            </Link>
-            <div className='mb-1'>
-              <button
-                onClick={() => setDailiesOpen(!dailiesOpen)}
-                className={`flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors ${
-                  isDailiesRoute
-                    ? 'text-white bg-zinc-800'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <span>Dailies</span>
-                {dailiesOpen ? (
-                  <ChevronDown className='h-4 w-4' />
-                ) : (
-                  <ChevronRight className='h-4 w-4' />
-                )}
-              </button>
-              {dailiesOpen && (
-                <div className='ml-4 mt-1'>
-                  <Link
-                    href='/admin/dailies/uncover'
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname?.startsWith('/admin/dailies/uncover')
-                        ? 'text-white bg-zinc-800/70'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    <span>Uncover</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-            <Link
-              href='/admin/users'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/users'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Users</span>
-            </Link>
-            <Link
-              href='/admin/scheduler-controls'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/scheduler-controls'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Scheduler Controls</span>
-            </Link>
-            <Link
-              href='/admin/analytics'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/analytics'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Analytics</span>
-            </Link>
-            <Link
-              href='/admin/testing'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/testing'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Testing</span>
-            </Link>
-            <Link
-              href='/admin/help'
-              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
-                pathname === '/admin/help'
-                  ? 'text-white bg-zinc-800'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span>Help</span>
-            </Link>
-            <div className='mb-1'>
-              <button
-                onClick={() => setDevOpen(!devOpen)}
-                className={`flex items-center justify-between w-full px-4 py-2 rounded-lg transition-colors ${
-                  isDevRoute
-                    ? 'text-white bg-zinc-800'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <span>Dev Pages</span>
-                {devOpen ? (
-                  <ChevronDown className='h-4 w-4' />
-                ) : (
-                  <ChevronRight className='h-4 w-4' />
-                )}
-              </button>
-              {devOpen && (
-                <div className='ml-4 mt-1'>
-                  <Link
-                    href='/admin/dev/score-colors'
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname === '/admin/dev/score-colors'
-                        ? 'text-white bg-zinc-800/70'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    <span>Score Colors (Live)</span>
-                  </Link>
-                  <Link
-                    href='/admin/dev/score-badges'
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname === '/admin/dev/score-badges'
-                        ? 'text-white bg-zinc-800/70'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    <span>Score Badges (Isolated)</span>
-                  </Link>
-                  <Link
-                    href='/admin/dev/game-test'
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname === '/admin/dev/game-test'
-                        ? 'text-white bg-zinc-800/70'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    <span>Uncover Game Test</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-            <hr className='my-4 border-zinc-800' />
-            <Link
-              href='/home-mosaic'
-              className='flex items-center px-4 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
-            >
-              <span>← Back to App</span>
-            </Link>
-          </nav>
-        </aside>
+    <RecommendationDrawerProvider>
+      <ConditionalMosaicProvider>
+        <HeaderProvider>
+          <SidebarProvider>
+            <div className='min-h-screen bg-black'>
+              <Sidebar items={adminNavItems} />
+              <TopBar />
 
-        {/* Main content */}
-        <main className='flex-1 bg-zinc-950'>{children}</main>
-      </div>
-    </div>
+              <MainContent>
+                <div className='bg-zinc-950 min-h-screen'>{children}</div>
+              </MainContent>
+
+              <GlobalRecommendationDrawer />
+            </div>
+          </SidebarProvider>
+        </HeaderProvider>
+      </ConditionalMosaicProvider>
+    </RecommendationDrawerProvider>
   );
 }

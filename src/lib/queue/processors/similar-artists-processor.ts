@@ -40,7 +40,9 @@ export async function handleFetchSimilarArtists(
   console.log(
     `${orange('❄ CACHE MISS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
   );
-  console.log(`  ${orange('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`);
+  console.log(
+    `  ${orange('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`
+  );
   console.log(border());
 
   const results = await fetchSimilarArtistsFromAPIs(artistName, mbid);
@@ -74,16 +76,23 @@ export async function handleFetchSimilarArtists(
     });
   }
 
-  const artistNames = toCache.slice(0, 5).map(a => a.name).join(', ');
+  const artistNames = toCache
+    .slice(0, 5)
+    .map(a => a.name)
+    .join(', ');
   const suffix = toCache.length > 5 ? `, +${toCache.length - 5} more` : '';
 
   console.log(border());
   console.log(
     `${orange('💾 CACHED')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
   );
-  console.log(`  ${orange('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`);
+  console.log(
+    `  ${orange('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`
+  );
   console.log(`  ${orange('Artists:')} ${chalk.white(artistNames + suffix)}`);
-  console.log(`  ${orange('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`);
+  console.log(
+    `  ${orange('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`
+  );
   console.log(border());
 
   return { success: true, cached: false, count: toCache.length };

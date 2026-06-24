@@ -2,10 +2,11 @@
 // Album, artist, and track enrichment handlers
 
 import { Job } from 'bullmq';
-
 import { type DataQuality } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
+import { getInitialQuality } from '@/lib/db';
 
 import { redis } from '../redis';
 import { publishEnrichmentEvent } from '../enrichment-events';
@@ -29,7 +30,6 @@ import {
   type CacheAlbumCoverArtJobData,
 } from '../jobs';
 import { analyzeTitle } from '../../musicbrainz/title-utils';
-import { getInitialQuality } from '@/lib/db';
 
 import {
   calculateStringSimilarity,
@@ -448,10 +448,12 @@ async function fetchAndProcessTracks(
   }
 ): Promise<boolean> {
   try {
-    const releaseWithTracks = await musicBrainzService.getRelease(
-      releaseId,
-      ['recordings', 'artist-credits', 'isrcs', 'url-rels']
-    );
+    const releaseWithTracks = await musicBrainzService.getRelease(releaseId, [
+      'recordings',
+      'artist-credits',
+      'isrcs',
+      'url-rels',
+    ]);
 
     if (releaseWithTracks?.media) {
       const totalTracks = releaseWithTracks.media.reduce(
@@ -470,10 +472,7 @@ async function fetchAndProcessTracks(
     }
     return false;
   } catch (error) {
-    console.warn(
-      `⚠️ Failed to fetch tracks for album "${albumTitle}":`,
-      error
-    );
+    console.warn(`⚠️ Failed to fetch tracks for album "${albumTitle}":`, error);
     return false;
   }
 }
@@ -580,9 +579,7 @@ async function searchAndEnrichFromMusicBrainz(
 
   // Step 3: If still no match AND edition detected, search with base title
   if (!bestMatch && !releaseMatch && titleAnalysis.isEditionOrVersion) {
-    console.log(
-      `🔍 Trying base title search: "${titleAnalysis.baseTitle}"`
-    );
+    console.log(`🔍 Trying base title search: "${titleAnalysis.baseTitle}"`);
     apiCalls++;
     // Build query with base title
     const baseAlbum = { ...album, title: titleAnalysis.baseTitle };
@@ -609,10 +606,7 @@ async function searchAndEnrichFromMusicBrainz(
           `📀 Found ${releases.length} releases under "${baseMatch.result.title}"`
         );
 
-        const specificRelease = findBestReleaseMatch(
-          releases,
-          album.title
-        );
+        const specificRelease = findBestReleaseMatch(releases, album.title);
         if (specificRelease) {
           console.log(
             `✅ Found specific edition: "${specificRelease.release.title}" (${(specificRelease.score * 100).toFixed(1)}% match)`
@@ -666,13 +660,7 @@ async function searchAndEnrichFromMusicBrainz(
     apiCalls++;
     const releaseWithTracks = await musicBrainzService.getRelease(
       releaseMatch.id,
-      [
-        'recordings',
-        'artist-credits',
-        'isrcs',
-        'url-rels',
-        'release-groups',
-      ]
+      ['recordings', 'artist-credits', 'isrcs', 'url-rels', 'release-groups']
     );
 
     if (releaseWithTracks) {
@@ -713,7 +701,13 @@ async function searchAndEnrichFromMusicBrainz(
     }
   }
 
-  return { enrichmentResult, newDataQuality, fieldChanges, fieldsEnriched, apiCalls };
+  return {
+    enrichmentResult,
+    newDataQuality,
+    fieldChanges,
+    fieldsEnriched,
+    apiCalls,
+  };
 }
 
 // Result of Spotify track fallback
@@ -1085,8 +1079,10 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
             source: data.source,
           }
         );
-        if (searchResult.enrichmentResult) enrichmentResult = searchResult.enrichmentResult;
-        if (searchResult.newDataQuality) newDataQuality = searchResult.newDataQuality;
+        if (searchResult.enrichmentResult)
+          enrichmentResult = searchResult.enrichmentResult;
+        if (searchResult.newDataQuality)
+          newDataQuality = searchResult.newDataQuality;
         allFieldChanges.push(...searchResult.fieldChanges);
         fieldsEnriched.push(...searchResult.fieldsEnriched);
         apiCallCount += searchResult.apiCalls;
@@ -1483,7 +1479,9 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
     }
 
     // Update enrichment status
-    const enrichmentStatus = data.skipSimilarArtistsSync ? 'BASIC' : 'COMPLETED';
+    const enrichmentStatus = data.skipSimilarArtistsSync
+      ? 'BASIC'
+      : 'COMPLETED';
     await prisma.artist.update({
       where: { id: data.artistId },
       data: {
@@ -1622,7 +1620,10 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           sources: ['LASTFM', 'LISTENBRAINZ'],
           status: 'FAILED',
           fieldsEnriched: [],
-          errorMessage: similarError instanceof Error ? similarError.message : 'Unknown error',
+          errorMessage:
+            similarError instanceof Error
+              ? similarError.message
+              : 'Unknown error',
           durationMs: Date.now() - similarStartTime,
           apiCallCount: 2,
           metadata: { artistName: artist.name },

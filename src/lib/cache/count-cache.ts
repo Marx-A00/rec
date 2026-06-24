@@ -23,7 +23,9 @@ export async function getArtistTrackCount(artistId: string): Promise<number> {
   return count;
 }
 
-export async function getAlbumCollectionCount(albumId: string): Promise<number> {
+export async function getAlbumCollectionCount(
+  albumId: string
+): Promise<number> {
   const key = CACHE_KEYS.countAlbumCollections(albumId);
   const cached = await cache.get<number>(key);
   if (cached !== null) return cached;
@@ -33,7 +35,9 @@ export async function getAlbumCollectionCount(albumId: string): Promise<number> 
   return count;
 }
 
-export async function getCollectionAlbumCount(collectionId: string): Promise<number> {
+export async function getCollectionAlbumCount(
+  collectionId: string
+): Promise<number> {
   const key = CACHE_KEYS.countCollectionAlbums(collectionId);
   const cached = await cache.get<number>(key);
   if (cached !== null) return cached;
@@ -52,6 +56,8 @@ export async function invalidateAlbumCounts(albumId: string): Promise<void> {
   await cache.invalidate(CACHE_KEYS.countAlbumCollections(albumId));
 }
 
-export async function invalidateCollectionCounts(collectionId: string): Promise<void> {
+export async function invalidateCollectionCounts(
+  collectionId: string
+): Promise<void> {
   await cache.invalidate(CACHE_KEYS.countCollectionAlbums(collectionId));
 }

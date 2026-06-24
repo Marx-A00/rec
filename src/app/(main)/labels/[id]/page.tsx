@@ -164,7 +164,6 @@ export default function LabelDetailsPage() {
                 className='w-full h-full object-cover rounded-lg shadow-2xl'
                 sizes='(max-width: 768px) 100vw, 400px'
                 priority
-
               />
             </div>
           </div>

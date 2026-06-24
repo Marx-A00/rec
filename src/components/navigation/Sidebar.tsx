@@ -33,7 +33,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
   const router = useRouter();
   const { data: session } = useSession();
   const { openDrawer } = useRecommendationDrawerContext();
-  const { isExpanded, closeSidebar } = useSidebar();
+  const { isExpanded, closeSidebar, toggleSidebar } = useSidebar();
   const user = session?.user;
 
   // Build navigation context
@@ -104,9 +104,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
     >
       {/* Back Button - pinned to top */}
       <div
-        className={cn(
-          isExpanded ? 'px-3 py-3' : 'flex justify-center py-3'
-        )}
+        className={cn(isExpanded ? 'px-3 py-3' : 'flex justify-center py-3')}
       >
         <button
           onClick={() => {
@@ -160,6 +158,7 @@ export const Sidebar: FC<SidebarProps> = ({ items, className }) => {
               context={navigationContext}
               isCollapsed={!isExpanded}
               onItemClick={isExpanded ? () => closeSidebar() : undefined}
+              onExpandRequest={!isExpanded ? toggleSidebar : undefined}
             />
           ))}
         </div>

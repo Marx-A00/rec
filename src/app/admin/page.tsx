@@ -134,7 +134,9 @@ export default function AdminDashboard() {
 
   // Taste match trigger state
   const [tasteMatchTriggering, setTasteMatchTriggering] = useState(false);
-  const [tasteMatchMessage, setTasteMatchMessage] = useState<string | null>(null);
+  const [tasteMatchMessage, setTasteMatchMessage] = useState<string | null>(
+    null
+  );
 
   const handleTriggerTasteMatches = async () => {
     setTasteMatchTriggering(true);
@@ -993,11 +995,13 @@ export default function AdminDashboard() {
 
                   {schedulerStatus?.['deezer-editorial'] && (
                     <div className='text-xs text-zinc-400 space-y-1 mb-3'>
-                      {schedulerStatus['deezer-editorial'].intervalMinutes > 0 && (
+                      {schedulerStatus['deezer-editorial'].intervalMinutes >
+                        0 && (
                         <p>
                           Interval:{' '}
                           {Math.round(
-                            schedulerStatus['deezer-editorial'].intervalMinutes / 1440
+                            schedulerStatus['deezer-editorial']
+                              .intervalMinutes / 1440
                           )}{' '}
                           days
                         </p>
@@ -1033,8 +1037,11 @@ export default function AdminDashboard() {
                             variant='outline'
                             className='text-xs h-6 px-2 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
                             onClick={() => {
-                              if (schedulerStatus?.['deezer-editorial']?.config) {
-                                const c = schedulerStatus['deezer-editorial'].config;
+                              if (
+                                schedulerStatus?.['deezer-editorial']?.config
+                              ) {
+                                const c =
+                                  schedulerStatus['deezer-editorial'].config;
                                 setDeConfigEdits({
                                   maxReleases: c.maxReleases,
                                   genres: c.genres,
@@ -1073,7 +1080,10 @@ export default function AdminDashboard() {
                               onChange={e =>
                                 setDeConfigEdits({
                                   ...deConfigEdits,
-                                  genres: e.target.value.split(',').map(g => g.trim()).filter(Boolean),
+                                  genres: e.target.value
+                                    .split(',')
+                                    .map(g => g.trim())
+                                    .filter(Boolean),
                                 })
                               }
                               className='h-7 text-xs bg-zinc-800 border-zinc-700'
@@ -1114,8 +1124,11 @@ export default function AdminDashboard() {
                               onClick={() => {
                                 setEditingDeConfig(false);
                                 setDeConfigMessage(null);
-                                if (schedulerStatus?.['deezer-editorial']?.config) {
-                                  const c = schedulerStatus['deezer-editorial'].config;
+                                if (
+                                  schedulerStatus?.['deezer-editorial']?.config
+                                ) {
+                                  const c =
+                                    schedulerStatus['deezer-editorial'].config;
                                   setDeConfigEdits({
                                     maxReleases: c.maxReleases,
                                     genres: c.genres,
@@ -1184,7 +1197,9 @@ export default function AdminDashboard() {
                         variant='outline'
                         size='sm'
                         className='text-red-400 border-red-900 hover:bg-red-950'
-                        onClick={() => toggleScheduler('deezer-editorial', 'stop')}
+                        onClick={() =>
+                          toggleScheduler('deezer-editorial', 'stop')
+                        }
                         disabled={togglingScheduler !== null}
                       >
                         {togglingScheduler === 'deezer-editorial-stop' ? (
@@ -1199,7 +1214,9 @@ export default function AdminDashboard() {
                         variant='outline'
                         size='sm'
                         className='text-green-400 border-green-900 hover:bg-green-950'
-                        onClick={() => toggleScheduler('deezer-editorial', 'start')}
+                        onClick={() =>
+                          toggleScheduler('deezer-editorial', 'start')
+                        }
                         disabled={togglingScheduler !== null}
                       >
                         {togglingScheduler === 'deezer-editorial-start' ? (
@@ -1214,7 +1231,9 @@ export default function AdminDashboard() {
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => toggleScheduler('deezer-editorial', 'sync')}
+                      onClick={() =>
+                        toggleScheduler('deezer-editorial', 'sync')
+                      }
                       disabled={togglingScheduler !== null}
                     >
                       {togglingScheduler === 'deezer-editorial-sync' ? (
@@ -1259,12 +1278,14 @@ export default function AdminDashboard() {
                     </Badge>
                   </div>
                   <p className='text-xs text-zinc-400 mb-3'>
-                    Recompute taste match scores for all users. Runs automatically every 12 hours via scheduler.
+                    Recompute taste match scores for all users. Runs
+                    automatically every 12 hours via scheduler.
                   </p>
                   {tasteMatchMessage && (
                     <div
                       className={`text-xs px-2 py-1.5 rounded mb-3 ${
-                        tasteMatchMessage.startsWith('Error') || tasteMatchMessage.startsWith('Failed')
+                        tasteMatchMessage.startsWith('Error') ||
+                        tasteMatchMessage.startsWith('Failed')
                           ? 'bg-red-950/50 text-red-400'
                           : 'bg-green-950/50 text-green-400'
                       }`}

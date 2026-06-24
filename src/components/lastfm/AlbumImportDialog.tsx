@@ -45,11 +45,10 @@ export default function AlbumImportDialog({
   const collectionId = selectedCollectionId ?? collections[0]?.id ?? '';
 
   // Fetch import matches
-  const { data: matchData, isLoading: isMatching } =
-    useAlbumImportMatchQuery(
-      { collectionId },
-      { enabled: open && !!collectionId }
-    );
+  const { data: matchData, isLoading: isMatching } = useAlbumImportMatchQuery(
+    { collectionId },
+    { enabled: open && !!collectionId }
+  );
 
   const match = matchData?.albumImportMatch;
 

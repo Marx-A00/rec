@@ -343,7 +343,11 @@ export default function AdminUsersPage() {
         {met ? '✓' : '✗'}
       </span>
       <div>
-        <div className={met ? 'text-emeraled-green font-medium' : 'text-red-400 font-medium'}>
+        <div
+          className={
+            met ? 'text-emeraled-green font-medium' : 'text-red-400 font-medium'
+          }
+        >
           {label}
         </div>
         <div className='text-zinc-500'>
@@ -678,12 +682,18 @@ export default function AdminUsersPage() {
                   <ThresholdPill
                     label='Taste Profile'
                     met={thresholds.hasTasteProfile}
-                    detail={thresholds.hasTasteProfile ? `${favorites.length} artists` : 'none'}
+                    detail={
+                      thresholds.hasTasteProfile
+                        ? `${favorites.length} artists`
+                        : 'none'
+                    }
                   />
                   <ThresholdPill
                     label='Similar Artists'
                     met={thresholds.similarArtistsAvailable}
-                    detail={thresholds.similarArtistsAvailable ? 'cached' : 'no cache'}
+                    detail={
+                      thresholds.similarArtistsAvailable ? 'cached' : 'no cache'
+                    }
                     threshold='4+ needed'
                   />
                   <ThresholdPill

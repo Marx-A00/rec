@@ -4,6 +4,9 @@
 import { Job } from 'bullmq';
 import chalk from 'chalk';
 
+import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
+import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
+
 import {
   JOB_TYPES,
   type MusicBrainzJobData,
@@ -40,8 +43,6 @@ import {
   type LastFmSyncUserJobData,
   type ComputeTasteMatchesJobData,
 } from '../jobs';
-import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
-import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
 
 import { toStructuredJobError } from './utils';
 import {
@@ -360,7 +361,8 @@ export async function processMusicBrainzJob(
 
       // Taste match computation
       case JOB_TYPES.COMPUTE_TASTE_MATCHES: {
-        const { computeAllTasteMatches, computeTasteMatchesForUser } = await import('@/lib/taste-match/compute');
+        const { computeAllTasteMatches, computeTasteMatchesForUser } =
+          await import('@/lib/taste-match/compute');
         const tmData = job.data as ComputeTasteMatchesJobData;
         if (tmData.userId) {
           await computeTasteMatchesForUser(tmData.userId);

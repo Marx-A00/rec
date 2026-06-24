@@ -36,7 +36,7 @@ export default function SimilarArtistsTab({
     },
     {
       enabled: !!artistId,
-      refetchInterval: (query) => {
+      refetchInterval: query => {
         const results = query.state.data?.similarArtists;
         // Poll every 3s until results arrive (covers both local fallback and external)
         return !results || results.length === 0 ? 3000 : false;
@@ -48,7 +48,9 @@ export default function SimilarArtistsTab({
   const similarArtists = data?.similarArtists || [];
   const isFetching = similarArtists.length === 0 && !error;
   const hasMore = similarArtists.length > INITIAL_COUNT;
-  const displayedArtists = showAll ? similarArtists : similarArtists.slice(0, INITIAL_COUNT);
+  const displayedArtists = showAll
+    ? similarArtists
+    : similarArtists.slice(0, INITIAL_COUNT);
 
   if (isLoading) {
     return (
@@ -87,7 +89,9 @@ export default function SimilarArtistsTab({
         {isFetching ? (
           <div className='flex items-center justify-center h-32'>
             <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-green'></div>
-            <span className='ml-3 text-zinc-400'>Fetching similar artists...</span>
+            <span className='ml-3 text-zinc-400'>
+              Fetching similar artists...
+            </span>
           </div>
         ) : (
           <p className='text-zinc-400'>No similar artists found</p>

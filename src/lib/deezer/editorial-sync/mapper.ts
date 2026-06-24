@@ -15,7 +15,10 @@ import type { Prisma } from '@prisma/client';
 import { findOrCreateAlbum } from '@/lib/albums/find-or-create';
 import { prisma } from '@/lib/prisma';
 
-import type { DeezerEditorialRelease, DeezerEditorialSyncResult } from './types';
+import type {
+  DeezerEditorialRelease,
+  DeezerEditorialSyncResult,
+} from './types';
 
 // ============================================================================
 // Main processor
@@ -120,9 +123,7 @@ export async function processEditorialReleases(
       void album;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      result.errors.push(
-        `Failed to process "${release.title}": ${message}`
-      );
+      result.errors.push(`Failed to process "${release.title}": ${message}`);
     }
   }
 

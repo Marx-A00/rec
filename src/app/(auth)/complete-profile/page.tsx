@@ -675,7 +675,9 @@ export default function CompleteProfilePage() {
                         </span>
                       </div>
                       <p className='text-xs text-zinc-400 truncate'>
-                        {match.sharedArtists.map(sa => sa.artist.name).join(', ')}
+                        {match.sharedArtists
+                          .map(sa => sa.artist.name)
+                          .join(', ')}
                       </p>
                     </div>
                     <button

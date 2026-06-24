@@ -38,11 +38,7 @@ const BATCH_SIZE = 50;
 const BATCH_PAUSE_MS = 5_000;
 const MATCH_THRESHOLD = 0.8;
 
-const MANIFEST_PATH = path.join(
-  __dirname,
-  'data',
-  'spotify-caa-matches.json'
-);
+const MANIFEST_PATH = path.join(__dirname, 'data', 'spotify-caa-matches.json');
 
 // ─── CLI args ───────────────────────────────────────────────────
 
@@ -76,7 +72,9 @@ let prodPrisma: PrismaClient | null = null;
 if (phase === 'upload' || phase === 'all') {
   const prodDbUrl = process.env.PROD_DATABASE_URL;
   if (!prodDbUrl) {
-    console.error('ERROR: PROD_DATABASE_URL environment variable is required for upload phase');
+    console.error(
+      'ERROR: PROD_DATABASE_URL environment variable is required for upload phase'
+    );
     console.error(
       'Usage: PROD_DATABASE_URL="postgresql://..." pnpm tsx src/scripts/upgrade-spotify-cover-art.ts --phase upload'
     );
@@ -112,7 +110,10 @@ async function verifyUrl(url: string): Promise<boolean> {
  */
 function stripFeaturing(title: string): string {
   return title
-    .replace(/\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring|with)\s+[^\)\]]+[\)\]]/gi, '')
+    .replace(
+      /\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring|with)\s+[^\)\]]+[\)\]]/gi,
+      ''
+    )
     .replace(/\s*[-–—]\s*(?:feat\.?|ft\.?|featuring|with)\s+.+$/gi, '')
     .trim();
 }
@@ -200,7 +201,9 @@ async function phaseMatch() {
 
   const toProcess = limit ? albums.slice(0, limit) : albums;
 
-  console.log(`  Found ${albums.length} Spotify albums without MusicBrainz IDs`);
+  console.log(
+    `  Found ${albums.length} Spotify albums without MusicBrainz IDs`
+  );
   console.log(`  Processing ${toProcess.length} albums`);
   console.log('');
 
@@ -245,10 +248,7 @@ async function phaseMatch() {
       let bestMatch = findBestAlbumMatch(searchAlbum, searchResults);
 
       // Step 2: If edition and no good match, try base title
-      if (
-        !bestMatch &&
-        titleAnalysis.isEditionOrVersion
-      ) {
+      if (!bestMatch && titleAnalysis.isEditionOrVersion) {
         const baseTitle = stripFeaturing(titleAnalysis.baseTitle);
         if (baseTitle !== cleanTitle) {
           console.log(
@@ -268,10 +268,7 @@ async function phaseMatch() {
 
       // Step 3: If single with no results, retry as album type
       // (some singles are filed as release-groups with type "album" on MB)
-      if (
-        !bestMatch &&
-        album.releaseType?.toLowerCase() === 'single'
-      ) {
+      if (!bestMatch && album.releaseType?.toLowerCase() === 'single') {
         await sleep(MB_DELAY_MS);
         const albumTypeSearch = {
           ...searchAlbum,
@@ -432,9 +429,7 @@ async function phaseUpload() {
   console.log(`    --limit:   ${limit ?? 'none'}`);
   console.log('');
 
-  const toProcess = limit
-    ? manifest.matches.slice(0, limit)
-    : manifest.matches;
+  const toProcess = limit ? manifest.matches.slice(0, limit) : manifest.matches;
 
   if (toProcess.length === 0) {
     console.log('  Nothing to upload!');
@@ -549,11 +544,8 @@ async function phaseUpload() {
           });
         }
       } catch (error) {
-        const errorMsg =
-          error instanceof Error ? error.message : String(error);
-        console.log(
-          `  ${progress} ERROR "${match.albumTitle}": ${errorMsg}`
-        );
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.log(`  ${progress} ERROR "${match.albumTitle}": ${errorMsg}`);
         stats.failed++;
         stats.errors.push({
           albumId: match.albumId,

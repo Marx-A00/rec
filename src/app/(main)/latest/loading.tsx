@@ -1,4 +1,5 @@
 import { Music } from 'lucide-react';
+
 import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
 
 export default function ReleasesLoading() {

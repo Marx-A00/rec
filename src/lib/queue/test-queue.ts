@@ -4,8 +4,9 @@
  * Run with: npx tsx src/lib/queue/test-queue.ts
  */
 
-import { getMusicBrainzQueue, JOB_TYPES } from './index';
 import { processMusicBrainzJob } from './processors';
+
+import { getMusicBrainzQueue, JOB_TYPES } from './index';
 
 async function testMusicBrainzQueue() {
   console.log('🧪 Testing MusicBrainz Queue System...\n');

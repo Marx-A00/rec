@@ -2,12 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  useMyUncoverSessionsQuery,
-  useUncoverChallengeDatesQuery,
-  useFirstUncoverChallengeDateQuery,
-} from '@/generated/graphql';
 import {
   format,
   isBefore,
@@ -16,6 +10,13 @@ import {
   startOfMonth,
   endOfMonth,
 } from 'date-fns';
+
+import { Calendar } from '@/components/ui/calendar';
+import {
+  useMyUncoverSessionsQuery,
+  useUncoverChallengeDatesQuery,
+  useFirstUncoverChallengeDateQuery,
+} from '@/generated/graphql';
 import { LumaSpinner } from '@/components/ui/LumaSpinner';
 
 interface ArchiveCalendarProps {

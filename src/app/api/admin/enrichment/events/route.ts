@@ -2,6 +2,7 @@
 // Bridges Redis pub/sub (worker) → browser EventSource (admin page)
 
 import { NextRequest } from 'next/server';
+
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import { createRedisSubscriber } from '@/lib/queue/redis';

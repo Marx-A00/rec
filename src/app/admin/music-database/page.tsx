@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { formatDateOnly } from '@/lib/date-utils';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Search,
@@ -33,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { formatDateOnly } from '@/lib/date-utils';
 import {
   Card,
   CardContent,
@@ -394,7 +394,7 @@ export default function MusicDatabasePage() {
       setSseConnected(true);
     };
 
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = event => {
       try {
         const data = JSON.parse(event.data) as {
           entityType: 'ALBUM' | 'ARTIST';
@@ -585,7 +585,6 @@ export default function MusicDatabasePage() {
     );
   };
 
-
   const formatDuration = (ms: number | null | undefined) => {
     if (!ms) return '-';
     // Convert milliseconds to total seconds
@@ -625,14 +624,22 @@ export default function MusicDatabasePage() {
         <p className='text-zinc-400 mt-1'>
           Search, manage, and enrich music metadata
         </p>
-        <div className={`mt-3 flex items-center gap-2 text-sm ${sseConnected ? 'text-green-400' : 'text-zinc-500'}`}>
+        <div
+          className={`mt-3 flex items-center gap-2 text-sm ${sseConnected ? 'text-green-400' : 'text-zinc-500'}`}
+        >
           <span className='relative flex h-2 w-2'>
             {sseConnected && (
               <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75' />
             )}
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${sseConnected ? 'bg-green-500' : 'bg-zinc-500'}`} />
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${sseConnected ? 'bg-green-500' : 'bg-zinc-500'}`}
+            />
           </span>
-          <span>{sseConnected ? 'Live updates connected' : 'Connecting to live updates...'}</span>
+          <span>
+            {sseConnected
+              ? 'Live updates connected'
+              : 'Connecting to live updates...'}
+          </span>
         </div>
         {process.env.NEXT_PUBLIC_ENRICHMENT_DEBUG === 'true' && (
           <EnrichmentDebugPanel />
@@ -644,23 +651,39 @@ export default function MusicDatabasePage() {
         <div className='flex flex-wrap gap-4 mb-4 text-sm'>
           <div className='flex items-baseline gap-1.5'>
             <span className='text-zinc-500'>Albums</span>
-            <span className='font-semibold text-white'>{stats.totalAlbums.toLocaleString()}</span>
-            <span className='text-zinc-600 text-xs'>({stats.albumsNeedingEnrichment} need enrichment)</span>
+            <span className='font-semibold text-white'>
+              {stats.totalAlbums.toLocaleString()}
+            </span>
+            <span className='text-zinc-600 text-xs'>
+              ({stats.albumsNeedingEnrichment} need enrichment)
+            </span>
           </div>
           <div className='flex items-baseline gap-1.5'>
             <span className='text-zinc-500'>Artists</span>
-            <span className='font-semibold text-white'>{stats.totalArtists.toLocaleString()}</span>
-            <span className='text-zinc-600 text-xs'>({stats.artistsNeedingEnrichment} need enrichment)</span>
+            <span className='font-semibold text-white'>
+              {stats.totalArtists.toLocaleString()}
+            </span>
+            <span className='text-zinc-600 text-xs'>
+              ({stats.artistsNeedingEnrichment} need enrichment)
+            </span>
           </div>
           <div className='flex items-baseline gap-1.5'>
             <span className='text-zinc-500'>Tracks</span>
-            <span className='font-semibold text-white'>{stats.totalTracks.toLocaleString()}</span>
-            <span className='text-zinc-600 text-xs'>({stats.recentlyEnriched} enriched today)</span>
+            <span className='font-semibold text-white'>
+              {stats.totalTracks.toLocaleString()}
+            </span>
+            <span className='text-zinc-600 text-xs'>
+              ({stats.recentlyEnriched} enriched today)
+            </span>
           </div>
           <div className='flex items-baseline gap-1.5'>
             <span className='text-zinc-500'>Quality</span>
-            <span className='font-semibold text-white'>{(stats.averageDataQuality * 100).toFixed(0)}%</span>
-            <span className='text-zinc-600 text-xs'>({stats.failedEnrichments} failed)</span>
+            <span className='font-semibold text-white'>
+              {(stats.averageDataQuality * 100).toFixed(0)}%
+            </span>
+            <span className='text-zinc-600 text-xs'>
+              ({stats.failedEnrichments} failed)
+            </span>
           </div>
         </div>
       )}
@@ -973,7 +996,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayAlbums.map((album) => (
+                  {displayAlbums.map(album => (
                     <React.Fragment key={album.id}>
                       <TableRow
                         id={`row-${album.id}`}
@@ -1162,15 +1185,11 @@ export default function MusicDatabasePage() {
                                     Preview Enrichment
                                   </DropdownMenuItem>
                                   {(album.enrichmentStatus === 'QUEUED' ||
-                                    album.enrichmentStatus ===
-                                      'IN_PROGRESS' ||
+                                    album.enrichmentStatus === 'IN_PROGRESS' ||
                                     isEnrichmentStaleOnLoad(album)) && (
                                     <DropdownMenuItem
                                       onClick={() =>
-                                        handleResetEnrichment(
-                                          album.id,
-                                          'album'
-                                        )
+                                        handleResetEnrichment(album.id, 'album')
                                       }
                                       className='text-red-400 hover:bg-zinc-700 focus:bg-zinc-700'
                                     >
@@ -1292,7 +1311,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayArtists.map((artist) => (
+                  {displayArtists.map(artist => (
                     <React.Fragment key={artist.id}>
                       <TableRow
                         id={`row-${artist.id}`}
@@ -1450,8 +1469,7 @@ export default function MusicDatabasePage() {
                                     Preview Enrichment
                                   </DropdownMenuItem>
                                   {(artist.enrichmentStatus === 'QUEUED' ||
-                                    artist.enrichmentStatus ===
-                                      'IN_PROGRESS' ||
+                                    artist.enrichmentStatus === 'IN_PROGRESS' ||
                                     isEnrichmentStaleOnLoad(artist)) && (
                                     <DropdownMenuItem
                                       onClick={() =>
@@ -1515,7 +1533,7 @@ export default function MusicDatabasePage() {
                                 openDeleteArtistModal(id, name);
                               }}
                               onImagePreview={setImagePreview}
-                              onNavigateToAlbum={(albumId) => {
+                              onNavigateToAlbum={albumId => {
                                 window.location.href = `/admin/music-database?id=${albumId}&type=albums`;
                               }}
                             />
@@ -1555,7 +1573,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayTracks.map((track) => (
+                  {displayTracks.map(track => (
                     <TableRow
                       key={track.id}
                       className='border-b border-zinc-800 hover:bg-transparent'
@@ -1568,7 +1586,7 @@ export default function MusicDatabasePage() {
                       <TableCell className='text-zinc-300'>
                         {track.artists
                           .slice(0, 2)
-                          .map((a) => a.artist.name)
+                          .map(a => a.artist.name)
                           .join(', ')}
                         {track.artists.length > 2 &&
                           ` +${track.artists.length - 2}`}
@@ -1821,9 +1839,7 @@ export default function MusicDatabasePage() {
                   />
                 </svg>
               )}
-              {deleteArtistPending
-                ? 'Deleting...'
-                : 'Delete Permanently'}
+              {deleteArtistPending ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

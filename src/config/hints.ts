@@ -10,8 +10,7 @@ export const HINT_DEFINITIONS: HintDefinition[] = [
   {
     id: 'search-bar',
     title: 'Search',
-    description:
-      'Find albums, artists, tracks, and users across the platform.',
+    description: 'Find albums, artists, tracks, and users across the platform.',
     page: 'Header',
     pagePath: null,
   },

@@ -7,7 +7,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatDateOnly } from '@/lib/date-utils';
 import {
   ArrowLeft,
   Calendar,
@@ -20,6 +19,7 @@ import {
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 
+import { formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import MobileAlbumRecommendations from '@/components/mobile/MobileAlbumRecommendations';
@@ -125,7 +125,6 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
               height={128}
               className='w-full h-full object-cover rounded-lg shadow-xl'
               priority
-
             />
           </div>
 

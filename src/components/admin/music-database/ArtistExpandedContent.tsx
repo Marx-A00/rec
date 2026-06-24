@@ -3,13 +3,15 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Disc, Eye, Music } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { useGetArtistDetailsQuery, EnrichmentEntityType } from '@/generated/graphql';
+import {
+  useGetArtistDetailsQuery,
+  EnrichmentEntityType,
+} from '@/generated/graphql';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
-import {
-  ArtistExpandedSkeleton,
-} from '@/components/admin/MusicDatabaseExpandedSkeleton';
+import { ArtistExpandedSkeleton } from '@/components/admin/MusicDatabaseExpandedSkeleton';
 import type { PreviewEnrichmentResult } from '@/generated/graphql';
 
 interface ArtistSearchResult {
@@ -75,11 +77,17 @@ export function ArtistExpandedContent({
       {/* Metadata Section */}
       <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Database ID</div>
-          <div className='text-sm text-zinc-300 font-mono text-xs'>{artistDetails.id}</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Database ID
+          </div>
+          <div className='text-sm text-zinc-300 font-mono text-xs'>
+            {artistDetails.id}
+          </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>MusicBrainz ID</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            MusicBrainz ID
+          </div>
           <div className='text-sm text-zinc-300 font-mono text-xs'>
             {artistDetails.musicbrainzId || 'N/A'}
           </div>
@@ -109,20 +117,32 @@ export function ArtistExpandedContent({
         </div>
         <div>
           <div className='text-xs text-zinc-500 uppercase mb-1'>Country</div>
-          <div className='text-sm text-zinc-300'>{artistDetails.countryCode || 'N/A'}</div>
-        </div>
-        <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Formed Year</div>
-          <div className='text-sm text-zinc-300'>{artistDetails.formedYear || 'N/A'}</div>
-        </div>
-        <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Listeners (Last.fm)</div>
           <div className='text-sm text-zinc-300'>
-            {artistDetails.listeners ? artistDetails.listeners.toLocaleString() : 'N/A'}
+            {artistDetails.countryCode || 'N/A'}
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Last Enriched</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Formed Year
+          </div>
+          <div className='text-sm text-zinc-300'>
+            {artistDetails.formedYear || 'N/A'}
+          </div>
+        </div>
+        <div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Listeners (Last.fm)
+          </div>
+          <div className='text-sm text-zinc-300'>
+            {artistDetails.listeners
+              ? artistDetails.listeners.toLocaleString()
+              : 'N/A'}
+          </div>
+        </div>
+        <div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Last Enriched
+          </div>
           <div className='text-sm text-zinc-300'>
             {artistDetails.lastEnriched
               ? formatDistanceToNow(new Date(artistDetails.lastEnriched), {
@@ -132,7 +152,9 @@ export function ArtistExpandedContent({
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Image Status</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Image Status
+          </div>
           <div className='text-sm text-zinc-300 flex items-center gap-2'>
             <span>
               {artistDetails.imageUrl && artistDetails.cloudflareImageId

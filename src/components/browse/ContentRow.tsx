@@ -55,9 +55,7 @@ export function ContentRow({
         </div>
       </div>
       {/* Children - full width, left-aligned with header */}
-      <div className='pl-4 md:pl-8 lg:pl-12'>
-        {children}
-      </div>
+      <div className='pl-4 md:pl-8 lg:pl-12'>{children}</div>
     </section>
   );
 }

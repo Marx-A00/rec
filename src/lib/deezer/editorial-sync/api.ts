@@ -1,5 +1,6 @@
 // src/lib/deezer/editorial-sync/api.ts
 import { detectSuspiciousTitle } from '@/lib/albums/suspicious-title-detection';
+
 import type { DeezerEditorialRelease, DeezerEditorialResponse } from './types';
 
 const DEEZER_BASE_URL = 'https://api.deezer.com';

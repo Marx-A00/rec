@@ -50,9 +50,7 @@ interface MosaicContainerProps {
   className?: string;
 }
 
-export default function MosaicContainer({
-  className,
-}: MosaicContainerProps) {
+export default function MosaicContainer({ className }: MosaicContainerProps) {
   const { isExpanded } = useSidebar();
 
   return (

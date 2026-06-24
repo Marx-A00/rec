@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+
 import {
   useApplyCorrectionMutation,
   useManualCorrectionApplyMutation,
@@ -85,8 +86,7 @@ export function useCorrectionMutations({
             { id: albumId, priority: EnrichmentPriority.High },
             {
               onSuccess: () => showToast('Enrichment queued', 'success'),
-              onError: err =>
-                console.error('Failed to queue enrichment:', err),
+              onError: err => console.error('Failed to queue enrichment:', err),
             }
           );
         }

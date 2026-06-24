@@ -274,7 +274,12 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
         });
 
         const restoredGuesses: Guess[] = existing.guesses.map(
-          (g: { guessNumber: number; albumTitle?: string | null; albumId?: string | null; isCorrect: boolean }) => ({
+          (g: {
+            guessNumber: number;
+            albumTitle?: string | null;
+            albumId?: string | null;
+            isCorrect: boolean;
+          }) => ({
             guessNumber: g.guessNumber,
             guessedText: g.albumTitle ?? null,
             isCorrect: g.isCorrect,
@@ -327,12 +332,25 @@ export function useUncoverGame(options?: UseUncoverGameOptions) {
       if (isArchive) return null;
       throw error;
     }
-  }, [gameStore, puzzle, mode, isArchive, dateString, archiveQuery, dailyQuery]);
+  }, [
+    gameStore,
+    puzzle,
+    mode,
+    isArchive,
+    dateString,
+    archiveQuery,
+    dailyQuery,
+  ]);
 
   // ----- Submit guess (instant) -----
 
   const submitGuess = useCallback(
-    async (guessText: string, localAlbumId?: string, artistName?: string, releaseYear?: number) => {
+    async (
+      guessText: string,
+      localAlbumId?: string,
+      artistName?: string,
+      releaseYear?: number
+    ) => {
       if (!gameStore.sessionId || !gameStore.challengeId) {
         throw new Error('No active session');
       }

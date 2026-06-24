@@ -13,8 +13,7 @@ export function EmptyStepPlaceholder({
     variant === 'error'
       ? 'border-destructive/30'
       : 'border-muted-foreground/30';
-  const textClass =
-    variant === 'error' ? 'text-destructive' : 'text-zinc-500';
+  const textClass = variant === 'error' ? 'text-destructive' : 'text-zinc-500';
 
   return (
     <div
@@ -22,9 +21,7 @@ export function EmptyStepPlaceholder({
     >
       <div className='text-center'>
         <p className={textClass}>{message}</p>
-        {subtitle && (
-          <p className='text-sm text-zinc-600 mt-1'>{subtitle}</p>
-        )}
+        {subtitle && <p className='text-sm text-zinc-600 mt-1'>{subtitle}</p>}
       </div>
     </div>
   );

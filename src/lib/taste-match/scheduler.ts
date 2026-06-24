@@ -27,39 +27,31 @@ export async function initializeTasteMatchScheduler(): Promise<boolean> {
       source: 'scheduled',
     };
 
-    await queue.addJob(
-      JOB_TYPES.COMPUTE_TASTE_MATCHES,
-      immediateJobData,
-      {
-        jobId: `taste-match-bootstrap-${Date.now()}`,
-        priority: PRIORITY_TIERS.BACKGROUND,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 10000 },
-        removeOnComplete: 1,
-        removeOnFail: 1,
-        silent: true,
-      }
-    );
+    await queue.addJob(JOB_TYPES.COMPUTE_TASTE_MATCHES, immediateJobData, {
+      jobId: `taste-match-bootstrap-${Date.now()}`,
+      priority: PRIORITY_TIERS.BACKGROUND,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 10000 },
+      removeOnComplete: 1,
+      removeOnFail: 1,
+      silent: true,
+    });
 
     // 2. Set up repeatable job every 12 hours
     const repeatJobData: ComputeTasteMatchesJobData = {
       source: 'scheduled',
     };
 
-    await queue.addJob(
-      JOB_TYPES.COMPUTE_TASTE_MATCHES,
-      repeatJobData,
-      {
-        repeat: { every: TWELVE_HOURS_MS },
-        jobId: 'taste-match-schedule',
-        priority: PRIORITY_TIERS.BACKGROUND,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 10000 },
-        removeOnComplete: 7,
-        removeOnFail: 7,
-        silent: true,
-      }
-    );
+    await queue.addJob(JOB_TYPES.COMPUTE_TASTE_MATCHES, repeatJobData, {
+      repeat: { every: TWELVE_HOURS_MS },
+      jobId: 'taste-match-schedule',
+      priority: PRIORITY_TIERS.BACKGROUND,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 10000 },
+      removeOnComplete: 7,
+      removeOnFail: 7,
+      silent: true,
+    });
 
     return true;
   } catch (error) {

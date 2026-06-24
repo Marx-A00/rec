@@ -14,7 +14,12 @@ import {
 } from '@/components/ui/command';
 
 interface AlbumGuessInputProps {
-  onGuess: (guessText: string, localAlbumId?: string, artistName?: string, releaseYear?: number) => void;
+  onGuess: (
+    guessText: string,
+    localAlbumId?: string,
+    artistName?: string,
+    releaseYear?: number
+  ) => void;
   onSkip: () => void;
   disabled?: boolean;
   isSubmitting?: boolean;
@@ -152,7 +157,12 @@ export function AlbumGuessInput({
     const guessText = `${result.title} - ${result.artistName}`;
 
     // Submit with text, optional local album ID, artist name, and release year
-    onGuess(guessText, result.localAlbumId ?? undefined, result.artistName, result.releaseYear ?? undefined);
+    onGuess(
+      guessText,
+      result.localAlbumId ?? undefined,
+      result.artistName,
+      result.releaseYear ?? undefined
+    );
 
     // Clear input, reset cmdk selection, and close dropdown
     setInputValue('');

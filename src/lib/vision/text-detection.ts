@@ -10,6 +10,7 @@ import path from 'path';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import type { google } from '@google-cloud/vision/build/protos/protos';
 import sharp from 'sharp';
+
 import { calculateStringSimilarity } from '@/lib/utils/string-similarity';
 
 // ============================================================================

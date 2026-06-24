@@ -22,12 +22,12 @@ import {
 } from 'deezer-ts';
 
 import prisma from '@/lib/prisma';
-
-import type { DeezerAlbumData } from './mappers';
 import {
   detectSuspiciousTitle,
   type AlbumWarning,
 } from '@/lib/albums/suspicious-title-detection';
+
+import type { DeezerAlbumData } from './mappers';
 
 // ============================================================================
 // Types
@@ -235,7 +235,11 @@ async function extractUniqueAlbumsWithDetails(
           artist: artistName,
           artistId: String(track.artist.id),
           year,
-          coverUrl: details.cover_xl || details.cover_big || details.cover_medium || null,
+          coverUrl:
+            details.cover_xl ||
+            details.cover_big ||
+            details.cover_medium ||
+            null,
           totalTracks: details.nb_tracks ?? 0,
           albumType: details.record_type || 'album',
         });
@@ -260,7 +264,11 @@ async function extractUniqueAlbumsWithDetails(
         artist: artistName,
         artistId: String(track.artist.id),
         year: null,
-        coverUrl: track.album.cover_xl || track.album.cover_big || track.album.cover_medium || null,
+        coverUrl:
+          track.album.cover_xl ||
+          track.album.cover_big ||
+          track.album.cover_medium ||
+          null,
         totalTracks: 0,
         albumType: 'album',
       });

@@ -86,7 +86,9 @@ export async function GET(
           select: { musicbrainzId: true },
         });
         if (artist?.musicbrainzId) {
-          const cached = await cache.get(`cache:similar:${artist.musicbrainzId}`);
+          const cached = await cache.get(
+            `cache:similar:${artist.musicbrainzId}`
+          );
           if (cached && !cache.isMiss(cached)) {
             similarArtistsAvailable = true;
             break;

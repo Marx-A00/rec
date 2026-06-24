@@ -189,13 +189,15 @@ export default function PreferencesTab() {
   const lastfmArtistsWithIds = lastfmTopArtists.filter(a => a.artistId);
 
   const handlePopulateFromLastfm = () => {
-    const mapped: SelectedArtist[] = lastfmArtistsWithIds.slice(0, 5).map(a => ({
-      id: a.artistId!,
-      name: a.name,
-      imageUrl: a.imageUrl ?? undefined,
-      cloudflareImageId: a.cloudflareImageId ?? undefined,
-      source: 'local' as const,
-    }));
+    const mapped: SelectedArtist[] = lastfmArtistsWithIds
+      .slice(0, 5)
+      .map(a => ({
+        id: a.artistId!,
+        name: a.name,
+        imageUrl: a.imageUrl ?? undefined,
+        cloudflareImageId: a.cloudflareImageId ?? undefined,
+        source: 'local' as const,
+      }));
     if (mapped.length > 0) {
       setTasteArtists(mapped);
       setTasteDirty(true);
@@ -345,7 +347,9 @@ export default function PreferencesTab() {
               open={showImportDialog}
               onOpenChange={setShowImportDialog}
               onComplete={() => {
-                queryClient.invalidateQueries({ queryKey: ['GetMyCollections'] });
+                queryClient.invalidateQueries({
+                  queryKey: ['GetMyCollections'],
+                });
               }}
             />
           </>
@@ -447,7 +451,8 @@ export default function PreferencesTab() {
                 Populate from Last.fm
               </h4>
               <p className='text-xs text-zinc-400 mt-0.5'>
-                Use your top {Math.min(lastfmArtistsWithIds.length, 5)} Last.fm artists as your taste profile
+                Use your top {Math.min(lastfmArtistsWithIds.length, 5)} Last.fm
+                artists as your taste profile
               </p>
             </div>
             <button

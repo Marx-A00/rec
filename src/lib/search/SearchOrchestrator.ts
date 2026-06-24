@@ -972,7 +972,9 @@ export class SearchOrchestrator {
     }
     // Also check if local album has a stored MusicBrainz ID (for deduplication with external results)
     if (result.type === 'album') {
-      const mbData = (result as UnifiedSearchResult & { _musicbrainz?: { albumId?: string } })._musicbrainz;
+      const mbData = (
+        result as UnifiedSearchResult & { _musicbrainz?: { albumId?: string } }
+      )._musicbrainz;
       if (
         mbData?.albumId &&
         mbData.albumId.match(

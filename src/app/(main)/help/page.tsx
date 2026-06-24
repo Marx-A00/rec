@@ -32,10 +32,7 @@ export default function HelpPage() {
         defaultValue='what-is-rec'
         className='w-full'
       >
-        <AccordionItem
-          value='what-is-rec'
-          className='border-zinc-800'
-        >
+        <AccordionItem value='what-is-rec' className='border-zinc-800'>
           <AccordionTrigger className='text-white text-base font-medium'>
             What is Rec?
           </AccordionTrigger>
@@ -56,10 +53,7 @@ export default function HelpPage() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value='what-do-i-do'
-          className='border-zinc-800'
-        >
+        <AccordionItem value='what-do-i-do' className='border-zinc-800'>
           <AccordionTrigger className='text-white text-base font-medium'>
             What do I do here?
           </AccordionTrigger>
@@ -68,7 +62,11 @@ export default function HelpPage() {
               The main thing to do is make recommendations. But here&apos;s an
               exhaustive list of things you can do:
             </p>
-            <Accordion type='single' collapsible className='w-full pl-4 border-l border-zinc-800'>
+            <Accordion
+              type='single'
+              collapsible
+              className='w-full pl-4 border-l border-zinc-800'
+            >
               <AccordionItem value='do-make-rec' className='border-zinc-800'>
                 <AccordionTrigger className='text-zinc-300 text-sm'>
                   Make a recommendation
@@ -159,7 +157,10 @@ export default function HelpPage() {
                   />
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value='do-listen-later' className='border-zinc-800'>
+              <AccordionItem
+                value='do-listen-later'
+                className='border-zinc-800'
+              >
                 <AccordionTrigger className='text-zinc-300 text-sm'>
                   Add albums to Listen Later
                 </AccordionTrigger>
@@ -245,8 +246,8 @@ export default function HelpPage() {
                     </li>
                     <li className='flex gap-2'>
                       <span className='font-semibold text-emerald-400'>3.</span>
-                      Solve it in as few attempts as possible. A new puzzle drops
-                      every day.
+                      Solve it in as few attempts as possible. A new puzzle
+                      drops every day.
                     </li>
                   </ul>
                 </AccordionContent>
@@ -300,10 +301,7 @@ export default function HelpPage() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value='similarity-rating'
-          className='border-zinc-800'
-        >
+        <AccordionItem value='similarity-rating' className='border-zinc-800'>
           <AccordionTrigger className='text-white text-base font-medium'>
             How does the similarity rating work?
           </AccordionTrigger>
@@ -427,10 +425,7 @@ export default function HelpPage() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value='customize-profile'
-          className='border-zinc-800'
-        >
+        <AccordionItem value='customize-profile' className='border-zinc-800'>
           <AccordionTrigger className='text-white text-base font-medium'>
             How do I customize my profile?
           </AccordionTrigger>
@@ -452,10 +447,7 @@ export default function HelpPage() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value='contextual-hints'
-          className='border-zinc-800'
-        >
+        <AccordionItem value='contextual-hints' className='border-zinc-800'>
           <AccordionTrigger className='text-white text-base font-medium'>
             What are the tips that pop up on pages?
           </AccordionTrigger>

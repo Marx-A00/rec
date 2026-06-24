@@ -17,6 +17,7 @@
  */
 
 import { PrismaClient, Prisma } from '@prisma/client';
+
 import { detectAnswerRegions } from '@/lib/vision/text-detection';
 
 const prisma = new PrismaClient();

@@ -20,9 +20,5 @@ export function TourProviderWrapper({
     return <>{children}</>;
   }
 
-  return (
-    <TourProvider>
-      {children}
-    </TourProvider>
-  );
+  return <TourProvider>{children}</TourProvider>;
 }

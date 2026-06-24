@@ -28,9 +28,7 @@ export function getInitialQuality(
   identifiers: QualityIdentifiers = {}
 ): InitialQualityFields {
   const hasAuthoritativeId =
-    identifiers.musicbrainzId ||
-    identifiers.discogsId ||
-    identifiers.spotifyId;
+    identifiers.musicbrainzId || identifiers.discogsId || identifiers.spotifyId;
 
   const dataQuality: 'LOW' | 'MEDIUM' = hasAuthoritativeId ? 'MEDIUM' : 'LOW';
 

@@ -1,6 +1,7 @@
+import type { TextRegion } from '@/lib/vision/text-detection';
+
 import { createSeededRng, fisherYatesShuffle } from './seeded-random';
 import { TOTAL_STAGES, STAGE_REVEAL_TARGETS } from './reveal-constants';
-import type { TextRegion } from '@/lib/vision/text-detection';
 
 /** A rectangular region in the reveal grid */
 export interface RevealRegion {

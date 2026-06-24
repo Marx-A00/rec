@@ -98,18 +98,14 @@ export async function handleLastFmSyncUser(
       name: string;
       mbid: string;
     }>;
-    const artistMbids = overallArtists
-      .filter(a => a.mbid)
-      .map(a => a.mbid);
+    const artistMbids = overallArtists.filter(a => a.mbid).map(a => a.mbid);
 
     if (artistMbids.length > 0) {
       const localArtists = await prisma.artist.findMany({
         where: { musicbrainzId: { in: artistMbids } },
         select: { musicbrainzId: true, imageUrl: true, id: true },
       });
-      const localMap = new Map(
-        localArtists.map(a => [a.musicbrainzId, a])
-      );
+      const localMap = new Map(localArtists.map(a => [a.musicbrainzId, a]));
 
       const needsImage = overallArtists.filter(a => {
         if (!a.mbid) return false;

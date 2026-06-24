@@ -51,7 +51,12 @@ class SpotifyClient {
 
     const results = await withSpotifyRetry(
       async () => {
-        const response = await this.sdk.search(query, ['artist'], undefined, limit);
+        const response = await this.sdk.search(
+          query,
+          ['artist'],
+          undefined,
+          limit
+        );
         const artists = response.artists?.items ?? [];
 
         return artists.map(artist => ({
@@ -78,9 +83,7 @@ class SpotifyClient {
   /**
    * Fetch multiple artists by their Spotify IDs (batch, max 50 per call).
    */
-  async getArtistsByIds(
-    artistIds: string[]
-  ): Promise<
+  async getArtistsByIds(artistIds: string[]): Promise<
     Array<{
       id: string;
       name: string;
@@ -139,7 +142,12 @@ class SpotifyClient {
   async searchAlbums(query: string, limit: MaxInt<50> = 20) {
     return withSpotifyRetry(
       async () => {
-        const response = await this.sdk.search(query, ['album'], undefined, limit);
+        const response = await this.sdk.search(
+          query,
+          ['album'],
+          undefined,
+          limit
+        );
         return response.albums?.items ?? [];
       },
       `Spotify searchAlbums("${query}")`,
@@ -150,7 +158,11 @@ class SpotifyClient {
   /**
    * Get tracks for an album.
    */
-  async getAlbumTracks(albumId: string, market: Market = 'US', limit: MaxInt<50> = 50) {
+  async getAlbumTracks(
+    albumId: string,
+    market: Market = 'US',
+    limit: MaxInt<50> = 50
+  ) {
     return withSpotifyRetry(
       async () => {
         const response = await this.sdk.albums.tracks(albumId, market, limit);
@@ -181,7 +193,9 @@ export function getSpotifyClient(): SpotifyClient {
 /** @deprecated Use getSpotifyClient() instead — lazy initialization avoids build-time crashes when env vars are missing */
 export const spotifyClient = new Proxy({} as SpotifyClient, {
   get(_, prop) {
-    return (getSpotifyClient() as unknown as Record<string | symbol, unknown>)[prop];
+    return (getSpotifyClient() as unknown as Record<string | symbol, unknown>)[
+      prop
+    ];
   },
 });
 

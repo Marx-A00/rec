@@ -26,18 +26,25 @@ export async function fetchSimilarArtistsFromAPIs(
 ): Promise<SimilarArtistResult[]> {
   // Check individual API caches before calling
   const lastfmCacheKey = CACHE_KEYS.lastfmSimilar(musicbrainzId || artistName);
-  const lbCacheKey = musicbrainzId ? CACHE_KEYS.listenbrainzSimilar(musicbrainzId) : null;
+  const lbCacheKey = musicbrainzId
+    ? CACHE_KEYS.listenbrainzSimilar(musicbrainzId)
+    : null;
 
   const [lastfmResults, listenbrainzResults] = await Promise.all([
-    cache.get(lastfmCacheKey).then(async (cached) => {
-      if (cached !== null) return cached as Awaited<ReturnType<typeof getLastFmSimilarArtists>>;
+    cache.get(lastfmCacheKey).then(async cached => {
+      if (cached !== null)
+        return cached as Awaited<ReturnType<typeof getLastFmSimilarArtists>>;
       const results = await getLastFmSimilarArtists(artistName, false, limit);
-      if (results.length > 0) await cache.set(lastfmCacheKey, results, CACHE_TTLS.LASTFM);
+      if (results.length > 0)
+        await cache.set(lastfmCacheKey, results, CACHE_TTLS.LASTFM);
       return results;
     }),
     lbCacheKey
-      ? cache.get(lbCacheKey).then(async (cached) => {
-          if (cached !== null) return cached as Awaited<ReturnType<typeof getListenBrainzSimilarArtists>>;
+      ? cache.get(lbCacheKey).then(async cached => {
+          if (cached !== null)
+            return cached as Awaited<
+              ReturnType<typeof getListenBrainzSimilarArtists>
+            >;
           const results = await getListenBrainzSimilarArtists(musicbrainzId!);
           await cache.set(lbCacheKey, results, CACHE_TTLS.LISTENBRAINZ);
           return results;

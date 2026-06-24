@@ -105,7 +105,6 @@ export default function MobileAlbumRecommendations({
                   width={116}
                   height={116}
                   className='w-full h-full object-cover rounded-md'
-
                 />
 
                 {/* Score badge */}

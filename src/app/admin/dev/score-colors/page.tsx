@@ -200,7 +200,7 @@ export default function ScoreColorsDevPage() {
 
         {/* Preview swatches for selected option */}
         <div className='flex items-center gap-3 mt-3'>
-          {[5, 7, 8, 9, 10].map((score) => {
+          {[5, 7, 8, 9, 10].map(score => {
             const colors = colorOptions[selected].fn(score);
             return (
               <div key={score} className='flex items-center gap-1.5'>
@@ -208,9 +208,7 @@ export default function ScoreColorsDevPage() {
                   className={`flex items-center justify-center w-8 h-8 bg-linear-to-r ${colors.bgGradient} rounded-full border-2 ${colors.borderColor}`}
                 >
                   <div className='flex flex-col items-center'>
-                    <Heart
-                      className={`h-2 w-2 ${colors.heartColor} mb-0.5`}
-                    />
+                    <Heart className={`h-2 w-2 ${colors.heartColor} mb-0.5`} />
                     <span
                       className={`text-[8px] font-bold ${colors.textColor} leading-none`}
                     >

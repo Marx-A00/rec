@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Grid3X3, Droplets, Loader2 } from 'lucide-react';
 
 import { useRevealStore, type RevealStyle } from '@/stores/useRevealStore';
-
 import type { RevealMode } from '@/hooks/useRevealImage';
 import type { TextRegion } from '@/lib/vision/text-detection';
 

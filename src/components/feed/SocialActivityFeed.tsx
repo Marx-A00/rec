@@ -13,8 +13,8 @@ import {
   ActivityType,
 } from '@/generated/graphql';
 import { ActivityFeedSkeleton } from '@/components/ui/skeletons';
-
 import { LumaSpinner } from '@/components/ui/LumaSpinner';
+
 import GroupedActivityItem from './GroupedActivityItem';
 
 interface SocialActivityFeedProps {

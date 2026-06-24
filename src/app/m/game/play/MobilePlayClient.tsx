@@ -51,7 +51,10 @@ export function MobilePlayClient({
     try {
       await resetDailySession({});
     } catch (e) {
-      console.warn('[DEV] Server reset failed (continuing with local reset):', e);
+      console.warn(
+        '[DEV] Server reset failed (continuing with local reset):',
+        e
+      );
     }
     game.resetGame();
     setChallengeImageUrl(null);
@@ -219,7 +222,11 @@ export function MobilePlayClient({
 
         {game.guesses.length > 0 && (
           <div className='w-full'>
-            <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
+            <GuessList
+              guesses={game.guesses}
+              correctArtist={game.correctAlbumArtist}
+              correctYear={game.correctAlbumYear}
+            />
           </div>
         )}
 
@@ -286,7 +293,11 @@ export function MobilePlayClient({
       {/* Previous guesses — scrollable within remaining space */}
       {game.guesses.length > 0 && (
         <div className='min-h-0 flex-1 overflow-y-auto pt-2'>
-          <GuessList guesses={game.guesses} correctArtist={game.correctAlbumArtist} correctYear={game.correctAlbumYear} />
+          <GuessList
+            guesses={game.guesses}
+            correctArtist={game.correctAlbumArtist}
+            correctYear={game.correctAlbumYear}
+          />
         </div>
       )}
 

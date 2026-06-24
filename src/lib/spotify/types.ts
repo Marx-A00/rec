@@ -262,7 +262,12 @@ export interface AlbumCreationData {
   spotifyUrl?: string;
   // Enrichment fields (start empty)
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  enrichmentStatus:
+    | 'UNENRICHED'
+    | 'QUEUED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED';
   lastEnriched: Date | null;
 }
 
@@ -273,7 +278,12 @@ export interface ArtistCreationData {
   imageUrl?: string;
   // Enrichment fields (start empty)
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  enrichmentStatus:
+    | 'UNENRICHED'
+    | 'QUEUED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED';
   lastEnriched: Date | null;
 }
 
@@ -297,7 +307,12 @@ export interface TrackCreationData {
   }>;
   // Enrichment fields (start empty)
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
-  enrichmentStatus: 'UNENRICHED' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  enrichmentStatus:
+    | 'UNENRICHED'
+    | 'QUEUED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED';
   lastEnriched: Date | null;
 }
 

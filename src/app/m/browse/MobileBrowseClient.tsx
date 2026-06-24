@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { formatDateOnly } from '@/lib/date-utils';
 import { ArrowLeft, TrendingUp, Music } from 'lucide-react';
 
+import { formatDateOnly } from '@/lib/date-utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
   PersonalizedSimilarArtists,

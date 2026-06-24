@@ -62,7 +62,10 @@ export interface UncoverGameStore {
 
   // Completed sessions (persistent history — survives resets)
   completedSessions: Record<string, CompletedSession>;
-  saveCompletedSession: (challengeId: string, session: CompletedSession) => void;
+  saveCompletedSession: (
+    challengeId: string,
+    session: CompletedSession
+  ) => void;
   markCompletedSessionSubmitted: (challengeId: string) => void;
   removeCompletedSession: (challengeId: string) => void;
 
@@ -127,8 +130,7 @@ export const useUncoverGameStore = create<UncoverGameStore>()(
       // --- Guesses ---
       guesses: [],
 
-      addGuess: guess =>
-        set(state => ({ guesses: [...state.guesses, guess] })),
+      addGuess: guess => set(state => ({ guesses: [...state.guesses, guess] })),
 
       setGuesses: guesses => set({ guesses }),
 

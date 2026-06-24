@@ -9,6 +9,7 @@ import {
   type GetUserFollowersQuery,
   type GetUserFollowingQuery,
 } from '@/generated/graphql';
+
 import UserListItem from './UserListItem';
 
 interface FollowersListProps {
@@ -37,44 +38,51 @@ export default function FollowersList({
     return () => clearTimeout(timer);
   }, [search]);
 
-  const variables = { userId, limit: 20, search: debouncedSearch || undefined, sort };
+  const variables = {
+    userId,
+    limit: 20,
+    search: debouncedSearch || undefined,
+    sort,
+  };
 
-  const followersQuery = useInfiniteGetUserFollowersQuery(
-    variables,
-    {
-      initialPageParam: undefined,
-      getNextPageParam: (lastPage: GetUserFollowersQuery) =>
-        lastPage.userFollowers?.cursor
-          ? { cursor: lastPage.userFollowers.cursor }
-          : undefined,
-      enabled: type === 'followers',
-    }
-  );
+  const followersQuery = useInfiniteGetUserFollowersQuery(variables, {
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage: GetUserFollowersQuery) =>
+      lastPage.userFollowers?.cursor
+        ? { cursor: lastPage.userFollowers.cursor }
+        : undefined,
+    enabled: type === 'followers',
+  });
 
-  const followingQuery = useInfiniteGetUserFollowingQuery(
-    variables,
-    {
-      initialPageParam: undefined,
-      getNextPageParam: (lastPage: GetUserFollowingQuery) =>
-        lastPage.userFollowing?.cursor
-          ? { cursor: lastPage.userFollowing.cursor }
-          : undefined,
-      enabled: type === 'following',
-    }
-  );
+  const followingQuery = useInfiniteGetUserFollowingQuery(variables, {
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage: GetUserFollowingQuery) =>
+      lastPage.userFollowing?.cursor
+        ? { cursor: lastPage.userFollowing.cursor }
+        : undefined,
+    enabled: type === 'following',
+  });
 
   const query = type === 'followers' ? followersQuery : followingQuery;
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    refetch,
+  } = query;
 
   // Extract users from paginated data
   const users =
     type === 'followers'
-      ? (data as InfiniteData<GetUserFollowersQuery> | undefined)?.pages.flatMap(
-          page => page.userFollowers.users
-        ) || []
-      : (data as InfiniteData<GetUserFollowingQuery> | undefined)?.pages.flatMap(
-          page => page.userFollowing.users
-        ) || [];
+      ? (
+          data as InfiniteData<GetUserFollowersQuery> | undefined
+        )?.pages.flatMap(page => page.userFollowers.users) || []
+      : (
+          data as InfiniteData<GetUserFollowingQuery> | undefined
+        )?.pages.flatMap(page => page.userFollowing.users) || [];
 
   // Handle follow status changes with optimistic updates
   const handleFollowChange = useCallback(

@@ -4916,7 +4916,11 @@ export const queryResolvers: QueryResolvers = {
 
     const enrichedMap = new Map(enriched.map(a => [a.id, a]));
 
-    const mapAlbum = (a: { id: string; title: string; musicbrainzId: string | null }) => {
+    const mapAlbum = (a: {
+      id: string;
+      title: string;
+      musicbrainzId: string | null;
+    }) => {
       const e = enrichedMap.get(a.id);
       return {
         id: a.id,

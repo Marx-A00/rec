@@ -19,6 +19,7 @@ interface NavigationItemProps {
   context?: NavigationContext;
   depth?: number;
   onItemClick?: (item: NavItem) => void;
+  onExpandRequest?: () => void;
 }
 
 export const NavigationItem: FC<NavigationItemProps> = ({
@@ -27,6 +28,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   context,
   depth = 0,
   onItemClick,
+  onExpandRequest,
 }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -37,11 +39,19 @@ export const NavigationItem: FC<NavigationItemProps> = ({
     if (item.action && context) {
       e.preventDefault();
       item.action(context);
+      onItemClick?.(item);
     } else if (hasChildren && !item.href) {
       e.preventDefault();
-      setIsExpanded(!isExpanded);
+      if (isCollapsed && onExpandRequest) {
+        // Expand the sidebar and this item
+        setIsExpanded(true);
+        onExpandRequest();
+      } else {
+        setIsExpanded(!isExpanded);
+      }
+    } else {
+      onItemClick?.(item);
     }
-    onItemClick?.(item);
   };
 
   const ItemIcon = item.icon;

@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -26,7 +27,10 @@ const MAX_MATCHES_PER_USER = 15;
 interface UserFingerprint {
   userId: string;
   /** Map of artistId -> { artistName, sources } */
-  artists: Map<string, { artistName: string; sources: Set<'taste_profile' | 'collections'> }>;
+  artists: Map<
+    string,
+    { artistName: string; sources: Set<'taste_profile' | 'collections'> }
+  >;
   /** Set of albumIds from collections */
   albumIds: Set<string>;
 }
@@ -120,7 +124,9 @@ async function fetchAllFingerprints(): Promise<Map<string, UserFingerprint>> {
 /**
  * Fetch fingerprint for a single user.
  */
-async function fetchFingerprintForUser(userId: string): Promise<UserFingerprint | null> {
+async function fetchFingerprintForUser(
+  userId: string
+): Promise<UserFingerprint | null> {
   // Verify user exists and is not deleted
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
@@ -128,7 +134,11 @@ async function fetchFingerprintForUser(userId: string): Promise<UserFingerprint 
   });
   if (!user) return null;
 
-  const fp: UserFingerprint = { userId, artists: new Map(), albumIds: new Set() };
+  const fp: UserFingerprint = {
+    userId,
+    artists: new Map(),
+    albumIds: new Set(),
+  };
 
   // Taste-profile artists
   const favoriteArtists = await prisma.userFavoriteArtist.findMany({
@@ -222,13 +232,19 @@ function computeMatchesForUser(
       const sharedSources: ('taste_profile' | 'collections')[] = [];
 
       // Both have this artist in taste_profile
-      if (targetInfo.sources.has('taste_profile') && otherInfo.sources.has('taste_profile')) {
+      if (
+        targetInfo.sources.has('taste_profile') &&
+        otherInfo.sources.has('taste_profile')
+      ) {
         score += POINTS.TASTE_PROFILE_ARTIST;
         sharedSources.push('taste_profile');
       }
 
       // Both have this artist in collections
-      if (targetInfo.sources.has('collections') && otherInfo.sources.has('collections')) {
+      if (
+        targetInfo.sources.has('collections') &&
+        otherInfo.sources.has('collections')
+      ) {
         score += POINTS.COLLECTION_ARTIST;
         sharedSources.push('collections');
       }
@@ -238,7 +254,10 @@ function computeMatchesForUser(
       if (sharedSources.length === 0) {
         score += POINTS.COLLECTION_ARTIST;
         // Pick the strongest signal: if either side has it as a favorite, call it taste_profile
-        if (targetInfo.sources.has('taste_profile') || otherInfo.sources.has('taste_profile')) {
+        if (
+          targetInfo.sources.has('taste_profile') ||
+          otherInfo.sources.has('taste_profile')
+        ) {
           sharedSources.push('taste_profile');
         } else {
           sharedSources.push('collections');
@@ -290,7 +309,7 @@ async function persistMatchesForUser(
 
   await prisma.$transaction([
     prisma.tasteMatch.deleteMany({ where: { userId } }),
-    ...matches.map((m) =>
+    ...matches.map(m =>
       prisma.tasteMatch.create({
         data: {
           userId,
@@ -315,7 +334,9 @@ async function persistMatchesForUser(
 export async function computeAllTasteMatches(): Promise<void> {
   console.log('[TasteMatch] Fetching user fingerprints...');
   const fingerprints = await fetchAllFingerprints();
-  console.log(`[TasteMatch] Computing taste matches for ${fingerprints.size} users...`);
+  console.log(
+    `[TasteMatch] Computing taste matches for ${fingerprints.size} users...`
+  );
 
   let processed = 0;
 
@@ -334,7 +355,9 @@ export async function computeAllTasteMatches(): Promise<void> {
 
     processed++;
     if (processed % 50 === 0) {
-      console.log(`[TasteMatch] Processed ${processed}/${fingerprints.size} users`);
+      console.log(
+        `[TasteMatch] Processed ${processed}/${fingerprints.size} users`
+      );
     }
   }
 
@@ -345,7 +368,9 @@ export async function computeAllTasteMatches(): Promise<void> {
  * Compute taste matches for a single user against all other users.
  * Useful for targeted recomputes after a user updates their profile or collections.
  */
-export async function computeTasteMatchesForUser(userId: string): Promise<void> {
+export async function computeTasteMatchesForUser(
+  userId: string
+): Promise<void> {
   console.log(`[TasteMatch] Computing matches for user ${userId}...`);
 
   const targetFp = await fetchFingerprintForUser(userId);
@@ -355,7 +380,9 @@ export async function computeTasteMatchesForUser(userId: string): Promise<void> 
   }
 
   if (targetFp.artists.size === 0 && targetFp.albumIds.size === 0) {
-    console.log(`[TasteMatch] User ${userId} has no artists or albums. Clearing matches.`);
+    console.log(
+      `[TasteMatch] User ${userId} has no artists or albums. Clearing matches.`
+    );
     await prisma.tasteMatch.deleteMany({ where: { userId } });
     return;
   }

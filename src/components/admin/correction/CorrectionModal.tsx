@@ -26,8 +26,8 @@ import {
 } from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
-import { useCorrectionMutations } from './hooks/useCorrectionMutations';
 
+import { useCorrectionMutations } from './hooks/useCorrectionMutations';
 import {
   ModalSkeleton,
   AppliedSuccessState,
@@ -54,7 +54,6 @@ import {
   hasUnsavedChanges,
   createInitialEditState,
 } from './manual';
-
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct (required - parent should conditionally render) */

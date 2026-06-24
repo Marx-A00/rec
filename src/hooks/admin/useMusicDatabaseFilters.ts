@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 type SearchType = 'albums' | 'artists' | 'tracks';

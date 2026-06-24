@@ -1,6 +1,5 @@
 import { Music } from 'lucide-react';
 
-
 interface ProfileSkeletonProps {
   showCollection?: boolean;
   showRecommendations?: boolean;

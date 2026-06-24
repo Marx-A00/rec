@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import { FileText } from 'lucide-react';
 
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/gu;
@@ -17,9 +18,7 @@ function parseChangelog(markdown: string) {
 
     // Horizontal rule
     if (line.trim() === '---') {
-      elements.push(
-        <hr key={key++} className='border-zinc-800 my-8' />
-      );
+      elements.push(<hr key={key++} className='border-zinc-800 my-8' />);
       continue;
     }
 
@@ -38,7 +37,10 @@ function parseChangelog(markdown: string) {
     if (line.startsWith('### ')) {
       const text = line.replace(/^### /, '');
       elements.push(
-        <h3 key={key++} className='text-lg font-semibold text-cosmic-latte mt-6 mb-3'>
+        <h3
+          key={key++}
+          className='text-lg font-semibold text-cosmic-latte mt-6 mb-3'
+        >
           {text}
         </h3>
       );
@@ -49,7 +51,10 @@ function parseChangelog(markdown: string) {
     if (line.startsWith('#### ')) {
       const text = line.replace(/^#### /, '');
       elements.push(
-        <h4 key={key++} className='text-base font-medium text-zinc-200 mt-4 mb-2'>
+        <h4
+          key={key++}
+          className='text-base font-medium text-zinc-200 mt-4 mb-2'
+        >
           {text}
         </h4>
       );
@@ -61,10 +66,15 @@ function parseChangelog(markdown: string) {
       const text = line.replace(/^- /, '');
       const parts = text.split(/\*\*(.+?)\*\*/g);
       elements.push(
-        <li key={key++} className='text-zinc-300 ml-4 mb-1.5 list-disc list-outside'>
+        <li
+          key={key++}
+          className='text-zinc-300 ml-4 mb-1.5 list-disc list-outside'
+        >
           {parts.map((part, idx) =>
             idx % 2 === 1 ? (
-              <strong key={idx} className='text-white'>{part}</strong>
+              <strong key={idx} className='text-white'>
+                {part}
+              </strong>
             ) : (
               <span key={idx}>{part}</span>
             )

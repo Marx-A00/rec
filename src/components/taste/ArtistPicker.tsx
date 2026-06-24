@@ -224,8 +224,7 @@ export default function ArtistPicker({
         {/* Empty slots */}
         {Array.from({ length: emptySlotCount }).map((_, i) => {
           const slotIndex = selectedArtists.length + i;
-          const isLargeSlot =
-            slotIndex === 0 && selectedArtists.length === 0;
+          const isLargeSlot = slotIndex === 0 && selectedArtists.length === 0;
           return (
             <div
               key={`empty-${i}`}

@@ -76,7 +76,6 @@ export default function AlbumImage({
   );
   const [isLoading, setIsLoading] = useState(true);
 
-
   // Update imgSrc when props change (subsequent renders only)
   useEffect(() => {
     const resolved = resolveImageUrl(src, cloudflareImageId, width, height);
@@ -87,8 +86,6 @@ export default function AlbumImage({
   const handleImageLoad = () => {
     setIsLoading(false);
   };
-
-
 
   const handleImageError = () => {
     setIsLoading(false);
@@ -127,8 +124,7 @@ export default function AlbumImage({
 
   // Native img only for domains with CORS redirect issues
   const useNativeImg =
-    imgSrc.includes('coverartarchive.org') ||
-    imgSrc.includes('archive.org');
+    imgSrc.includes('coverartarchive.org') || imgSrc.includes('archive.org');
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
@@ -171,7 +167,6 @@ export default function AlbumImage({
           unoptimized={!imgSrc.includes('imagedelivery.net')}
         />
       )}
-
     </div>
   );
 }

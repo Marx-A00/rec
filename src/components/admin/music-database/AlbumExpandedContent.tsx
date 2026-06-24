@@ -2,22 +2,18 @@
 
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { ChevronDown, ChevronRight, Disc, Eye, Music } from 'lucide-react';
+
 import { formatDateOnly } from '@/lib/date-utils';
-import {
-  ChevronDown,
-  ChevronRight,
-  Disc,
-  Eye,
-  Music,
-} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useGetAlbumDetailsAdminQuery, EnrichmentEntityType } from '@/generated/graphql';
+import {
+  useGetAlbumDetailsAdminQuery,
+  EnrichmentEntityType,
+} from '@/generated/graphql';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
-import {
-  AlbumExpandedSkeleton,
-} from '@/components/admin/MusicDatabaseExpandedSkeleton';
+import { AlbumExpandedSkeleton } from '@/components/admin/MusicDatabaseExpandedSkeleton';
 import type { PreviewEnrichmentResult } from '@/generated/graphql';
 
 interface AlbumSearchResult {
@@ -92,11 +88,17 @@ export function AlbumExpandedContent({
       {/* Metadata Section */}
       <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Database ID</div>
-          <div className='text-sm text-zinc-300 font-mono text-xs'>{albumDetails.id}</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Database ID
+          </div>
+          <div className='text-sm text-zinc-300 font-mono text-xs'>
+            {albumDetails.id}
+          </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>MusicBrainz ID</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            MusicBrainz ID
+          </div>
           <div className='text-sm text-zinc-300 font-mono text-xs'>
             {albumDetails.musicbrainzId || 'N/A'}
           </div>
@@ -125,14 +127,20 @@ export function AlbumExpandedContent({
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Release Date</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Release Date
+          </div>
           <div className='text-sm text-zinc-300'>
-            {albumDetails.releaseDate ? formatDateOnly(albumDetails.releaseDate) : 'N/A'}
+            {albumDetails.releaseDate
+              ? formatDateOnly(albumDetails.releaseDate)
+              : 'N/A'}
           </div>
         </div>
         <div>
           <div className='text-xs text-zinc-500 uppercase mb-1'>Label</div>
-          <div className='text-sm text-zinc-300'>{albumDetails.label || 'N/A'}</div>
+          <div className='text-sm text-zinc-300'>
+            {albumDetails.label || 'N/A'}
+          </div>
         </div>
         <div>
           <div className='text-xs text-zinc-500 uppercase mb-1'>Genres</div>
@@ -161,7 +169,9 @@ export function AlbumExpandedContent({
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Last Enriched</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Last Enriched
+          </div>
           <div className='text-sm text-zinc-300'>
             {albumDetails.lastEnriched
               ? formatDistanceToNow(new Date(albumDetails.lastEnriched), {
@@ -171,13 +181,17 @@ export function AlbumExpandedContent({
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Track Count</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Track Count
+          </div>
           <div className='text-sm text-zinc-300'>
             {albumDetails.tracks?.length || 0} tracks
           </div>
         </div>
         <div>
-          <div className='text-xs text-zinc-500 uppercase mb-1'>Image Status</div>
+          <div className='text-xs text-zinc-500 uppercase mb-1'>
+            Image Status
+          </div>
           <div className='text-sm text-zinc-300 flex items-center gap-2'>
             <span>
               {albumDetails.coverArtUrl && albumDetails.cloudflareImageId
