@@ -564,7 +564,7 @@ function ExpandedRecGrid({
   // No carousel needed if everything fits in one page
   if (pages.length <= 1) {
     return (
-      <div className='pb-4 animate-in fade-in zoom-in-95 duration-300'>
+      <div className='py-2 pb-4 animate-in fade-in zoom-in-95 duration-300'>
         <div className='flex flex-wrap justify-center items-start gap-x-8 gap-y-8 px-4'>
           {activities.map(activity => (
             <div key={activity.id} className='shrink-0'>
@@ -577,7 +577,7 @@ function ExpandedRecGrid({
   }
 
   return (
-    <div className='pb-4 animate-in fade-in zoom-in-95 duration-300'>
+    <div className='py-2 pb-4 animate-in fade-in zoom-in-95 duration-300'>
       <Carousel opts={{ loop: true }} setApi={setApi} className='w-full px-12'>
         <CarouselContent>
           {pages.map((page, pageIdx) => (
@@ -676,7 +676,7 @@ function ExpandedCollectionGrid({
 
   if (pages.length <= 1) {
     return (
-      <div className='pb-4'>
+      <div className='py-2 pb-4'>
         <div className='flex justify-center gap-x-8 gap-y-6 px-4 -translate-x-11'>
           {activities.map(activity => (
             <CollectionItem key={activity.id} activity={activity} />
@@ -687,7 +687,7 @@ function ExpandedCollectionGrid({
   }
 
   return (
-    <div className='pb-4'>
+    <div className='py-2 pb-4'>
       <Carousel opts={{ loop: true }} setApi={setApi} className='w-full px-12'>
         <CarouselContent>
           {pages.map((page, pageIdx) => (
