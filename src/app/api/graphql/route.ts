@@ -16,6 +16,7 @@ import {
   runWithCorrelationId,
   generateCorrelationId,
 } from '@/lib/correlation-context';
+import { graphqlLogger } from '@/lib/logger';
 
 // Load GraphQL schema from file
 const typeDefs = readFileSync(
@@ -42,11 +43,17 @@ const handler = startServerAndCreateNextHandler(server, {
 export async function GET(request: NextRequest) {
   const correlationId =
     request.headers.get('x-correlation-id') || generateCorrelationId();
+  const start = Date.now();
 
   const response = await runWithCorrelationId(
     correlationId,
     { requestPath: request.nextUrl.pathname },
     async () => await handler(request)
+  );
+
+  graphqlLogger.info(
+    { duration: Date.now() - start, status: response.status },
+    'GraphQL GET completed'
   );
 
   // Add correlation ID to response headers for client tracking
@@ -57,6 +64,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const correlationId =
     request.headers.get('x-correlation-id') || generateCorrelationId();
+  const start = Date.now();
 
   // DEBUG: Log raw request body to find empty/malformed GraphQL requests
   const clonedRequest = request.clone();
@@ -107,6 +115,11 @@ export async function POST(request: NextRequest) {
     correlationId,
     { requestPath: request.nextUrl.pathname },
     async () => await handler(request)
+  );
+
+  graphqlLogger.info(
+    { duration: Date.now() - start, status: response.status },
+    'GraphQL POST completed'
   );
 
   // Add correlation ID to response headers for client tracking

@@ -1,0 +1,7 @@
+{
+  "translateTime": "SYS:HH:MM:ss",
+  "ignore": "pid,hostname",
+  "colorize": true,
+  "singleLine": false,
+  "messageFormat": "{module} » {msg}"
+}
