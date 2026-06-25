@@ -159,14 +159,24 @@ export default function GroupedActivityItem({
 
           {/* Collections */}
           {group.type === 'collection_add' && (
-            <div className='flex flex-wrap justify-center items-start gap-x-8 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
+            <div className='flex flex-wrap justify-center items-start gap-x-12 gap-y-6 px-4 pb-8'>
               {group.activities.map(activity => (
-                <div key={activity.id} className='shrink-0'>
-                  {/* Collection Add: Show single album */}
-                  {group.type === 'collection_add' && activity.albumImage && (
+                <div key={activity.id} className='shrink-0 flex items-center gap-3'>
+                  {/* Album title - left side */}
+                  <div className='max-w-28 text-right'>
+                    <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+                      {activity.albumTitle}
+                    </p>
+                    <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+                      {activity.albumArtist}
+                    </p>
+                  </div>
+
+                  {/* Album art */}
+                  {activity.albumImage && (
                     <Link
                       href={`/albums/${activity.albumId}?source=local`}
-                      className='relative group cursor-pointer inline-block'
+                      className='relative group cursor-pointer inline-block shrink-0'
                     >
                       <AlbumImage
                         src={activity.albumImage || '/placeholder-album.png'}
@@ -177,33 +187,9 @@ export default function GroupedActivityItem({
                         className='w-[110px] h-[110px] rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105 shadow-lg'
                       />
 
-                      {/* Show rating badge for collection adds */}
-                      {(activity.metadata as TransformedActivityMetadata)
-                        ?.personalRating && (
-                        <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900 shadow-md'>
-                          <span className='text-[10px] text-cosmic-latte font-bold'>
-                            {
-                              (activity.metadata as TransformedActivityMetadata)
-                                .personalRating
-                            }
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Album info tooltip - positioned below album */}
-                      <div className='absolute top-full left-1/2 -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20'>
-                        <p className='text-sm text-zinc-500 text-center'>
-                          <span className='text-zinc-300'>
-                            {activity.albumTitle}
-                          </span>{' '}
-                          by{' '}
-                          <span className='text-zinc-400'>
-                            {activity.albumArtist}
-                          </span>
-                        </p>
-                      </div>
                     </Link>
                   )}
+
                 </div>
               ))}
             </div>
@@ -301,17 +287,6 @@ function SingleActivityDisplay({
             >
               {activity.albumArtist}
             </Link>
-            {(activity.metadata as TransformedActivityMetadata)
-              ?.personalRating && (
-              <span className='text-yellow-400 text-sm block mt-1'>
-                ★{' '}
-                {
-                  (activity.metadata as TransformedActivityMetadata)
-                    .personalRating
-                }
-                /10
-              </span>
-            )}
           </span>
         );
       case 'profile_update':
