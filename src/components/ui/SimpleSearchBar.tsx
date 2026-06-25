@@ -166,19 +166,20 @@ export default function SimpleSearchBar({
     [setPreferredSearchType]
   );
 
-  // Handle suggestion click — fill bar and navigate to search page
+  // Handle suggestion click — navigate directly to entity page
   const handleSuggestionClick = useCallback(
     (suggestion: SuggestResult) => {
-      const q = suggestion.name;
-      setQuery(q);
-      addRecentSearch(q);
+      addRecentSearch(suggestion.name);
       setShowDropdown(false);
       setSuggestions([]);
-      router.push(
-        `/search?q=${encodeURIComponent(q)}&type=${searchType}`
-      );
+
+      if (suggestion.type === 'artist') {
+        router.push(`/artists/${suggestion.id}`);
+      } else {
+        router.push(`/albums/${suggestion.id}?source=local`);
+      }
     },
-    [router, setQuery, addRecentSearch, searchType]
+    [router, addRecentSearch]
   );
 
   // Handle recent search click

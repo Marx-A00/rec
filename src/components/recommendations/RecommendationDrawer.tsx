@@ -247,16 +247,14 @@ export default function RecommendationDrawer({
         <div className='flex-1 overflow-hidden relative'>
           <div className={layoutConfig.containerClasses}>
             {/* Search Bar - Dual Input Mode */}
-            <div className='mb-4 relative z-40 h-[160px]'>
+            <div className='mb-4 relative z-40 h-[110px]'>
               <DualAlbumSearch
                 ref={albumSearchRef}
                 onAlbumSelect={handleAlbumSelect}
-                albumPlaceholder='Search album title...'
-                artistPlaceholder='Filter by artist (optional)...'
+                placeholder='Search album or artist...'
                 label={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album`}
                 disabled={false}
                 colorTheme={isSearchingForBasis ? 'red' : 'green'}
-                searchMode='dual'
               />
             </div>
 
