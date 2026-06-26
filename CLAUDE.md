@@ -466,3 +466,78 @@ interface MusicBrainzArtistCredit {
   };
 }
 ```
+
+## Structured Logging
+
+The app uses Pino for structured logging with multi-stream output (console via pino-pretty, local log files, Axiom).
+
+### Available Loggers
+
+All loggers auto-include correlation context (correlationId, requestPath, userId) when available via AsyncLocalStorage:
+
+```typescript
+import { apiLogger } from '@/lib/logger';
+```
+
+- `graphqlLogger` — GraphQL operations
+- `apiLogger` — REST API routes (auto-logged via `withApiLogging` wrapper)
+- `authLogger` — Authentication & authorization events
+- `mbLogger` — MusicBrainz API calls
+- `spotifyLogger` — Spotify API calls
+- `listenbrainzLogger` — ListenBrainz API calls
+- `deezerLogger` — Deezer API calls
+- `discogsLogger` — Discogs API calls
+- `lastfmLogger` — Last.fm API calls
+- `searchLogger` — Search orchestration
+- `queueLogger` — Queue & worker operations
+- `schedulerLogger` — Scheduler lifecycle
+- `cacheLogger` — Cache operations (debug level)
+- `enrichmentLogger` — Enrichment decisions
+- `middlewareLogger` — Middleware operations (edge-compatible, not Pino)
+- `logger` — Root logger for misc modules
+
+### REST API Route Logging
+
+All REST routes use the `withApiLogging` wrapper from `@/lib/api-utils`:
+
+```typescript
+import { withApiLogging } from '@/lib/api-utils';
+
+export const GET = withApiLogging(async (request, { params }) => {
+  // handler body — request/response logging is automatic
+});
+```
+
+This automatically logs: method, path, status, duration, correlationId, and errors.
+
+### Log Levels
+
+- `debug` — Verbose operations (cache hits, enrichment skips) — dev only
+- `info` — Normal operations (requests, completions, user actions)
+- `warn` — Degraded operations (rate limits, retries, validation failures)
+- `error` — Failures (exceptions, API errors, data corruption)
+
+### PII Policy
+
+NEVER log: email addresses, passwords, tokens, request/response bodies.
+DO log: user IDs (UUIDs), operation types, sanitized error messages.
+
+### Client Bundle Safety
+
+`logger.ts` and `correlation-context.ts` get pulled into client bundles via import chains. This is handled by:
+
+- `turbopack.resolveAlias` in `next.config.ts` — stubs `fs`, `path`, `async_hooks`, `pino`, etc. for browser bundles
+- `typeof window === 'undefined'` guard — server gets real Pino, client gets no-op logger
+- `serverExternalPackages` — pino uses native `require()` on server instead of bundling
+
+If you add a new Node.js-only dependency to logger.ts, add it to the `resolveAlias` in next.config.ts.
+
+### Axiom Dashboards
+
+- **Rec — System Health** — errors, latency, log volume, status codes
+- **Rec — Queue & Worker Health** — job success/failure, duration, scheduler activity
+- **Rec — External API Health** — request volume, errors, rate limits by service
+
+### Proxy (formerly Middleware)
+
+`src/proxy.ts` (renamed from `middleware.ts` in Next.js 16) runs on Node.js runtime but uses an edge-compatible structured logger (`mwLog`) instead of Pino, since the proxy file is evaluated in both Edge and Node contexts. The `mwLog` outputs JSON to console with the same field conventions (module, level, msg).
