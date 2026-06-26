@@ -104,7 +104,7 @@ function RecItem({ rec }: { rec: RecommendationFieldsFragment }) {
             <Link
               href={`/albums/${rec.basisAlbum.id}?source=local`}
               className='absolute left-0 top-0 cursor-pointer hover:scale-105 transition-transform'
-              title={`View ${rec.basisAlbum.title}`}
+
             >
               <AlbumImage
                 src={rec.basisAlbum.coverArtUrl}
@@ -113,6 +113,8 @@ function RecItem({ rec }: { rec: RecommendationFieldsFragment }) {
                 width={180}
                 height={180}
                 className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+                tooltip={rec.basisAlbum.title}
+                tooltipSide='left'
               />
             </Link>
 
@@ -120,7 +122,7 @@ function RecItem({ rec }: { rec: RecommendationFieldsFragment }) {
             <Link
               href={`/albums/${rec.recommendedAlbum.id}?source=local`}
               className='absolute left-[200px] top-0 cursor-pointer hover:scale-105 transition-transform'
-              title={`View ${rec.recommendedAlbum.title} by ${recArtist}`}
+
             >
               <AlbumImage
                 src={rec.recommendedAlbum.coverArtUrl}
@@ -129,6 +131,7 @@ function RecItem({ rec }: { rec: RecommendationFieldsFragment }) {
                 width={220}
                 height={220}
                 className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
+                tooltip={`${rec.recommendedAlbum.title} by ${recArtist}`}
               />
             </Link>
 

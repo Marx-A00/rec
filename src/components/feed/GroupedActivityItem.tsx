@@ -206,7 +206,7 @@ function SingleActivityDisplay({
             followed{' '}
             <Link
               href={`/profile/${activity.targetId}`}
-              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
+              className='text-cosmic-latte hover:underline font-medium transition-colors'
             >
               {activity.targetName}
             </Link>
@@ -218,14 +218,14 @@ function SingleActivityDisplay({
             recommends{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-cosmic-latte font-semibold transition-colors'
+              className='text-cosmic-latte hover:underline font-semibold transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-cosmic-latte hover:text-cosmic-latte transition-colors'
+              className='text-cosmic-latte hover:underline transition-colors'
             >
               {activity.albumArtist}
             </Link>
@@ -237,14 +237,14 @@ function SingleActivityDisplay({
             collected{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-cosmic-latte font-medium transition-colors'
+              className='text-cosmic-latte hover:underline font-medium transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-cosmic-latte hover:text-cosmic-latte transition-colors'
+              className='text-cosmic-latte hover:underline transition-colors'
             >
               {activity.albumArtist}
             </Link>
@@ -303,7 +303,6 @@ function SingleActivityDisplay({
                 <Link
                   href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
                   className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                  title={`View ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}`}
                 >
                   <div className='relative'>
                     <AlbumImage
@@ -322,6 +321,8 @@ function SingleActivityDisplay({
                       width={180}
                       height={180}
                       className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+                      tooltip={(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}
+                      tooltipSide='left'
                     />
                   </div>
                 </Link>
@@ -331,7 +332,6 @@ function SingleActivityDisplay({
               <Link
                 href={`/albums/${activity.albumId}?source=local`}
                 className='rec-album absolute left-[200px] top-0 cursor-pointer hover:scale-105 transition-transform'
-                title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
               >
                 <div className='relative'>
                   <AlbumImage
@@ -341,6 +341,8 @@ function SingleActivityDisplay({
                     width={220}
                     height={220}
                     className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
+                    tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
+                    tooltipSide='right'
                   />
                 </div>
               </Link>
@@ -373,22 +375,37 @@ function SingleActivityDisplay({
               {/* Basis album text - shows on hover with the albums */}
               {(activity.metadata as TransformedActivityMetadata)
                 ?.basisAlbum && (
-                <div className='basis-text absolute bottom-0 left-0 w-[420px] pointer-events-none'>
+                <div className='basis-text absolute bottom-0 left-0 w-[420px]'>
                   <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1 line-clamp-1'>
                     if you like{' '}
-                    <span className='text-zinc-400'>
+                    <Link
+                      href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
+                      className='text-zinc-400 hover:underline'
+                    >
                       {
                         (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.title
                       }
-                    </span>{' '}
+                    </Link>{' '}
                     by{' '}
-                    <span className='text-zinc-400'>
-                      {
-                        (activity.metadata as TransformedActivityMetadata)
-                          .basisAlbum!.artists?.[0]?.artist?.name
-                      }
-                    </span>
+                    {(activity.metadata as TransformedActivityMetadata).basisAlbum!.artists?.[0]?.artist?.id ? (
+                      <Link
+                        href={`/artists/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.artists![0]!.artist!.id}`}
+                        className='text-zinc-400 hover:underline'
+                      >
+                        {
+                          (activity.metadata as TransformedActivityMetadata)
+                            .basisAlbum!.artists?.[0]?.artist?.name
+                        }
+                      </Link>
+                    ) : (
+                      <span className='text-zinc-400'>
+                        {
+                          (activity.metadata as TransformedActivityMetadata)
+                            .basisAlbum!.artists?.[0]?.artist?.name
+                        }
+                      </span>
+                    )}
                   </p>
                 </div>
               )}
@@ -403,7 +420,6 @@ function SingleActivityDisplay({
           <Link
             href={`/albums/${activity.albumId}?source=local`}
             className='cursor-pointer hover:scale-105 transition-transform inline-block'
-            title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
           >
             <AlbumImage
               src={activity.albumImage}
@@ -412,6 +428,7 @@ function SingleActivityDisplay({
               width={150}
               height={150}
               className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-cosmic-latte/50 transition-all shadow-xl'
+              tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
             />
           </Link>
         </div>
@@ -448,6 +465,16 @@ type ScoreColorFn = (score: number) => {
   borderColor: string;
 };
 
+// Album pair layout constants
+const BASIS_SIZE = 90;
+const REC_SIZE = 110;
+const REC_LEFT = 100;
+const PAIR_WIDTH = REC_LEFT + REC_SIZE;
+const PAIR_HEIGHT = Math.max(BASIS_SIZE, REC_SIZE);
+// Badge center: midpoint of the gap between albums, average of vertical centers
+const BADGE_CENTER_X = (BASIS_SIZE + REC_LEFT) / 2;
+const BADGE_CENTER_Y = (BASIS_SIZE / 2 + REC_SIZE / 2) / 2;
+
 function RecPairItem({
   activity,
   getScoreColors,
@@ -461,17 +488,29 @@ function RecPairItem({
       {/* Basis album details - left */}
       {metadata?.basisAlbum && (
         <div className='max-w-20 text-right'>
-          <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+          <Link
+            href={`/albums/${metadata.basisAlbum.id}?source=local`}
+            className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight hover:underline'
+          >
             {metadata.basisAlbum.title}
-          </p>
-          <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
-            {metadata.basisAlbum.artists?.[0]?.artist?.name}
-          </p>
+          </Link>
+          {metadata.basisAlbum.artists?.[0]?.artist?.id ? (
+            <Link
+              href={`/artists/${metadata.basisAlbum.artists[0].artist.id}`}
+              className='text-xs text-zinc-500 line-clamp-2 leading-tight hover:underline'
+            >
+              {metadata.basisAlbum.artists[0].artist.name}
+            </Link>
+          ) : (
+            <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+              {metadata.basisAlbum.artists?.[0]?.artist?.name}
+            </p>
+          )}
         </div>
       )}
 
       {/* Album pair */}
-      <div className='relative shrink-0 w-[210px] h-[120px]'>
+      <div className='relative shrink-0' style={{ width: PAIR_WIDTH, height: PAIR_HEIGHT }}>
         {metadata?.basisAlbum && (
           <Link
             href={`/albums/${metadata.basisAlbum.id}?source=local`}
@@ -481,29 +520,38 @@ function RecPairItem({
               src={metadata.basisAlbum.coverArtUrl || '/placeholder-album.png'}
               cloudflareImageId={metadata.basisAlbum.cloudflareImageId}
               alt={metadata.basisAlbum.title}
-              width={90}
-              height={90}
-              className='w-[90px] h-[90px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+              width={BASIS_SIZE}
+              height={BASIS_SIZE}
+              className='rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+              style={{ width: BASIS_SIZE, height: BASIS_SIZE }}
+              tooltip={metadata.basisAlbum.title}
+              tooltipSide='left'
             />
           </Link>
         )}
         <Link
           href={`/albums/${activity.albumId}?source=local`}
-          className='absolute left-[100px] top-0 cursor-pointer hover:scale-105 transition-transform'
+          className='absolute top-0 cursor-pointer hover:scale-105 transition-transform'
+          style={{ left: REC_LEFT }}
         >
           <AlbumImage
             src={activity.albumImage}
             cloudflareImageId={activity.albumCloudflareImageId}
             alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-            width={110}
-            height={110}
-            className='w-[110px] h-[110px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
+            width={REC_SIZE}
+            height={REC_SIZE}
+            className='rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
+            style={{ width: REC_SIZE, height: REC_SIZE }}
+            tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
           />
         </Link>
         {metadata?.score && (() => {
           const sc = getScoreColors(metadata.score!);
           return (
-            <div className='absolute left-[77px] top-[37px] z-20'>
+            <div
+              className='absolute -translate-x-1/2 -translate-y-1/2 z-20'
+              style={{ left: BADGE_CENTER_X, top: BADGE_CENTER_Y }}
+            >
               <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                 <div className={`flex items-center justify-center w-12 h-12 bg-linear-to-r ${sc.bgGradient} rounded-full border-2 ${sc.borderColor} shadow-md`}>
                   <div className='flex flex-col items-center'>
@@ -521,12 +569,24 @@ function RecPairItem({
 
       {/* Recommended album details - right */}
       <div className='max-w-20'>
-        <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+        <Link
+          href={`/albums/${activity.albumId}?source=local`}
+          className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight hover:underline'
+        >
           {activity.albumTitle}
-        </p>
-        <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
-          {activity.albumArtist}
-        </p>
+        </Link>
+        {activity.artistId ? (
+          <Link
+            href={`/artists/${activity.artistId}`}
+            className='text-xs text-zinc-500 line-clamp-2 leading-tight hover:underline'
+          >
+            {activity.albumArtist}
+          </Link>
+        ) : (
+          <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+            {activity.albumArtist}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -624,14 +684,26 @@ const COLLECTION_PAGE_SIZE = 5;
 
 function CollectionItem({ activity }: { activity: TransformedActivity }) {
   return (
-    <div className='w-[196px] flex items-center gap-2'>
-      <div className='w-[80px] text-right shrink-0'>
-        <p className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight'>
+    <div className='w-[220px] flex items-center gap-2'>
+      <div className='w-[100px] text-right shrink-0'>
+        <Link
+          href={`/albums/${activity.albumId}?source=local`}
+          className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight hover:underline'
+        >
           {activity.albumTitle}
-        </p>
-        <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
-          {activity.albumArtist}
-        </p>
+        </Link>
+        {activity.artistId ? (
+          <Link
+            href={`/artists/${activity.artistId}`}
+            className='text-xs text-zinc-500 line-clamp-2 leading-tight hover:underline'
+          >
+            {activity.albumArtist}
+          </Link>
+        ) : (
+          <p className='text-xs text-zinc-500 line-clamp-2 leading-tight'>
+            {activity.albumArtist}
+          </p>
+        )}
       </div>
 
       {activity.albumImage && (
@@ -646,6 +718,7 @@ function CollectionItem({ activity }: { activity: TransformedActivity }) {
             width={110}
             height={110}
             className='w-[110px] h-[110px] rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105 shadow-lg'
+            tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
           />
         </Link>
       )}

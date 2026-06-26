@@ -103,6 +103,7 @@ function TopAlbumCard({
             cloudflareImageId={album.cloudflareImageId}
             className='w-full h-full object-cover shadow-xl'
             showSkeleton={false}
+            tooltip={`${album.title} by ${artistName}`}
           />
         </div>
 

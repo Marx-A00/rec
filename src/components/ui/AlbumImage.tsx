@@ -5,6 +5,12 @@ import { useState, useEffect } from 'react';
 
 import { getImageUrl } from '@/lib/cloudflare-images';
 import { VinylPlaceholder } from '@/components/ui/VinylPlaceholder';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AlbumImageProps {
   src: string | null | undefined;
@@ -19,6 +25,8 @@ interface AlbumImageProps {
   showSkeleton?: boolean;
   fallbackIcon?: React.ReactNode;
   style?: React.CSSProperties;
+  tooltip?: string;
+  tooltipSide?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 /**
@@ -69,6 +77,8 @@ export default function AlbumImage({
   showSkeleton = true,
   fallbackIcon,
   style,
+  tooltip,
+  tooltipSide = 'right',
 }: AlbumImageProps) {
   // Initialize synchronously so the first render has the correct URL
   const [imgSrc, setImgSrc] = useState<string | null>(() =>
@@ -126,7 +136,7 @@ export default function AlbumImage({
   const useNativeImg =
     imgSrc.includes('coverartarchive.org') || imgSrc.includes('archive.org');
 
-  return (
+  const imageContent = (
     <div className={`relative overflow-hidden ${className}`}>
       {/* Loading: animated vinyl (skipped when parent skeleton already handles it) */}
       {isLoading && showSkeleton && (
@@ -168,6 +178,17 @@ export default function AlbumImage({
         />
       )}
     </div>
+  );
+
+  if (!tooltip) return imageContent;
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>{imageContent}</TooltipTrigger>
+        <TooltipContent side={tooltipSide}>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

@@ -7,7 +7,7 @@ export interface TransformedActivityMetadata {
     title: string;
     coverArtUrl?: string;
     cloudflareImageId?: string;
-    artists?: Array<{ artist?: { name?: string } }>;
+    artists?: Array<{ artist?: { id?: string; name?: string } }>;
   };
   collectionName?: string;
   personalRating?: number;
@@ -75,7 +75,7 @@ export function transformActivity(
                   ?.filter((a): a is NonNullable<typeof a> => a != null)
                   .map(a => ({
                     artist: a.artist
-                      ? { name: a.artist.name ?? undefined }
+                      ? { id: a.artist.id ?? undefined, name: a.artist.name ?? undefined }
                       : undefined,
                   })),
               }

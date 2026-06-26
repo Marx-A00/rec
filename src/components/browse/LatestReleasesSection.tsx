@@ -115,6 +115,7 @@ function ReleaseCard({
           width={200}
           height={200}
           className='w-full h-full object-cover shadow-xl group-hover:brightness-110 transition-all duration-300'
+          tooltip={`${album.title} by ${album.artists}`}
         />
       </div>
       <div className='flex items-center justify-between px-3 py-2.5'>
