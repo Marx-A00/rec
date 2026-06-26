@@ -738,7 +738,7 @@ async function handleAuthentication(
 /**
  * Main middleware function
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const origin = request.headers.get('origin');
   const { pathname } = request.nextUrl;
   const method = request.method;

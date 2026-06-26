@@ -11,8 +11,19 @@ const apiCSP = `
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
+  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
+  turbopack: {
+    resolveAlias: {
+      // Node.js built-ins — stub for client bundles (logger.ts import chain)
+      fs: { browser: './src/lib/pino-stub.ts' },
+      path: { browser: './src/lib/pino-stub.ts' },
+      async_hooks: { browser: './src/lib/pino-stub.ts' },
+      // Pino and its transitive deps
+      pino: { browser: './src/lib/pino-stub.ts' },
+      'pino-pretty': { browser: './src/lib/pino-stub.ts' },
+      'sonic-boom': { browser: './src/lib/pino-stub.ts' },
+      'thread-stream': { browser: './src/lib/pino-stub.ts' },
+    },
   },
   // Ensure lucide-react icons are properly bundled in production
   transpilePackages: ['lucide-react'],

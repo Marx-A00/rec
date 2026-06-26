@@ -12,10 +12,7 @@ function buildStreams(): StreamEntry[] {
   const streams: StreamEntry[] = [];
 
   if (isDev) {
-    // Dev: pretty-printed console + local log files
     try {
-      // pino-pretty is a devDependency — safe to require here since this branch
-      // only runs when NODE_ENV=development
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pinoPretty = require('pino-pretty');
       streams.push({
@@ -28,14 +25,12 @@ function buildStreams(): StreamEntry[] {
         }),
       });
     } catch {
-      // Fallback if pino-pretty is missing
       streams.push({
         level: logLevel as pino.Level,
         stream: process.stdout as unknown as DestinationStream,
       });
     }
 
-    // Local log files (date-stamped)
     const logDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
     const today = new Date().toISOString().split('T')[0];
@@ -48,14 +43,12 @@ function buildStreams(): StreamEntry[] {
       }),
     });
   } else {
-    // Prod: JSON to stdout (Railway captures this)
     streams.push({
       level: 'info',
       stream: process.stdout as unknown as DestinationStream,
     });
   }
 
-  // Axiom — cloud log aggregation (both dev and prod when configured)
   if (process.env.AXIOM_DATASET && process.env.AXIOM_TOKEN) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -65,38 +58,46 @@ function buildStreams(): StreamEntry[] {
         process.env.AXIOM_TOKEN
       );
       if (axiomStream) {
-        streams.push({
-          level: 'info' as pino.Level,
-          stream: axiomStream,
-        });
+        streams.push({ level: 'info' as pino.Level, stream: axiomStream });
       }
     } catch {
-      // Axiom stream not available — continue without it
+      // Axiom not available
     }
   }
 
   return streams;
 }
 
-export const logger = pino(
-  {
-    level: 'debug',
-    formatters: {
-      level: label => ({ level: label.toUpperCase() }),
-    },
-    mixin: () => {
-      const context = getCorrelationContext();
-      return context
-        ? {
-            correlationId: context.correlationId,
-            requestPath: context.requestPath,
-            userId: context.userId,
-          }
-        : {};
-    },
-  },
-  pino.multistream(buildStreams())
-);
+// No-op logger for client bundles (logger.ts gets pulled in via import chains
+// but is never meaningfully used on the client)
+const noopFn = () => {};
+const noopLogger = {
+  debug: noopFn, info: noopFn, warn: noopFn, error: noopFn, fatal: noopFn,
+  child: () => noopLogger,
+} as unknown as pino.Logger;
+
+export const logger: pino.Logger =
+  typeof window === 'undefined'
+    ? pino(
+        {
+          level: 'debug',
+          formatters: {
+            level: label => ({ level: label.toUpperCase() }),
+          },
+          mixin: () => {
+            const context = getCorrelationContext();
+            return context
+              ? {
+                  correlationId: context.correlationId,
+                  requestPath: context.requestPath,
+                  userId: context.userId,
+                }
+              : {};
+          },
+        },
+        pino.multistream(buildStreams())
+      )
+    : noopLogger;
 
 // Module-specific loggers
 export const graphqlLogger = logger.child({ module: 'graphql' });
