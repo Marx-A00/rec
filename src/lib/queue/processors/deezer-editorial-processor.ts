@@ -9,9 +9,8 @@
  *   4. Update SyncJob with results
  */
 
-import chalk from 'chalk';
-
 import { getSchedulerEnabled } from '@/lib/config/app-config';
+import { queueLogger } from '@/lib/logger';
 import {
   fetchAllGenreReleases,
   filterEditorialReleases,
@@ -28,11 +27,7 @@ export async function handleDeezerSyncEditorialReleases(
   if (data.source === 'scheduled') {
     const enabled = await getSchedulerEnabled('deezer-editorial');
     if (!enabled) {
-      console.log(
-        chalk.yellow(
-          `⏸️  Deezer Editorial scheduler disabled, skipping job ${jobId}`
-        )
-      );
+      queueLogger.info({ jobId }, 'Deezer Editorial scheduler disabled, skipping job');
       return { success: true, skipped: true, reason: 'scheduler_disabled' };
     }
   }
@@ -58,27 +53,17 @@ export async function handleDeezerSyncEditorialReleases(
 
   try {
     // 3. Fetch from Deezer editorial API
-    console.log(
-      chalk.cyan(
-        `[Deezer Editorial] Fetching releases (genres: ${data.genres.join(', ')}, max: ${data.maxReleases})`
-      )
-    );
+    queueLogger.info({ genres: data.genres, maxReleases: data.maxReleases }, 'Deezer Editorial fetching releases');
 
     let releases = await fetchAllGenreReleases(data.genres, data.maxReleases);
 
-    console.log(
-      chalk.cyan(`[Deezer Editorial] Fetched ${releases.length} releases`)
-    );
+    queueLogger.info({ count: releases.length }, 'Deezer Editorial fetched releases');
 
     // 4. Optional filtering of suspicious titles
     if (data.filterDeluxe) {
       const beforeFilter = releases.length;
       releases = filterEditorialReleases(releases, { filterDeluxe: true });
-      console.log(
-        chalk.cyan(
-          `[Deezer Editorial] Filtered ${beforeFilter - releases.length} suspicious titles (${releases.length} remaining)`
-        )
-      );
+      queueLogger.debug({ filtered: beforeFilter - releases.length, remaining: releases.length }, 'Deezer Editorial filtered suspicious titles');
     }
 
     // 5. Process into database
@@ -108,18 +93,13 @@ export async function handleDeezerSyncEditorialReleases(
       });
     }
 
-    console.log(
-      chalk.green(
-        `[Deezer Editorial] Sync complete: ${result.albumsCreated} created, ${result.albumsUpdated} updated, ${result.albumsSkipped} skipped, ${result.artistsCreated} artists created (${result.duration}ms)`
-      )
+    queueLogger.info(
+      { albumsCreated: result.albumsCreated, albumsUpdated: result.albumsUpdated, albumsSkipped: result.albumsSkipped, artistsCreated: result.artistsCreated, duration: result.duration },
+      'Deezer Editorial sync complete'
     );
 
     if (result.errors.length > 0) {
-      console.warn(
-        chalk.yellow(
-          `[Deezer Editorial] ${result.errors.length} errors during sync`
-        )
-      );
+      queueLogger.warn({ errorCount: result.errors.length }, 'Deezer Editorial sync had errors');
     }
 
     return {
@@ -129,7 +109,7 @@ export async function handleDeezerSyncEditorialReleases(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
-    console.error(chalk.red(`[Deezer Editorial] Sync failed: ${message}`));
+    queueLogger.error({ error: message }, 'Deezer Editorial sync failed');
 
     // Update SyncJob on failure
     if (syncJob) {

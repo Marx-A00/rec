@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { authLogger } from '@/lib/logger';
 import { verifyAndConsumeToken } from '@/lib/auth/tokens';
 import {
   validateRequestBody,
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('[reset-password] Error:', error);
+    authLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Reset password handler error');
     const { response, status } = createErrorResponse(
       'Something went wrong. Please try again.',
       500,

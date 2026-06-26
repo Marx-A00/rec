@@ -1,4 +1,5 @@
 // src/lib/musicbrainz/integration.ts
+import { mbLogger } from '@/lib/logger';
 import { PrismaClient } from '@prisma/client';
 import type { Artist, Album } from '@prisma/client';
 
@@ -53,7 +54,7 @@ export class MusicBrainzIntegrationService {
 
       return artist;
     } catch (error) {
-      console.error('Failed to process MusicBrainz artist data:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to process MusicBrainz artist data');
       throw new Error(
         `Failed to create artist: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -116,7 +117,7 @@ export class MusicBrainzIntegrationService {
 
       return album;
     } catch (error) {
-      console.error('Failed to process MusicBrainz release group data:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to process MusicBrainz release group data');
       throw new Error(
         `Failed to create album: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -135,7 +136,7 @@ export class MusicBrainzIntegrationService {
         const artist = await this.findOrCreateArtist(rawArtist);
         results.push(artist);
       } catch (error) {
-        console.error('Failed to process artist in batch:', error);
+        mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to process artist in batch');
         // Continue processing other artists even if one fails
       }
     }
@@ -155,7 +156,7 @@ export class MusicBrainzIntegrationService {
         const album = await this.findOrCreateAlbumWithArtists(rawReleaseGroup);
         results.push(album);
       } catch (error) {
-        console.error('Failed to process album in batch:', error);
+        mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to process album in batch');
         // Continue processing other albums even if one fails
       }
     }
@@ -181,8 +182,9 @@ export class MusicBrainzIntegrationService {
 
     // TODO: In future iterations, we could fetch from MusicBrainz API here
     // For now, just return null if we don't have the artist
-    console.warn(
-      `Artist with MusicBrainz ID ${musicbrainzId} not found and auto-fetch not implemented yet`
+    mbLogger.warn(
+      { musicbrainzId },
+      'Artist not found and auto-fetch not implemented yet'
     );
     return null;
   }

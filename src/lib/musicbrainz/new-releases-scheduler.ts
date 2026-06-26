@@ -7,6 +7,8 @@
  * so it survives Redis clears and worker restarts.
  */
 
+import { mbLogger } from '@/lib/logger';
+
 import { getSchedulerEnabled, setSchedulerEnabled } from '../config/app-config';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type { MusicBrainzSyncNewReleasesJobData } from '../queue/jobs';
@@ -56,7 +58,7 @@ class MusicBrainzScheduler {
    */
   async start() {
     if (this.isRunning) {
-      console.log('🔄 MusicBrainz scheduler is already running');
+      mbLogger.debug('MusicBrainz scheduler is already running');
       return;
     }
 
@@ -82,7 +84,7 @@ class MusicBrainzScheduler {
    * Always cleans up Redis regardless of in-memory state.
    */
   async stop() {
-    console.log('🛑 Stopping MusicBrainz automated scheduler...');
+    mbLogger.info('Stopping MusicBrainz automated scheduler');
 
     // Persist disabled state to database
     await setSchedulerEnabled('musicbrainz', false);
@@ -96,7 +98,7 @@ class MusicBrainzScheduler {
 
     this.isRunning = false;
 
-    console.log('✅ MusicBrainz scheduler stopped successfully');
+    mbLogger.info('MusicBrainz scheduler stopped successfully');
   }
 
   /**
@@ -115,7 +117,7 @@ class MusicBrainzScheduler {
       await this.start();
     }
 
-    console.log('🔧 MusicBrainz scheduler configuration updated');
+    mbLogger.info('MusicBrainz scheduler configuration updated');
   }
 
   /**
@@ -234,13 +236,12 @@ class MusicBrainzScheduler {
         }
       );
 
-      console.log(
-        `🎵 Queued manual MusicBrainz new releases sync (Job ID: ${job.id})`
+      mbLogger.info(
+        { jobId: job.id, fromDate, toDate, genres: this.config.newReleases.genres },
+        'Queued manual MusicBrainz new releases sync'
       );
-      console.log(`   Date range: ${fromDate} to ${toDate}`);
-      console.log(`   Genres: ${this.config.newReleases.genres.join(', ')}`);
     } catch (error) {
-      console.error('❌ Failed to queue MusicBrainz new releases sync:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to queue MusicBrainz new releases sync');
     }
   }
 
@@ -258,7 +259,7 @@ class MusicBrainzScheduler {
         }
       }
     } catch (error) {
-      console.warn('⚠️  Failed to remove existing schedules:', error);
+      mbLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to remove existing schedules');
     }
   }
 
@@ -288,10 +289,10 @@ class MusicBrainzScheduler {
       }
 
       if (removed > 0) {
-        console.log(`  🗑️  Drained ${removed} queued MusicBrainz sync job(s)`);
+        mbLogger.info({ removed }, 'Drained queued MusicBrainz sync jobs');
       }
     } catch (error) {
-      console.warn('⚠️  Failed to drain queued MusicBrainz jobs:', error);
+      mbLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to drain queued MusicBrainz jobs');
     }
   }
 
@@ -299,21 +300,20 @@ class MusicBrainzScheduler {
    * Log current schedule information
    */
   private logScheduleInfo() {
-    console.log('\n📋 MusicBrainz Sync Schedule:');
-
     if (this.config.newReleases.enabled) {
-      console.log(
-        `  🎵 New Releases: Every ${this.config.newReleases.intervalMinutes} minutes (${Math.round(this.config.newReleases.intervalMinutes / 1440)} days)`
+      mbLogger.info(
+        {
+          intervalMinutes: this.config.newReleases.intervalMinutes,
+          intervalDays: Math.round(this.config.newReleases.intervalMinutes / 1440),
+          limit: this.config.newReleases.limit,
+          dateRangeDays: this.config.newReleases.dateRangeDays,
+          genres: this.config.newReleases.genres,
+        },
+        'MusicBrainz sync schedule: new releases enabled'
       );
-      console.log(
-        `     Limit: ${this.config.newReleases.limit}, Date Range: ${this.config.newReleases.dateRangeDays} days`
-      );
-      console.log(`     Genres: ${this.config.newReleases.genres.join(', ')}`);
     } else {
-      console.log('  🎵 New Releases: Disabled');
+      mbLogger.info('MusicBrainz sync schedule: new releases disabled');
     }
-
-    console.log('');
   }
 
   /**
@@ -321,9 +321,9 @@ class MusicBrainzScheduler {
    * Always works regardless of whether the scheduler is enabled.
    */
   async triggerSync() {
-    console.log('🔄 Manually triggering MusicBrainz new releases sync...');
+    mbLogger.info('Manually triggering MusicBrainz new releases sync');
     await this.queueNewReleasesSync();
-    console.log('✅ Manual sync triggered successfully');
+    mbLogger.info('Manual sync triggered successfully');
   }
 }
 
@@ -373,10 +373,7 @@ export async function initializeMusicBrainzScheduler() {
   try {
     dbEnabled = await getSchedulerEnabled('musicbrainz');
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to read MusicBrainz scheduler state from DB, defaulting to disabled:',
-      error
-    );
+    mbLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to read MusicBrainz scheduler state from DB, defaulting to disabled');
     return false;
   }
 
@@ -389,7 +386,7 @@ export async function initializeMusicBrainzScheduler() {
       job.key.includes('musicbrainz-new-releases-schedule')
     );
   } catch (error) {
-    console.warn('⚠️  Failed to check BullMQ for MusicBrainz jobs:', error);
+    mbLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to check BullMQ for MusicBrainz jobs');
   }
 
   // Reconcile DB state with BullMQ state

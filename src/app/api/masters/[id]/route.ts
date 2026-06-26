@@ -1,6 +1,7 @@
 import { Client } from 'disconnect';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { mapDiscogsMasterToAlbum } from '@/lib/discogs/mappers';
 import { DiscogsMaster } from '@/types/discogs/master';
 
@@ -11,10 +12,10 @@ const db = new Client({
   consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
 
-export async function GET(
-  request: Request,
+export const GET = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   // Ensure params is awaited before accessing properties
   const { id } = await params;
 
@@ -26,31 +27,21 @@ export async function GET(
   }
 
   try {
-    console.log(`Fetching album details for ID: ${id}`);
-
     // Try to get the master release details
     let albumDetails: DiscogsMaster;
     try {
       albumDetails = await db.getMaster(id);
-      console.log(`Found master release: ${albumDetails.title}`);
-      console.log(
-        'Full Master Details: ',
-        JSON.stringify(albumDetails, null, 2)
-      );
     } catch {
-      console.log(`Not a master release, trying as regular release`);
       try {
         // If not a master, try as a regular release
         // Note: This would need a separate mapper for releases
-        const releaseDetails = await db.getRelease(id);
-        console.log(`Found regular release: ${releaseDetails.title}`);
+        await db.getRelease(id);
         // For now, return error since we haven't implemented release mapping yet
         return NextResponse.json(
           { error: 'Release mapping not implemented yet' },
           { status: 501 }
         );
-      } catch (releaseError) {
-        console.error('Error fetching album details:', releaseError);
+      } catch {
         return NextResponse.json({ error: 'Album not found' }, { status: 404 });
       }
     }
@@ -60,10 +51,9 @@ export async function GET(
 
     return NextResponse.json({ album });
   } catch (error) {
-    console.error('Error fetching album details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch album details' },
       { status: 500 }
     );
   }
-}
+});

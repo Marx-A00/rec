@@ -3,6 +3,7 @@
 
 import { PrismaClient } from '@prisma/client';
 
+import { queueLogger } from '@/lib/logger';
 import { ActivityTracker, UserActivityContext } from './activity-tracker';
 
 export type JobSource =
@@ -318,18 +319,21 @@ export class QueuePriorityManager {
     boost: PriorityBoost,
     delay?: number
   ): void {
-    console.log(`🎯 Job Priority Decision:`, {
-      source,
-      entityId: entityId.substring(0, 8),
-      finalPriority: priority,
-      boosts: {
-        action: boost.actionImportance,
-        userActivity: boost.userActivity,
-        entityRelevance: boost.entityRelevance,
-        systemLoad: boost.systemLoad,
+    queueLogger.debug(
+      {
+        source,
+        entityId: entityId.substring(0, 8),
+        finalPriority: priority,
+        boosts: {
+          action: boost.actionImportance,
+          userActivity: boost.userActivity,
+          entityRelevance: boost.entityRelevance,
+          systemLoad: boost.systemLoad,
+        },
+        delay: delay ? `${delay}ms` : 'none',
       },
-      delay: delay ? `${delay}ms` : 'none',
-    });
+      'Job priority decision'
+    );
   }
 }
 

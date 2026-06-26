@@ -2,9 +2,9 @@
 // Automatic queue pause/resume service based on user activity
 
 import { PrismaClient } from '@prisma/client';
-import chalk from 'chalk';
 
 import { getMusicBrainzQueue } from '@/lib/queue';
+import { queueLogger } from '@/lib/logger';
 
 import { QueuePriorityManager } from './queue-priority-manager';
 import { ActivityTracker } from './activity-tracker';
@@ -72,7 +72,7 @@ export class QueueActivityMonitor {
    */
   start(checkIntervalMs: number = 15000): void {
     if (this.isRunning) {
-      console.log('🔄 QueueActivityMonitor already running');
+      queueLogger.debug('QueueActivityMonitor already running');
       return;
     }
 
@@ -87,11 +87,9 @@ export class QueueActivityMonitor {
         const prismaError = error as { code?: string };
         // Handle database connection errors gracefully
         if (prismaError.code === 'P1017') {
-          console.warn(
-            '⚠️ Queue monitor: DB connection dropped, will retry next interval'
-          );
+          queueLogger.warn('Queue monitor: DB connection dropped, will retry next interval');
         } else {
-          console.error('❌ Error in queue activity monitor:', error);
+          queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Error in queue activity monitor');
         }
       }
     }, checkIntervalMs);
@@ -107,7 +105,7 @@ export class QueueActivityMonitor {
     }
 
     this.isRunning = false;
-    console.log('⏹️ QueueActivityMonitor stopped');
+    queueLogger.info('QueueActivityMonitor stopped');
   }
 
   /**
@@ -142,9 +140,7 @@ export class QueueActivityMonitor {
       );
 
       if (lowPriorityJobs.length > 0) {
-        console.log(
-          `⏸️ Pausing ${lowPriorityJobs.length} low-priority background jobs`
-        );
+        queueLogger.info({ count: lowPriorityJobs.length }, 'Pausing low-priority background jobs');
 
         for (const job of lowPriorityJobs) {
           // Delay by 60 seconds to let user activity settle
@@ -156,11 +152,12 @@ export class QueueActivityMonitor {
       this.pauseResumeEventCount++;
 
       // Log activity summary
-      console.log(
-        `🔄 Queue paused - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`
+      queueLogger.info(
+        { active: metrics.stats.active, waiting: metrics.stats.waiting, delayed: metrics.stats.delayed },
+        'Queue paused'
       );
     } catch (error) {
-      console.error('❌ Failed to pause background jobs:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to pause background jobs');
     }
   }
 
@@ -180,7 +177,7 @@ export class QueueActivityMonitor {
       );
 
       if (backgroundJobs.length > 0) {
-        console.log(`▶️ Resuming ${backgroundJobs.length} background jobs`);
+        queueLogger.info({ count: backgroundJobs.length }, 'Resuming background jobs');
 
         for (const job of backgroundJobs) {
           await job.promote();
@@ -191,11 +188,12 @@ export class QueueActivityMonitor {
       this.pauseResumeEventCount++;
 
       const metrics = await queue.getMetrics();
-      console.log(
-        `🔄 Queue resumed - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`
+      queueLogger.info(
+        { active: metrics.stats.active, waiting: metrics.stats.waiting, delayed: metrics.stats.delayed },
+        'Queue resumed'
       );
     } catch (error) {
-      console.error('❌ Failed to resume background jobs:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to resume background jobs');
     }
   }
 
@@ -242,24 +240,18 @@ export class QueueActivityMonitor {
       // Update last logged stats
       this.lastLoggedStats = currentStats;
 
-      // Use compact single-line format for routine updates
-      const statusIcon = this.backgroundJobsPaused ? '⏸️' : '▶️';
-      const activityColor = activityLevel === 'HIGH' ? chalk.red : chalk.green;
-
-      console.log(
-        chalk.gray('📊 Queue:') +
-          ` ${statusIcon} ` +
-          activityColor(activityLevel) +
-          chalk.gray(' | ') +
-          chalk.blue(`A:${currentStats.active}`) +
-          chalk.gray('/') +
-          chalk.yellow(`W:${currentStats.waiting}`) +
-          chalk.gray('/') +
-          chalk.magenta(`D:${currentStats.delayed}`) +
-          chalk.gray(' | ') +
-          chalk.green(`✓${currentStats.completed}`) +
-          chalk.gray('/') +
-          chalk.red(`✗${currentStats.failed}`)
+      // Structured status log
+      queueLogger.debug(
+        {
+          paused: this.backgroundJobsPaused,
+          activityLevel,
+          active: currentStats.active,
+          waiting: currentStats.waiting,
+          delayed: currentStats.delayed,
+          completed: currentStats.completed,
+          failed: currentStats.failed,
+        },
+        'Queue status'
       );
     } catch (error: unknown) {
       const prismaError = error as { code?: string };
@@ -268,7 +260,7 @@ export class QueueActivityMonitor {
       if (prismaError.code === 'P1017') {
         return;
       }
-      console.error('❌ Failed to log queue status:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to log queue status');
     }
   }
 

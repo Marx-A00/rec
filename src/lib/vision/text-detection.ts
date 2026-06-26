@@ -8,6 +8,8 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import path from 'path';
 
 import { ImageAnnotatorClient } from '@google-cloud/vision';
+
+import { apiLogger } from '@/lib/logger';
 import type { google } from '@google-cloud/vision/build/protos/protos';
 import sharp from 'sharp';
 
@@ -53,7 +55,7 @@ function incrementUsage(): VisionUsage {
   try {
     writeFileSync(USAGE_FILE, JSON.stringify(usage, null, 2));
   } catch {
-    console.warn('[Vision] Failed to write usage file');
+    apiLogger.warn({ module: 'vision' }, 'Failed to write usage file');
   }
   return usage;
 }
@@ -115,9 +117,7 @@ function getVisionClient(): ImageAnnotatorClient {
       _client = new ImageAnnotatorClient({ credentials });
       return _client;
     } catch {
-      console.warn(
-        '[Vision] Failed to parse GOOGLE_CLOUD_VISION_CREDENTIALS, falling back to default auth'
-      );
+      apiLogger.warn({ module: 'vision' }, 'Failed to parse GOOGLE_CLOUD_VISION_CREDENTIALS, falling back to default auth');
     }
   }
 
@@ -145,9 +145,7 @@ export async function detectAllText(
     // Fetch the image as a buffer
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      console.warn(
-        `[Vision] Failed to fetch image: ${response.status} ${response.statusText}`
-      );
+      apiLogger.warn({ module: 'vision', status: response.status }, 'Failed to fetch image for text detection');
       return null;
     }
 
@@ -155,9 +153,7 @@ export async function detectAllText(
 
     // Check size — Cloud Vision limit is 10MB
     if (imageBuffer.byteLength > 10 * 1024 * 1024) {
-      console.warn(
-        `[Vision] Image too large (${(imageBuffer.byteLength / 1024 / 1024).toFixed(1)}MB), skipping`
-      );
+      apiLogger.warn({ module: 'vision', sizeMB: (imageBuffer.byteLength / 1024 / 1024).toFixed(1) }, 'Image too large for text detection, skipping');
       return null;
     }
 
@@ -210,7 +206,7 @@ export async function detectAllText(
 
     return detectedTexts;
   } catch (error) {
-    console.warn('[Vision] Text detection failed:', error);
+    apiLogger.warn({ module: 'vision', err: error instanceof Error ? error.message : String(error) }, 'Text detection failed');
     return null;
   }
 }

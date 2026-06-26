@@ -3,7 +3,7 @@
 // Creates albums with source=DEEZER, proper deezerId fields,
 // and LlamaLog audit trail tracing back to this job.
 
-import chalk from 'chalk';
+import { queueLogger } from '@/lib/logger';
 
 import type { DeezerImportPlaylistJobData } from '../jobs';
 
@@ -28,11 +28,7 @@ export async function handleDeezerImportPlaylist(
   jobId?: string
 ): Promise<Record<string, unknown>> {
   const playlistLabel = data.playlistName || data.playlistId;
-  console.log(
-    chalk.blue(
-      `[DEEZER-PROCESSOR] Starting import for playlist "${playlistLabel}" (jobId: ${jobId})`
-    )
-  );
+  queueLogger.info({ playlistId: data.playlistId, playlistName: playlistLabel, jobId }, 'Deezer playlist import started');
 
   try {
     const { importDeezerPlaylistAlbums } = await import(
@@ -45,10 +41,9 @@ export async function handleDeezerImportPlaylist(
       selectedDeezerIds: data.selectedDeezerIds,
     });
 
-    console.log(
-      chalk.blue(
-        `[DEEZER-PROCESSOR] Import complete: ${result.processing.albumsProcessed} created, ${result.processing.duplicatesSkipped} dupes, ${result.processing.errors.length} errors`
-      )
+    queueLogger.info(
+      { albumsProcessed: result.processing.albumsProcessed, duplicatesSkipped: result.processing.duplicatesSkipped, errors: result.processing.errors.length },
+      'Deezer playlist import complete'
     );
 
     return {
@@ -62,10 +57,7 @@ export async function handleDeezerImportPlaylist(
       message: result.message,
     };
   } catch (error) {
-    console.error(
-      chalk.red('[DEEZER-PROCESSOR] Playlist import failed:'),
-      error
-    );
+    queueLogger.error({ playlistId: data.playlistId, error: error instanceof Error ? error.message : String(error) }, 'Deezer playlist import failed');
 
     const message = error instanceof Error ? error.message : String(error);
 

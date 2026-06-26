@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { authLogger } from '@/lib/logger';
 import { createPasswordResetToken } from '@/lib/auth/tokens';
 import { sendPasswordResetEmail } from '@/lib/email';
 import {
@@ -69,17 +70,14 @@ export async function POST(request: Request) {
     const emailResult = await sendPasswordResetEmail(email, resetUrl);
 
     if (!emailResult.success) {
-      console.error(
-        '[forgot-password] Failed to send email:',
-        emailResult.error
-      );
+      authLogger.error({ error: emailResult.error }, 'Failed to send password reset email');
       // Still return generic success — don't leak info about email delivery failures
     }
 
     const { response, status } = createSuccessResponse(GENERIC_SUCCESS);
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('[forgot-password] Error:', error);
+    authLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Forgot password handler error');
     const { response, status } = createErrorResponse(
       'Something went wrong. Please try again.',
       500,

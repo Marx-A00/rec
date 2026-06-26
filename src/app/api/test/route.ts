@@ -1,8 +1,11 @@
 import { Client, DiscogsSearchResult } from 'disconnect';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { withApiLogging } from '@/lib/api-utils';
 
 // Test endpoint to verify Discogs API connectivity
-export async function GET() {
+export const GET = withApiLogging(async (
+): Promise<NextResponse> => {
   try {
     // Create a Discogs client
     const db = new Client({
@@ -18,7 +21,6 @@ export async function GET() {
     });
 
     const testData: DiscogsSearchResult = searchResults.results?.[0] || null;
-    console.log('Test search successful:', testData);
 
     return NextResponse.json({
       success: true,
@@ -26,7 +28,6 @@ export async function GET() {
       testData,
     });
   } catch (error) {
-    console.error('Error in test route:', error);
     return NextResponse.json(
       {
         error: 'Test failed',
@@ -35,9 +36,11 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiLogging(async (
+  request: NextRequest,
+): Promise<NextResponse> => {
   const data = await request.json();
   return NextResponse.json({ message: 'Data received', data });
-}
+});

@@ -7,6 +7,7 @@ import { GraphQLError } from 'graphql';
 import { withFilter } from 'graphql-subscriptions';
 
 import { SubscriptionResolvers } from '@/generated/resolvers-types';
+import { graphqlLogger } from '@/lib/logger';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import {
   healthChecker,
@@ -61,7 +62,7 @@ function initializeMonitoringListeners() {
     pubsub.publish(ALERT_EVENT, { alertStream: alert });
   });
 
-  console.log('📊 Initialized monitoring subscription listeners');
+  graphqlLogger.info('Initialized monitoring subscription listeners');
 }
 
 // Initialize listeners on module load
@@ -157,7 +158,7 @@ export const subscriptionResolvers: SubscriptionResolvers = {
 
           pubsub.publish(METRICS_UPDATE, { metricsStream: metricsData });
         } catch (error) {
-          console.error('Failed to publish metrics:', error);
+          graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Failed to publish metrics');
         }
       };
 

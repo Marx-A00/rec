@@ -9,6 +9,7 @@
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
 import type { ComputeTasteMatchesJobData } from '@/lib/queue/jobs';
+import { schedulerLogger } from '@/lib/logger';
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
@@ -55,7 +56,7 @@ export async function initializeTasteMatchScheduler(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Failed to initialize taste match scheduler:', error);
+    schedulerLogger.error({ scheduler: 'taste-match', error: error instanceof Error ? error.message : String(error) }, 'Failed to initialize taste match scheduler');
     return false;
   }
 }
@@ -71,10 +72,10 @@ export async function shutdownTasteMatchScheduler(): Promise<void> {
     for (const job of repeatableJobs) {
       if (job.id === 'taste-match-schedule') {
         await queue.removeRepeatableByKey(job.key);
-        console.log('Taste match scheduler stopped');
+        schedulerLogger.info({ scheduler: 'taste-match' }, 'Taste match scheduler stopped');
       }
     }
   } catch (error) {
-    console.error('Failed to shut down taste match scheduler:', error);
+    schedulerLogger.error({ scheduler: 'taste-match', error: error instanceof Error ? error.message : String(error) }, 'Failed to shut down taste match scheduler');
   }
 }

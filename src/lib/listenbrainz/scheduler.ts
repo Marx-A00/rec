@@ -8,6 +8,8 @@
  *   - Reconciliation on boot (cleans orphaned jobs if DB says disabled)
  */
 
+import { listenbrainzLogger } from '@/lib/logger';
+
 import {
   getListenBrainzConfig,
   getSchedulerEnabled,
@@ -57,7 +59,7 @@ class ListenBrainzScheduler {
    */
   async start() {
     if (this.isRunning) {
-      console.log('🔄 ListenBrainz scheduler is already running');
+      listenbrainzLogger.debug('ListenBrainz scheduler is already running');
       return;
     }
 
@@ -80,7 +82,7 @@ class ListenBrainzScheduler {
    * Persists enabled=false to the database.
    */
   async stop() {
-    console.log('🛑 Stopping ListenBrainz scheduler...');
+    listenbrainzLogger.info('Stopping ListenBrainz scheduler');
 
     await setSchedulerEnabled('listenbrainz', false);
     await this.removeExistingSchedules();
@@ -88,7 +90,7 @@ class ListenBrainzScheduler {
 
     this.isRunning = false;
 
-    console.log('✅ ListenBrainz scheduler stopped');
+    listenbrainzLogger.info('ListenBrainz scheduler stopped');
   }
 
   /**
@@ -130,14 +132,14 @@ class ListenBrainzScheduler {
    * Re-reads config (DB > env) so manual triggers respect current values.
    */
   async triggerSync() {
-    console.log('🔄 Manually triggering ListenBrainz fresh releases sync...');
+    listenbrainzLogger.info('Manually triggering ListenBrainz fresh releases sync');
 
     // Re-read config from DB > env > defaults
     this.config = await readListenBrainzConfig();
 
     await this.queueFreshReleasesSync('manual');
 
-    console.log('✅ ListenBrainz manual sync triggered');
+    listenbrainzLogger.info('ListenBrainz manual sync triggered');
   }
 
   // --------------------------------------------------------------------------
@@ -183,10 +185,7 @@ class ListenBrainzScheduler {
         }
       }
     } catch (error) {
-      console.warn(
-        '⚠️  Failed to remove existing ListenBrainz schedules:',
-        error
-      );
+      listenbrainzLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to remove existing ListenBrainz schedules');
     }
   }
 
@@ -211,10 +210,10 @@ class ListenBrainzScheduler {
       }
 
       if (removed > 0) {
-        console.log(`  🗑️  Drained ${removed} queued ListenBrainz sync job(s)`);
+        listenbrainzLogger.info({ removed }, 'Drained queued ListenBrainz sync jobs');
       }
     } catch (error) {
-      console.warn('⚠️  Failed to drain queued ListenBrainz jobs:', error);
+      listenbrainzLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to drain queued ListenBrainz jobs');
     }
   }
 
@@ -274,10 +273,7 @@ async function readListenBrainzConfig(): Promise<ListenBrainzScheduleConfig> {
   try {
     dbConfig = await getListenBrainzConfig();
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to read ListenBrainz config from DB, using env/defaults:',
-      error
-    );
+    listenbrainzLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to read ListenBrainz config from DB, using env/defaults');
   }
 
   // 2. Read env vars
@@ -373,10 +369,7 @@ export async function initializeListenBrainzScheduler(): Promise<boolean> {
   try {
     dbEnabled = await getSchedulerEnabled('listenbrainz');
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to read ListenBrainz scheduler state from DB, defaulting to disabled:',
-      error
-    );
+    listenbrainzLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to read ListenBrainz scheduler state from DB, defaulting to disabled');
     return false;
   }
 
@@ -389,7 +382,7 @@ export async function initializeListenBrainzScheduler(): Promise<boolean> {
       job.key.includes(REPEATABLE_JOB_KEY)
     );
   } catch (error) {
-    console.warn('⚠️  Failed to check BullMQ for ListenBrainz jobs:', error);
+    listenbrainzLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to check BullMQ for ListenBrainz jobs');
   }
 
   // Reconcile DB state with BullMQ state

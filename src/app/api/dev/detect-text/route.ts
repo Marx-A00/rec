@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import {
@@ -12,7 +13,7 @@ import {
  * POST /api/dev/detect-text
  * Body: { imageUrl: string, albumTitle: string, artistName: string, threshold?: number }
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -64,10 +65,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[dev/detect-text] Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});

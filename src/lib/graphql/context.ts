@@ -3,13 +3,13 @@
 
 import { randomUUID } from 'crypto';
 
-import chalk from 'chalk';
 import type { PrismaClient } from '@prisma/client';
 // @ts-nocheck - GraphQL context has some type issues after schema migration
 import type { NextRequest } from 'next/server';
 import DataLoader from 'dataloader';
 
 import { auth } from '@/../auth';
+import { graphqlLogger } from '@/lib/logger';
 import {
   ActivityTracker,
   createActivityTracker,
@@ -109,16 +109,10 @@ export async function createGraphQLContext(
         role: session.user.role || undefined,
       };
 
-      // Condensed, prettified auth log
-      const border = chalk.gray('─'.repeat(50));
-      console.log('\n' + border);
-      console.log(
-        `${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')} ${chalk.gray('•')} ${chalk.yellow(user.role || 'USER')}`
-      );
-      console.log(border + '\n');
+      graphqlLogger.debug({ userId: user.id, role: user.role || 'USER' }, 'Authenticated user context created');
     }
   } catch (error) {
-    console.error(chalk.red('❌ Auth error:'), error);
+    graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Auth error in GraphQL context');
   }
 
   // Extract request metadata for activity tracking

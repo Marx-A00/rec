@@ -3,8 +3,7 @@
 // Creates Album/Artist records with ContentSource.DEEZER and proper deezerId fields.
 // MusicBrainz enrichment is queued automatically via findOrCreateAlbum() side effects.
 
-import chalk from 'chalk';
-
+import { deezerLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 // ============================================================================
@@ -91,9 +90,7 @@ export async function processDeezerAlbums(
   albums: DeezerAlbumData[],
   options: ProcessDeezerAlbumsOptions = {}
 ): Promise<DeezerProcessingStats> {
-  console.log(
-    chalk.blue(`[DEEZER] Processing ${albums.length} Deezer albums...`)
-  );
+  deezerLogger.info({ count: albums.length }, 'Processing Deezer albums');
 
   const stats: DeezerProcessingStats = {
     albumsProcessed: 0,
@@ -177,15 +174,14 @@ export async function processDeezerAlbums(
       }
     } catch (error) {
       const errorMsg = `Failed to process "${albumData.title}": ${error instanceof Error ? error.message : String(error)}`;
-      console.error(chalk.red(`[DEEZER] ${errorMsg}`));
+      deezerLogger.error({ error: errorMsg }, 'Failed to process Deezer album');
       stats.errors.push(errorMsg);
     }
   }
 
-  console.log(
-    chalk.blue(
-      `[DEEZER] Processing complete: ${stats.albumsProcessed} created, ${stats.duplicatesSkipped} dupes, ${stats.errors.length} errors`
-    )
+  deezerLogger.info(
+    { albumsProcessed: stats.albumsProcessed, duplicatesSkipped: stats.duplicatesSkipped, errors: stats.errors.length },
+    'Deezer album processing complete'
   );
 
   return stats;

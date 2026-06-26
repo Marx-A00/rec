@@ -1,3 +1,5 @@
+import { apiLogger } from '@/lib/logger';
+
 // Cloudflare Images API wrapper
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN!;
@@ -170,9 +172,7 @@ export async function cacheAlbumArt(
     // If resource already exists, construct the expected ID and URL
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('Resource already exists')) {
-      console.log(
-        `Image already exists in Cloudflare for album ${albumId}, returning existing ID`
-      );
+      apiLogger.debug({ albumId }, 'Image already exists in Cloudflare for album');
       const cloudflareId = `album-${albumId}`;
       return {
         id: cloudflareId,
@@ -180,7 +180,7 @@ export async function cacheAlbumArt(
       };
     }
 
-    console.error('Failed to cache album art:', error);
+    apiLogger.error({ err: error instanceof Error ? error.message : String(error), albumId }, 'Failed to cache album art');
     return null;
   }
 }
@@ -203,9 +203,7 @@ export async function cacheArtistImage(
     // If resource already exists, construct the expected ID and URL
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('Resource already exists')) {
-      console.log(
-        `Image already exists in Cloudflare for artist ${artistId}, returning existing ID`
-      );
+      apiLogger.debug({ artistId }, 'Image already exists in Cloudflare for artist');
       const cloudflareId = `artist-${artistId}`;
       return {
         id: cloudflareId,
@@ -213,7 +211,7 @@ export async function cacheArtistImage(
       };
     }
 
-    console.error('Failed to cache artist image:', error);
+    apiLogger.error({ err: error instanceof Error ? error.message : String(error), artistId }, 'Failed to cache artist image');
     return null;
   }
 }

@@ -1,6 +1,7 @@
 // src/lib/logging/llama-logger.ts
 // Centralized logging system for tracking entity lifecycle operations (creation, enrichment, correction, caching)
 
+import { logger as pinoLogger } from '@/lib/logger';
 import {
   PrismaClient,
   LlamaLog,
@@ -177,13 +178,17 @@ export class LlamaLogger {
         },
       });
 
-      const rootIndicator = isRootJob ? ' [ROOT]' : '';
-      const rootInfo = rootJobId ? ` root:${rootJobId.slice(0, 8)}` : '';
-      console.log(
-        `[🦙 LlamaLog] [${category}] ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}${rootInfo}`
-      );
+      pinoLogger.debug({
+        module: 'llama-log',
+        category,
+        operation: data.operation,
+        entityType: data.entityType,
+        entityId: data.entityId,
+        status: data.status,
+        isRootJob,
+      }, 'LlamaLog entry created');
     } catch (error) {
-      console.warn('[🦙 LlamaLog] Failed to log:', error);
+      pinoLogger.warn({ module: 'llama-log', err: error instanceof Error ? error.message : String(error) }, 'Failed to create LlamaLog entry');
       // Don't throw - logging shouldn't break the enrichment process
     }
   }

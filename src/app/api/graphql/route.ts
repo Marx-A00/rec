@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
   const clonedRequest = request.clone();
   const rawBody = await clonedRequest.text();
   if (!rawBody || rawBody.trim() === '') {
-    console.error('[GraphQL DEBUG] Empty request body received!', {
+    graphqlLogger.warn({
       url: request.url,
       method: request.method,
       contentType: request.headers.get('content-type'),
       referer: request.headers.get('referer'),
       userAgent: request.headers.get('user-agent'),
-    });
+    }, 'Empty request body received');
     return new Response(
       JSON.stringify({ errors: [{ message: 'Empty request body' }] }),
       {
@@ -91,11 +91,11 @@ export async function POST(request: NextRequest) {
     try {
       JSON.parse(rawBody);
     } catch {
-      console.error('[GraphQL DEBUG] Malformed JSON body:', {
+      graphqlLogger.warn({
         bodyPreview: rawBody.slice(0, 500),
         bodyLength: rawBody.length,
         referer: request.headers.get('referer'),
-      });
+      }, 'Malformed JSON body');
       return new Response(
         JSON.stringify({
           errors: [{ message: 'Malformed JSON in request body' }],

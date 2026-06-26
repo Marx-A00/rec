@@ -5,6 +5,8 @@
  * Creates the UncoverChallenge row for today (or a specified date).
  */
 
+import { queueLogger } from '@/lib/logger';
+
 import type {
   UncoverCreateDailyChallengeJobData,
   UncoverResetChallengesJobData,
@@ -21,15 +23,11 @@ export async function handleCreateDailyChallenge(
 
   const date = data.date ? new Date(data.date) : new Date();
 
-  console.log(
-    `🎯 [Uncover] Creating daily challenge for ${formatDateUTC(date)} (source: ${data.source ?? 'unknown'})`
-  );
+  queueLogger.info({ date: formatDateUTC(date), source: data.source ?? 'unknown' }, 'Creating daily challenge');
 
   const challenge = await getOrCreateDailyChallenge(date);
 
-  console.log(
-    `✅ [Uncover] Challenge ready for ${formatDateUTC(challenge.date)} — album: ${challenge.album.title}`
-  );
+  queueLogger.info({ date: formatDateUTC(challenge.date), albumTitle: challenge.album.title }, 'Daily challenge ready');
 
   return {
     albumId: challenge.albumId,
@@ -53,23 +51,19 @@ export async function handleResetChallenges(
 }> {
   const { prisma } = await import('@/lib/prisma');
 
-  console.log('🗑️ [Uncover] Resetting all challenge data...');
+  queueLogger.info('Resetting all challenge data');
 
   // Delete in FK order: guesses → sessions → challenges → stats
   const guessesDeleted = await prisma.uncoverGuess.deleteMany({});
-  console.log(`   Deleted ${guessesDeleted.count} guesses`);
-
   const sessionsDeleted = await prisma.uncoverSession.deleteMany({});
-  console.log(`   Deleted ${sessionsDeleted.count} sessions`);
-
   const challengesDeleted = await prisma.uncoverChallenge.deleteMany({});
-  console.log(`   Deleted ${challengesDeleted.count} challenges`);
-
   const playerStatsDeleted = await prisma.uncoverPlayerStats.deleteMany({});
-  console.log(`   Deleted ${playerStatsDeleted.count} player stats`);
-
   const archiveStatsDeleted = await prisma.uncoverArchiveStats.deleteMany({});
-  console.log(`   Deleted ${archiveStatsDeleted.count} archive stats`);
+
+  queueLogger.info(
+    { guesses: guessesDeleted.count, sessions: sessionsDeleted.count, challenges: challengesDeleted.count, playerStats: playerStatsDeleted.count, archiveStats: archiveStatsDeleted.count },
+    'Challenge data deleted'
+  );
 
   // Backfill challenges: 7 past days + today (oldest first so archive dates are sequential)
   const { getOrCreateDailyChallenge } = await import(
@@ -80,9 +74,7 @@ export async function handleResetChallenges(
   const today = getCentralToday();
   const newChallengeAlbumTitles: string[] = [];
 
-  console.log(
-    `🔄 [Uncover] Backfilling ${BACKFILL_DAYS} archive days + today...`
-  );
+  queueLogger.info({ backfillDays: BACKFILL_DAYS }, 'Backfilling archive days');
 
   for (let daysAgo = BACKFILL_DAYS; daysAgo >= 0; daysAgo--) {
     const date = new Date(today);
@@ -91,22 +83,14 @@ export async function handleResetChallenges(
     try {
       const challenge = await getOrCreateDailyChallenge(date);
       newChallengeAlbumTitles.push(challenge.album.title);
-      const label = daysAgo === 0 ? 'today' : `${daysAgo}d ago`;
-      console.log(
-        `   ✅ ${date.toISOString().split('T')[0]} (${label}): ${challenge.album.title}`
-      );
+      queueLogger.debug({ date: date.toISOString().split('T')[0], albumTitle: challenge.album.title }, 'Backfill challenge created');
     } catch (error) {
-      console.error(
-        `   ❌ Failed to create challenge for ${date.toISOString().split('T')[0]}:`,
-        error
-      );
+      queueLogger.error({ date: date.toISOString().split('T')[0], error: error instanceof Error ? error.message : String(error) }, 'Failed to create backfill challenge');
       // Continue with remaining days — partial backfill is better than none
     }
   }
 
-  console.log(
-    `✅ [Uncover] Reset complete. Created ${newChallengeAlbumTitles.length} challenges.`
-  );
+  queueLogger.info({ challengesCreated: newChallengeAlbumTitles.length }, 'Reset complete');
 
   return {
     challengesDeleted: challengesDeleted.count,

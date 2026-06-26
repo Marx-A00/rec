@@ -1,9 +1,10 @@
 // src/app/api/auth/check-username/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import prisma from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
@@ -31,10 +32,9 @@ export async function GET(request: NextRequest) {
       username: username.toLowerCase(),
     });
   } catch (error) {
-    console.error('Error checking username availability:', error);
     return NextResponse.json(
       { error: 'Failed to check username', available: false },
       { status: 500 }
     );
   }
-}
+});

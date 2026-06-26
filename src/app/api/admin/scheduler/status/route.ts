@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { Queue } from 'bullmq';
 
+import { withApiLogging } from '@/lib/api-utils';
 import {
   getSchedulerEnabled,
   getListenBrainzConfig,
@@ -54,7 +55,7 @@ interface SchedulerStatus {
   };
 }
 
-export async function GET() {
+export const GET = withApiLogging(async () => {
   try {
     const redisConnection = createRedisConnection();
     const queue = new Queue('musicbrainz', { connection: redisConnection });
@@ -244,7 +245,6 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Failed to get scheduler status:', error);
     return NextResponse.json(
       {
         success: false,
@@ -256,4 +256,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

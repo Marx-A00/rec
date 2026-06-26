@@ -9,13 +9,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import { getMusicBrainzQueue } from '@/lib/queue/musicbrainz-queue';
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
 import type { ComputeTasteMatchesJobData } from '@/lib/queue/jobs';
 
-export async function POST(req: NextRequest) {
+export const POST = withApiLogging(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -51,4 +52,4 @@ export async function POST(req: NextRequest) {
       ? `Taste match computation queued for user ${userId}`
       : 'Taste match computation queued for all users',
   });
-}
+});

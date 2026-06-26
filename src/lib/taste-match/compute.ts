@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -332,11 +333,9 @@ async function persistMatchesForUser(
  * pairwise scores in memory, and stores the top 15 matches per user.
  */
 export async function computeAllTasteMatches(): Promise<void> {
-  console.log('[TasteMatch] Fetching user fingerprints...');
+  logger.info({ module: 'taste-match' }, 'Fetching user fingerprints');
   const fingerprints = await fetchAllFingerprints();
-  console.log(
-    `[TasteMatch] Computing taste matches for ${fingerprints.size} users...`
-  );
+  logger.info({ module: 'taste-match', userCount: fingerprints.size }, 'Computing taste matches');
 
   let processed = 0;
 
@@ -355,13 +354,11 @@ export async function computeAllTasteMatches(): Promise<void> {
 
     processed++;
     if (processed % 50 === 0) {
-      console.log(
-        `[TasteMatch] Processed ${processed}/${fingerprints.size} users`
-      );
+      logger.debug({ module: 'taste-match', processed, total: fingerprints.size }, 'Processing taste matches');
     }
   }
 
-  console.log(`[TasteMatch] Done. Processed ${processed} users with artists.`);
+  logger.info({ module: 'taste-match', processed }, 'Taste match computation complete');
 }
 
 /**
@@ -371,18 +368,16 @@ export async function computeAllTasteMatches(): Promise<void> {
 export async function computeTasteMatchesForUser(
   userId: string
 ): Promise<void> {
-  console.log(`[TasteMatch] Computing matches for user ${userId}...`);
+  logger.info({ module: 'taste-match', userId }, 'Computing matches for user');
 
   const targetFp = await fetchFingerprintForUser(userId);
   if (!targetFp) {
-    console.log(`[TasteMatch] User ${userId} not found or deleted. Skipping.`);
+    logger.debug({ module: 'taste-match', userId }, 'User not found or deleted, skipping');
     return;
   }
 
   if (targetFp.artists.size === 0 && targetFp.albumIds.size === 0) {
-    console.log(
-      `[TasteMatch] User ${userId} has no artists or albums. Clearing matches.`
-    );
+    logger.debug({ module: 'taste-match', userId }, 'User has no artists or albums, clearing matches');
     await prisma.tasteMatch.deleteMany({ where: { userId } });
     return;
   }
@@ -398,7 +393,5 @@ export async function computeTasteMatchesForUser(
     await prisma.tasteMatch.deleteMany({ where: { userId } });
   }
 
-  console.log(
-    `[TasteMatch] User ${userId}: stored ${matches.length} matches (top score: ${matches[0]?.score ?? 0})`
-  );
+  logger.info({ module: 'taste-match', userId, matchCount: matches.length, topScore: matches[0]?.score ?? 0 }, 'Stored taste matches for user');
 }

@@ -1,13 +1,14 @@
 // @ts-nocheck - Schema migration broke API routes, needs GraphQL rewrite
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
-export async function POST(
+export const POST = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -143,10 +144,9 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error adding album to collection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});

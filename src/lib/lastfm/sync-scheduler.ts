@@ -12,6 +12,7 @@ import {
   setSchedulerEnabled,
 } from '@/lib/config/app-config';
 import { prisma } from '@/lib/prisma';
+import { lastfmLogger } from '@/lib/logger';
 
 const REPEATABLE_JOB_KEY = 'lastfm-dispatch-sync';
 const DEFAULT_INTERVAL_MINUTES = 10080; // 7 days
@@ -32,14 +33,14 @@ class LastfmSyncScheduler {
     await this.removeExistingSchedules();
     await this.scheduleDispatcher();
     this.isRunning = true;
-    console.log('[Last.fm Scheduler] Started');
+    lastfmLogger.info({ scheduler: 'lastfm' }, 'Last.fm scheduler started');
   }
 
   async stop(): Promise<void> {
     await setSchedulerEnabled('lastfm', false);
     await this.removeExistingSchedules();
     this.isRunning = false;
-    console.log('[Last.fm Scheduler] Stopped');
+    lastfmLogger.info({ scheduler: 'lastfm' }, 'Last.fm scheduler stopped');
   }
 
   async triggerSync(): Promise<void> {
@@ -100,15 +101,12 @@ class LastfmSyncScheduler {
         }
       }
     } catch (error) {
-      console.warn(
-        '[Last.fm Scheduler] Failed to remove existing schedules:',
-        error
-      );
+      lastfmLogger.warn({ scheduler: 'lastfm', error: error instanceof Error ? error.message : String(error) }, 'Failed to remove existing schedules');
     }
   }
 
   async dispatchSyncJobs(): Promise<void> {
-    console.log('[Last.fm Scheduler] Dispatching sync jobs...');
+    lastfmLogger.info({ scheduler: 'lastfm' }, 'Dispatching sync jobs');
 
     // Find users with Last.fm connected and sync enabled
     const users = await prisma.userSettings.findMany({
@@ -123,7 +121,7 @@ class LastfmSyncScheduler {
     });
 
     if (users.length === 0) {
-      console.log('[Last.fm Scheduler] No users with Last.fm connected');
+      lastfmLogger.info({ scheduler: 'lastfm' }, 'No users with Last.fm connected');
       return;
     }
 
@@ -143,9 +141,7 @@ class LastfmSyncScheduler {
       u => !recentlysynced.has(u.userId) && u.lastfmUsername
     );
 
-    console.log(
-      `[Last.fm Scheduler] ${eligibleUsers.length}/${users.length} users eligible for sync`
-    );
+    lastfmLogger.info({ scheduler: 'lastfm', eligible: eligibleUsers.length, total: users.length }, 'Users eligible for sync');
 
     const queue = getMusicBrainzQueue();
 
@@ -166,9 +162,7 @@ class LastfmSyncScheduler {
       });
     }
 
-    console.log(
-      `[Last.fm Scheduler] Enqueued ${eligibleUsers.length} sync jobs`
-    );
+    lastfmLogger.info({ scheduler: 'lastfm', count: eligibleUsers.length }, 'Enqueued sync jobs');
   }
 }
 
@@ -184,10 +178,7 @@ export async function initializeLastfmScheduler(): Promise<boolean> {
   try {
     dbEnabled = await getSchedulerEnabled('lastfm');
   } catch (error) {
-    console.warn(
-      '[Last.fm Scheduler] Failed to read DB state, defaulting to disabled:',
-      error
-    );
+    lastfmLogger.warn({ scheduler: 'lastfm', error: error instanceof Error ? error.message : String(error) }, 'Failed to read DB state, defaulting to disabled');
     return false;
   }
 
@@ -207,13 +198,13 @@ export async function initializeLastfmScheduler(): Promise<boolean> {
     if (bullmqHasJobs) {
       await lastfmScheduler.stop();
     }
-    console.log('[Last.fm Scheduler] Disabled (DB state)');
+    lastfmLogger.info({ scheduler: 'lastfm' }, 'Scheduler disabled (DB state)');
     return false;
   }
 
   // Env var override to disable
   if (process.env.LASTFM_SYNC_ENABLED === 'false') {
-    console.log('[Last.fm Scheduler] Disabled (env var)');
+    lastfmLogger.info({ scheduler: 'lastfm' }, 'Scheduler disabled (env var)');
     return false;
   }
 

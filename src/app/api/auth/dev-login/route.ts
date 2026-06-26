@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import prisma from '@/lib/prisma';
+import { authLogger } from '@/lib/logger';
 
 /**
  * DEV ONLY: Auto-login endpoint for development convenience.
@@ -49,7 +50,7 @@ export async function POST() {
       },
     });
   } catch (error) {
-    console.error('[dev-login] Error:', error);
+    authLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Dev login error');
     return NextResponse.json(
       { error: 'Failed to get dev credentials' },
       { status: 500 }

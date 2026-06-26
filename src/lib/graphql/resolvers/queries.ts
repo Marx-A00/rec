@@ -691,13 +691,12 @@ export const queryResolvers: QueryResolvers = {
         sources,
       });
 
-      // DEBUG: Log what we received from SearchOrchestrator
-      console.log(
-        `\n🔍 [GraphQL] Received from SearchOrchestrator: ${searchResults.results.length} results`
-      );
-      console.log(
-        `   Breakdown: ${searchResults.results.filter(r => r.type === 'track').length} tracks, ${searchResults.results.filter(r => r.type === 'album').length} albums, ${searchResults.results.filter(r => r.type === 'artist').length} artists`
-      );
+      graphqlLogger.debug({
+        totalResults: searchResults.results.length,
+        tracks: searchResults.results.filter(r => r.type === 'track').length,
+        albums: searchResults.results.filter(r => r.type === 'album').length,
+        artists: searchResults.results.filter(r => r.type === 'artist').length,
+      }, 'Received from SearchOrchestrator');
 
       // Track search activity with result count
       const searchType =
@@ -717,20 +716,10 @@ export const queryResolvers: QueryResolvers = {
       // Map search results back to entity objects
       // For tracks, include the full search result data (including cover art URL)
       // so that the frontend can display it without needing to resolve album relations
-      console.log(
-        `[GraphQL Resolver] searchResults.results.length: ${searchResults.results.length}`
-      );
-      console.log(
-        `[GraphQL Resolver] Track results: ${searchResults.results.filter(r => r.type === 'track').length}`
-      );
-      if (searchResults.results.length > 0) {
-        console.log(
-          `[GraphQL Resolver] First 3 result types:`,
-          searchResults.results
-            .slice(0, 3)
-            .map(r => ({ type: r.type, id: r.id, title: r.title }))
-        );
-      }
+      graphqlLogger.debug({
+        resultCount: searchResults.results.length,
+        trackCount: searchResults.results.filter(r => r.type === 'track').length,
+      }, 'Mapping search results to entities');
 
       const artists = searchResults.results
         .filter(r => r.type === 'artist')
@@ -754,19 +743,11 @@ export const queryResolvers: QueryResolvers = {
           return track as ResolversTypes['Track'];
         });
 
-      console.log(
-        `\n📤 [GraphQL Resolver] FINAL RETURN: ${tracks.length} tracks, ${albums.length} albums, ${artists.length} artists`
-      );
-      if (tracks.length > 0) {
-        console.log(`   First track:`, {
-          id: tracks[0].id,
-          title: tracks[0].title,
-        });
-        console.log(`   Last track:`, {
-          id: tracks[tracks.length - 1].id,
-          title: tracks[tracks.length - 1].title,
-        });
-      }
+      graphqlLogger.debug({
+        tracks: tracks.length,
+        albums: albums.length,
+        artists: artists.length,
+      }, 'Search final return');
 
       const returnValue = {
         artists,
@@ -775,10 +756,6 @@ export const queryResolvers: QueryResolvers = {
         total: artists.length + albums.length + tracks.length,
         hasMore: false, // Simplified for now
       };
-
-      console.log(
-        `   Return value tracks.length: ${returnValue.tracks.length}\n`
-      );
 
       return returnValue;
     } catch (error) {
@@ -841,7 +818,7 @@ export const queryResolvers: QueryResolvers = {
         hasMore,
       };
     } catch (error) {
-      console.error('Error fetching recommendation feed:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching recommendation feed');
       return {
         recommendations: [],
         cursor: null,
@@ -1166,18 +1143,11 @@ export const queryResolvers: QueryResolvers = {
 
   // User-specific queries (placeholders - require authentication)
   myCollections: async (_, __, { user, prisma }) => {
-    // Debug logging to check auth context
-    console.log('=== myCollections resolver ===');
-    console.log('User in GraphQL context:', user);
-    console.log('User ID:', user?.id);
-    console.log('User email:', user?.email);
-
     if (!user) {
-      console.log('No user found in context, throwing auth error');
       throw new GraphQLError('Authentication required');
     }
 
-    console.log(`Fetching collections for user: ${user.id}`);
+    graphqlLogger.debug({ userId: user.id }, 'Fetching myCollections');
     const collections = await prisma.collection.findMany({
       where: { userId: user.id },
       include: {
@@ -1198,12 +1168,7 @@ export const queryResolvers: QueryResolvers = {
       },
     });
 
-    console.log(`Found ${collections.length} collections for user ${user.id}`);
-    collections.forEach((col, idx) => {
-      console.log(
-        `  Collection ${idx + 1}: ${col.name} with ${col.albums?.length || 0} albums`
-      );
-    });
+    graphqlLogger.debug({ userId: user.id, count: collections.length }, 'Found collections');
 
     return collections;
   },
@@ -1330,7 +1295,7 @@ export const queryResolvers: QueryResolvers = {
         hasMore,
       };
     } catch (error) {
-      console.error('Error fetching user recommendations:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching user recommendations');
       return {
         recommendations: [],
         cursor: null,
@@ -1448,7 +1413,7 @@ export const queryResolvers: QueryResolvers = {
         },
       };
     } catch (error) {
-      console.error('Error fetching album recommendations:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching album recommendations');
       throw new GraphQLError(
         `Failed to fetch album recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -1647,7 +1612,7 @@ export const queryResolvers: QueryResolvers = {
         hasMore,
       };
     } catch (error) {
-      console.error('Error fetching social feed:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching social feed');
       return {
         activities: [],
         cursor: null,
@@ -1688,7 +1653,7 @@ export const queryResolvers: QueryResolvers = {
 
       return settings;
     } catch (error) {
-      console.error('Error fetching user settings:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching user settings');
       throw new GraphQLError('Failed to fetch settings');
     }
   },
@@ -1708,7 +1673,7 @@ export const queryResolvers: QueryResolvers = {
       const followedUserIds = followedUsers.map(f => f.followedId);
 
       if (followedUserIds.length === 0) {
-        console.log('User not following anyone, returning empty activity');
+        graphqlLogger.debug('User not following anyone, returning empty activity');
         return [];
       }
 
@@ -1745,7 +1710,7 @@ export const queryResolvers: QueryResolvers = {
 
       return recommendations;
     } catch (error) {
-      console.error('Error fetching following activity:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching following activity');
       return [];
     }
   },
@@ -2083,10 +2048,7 @@ export const queryResolvers: QueryResolvers = {
           artist.enrichmentStatus === 'FAILED',
       }));
     } catch (error) {
-      console.error(
-        `❌ [Search Error] Failed to search artists for "${args.query}":`,
-        error
-      );
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error), query: args.query }, 'Failed to search artists');
       throw new GraphQLError(
         `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2518,7 +2480,7 @@ export const queryResolvers: QueryResolvers = {
         })
         .filter(Boolean);
     } catch (error) {
-      console.error('Error fetching top recommended albums:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching top recommended albums');
       throw new GraphQLError(
         `Failed to fetch top recommended albums: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2590,7 +2552,7 @@ export const queryResolvers: QueryResolvers = {
         })
         .filter(Boolean);
     } catch (error) {
-      console.error('Error fetching top recommended artists:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching top recommended artists');
       throw new GraphQLError(
         `Failed to fetch top recommended artists: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2718,7 +2680,7 @@ export const queryResolvers: QueryResolvers = {
         hasMore: offset + recommendations.length < totalCount,
       };
     } catch (error) {
-      console.error('Error fetching artist recommendations:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching artist recommendations');
       throw new GraphQLError(
         `Failed to fetch artist recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2778,7 +2740,7 @@ export const queryResolvers: QueryResolvers = {
         hasMore: offset + jobs.length < totalCount,
       };
     } catch (error) {
-      console.error('Error fetching sync jobs:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching sync jobs');
       throw new GraphQLError(
         `Failed to fetch sync jobs: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2793,7 +2755,7 @@ export const queryResolvers: QueryResolvers = {
 
       return syncJob;
     } catch (error) {
-      console.error('Error fetching sync job:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching sync job');
       throw new GraphQLError(
         `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2808,7 +2770,7 @@ export const queryResolvers: QueryResolvers = {
 
       return syncJob;
     } catch (error) {
-      console.error('Error fetching sync job by jobId:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching sync job by jobId');
       throw new GraphQLError(
         `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -2983,13 +2945,11 @@ export const queryResolvers: QueryResolvers = {
           limit: limit ?? 10,
         });
 
-        // Debug: log the response structure
-        console.log('[correctionSearch] Discogs response:', {
+        graphqlLogger.debug({
           hasResponse: !!discogsResponse,
-          hasResults: !!discogsResponse?.results,
           resultsCount: discogsResponse?.resultsCount,
           resultsLength: discogsResponse?.results?.length,
-        });
+        }, 'Discogs correction search response');
 
         // Transform Discogs results to GraphQL format
         // Discogs does not have scoring, so wrap each result as a single-item group
@@ -3070,7 +3030,7 @@ export const queryResolvers: QueryResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in correctionSearch:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error in correctionSearch');
       throw new GraphQLError(
         'Correction search failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -3213,7 +3173,7 @@ export const queryResolvers: QueryResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in correctionPreview:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error in correctionPreview');
       throw new GraphQLError(
         'Correction preview failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -3305,7 +3265,7 @@ export const queryResolvers: QueryResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in artistCorrectionSearch:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error in artistCorrectionSearch');
       throw new GraphQLError(
         'Artist correction search failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -3369,7 +3329,7 @@ export const queryResolvers: QueryResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in artistCorrectionPreview:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error in artistCorrectionPreview');
       throw new GraphQLError(
         'Artist correction preview failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -4690,7 +4650,7 @@ export const queryResolvers: QueryResolvers = {
 
       return { users: topUsers, total: topUsers.length, timeframe };
     } catch (error) {
-      console.error('Error fetching trending users:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching trending users');
       return { users: [], total: 0, timeframe };
     }
   },
@@ -4796,7 +4756,7 @@ export const queryResolvers: QueryResolvers = {
       const result = processed.slice(0, limit);
       return { users: result, total: result.length };
     } catch (error) {
-      console.error('Error fetching new users:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching new users');
       return { users: [], total: 0 };
     }
   },
@@ -4812,7 +4772,7 @@ export const queryResolvers: QueryResolvers = {
         take: limit,
       });
     } catch (error) {
-      console.error('Error fetching browse new users:', error);
+      graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Error fetching browse new users');
       return [];
     }
   },

@@ -3,6 +3,7 @@
 
 import { EnrichmentStatus } from '@prisma/client';
 
+import { enrichmentLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 import { musicBrainzService } from '../musicbrainz';
@@ -79,10 +80,7 @@ export async function previewAlbumEnrichment(
           rawData = mbData;
         }
       } catch (error) {
-        console.warn(
-          `MusicBrainz lookup failed for ${album.musicbrainzId}:`,
-          error
-        );
+        enrichmentLogger.warn({ musicbrainzId: album.musicbrainzId, err: error instanceof Error ? error.message : String(error) }, 'MusicBrainz lookup failed');
         message = `MusicBrainz lookup failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
     }
@@ -362,7 +360,7 @@ export async function previewArtistEnrichment(
           rawData = mbData;
         }
       } catch (error) {
-        console.warn(`MusicBrainz artist lookup failed:`, error);
+        enrichmentLogger.warn({ err: error instanceof Error ? error.message : String(error) }, 'MusicBrainz artist lookup failed');
         message = `MusicBrainz lookup failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
     }

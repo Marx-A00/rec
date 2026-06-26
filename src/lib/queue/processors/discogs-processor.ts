@@ -5,6 +5,7 @@ import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
+import { queueLogger } from '@/lib/logger';
 
 import type {
   DiscogsSearchArtistJobData,
@@ -32,7 +33,7 @@ export async function handleDiscogsSearchArtist(
   const startTime = Date.now();
   const llamaLogger = createLlamaLogger(prisma);
 
-  console.log(`🔍 Searching Discogs for artist: "${data.artistName}"`);
+  queueLogger.info({ artistName: data.artistName }, 'Searching Discogs for artist');
 
   try {
     // Initialize Discogs client via dynamic import (ESM-friendly)
@@ -52,7 +53,7 @@ export async function handleDiscogsSearchArtist(
     });
 
     if (!searchResults.results || searchResults.results.length === 0) {
-      console.log(`❌ No Discogs results found for "${data.artistName}"`);
+      queueLogger.info({ artistName: data.artistName }, 'No Discogs results found');
 
       await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -83,9 +84,7 @@ export async function handleDiscogsSearchArtist(
       };
     }
 
-    console.log(
-      `📊 Found ${searchResults.results.length} Discogs results for "${data.artistName}"`
-    );
+    queueLogger.debug({ artistName: data.artistName, resultCount: searchResults.results.length }, 'Found Discogs search results');
 
     // Find best match using fuzzy matching
     const bestMatch = findBestDiscogsArtistMatch(
@@ -94,7 +93,7 @@ export async function handleDiscogsSearchArtist(
     );
 
     if (!bestMatch) {
-      console.log(`❌ No confident match found for "${data.artistName}"`);
+      queueLogger.info({ artistName: data.artistName }, 'No confident Discogs match found');
 
       await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -126,9 +125,7 @@ export async function handleDiscogsSearchArtist(
       };
     }
 
-    console.log(
-      `✅ Found Discogs match: "${bestMatch.result.title}" (ID: ${bestMatch.result.id}, confidence: ${(bestMatch.score * 100).toFixed(1)}%)`
-    );
+    queueLogger.info({ discogsTitle: bestMatch.result.title, discogsId: bestMatch.result.id, confidence: bestMatch.score }, 'Found Discogs match');
 
     // Extract Discogs ID and queue fetch job
     const discogsId = bestMatch.result.id;
@@ -158,7 +155,7 @@ export async function handleDiscogsSearchArtist(
       }
     );
 
-    console.log(`📤 Queued Discogs fetch for artist ${data.artistId}`);
+    queueLogger.debug({ artistId: data.artistId }, 'Queued Discogs fetch for artist');
 
     await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -195,7 +192,7 @@ export async function handleDiscogsSearchArtist(
       searchResults: searchResults.results, // Return all results for correction UI
     };
   } catch (error) {
-    console.error(`❌ Discogs search failed for "${data.artistName}":`, error);
+    queueLogger.error({ artistName: data.artistName, error: error instanceof Error ? error.message : String(error) }, 'Discogs search failed');
 
     await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -236,7 +233,7 @@ export async function handleDiscogsGetArtist(
   const startTime = Date.now();
   const llamaLogger = createLlamaLogger(prisma);
 
-  console.log(`🎤 Fetching Discogs artist details for ID: ${data.discogsId}`);
+  queueLogger.info({ discogsId: data.discogsId }, 'Fetching Discogs artist details');
 
   try {
     // Use unified artist service to fetch Discogs data
@@ -249,7 +246,7 @@ export async function handleDiscogsGetArtist(
     );
 
     if (!discogsArtist.imageUrl) {
-      console.log(`⚠️ No image found for Discogs artist ${data.discogsId}`);
+      queueLogger.info({ discogsId: data.discogsId }, 'No image found for Discogs artist');
 
       await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -285,7 +282,7 @@ export async function handleDiscogsGetArtist(
       data: { imageUrl: discogsArtist.imageUrl },
     });
 
-    console.log(`📸 Updated artist ${data.artistId} with Discogs image`);
+    queueLogger.info({ artistId: data.artistId }, 'Updated artist with Discogs image');
 
     // Queue Cloudflare caching job
     const queue = await import('../musicbrainz-queue').then(m =>
@@ -304,7 +301,7 @@ export async function handleDiscogsGetArtist(
       backoff: { type: 'exponential', delay: 2000 },
     });
 
-    console.log(`📤 Queued Cloudflare caching for artist ${data.artistId}`);
+    queueLogger.debug({ artistId: data.artistId }, 'Queued Cloudflare caching for artist');
 
     await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -337,10 +334,7 @@ export async function handleDiscogsGetArtist(
       imageUrl: discogsArtist.imageUrl,
     };
   } catch (error) {
-    console.error(
-      `❌ Failed to fetch Discogs artist ${data.discogsId}:`,
-      error
-    );
+    queueLogger.error({ discogsId: data.discogsId, error: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs artist');
 
     await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -384,10 +378,7 @@ export async function handleDiscogsSearchAlbum(
     '@/lib/discogs/mappers'
   );
 
-  const artistInfo = data.artistName ? ` by "${data.artistName}"` : '';
-  console.log(
-    `🔍 [Discogs Album Search] Searching for: "${data.albumTitle}"${artistInfo}`
-  );
+  queueLogger.info({ albumTitle: data.albumTitle, artistName: data.artistName }, 'Discogs album search started');
 
   try {
     // Initialize Discogs client via dynamic import (ESM-friendly)
@@ -423,9 +414,7 @@ export async function handleDiscogsSearchAlbum(
     const searchResults = await discogsClient.search(searchOptions);
 
     if (!searchResults.results || searchResults.results.length === 0) {
-      console.log(
-        `❌ [Discogs Album Search] No results found for "${data.albumTitle}"`
-      );
+      queueLogger.info({ albumTitle: data.albumTitle }, 'No Discogs album search results');
       return {
         albumId: data.albumId,
         action: 'search_complete',
@@ -434,9 +423,7 @@ export async function handleDiscogsSearchAlbum(
       };
     }
 
-    console.log(
-      `📊 [Discogs Album Search] Found ${searchResults.results.length} search results, fetching master details...`
-    );
+    queueLogger.debug({ resultCount: searchResults.results.length }, 'Discogs album search results found, fetching master details');
 
     // Fetch full master details for each result
     interface DiscogsSearchResultItem {
@@ -453,10 +440,7 @@ export async function handleDiscogsSearchAlbum(
           const master = await discogsClient.getMaster(masterId);
           return mapMasterToCorrectionSearchResult(master);
         } catch (error) {
-          console.warn(
-            `⚠️ [Discogs Album Search] Failed to fetch master ${result.id}:`,
-            error
-          );
+          queueLogger.warn({ masterId: result.id, error: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs master');
           return null;
         }
       }
@@ -467,9 +451,7 @@ export async function handleDiscogsSearchAlbum(
     );
 
     const duration = Date.now() - startTime;
-    console.log(
-      `✅ [Discogs Album Search] Returning ${results.length} mapped results (took ${duration}ms)`
-    );
+    queueLogger.info({ resultCount: results.length, duration }, 'Discogs album search complete');
 
     return {
       albumId: data.albumId,
@@ -478,7 +460,7 @@ export async function handleDiscogsSearchAlbum(
       results,
     };
   } catch (error) {
-    console.error(`❌ [Discogs Album Search] Failed:`, error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Discogs album search failed');
     throw error;
   }
 }
@@ -497,7 +479,7 @@ export async function handleDiscogsGetMaster(
   const data = job.data;
   const startTime = Date.now();
 
-  console.log('[Discogs Get Master] Fetching master ID: ' + data.masterId);
+  queueLogger.info({ masterId: data.masterId }, 'Fetching Discogs master');
 
   try {
     // Initialize Discogs client via dynamic import (ESM-friendly)
@@ -512,24 +494,12 @@ export async function handleDiscogsGetMaster(
     const master = await discogsClient.getMaster(parseInt(data.masterId, 10));
 
     const duration = Date.now() - startTime;
-    const year = master.year || 'unknown year';
-    console.log(
-      '[Discogs Get Master] Fetched "' +
-        master.title +
-        '" (' +
-        year +
-        ') in ' +
-        duration +
-        'ms'
-    );
+    queueLogger.info({ masterId: data.masterId, title: master.title, year: master.year, duration }, 'Fetched Discogs master');
 
     // Return full master object
     return master;
   } catch (error) {
-    console.error(
-      '[Discogs Get Master] Failed for ID ' + data.masterId + ':',
-      error
-    );
+    queueLogger.error({ masterId: data.masterId, error: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs master');
     throw error;
   }
 }

@@ -2,6 +2,7 @@
 // Proxy to worker service with API key authentication
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 
@@ -11,19 +12,19 @@ const WORKER_URL =
   'http://localhost:3001';
 const WORKER_API_KEY = process.env.WORKER_API_KEY || '';
 
-export async function GET(
+export const GET = withApiLogging(async (
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  return handleRequest(request, params, 'GET');
-}
+  { params }: { params: Promise<Record<string, string>> }
+) => {
+  return handleRequest(request, params as unknown as Promise<{ path: string[] }>, 'GET');
+});
 
-export async function POST(
+export const POST = withApiLogging(async (
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  return handleRequest(request, params, 'POST');
-}
+  { params }: { params: Promise<Record<string, string>> }
+) => {
+  return handleRequest(request, params as unknown as Promise<{ path: string[] }>, 'POST');
+});
 
 async function handleRequest(
   request: NextRequest,
@@ -76,7 +77,6 @@ async function handleRequest(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Worker proxy error:', error);
     return NextResponse.json(
       {
         error:

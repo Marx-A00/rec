@@ -4,6 +4,8 @@
  * Uses shared lastfm-base.ts for API calls.
  */
 
+import { lastfmLogger } from '@/lib/logger';
+
 import { lastfmFetch } from './lastfm-base';
 import type { LastfmImage } from './types';
 
@@ -119,12 +121,11 @@ export async function searchLastFmArtists(
 
   if (!result.success) {
     if (result.error.code === 'missing_api_key') {
-      console.warn(
-        '⚠️ [Last.fm] API key not configured, skipping Last.fm search'
-      );
+      lastfmLogger.warn('API key not configured, skipping Last.fm search');
     } else {
-      console.error(
-        `❌ [Last.fm] Search error: ${result.error.message} (${duration}ms)`
+      lastfmLogger.error(
+        { error: result.error.message, durationMs: duration },
+        'Search error'
       );
     }
     return [];
@@ -133,18 +134,13 @@ export async function searchLastFmArtists(
   const artists = result.data?.results?.artistmatches?.artist || [];
 
   if (!Array.isArray(artists)) {
-    console.warn(
-      `⚠️ [Last.fm] Unexpected response format for query "${query}"`
-    );
+    lastfmLogger.warn({ query }, 'Unexpected response format');
     return [];
   }
 
   const results: LastFmSearchResult[] = artists.map((artist: LastFmArtist) => {
     const imageUrl = extractBestImage(artist.image);
-    console.log(
-      `🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`,
-      artist.image
-    );
+    lastfmLogger.debug({ artist: artist.name, imageUrl: imageUrl || 'NONE' }, 'Artist image lookup');
     return {
       name: artist.name,
       mbid: artist.mbid || undefined,
@@ -154,9 +150,7 @@ export async function searchLastFmArtists(
     };
   });
 
-  console.log(
-    `✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`
-  );
+  lastfmLogger.info({ query, resultCount: results.length, durationMs: duration }, 'Artist search completed');
 
   return results;
 }
@@ -192,10 +186,11 @@ export async function getSimilarArtists(
 
   if (!result.success) {
     if (result.error.code === 'missing_api_key') {
-      console.warn('[Last.fm] API key not configured, skipping getSimilar');
+      lastfmLogger.warn('API key not configured, skipping getSimilar');
     } else {
-      console.error(
-        `[Last.fm] getSimilar error: ${result.error.message} (${duration}ms)`
+      lastfmLogger.error(
+        { error: result.error.message, durationMs: duration },
+        'getSimilar error'
       );
     }
     return [];
@@ -204,13 +199,11 @@ export async function getSimilarArtists(
   const artists = result.data?.similarartists?.artist || [];
 
   if (!Array.isArray(artists)) {
-    console.warn('[Last.fm] Unexpected getSimilar response format');
+    lastfmLogger.warn('Unexpected getSimilar response format');
     return [];
   }
 
-  console.log(
-    `[Last.fm] Found ${artists.length} similar artists (${duration}ms)`
-  );
+  lastfmLogger.info({ count: artists.length, durationMs: duration }, 'Found similar artists');
   return artists;
 }
 
@@ -235,8 +228,9 @@ export async function getLastFmArtistInfo(
 
   if (!result.success) {
     if (result.error.code !== 'missing_api_key') {
-      console.error(
-        `❌ [Last.fm] getinfo error: ${result.error.message} (${duration}ms)`
+      lastfmLogger.error(
+        { error: result.error.message, durationMs: duration },
+        'getinfo error'
       );
     }
     return null;
@@ -245,7 +239,7 @@ export async function getLastFmArtistInfo(
   const artist = result.data?.artist;
 
   if (!artist) {
-    console.warn(`⚠️ [Last.fm] No artist info found for "${artistName}"`);
+    lastfmLogger.warn({ artistName }, 'No artist info found');
     return null;
   }
 
@@ -258,9 +252,7 @@ export async function getLastFmArtistInfo(
     imageUrl: extractBestImage(artist.image as LastFmArtistImage[]),
   };
 
-  console.log(
-    `✅ [Last.fm] Got artist info for "${artistName}" (${duration}ms)`
-  );
+  lastfmLogger.info({ artistName, durationMs: duration }, 'Got artist info');
 
   return searchResult;
 }

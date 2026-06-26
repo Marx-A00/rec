@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * then sends the final result. Uses TransformStream so the Response is
  * returned immediately and events flow as they happen.
  */
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   // Auth check
   const session = await auth();
   if (!session?.user?.id) {
@@ -100,4 +101,4 @@ export async function GET(request: NextRequest) {
       'X-Accel-Buffering': 'no',
     },
   });
-}
+});

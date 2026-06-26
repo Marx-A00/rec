@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import { redis } from '@/lib/queue/redis';
@@ -16,7 +17,7 @@ async function checkAdmin() {
 /**
  * GET /api/admin/cache?action=stats|keys&pattern=cache:*
  */
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   const denied = await checkAdmin();
   if (denied) return denied;
 
@@ -61,12 +62,12 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-}
+});
 
 /**
  * DELETE /api/admin/cache?pattern=cache:spotify:*
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withApiLogging(async (request: NextRequest) => {
   const denied = await checkAdmin();
   if (denied) return denied;
 
@@ -82,4 +83,4 @@ export async function DELETE(request: NextRequest) {
   await cache.invalidatePattern(pattern);
 
   return NextResponse.json({ success: true, pattern });
-}
+});

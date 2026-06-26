@@ -1,5 +1,7 @@
 import { Client, DiscogsImage } from 'disconnect';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { withApiLogging } from '@/lib/api-utils';
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
@@ -11,14 +13,13 @@ const db = new Client({
 // Default placeholder image for labels without images
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
-export async function GET(
-  request: Request,
+export const GET = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   const { id } = await params;
 
   if (!id) {
-    console.log('Missing label ID parameter');
     return NextResponse.json(
       { error: 'Label ID is required' },
       { status: 400 }
@@ -26,19 +27,13 @@ export async function GET(
   }
 
   try {
-    console.log(`Fetching label details for ID: ${id}`);
-
     // Try to get the label details
     let labelDetails;
     try {
       labelDetails = await db.getLabel(id);
-      console.log(`Found label: ${labelDetails.name}`);
-    } catch (labelError) {
-      console.error('Error fetching label details:', labelError);
+    } catch {
       return NextResponse.json({ error: 'Label not found' }, { status: 404 });
     }
-
-    console.log('Raw label data:', JSON.stringify(labelDetails, null, 2));
 
     // Get the best image URL
     let imageUrl = PLACEHOLDER_IMAGE;
@@ -80,14 +75,11 @@ export async function GET(
       },
     };
 
-    console.log(`Successfully formatted label: ${label.title}`);
-
     return NextResponse.json({
       label,
       success: true,
     });
   } catch (error) {
-    console.error('Error fetching label:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch label',
@@ -96,4 +88,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

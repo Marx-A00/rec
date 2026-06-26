@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import {
   uploadImageFromFile,
   uploadImageFromUrl,
@@ -10,7 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '../../../../../auth';
 
 // Upload image from file
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -102,7 +103,6 @@ export async function POST(request: NextRequest) {
       variants: result.variants,
     });
   } catch (error) {
-    console.error('Upload error:', error);
     return NextResponse.json(
       {
         error:
@@ -111,10 +111,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Get direct upload URL for client-side uploads
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -131,10 +131,9 @@ export async function GET(request: NextRequest) {
       publicUrl: `${process.env.CLOUDFLARE_IMAGES_DELIVERY_URL}/${id}/public`,
     });
   } catch (error) {
-    console.error('Direct upload URL error:', error);
     return NextResponse.json(
       { error: 'Failed to generate upload URL' },
       { status: 500 }
     );
   }
-}
+});

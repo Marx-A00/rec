@@ -1,6 +1,8 @@
 // src/lib/enrichment/fetch-artist-biography.ts
 // Shared helper for fetching artist biographies from Wikipedia (primary) and Discogs (fallback)
 
+import { enrichmentLogger } from '@/lib/logger';
+
 interface MusicBrainzRelation {
   type: string;
   url?: { resource: string };
@@ -57,15 +59,10 @@ async function fetchWikipediaBiography(
     const extract = await fetchWikipediaExtract(wikiTitle);
     if (!extract) return undefined;
 
-    console.log(
-      `📝 Got Wikipedia biography for "${artistName}" (${extract.length} chars)`
-    );
+    enrichmentLogger.debug({ artistName, length: extract.length }, 'Got Wikipedia biography');
     return extract;
   } catch (error) {
-    console.warn(
-      `Failed to fetch Wikipedia biography for "${artistName}":`,
-      error
-    );
+    enrichmentLogger.warn({ artistName, err: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Wikipedia biography');
     return undefined;
   }
 }
@@ -141,19 +138,14 @@ async function fetchDiscogsBiography(
     if (discogsArtist.profile) {
       const cleaned = stripDiscogsMarkup(discogsArtist.profile);
       if (cleaned.length > 0) {
-        console.log(
-          `📝 Got Discogs biography for "${artistName}" (${cleaned.length} chars)`
-        );
+        enrichmentLogger.debug({ artistName, length: cleaned.length }, 'Got Discogs biography');
         return cleaned;
       }
     }
 
     return undefined;
   } catch (error) {
-    console.warn(
-      `Failed to fetch Discogs biography for "${artistName}":`,
-      error
-    );
+    enrichmentLogger.warn({ artistName, err: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs biography');
     return undefined;
   }
 }

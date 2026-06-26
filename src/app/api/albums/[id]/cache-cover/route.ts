@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { cacheAlbumArt } from '@/lib/cloudflare-images';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(
-  request: Request,
+export const POST = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const { id } = await params;
 
   if (!id) {
@@ -90,7 +91,6 @@ export async function POST(
       message: 'Album art cached successfully',
     });
   } catch (error) {
-    console.error('Error caching album art:', error);
     return NextResponse.json(
       {
         error: 'Failed to cache album art',
@@ -99,4 +99,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

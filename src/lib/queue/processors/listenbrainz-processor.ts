@@ -9,9 +9,8 @@
  *   4. Update SyncJob with results
  */
 
-import chalk from 'chalk';
-
 import { getSchedulerEnabled } from '@/lib/config/app-config';
+import { queueLogger } from '@/lib/logger';
 import {
   fetchFreshReleases,
   filterByArtistPopularity,
@@ -29,11 +28,7 @@ export async function handleListenBrainzSyncFreshReleases(
   if (data.source === 'scheduled') {
     const enabled = await getSchedulerEnabled('listenbrainz');
     if (!enabled) {
-      console.log(
-        chalk.yellow(
-          `⏸️  ListenBrainz scheduler disabled, skipping job ${jobId}`
-        )
-      );
+      queueLogger.info({ jobId }, 'ListenBrainz scheduler disabled, skipping job');
       return { success: true, skipped: true, reason: 'scheduler_disabled' };
     }
   }
@@ -65,11 +60,7 @@ export async function handleListenBrainzSyncFreshReleases(
     const maxReleases = data.maxReleases ?? 0;
     const minArtistListeners = data.minArtistListeners ?? 0;
 
-    console.log(
-      chalk.cyan(
-        `[ListenBrainz] Fetching fresh releases (days=${days}, future=${includeFuture})`
-      )
-    );
+    queueLogger.info({ days, includeFuture }, 'ListenBrainz fetching fresh releases');
 
     const releases = await fetchFreshReleases({
       days,
@@ -77,11 +68,7 @@ export async function handleListenBrainzSyncFreshReleases(
       sort: 'release_date',
     });
 
-    console.log(
-      chalk.cyan(
-        `[ListenBrainz] Fetched ${releases.length} releases, filtering by types: ${primaryTypes.join(', ')}`
-      )
-    );
+    queueLogger.info({ count: releases.length, primaryTypes }, 'ListenBrainz fetched releases, filtering');
 
     // 4. Filter by primary type and listen count (NOT maxReleases yet — applied after popularity)
     const typeFiltered = filterReleases(releases, {
@@ -89,11 +76,7 @@ export async function handleListenBrainzSyncFreshReleases(
       minListenCount,
     });
 
-    console.log(
-      chalk.cyan(
-        `[ListenBrainz] ${typeFiltered.length} releases after type/listen filter (${releases.length - typeFiltered.length} excluded)`
-      )
-    );
+    queueLogger.debug({ remaining: typeFiltered.length, excluded: releases.length - typeFiltered.length }, 'ListenBrainz type/listen filter applied');
 
     // 5. Filter by artist popularity (if configured)
     let popularityFiltered = typeFiltered;
@@ -102,20 +85,14 @@ export async function handleListenBrainzSyncFreshReleases(
         typeFiltered,
         minArtistListeners
       );
-      console.log(
-        chalk.cyan(
-          `[ListenBrainz] ${popularityFiltered.length} releases after artist popularity filter (>= ${minArtistListeners} listeners)`
-        )
-      );
+      queueLogger.debug({ remaining: popularityFiltered.length, minArtistListeners }, 'ListenBrainz popularity filter applied');
     }
 
     // 6. Apply maxReleases cap (after popularity sort, so top artists survive)
     let finalReleases = popularityFiltered;
     if (maxReleases > 0 && finalReleases.length > maxReleases) {
       finalReleases = finalReleases.slice(0, maxReleases);
-      console.log(
-        chalk.cyan(`[ListenBrainz] Capped to ${maxReleases} releases`)
-      );
+      queueLogger.debug({ maxReleases }, 'ListenBrainz capped releases');
     }
 
     // 7. Process into database
@@ -153,18 +130,13 @@ export async function handleListenBrainzSyncFreshReleases(
       });
     }
 
-    console.log(
-      chalk.green(
-        `[ListenBrainz] Sync complete: ${result.albumsCreated} created, ${result.albumsUpdated} updated, ${result.albumsSkipped} skipped, ${result.artistsCreated} artists created (${result.duration}ms)`
-      )
+    queueLogger.info(
+      { albumsCreated: result.albumsCreated, albumsUpdated: result.albumsUpdated, albumsSkipped: result.albumsSkipped, artistsCreated: result.artistsCreated, duration: result.duration },
+      'ListenBrainz sync complete'
     );
 
     if (result.errors.length > 0) {
-      console.warn(
-        chalk.yellow(
-          `[ListenBrainz] ${result.errors.length} errors during sync`
-        )
-      );
+      queueLogger.warn({ errorCount: result.errors.length }, 'ListenBrainz sync had errors');
     }
 
     return {
@@ -174,7 +146,7 @@ export async function handleListenBrainzSyncFreshReleases(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
-    console.error(chalk.red(`[ListenBrainz] Sync failed: ${message}`));
+    queueLogger.error({ error: message }, 'ListenBrainz sync failed');
 
     // Update SyncJob on failure
     if (syncJob) {

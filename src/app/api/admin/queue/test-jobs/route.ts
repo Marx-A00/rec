@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import { getMusicBrainzQueue } from '@/lib/queue/musicbrainz-queue';
@@ -268,7 +269,7 @@ function buildFakeJobs(count: number): JobSpec[] {
 // Route handler
 // ============================================================================
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -351,4 +352,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

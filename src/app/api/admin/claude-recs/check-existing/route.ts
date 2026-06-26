@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const session = await auth();
     if (!session?.user || !isAdmin(session.user.role)) {
@@ -48,10 +49,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ existing });
   } catch (error) {
-    console.error('Check existing albums error:', error);
     return NextResponse.json(
       { error: 'Failed to check existing albums' },
       { status: 500 }
     );
   }
-}
+});

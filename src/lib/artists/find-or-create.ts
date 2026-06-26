@@ -1,10 +1,10 @@
 // src/lib/artists/find-or-create.ts
 // Unified artist find-or-create helper used by all 13 creation sites
 
-import chalk from 'chalk';
 import type { Artist } from '@prisma/client';
 
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
+import { logger } from '@/lib/logger';
 import { redis } from '@/lib/queue/redis';
 import { publishEnrichmentEvent } from '@/lib/queue/enrichment-events';
 import type { CacheArtistImageJobData } from '@/lib/queue/jobs';
@@ -120,19 +120,11 @@ export async function findOrCreateArtist(
           where: { id: artist.id },
           data: updates,
         });
-        console.log(
-          chalk.magenta(
-            `[ARTIST-HELPER] BACKFILLED ${Object.keys(updates).join(', ')} on "${artist.name}" via ${caller}`
-          )
-        );
+        logger.debug({ module: 'artist-helper', fields: Object.keys(updates), name: artist.name, caller }, 'Backfilled external IDs');
       }
     }
 
-    console.log(
-      chalk.magenta(
-        `[ARTIST-HELPER] FOUND "${artist.name}" via ${caller} (dedup: ${dedupMethod})`
-      )
-    );
+    logger.debug({ module: 'artist-helper', name: artist.name, caller, dedupMethod }, 'Found existing artist');
     return { artist, created: false, dedupMethod };
   }
 
@@ -162,23 +154,14 @@ export async function findOrCreateArtist(
     },
   });
 
-  console.log(
-    chalk.magenta(
-      `[ARTIST-HELPER] CREATED "${artist.name}" via ${caller} (enrichment: ${enrichment})`
-    )
-  );
+  logger.info({ module: 'artist-helper', name: artist.name, caller, enrichment }, 'Created new artist');
 
   // ------------------------------------------------------------------
   // 4. Run side effects if not in a transaction
   // ------------------------------------------------------------------
   if (!insideTransaction && enrichment !== 'none') {
     await runPostCreateSideEffects(artist, options).catch(err =>
-      console.warn(
-        chalk.magenta(
-          `[ARTIST-HELPER] Side effect error for "${artist!.name}" (${artist!.id}):`
-        ),
-        err
-      )
+      logger.warn({ module: 'artist-helper', artistId: artist!.id, err: err instanceof Error ? err.message : String(err) }, 'Side effect error')
     );
   }
 
@@ -266,11 +249,7 @@ export async function runPostCreateSideEffects(
         entityName: artist.name,
       });
 
-      console.log(
-        chalk.magenta(
-          `[ARTIST-HELPER] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" via ${caller}`
-        )
-      );
+      logger.debug({ module: 'artist-helper', name: artist.name, caller }, 'Queued CHECK_ARTIST_ENRICHMENT');
     }
 
     // ------------------------------------------------------------------
@@ -292,11 +271,7 @@ export async function runPostCreateSideEffects(
           },
         });
 
-        console.log(
-          chalk.magenta(
-            `[ARTIST-HELPER] Set image for "${artist.name}" from Spotify via ${caller}`
-          )
-        );
+        logger.debug({ module: 'artist-helper', name: artist.name, caller }, 'Set image from Spotify');
 
         // Queue Cloudflare caching
         const { getMusicBrainzQueue } = await import('@/lib/queue');
@@ -365,27 +340,13 @@ export async function runPostCreateSideEffects(
         });
 
         if (updated.count > 0) {
-          console.log(
-            chalk.magenta(
-              `[ARTIST-HELPER] Backfilled ${updated.count} similar artist links for "${artist.name}"`
-            )
-          );
+          logger.debug({ module: 'artist-helper', count: updated.count, name: artist.name }, 'Backfilled similar artist links');
         }
       } catch (backfillError) {
-        console.warn(
-          chalk.magenta(
-            `[ARTIST-HELPER] Failed to backfill similar artist links for "${artist.name}":`
-          ),
-          backfillError
-        );
+        logger.warn({ module: 'artist-helper', name: artist.name, err: backfillError instanceof Error ? backfillError.message : String(backfillError) }, 'Failed to backfill similar artist links');
       }
     }
   } catch (error) {
-    console.warn(
-      chalk.magenta(
-        `[ARTIST-HELPER] Side effect error for artist ${artist.id}:`
-      ),
-      error
-    );
+    logger.warn({ module: 'artist-helper', artistId: artist.id, err: error instanceof Error ? error.message : String(error) }, 'Side effect error');
   }
 }

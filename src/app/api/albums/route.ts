@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import {
   albumRequestSchema,
   validateRequestBody,
@@ -23,7 +24,8 @@ const albums = [
   },
 ];
 
-export async function GET(): Promise<NextResponse> {
+export const GET = withApiLogging(async (
+): Promise<NextResponse> => {
   try {
     const response: AlbumListResponse = {
       albums,
@@ -31,7 +33,6 @@ export async function GET(): Promise<NextResponse> {
     };
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching albums:', error);
     const { response, status } = createErrorResponse(
       'Failed to fetch albums',
       500,
@@ -40,9 +41,11 @@ export async function GET(): Promise<NextResponse> {
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-}
+});
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export const POST = withApiLogging(async (
+  request: NextRequest,
+): Promise<NextResponse> => {
   try {
     // Parse request body
     const body: unknown = await request.json();
@@ -51,7 +54,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const validation = validateRequestBody(albumRequestSchema, body);
 
     if (!validation.success) {
-      console.error('Invalid album request body:', validation.details);
       const { response, status } = createErrorResponse(
         validation.error,
         400,
@@ -82,7 +84,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       status,
     });
   } catch (error) {
-    console.error('Error creating album:', error);
     const { response, status } = createErrorResponse(
       'Failed to create album',
       500,
@@ -91,4 +92,4 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-}
+});

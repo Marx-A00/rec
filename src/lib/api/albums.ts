@@ -1,5 +1,6 @@
 import { Client } from 'disconnect';
 
+import { apiLogger } from '@/lib/logger';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
 import {
@@ -33,9 +34,7 @@ export async function getAlbumDetails(
     throw new Error('Album ID is required');
   }
 
-  console.log(
-    `Fetching album details for ID: ${id}, source: ${options?.source || 'auto (local first)'}`
-  );
+  apiLogger.debug({ id, source: options?.source || 'auto' }, 'Fetching album details');
 
   const explicitSource = options?.source;
 
@@ -266,13 +265,13 @@ export async function getAlbumDetails(
             album.tracks = orderedTracks;
           }
         } catch (e) {
-          console.warn('Failed to fetch MB release with recordings:', e);
+          apiLogger.warn({ err: e instanceof Error ? e.message : String(e) }, 'Failed to fetch MB release with recordings');
         }
       }
 
       return album;
     } catch (err) {
-      console.error('MusicBrainz release-group fetch failed:', err);
+      apiLogger.error({ err: err instanceof Error ? err.message : String(err), id }, 'MusicBrainz release-group fetch failed');
       throw new Error('Album not found in MusicBrainz');
     }
   }
@@ -281,16 +280,16 @@ export async function getAlbumDetails(
   if (explicitSource === 'discogs') {
     try {
       const albumDetails: DiscogsMaster = await db.getMaster(id);
-      console.log(`Found master release: ${albumDetails.title}`);
+      apiLogger.debug({ title: albumDetails.title }, 'Found master release');
       return mapDiscogsMasterToAlbum(albumDetails);
     } catch {
-      console.log(`Not a master release, trying as regular release`);
+      apiLogger.debug('Not a master release, trying as regular release');
       try {
         const releaseDetails: DiscogsRelease = await db.getRelease(id);
-        console.log(`Found regular release: ${releaseDetails.title}`);
+        apiLogger.debug({ title: releaseDetails.title }, 'Found regular release');
         return mapDiscogsReleaseToAlbum(releaseDetails);
       } catch (releaseError) {
-        console.error('Error fetching release details:', releaseError);
+        apiLogger.error({ err: releaseError instanceof Error ? releaseError.message : String(releaseError) }, 'Error fetching release details');
         throw new Error('Album not found in Discogs');
       }
     }

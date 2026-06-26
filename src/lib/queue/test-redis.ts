@@ -5,65 +5,57 @@
  */
 
 import { redisManager, getQueueConfig } from './index';
+import { queueLogger } from '@/lib/logger';
 
 async function testRedisConnection() {
-  console.log('🔧 Testing Redis connection...\n');
+  queueLogger.info('Testing Redis connection');
 
   try {
     // Show configuration (without password)
     const config = redisManager.getConfig();
-    console.log('📋 Redis Configuration:');
-    console.log(JSON.stringify(config, null, 2));
-    console.log();
+    queueLogger.info({ config }, 'Redis configuration');
 
     // Test connection
-    console.log('🔗 Testing Redis connection...');
+    queueLogger.info('Testing Redis connection');
     const isConnected = await redisManager.testConnection();
 
     if (isConnected) {
-      console.log('✅ Redis connection successful!');
+      queueLogger.info('Redis connection successful');
 
       // Test basic operations
       const redis = redisManager.getClient();
       await redis.set('test:key', 'test-value', 'EX', 10); // Expire in 10 seconds
       const value = await redis.get('test:key');
-      console.log(
-        `✅ Redis set/get test: ${value === 'test-value' ? 'PASSED' : 'FAILED'}`
+      queueLogger.info(
+        { result: value === 'test-value' ? 'PASSED' : 'FAILED' },
+        'Redis set/get test'
       );
 
       // Clean up
       await redis.del('test:key');
-      console.log('🧹 Test cleanup completed');
+      queueLogger.info('Test cleanup completed');
     } else {
-      console.log('❌ Redis connection failed!');
-      console.log('\n💡 Make sure Redis is running:');
-      console.log(
-        '   - Install: brew install redis (macOS) or apt install redis (Ubuntu)'
-      );
-      console.log('   - Start: redis-server');
-      console.log(
-        '   - Or use Docker: docker run -d -p 6379:6379 redis:alpine'
-      );
+      queueLogger.error('Redis connection failed — ensure Redis is running');
     }
   } catch (error) {
-    console.error('❌ Redis test failed:', error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Redis test failed');
   } finally {
     // Graceful shutdown
     await redisManager.disconnect();
-    console.log('\n✅ Test completed');
+    queueLogger.info('Test completed');
     process.exit(0);
   }
 }
 
 // Validate queue configuration
-console.log('⚙️ Validating queue configuration...');
+queueLogger.info('Validating queue configuration');
 try {
   const queueConfig = getQueueConfig();
-  console.log('✅ Queue configuration valid\n');
+  queueLogger.info('Queue configuration valid');
 
   // Run the test
   testRedisConnection();
 } catch (error) {
-  console.error('❌ Queue configuration validation failed:', error);
+  queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Queue configuration validation failed');
   process.exit(1);
 }

@@ -7,23 +7,24 @@
 import { processMusicBrainzJob } from './processors';
 
 import { getMusicBrainzQueue, JOB_TYPES } from './index';
+import { queueLogger } from '@/lib/logger';
 
 async function testMusicBrainzQueue() {
-  console.log('🧪 Testing MusicBrainz Queue System...\n');
+  queueLogger.info('Testing MusicBrainz Queue System');
 
   const queue = getMusicBrainzQueue();
   let worker = null;
 
   try {
     // Create and start the worker
-    console.log('🔧 Creating worker with rate limiting (1 req/sec)...');
+    queueLogger.info('Creating worker with rate limiting (1 req/sec)');
     worker = queue.createWorker(processMusicBrainzJob);
 
     // Wait a bit for worker to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Test 1: Search for artists
-    console.log('\n📋 Test 1: Search Artists');
+    queueLogger.info('Test 1: Search Artists');
     const artistJob = await queue.addJob(
       JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS,
       {
@@ -36,7 +37,7 @@ async function testMusicBrainzQueue() {
     );
 
     // Test 2: Search for releases
-    console.log('📋 Test 2: Search Releases');
+    queueLogger.info('Test 2: Search Releases');
     const releaseJob = await queue.addJob(
       JOB_TYPES.MUSICBRAINZ_SEARCH_RELEASES,
       {
@@ -49,7 +50,7 @@ async function testMusicBrainzQueue() {
     );
 
     // Test 3: Multiple searches to test rate limiting
-    console.log('📋 Test 3: Multiple Jobs (Rate Limiting Test)');
+    queueLogger.info('Test 3: Multiple Jobs (Rate Limiting Test)');
     const jobs = await Promise.all([
       queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, {
         query: 'The Beatles',
@@ -62,13 +63,10 @@ async function testMusicBrainzQueue() {
       }),
     ]);
 
-    console.log(`✅ Queued ${jobs.length + 2} jobs successfully`);
+    queueLogger.info({ jobCount: jobs.length + 2 }, 'Queued jobs successfully');
 
     // Wait for jobs to complete and show progress
-    console.log(
-      '\n⏳ Waiting for jobs to complete (this will take ~5+ seconds due to 1 req/sec rate limiting)...'
-    );
-    console.log('👀 Watch the console for job processing messages...');
+    queueLogger.info('Waiting for jobs to complete (rate limited at 1 req/sec)');
 
     // Monitor queue for 10 seconds to see jobs processing
     let completedJobs = 0;
@@ -76,8 +74,9 @@ async function testMusicBrainzQueue() {
 
     const monitorInterval = setInterval(async () => {
       const stats = await queue.getStats();
-      console.log(
-        `📊 Queue Status: ${stats.completed} completed, ${stats.active} active, ${stats.waiting} waiting`
+      queueLogger.debug(
+        { completed: stats.completed, active: stats.active, waiting: stats.waiting },
+        'Queue status'
       );
 
       if (stats.completed >= totalJobs) {
@@ -106,27 +105,26 @@ async function testMusicBrainzQueue() {
     });
 
     // Show queue metrics
-    console.log('\n📈 Queue Metrics:');
     const metrics = await queue.getMetrics();
-    console.log(JSON.stringify(metrics, null, 2));
+    queueLogger.info({ metrics }, 'Queue metrics');
 
-    console.log('\n✅ Queue test completed successfully!');
-    console.log(
-      '🎯 Rate limiting working: Jobs processed at ~1 request/second'
-    );
+    queueLogger.info('Queue test completed successfully');
+    queueLogger.info('Rate limiting working: Jobs processed at ~1 request/second');
   } catch (error) {
-    console.error('❌ Queue test failed:', error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Queue test failed');
   } finally {
     // Cleanup
-    console.log('\n🧹 Cleaning up...');
+    queueLogger.info('Cleaning up');
     if (worker) {
       await queue.destroyWorker();
     }
     await queue.close();
-    console.log('✅ Cleanup completed');
+    queueLogger.info('Cleanup completed');
     process.exit(0);
   }
 }
 
 // Run the test
-testMusicBrainzQueue().catch(console.error);
+testMusicBrainzQueue().catch(err => {
+  queueLogger.error({ error: err instanceof Error ? err.message : String(err) }, 'Queue test failed');
+});

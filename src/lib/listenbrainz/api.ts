@@ -9,6 +9,8 @@
  * Endpoint docs: https://listenbrainz.readthedocs.io/en/latest/users/api/explore.html
  */
 
+import { listenbrainzLogger } from '@/lib/logger';
+
 import type {
   ListenBrainzArtistPopularity,
   ListenBrainzFreshRelease,
@@ -44,8 +46,9 @@ export async function fetchSimilarArtists(
     });
 
     if (!response.ok) {
-      console.error(
-        `[ListenBrainz Labs] Similar artists error: ${response.status} ${response.statusText}`
+      listenbrainzLogger.error(
+        { statusCode: response.status, statusText: response.statusText },
+        'Similar artists API error'
       );
       return [];
     }
@@ -53,17 +56,19 @@ export async function fetchSimilarArtists(
     const data: ListenBrainzSimilarArtist[] = await response.json();
 
     if (!Array.isArray(data)) {
-      console.warn('[ListenBrainz Labs] Unexpected response format');
+      listenbrainzLogger.warn('Unexpected similar artists response format');
       return [];
     }
 
-    console.log(
-      `[ListenBrainz Labs] Found ${data.length} similar artists for ${artistMbid}`
+    listenbrainzLogger.info(
+      { artistMbid, count: data.length },
+      'Found similar artists'
     );
     return data;
   } catch (error: unknown) {
-    console.error(
-      `[ListenBrainz Labs] fetchSimilarArtists error: ${error instanceof Error ? error.message : 'unknown'}`
+    listenbrainzLogger.error(
+      { error: error instanceof Error ? error.message : 'unknown' },
+      'fetchSimilarArtists error'
     );
     return [];
   }
@@ -130,8 +135,9 @@ export async function fetchFreshReleases(
   const resetIn = response.headers.get('X-RateLimit-Reset-In');
 
   if (remaining && parseInt(remaining) < 10) {
-    console.warn(
-      `ListenBrainz rate limit low: ${remaining} remaining, resets in ${resetIn}s`
+    listenbrainzLogger.warn(
+      { remaining: parseInt(remaining), resetInSeconds: resetIn },
+      'Rate limit low'
     );
   }
 
@@ -224,8 +230,9 @@ export async function fetchArtistPopularity(
       });
 
       if (!response.ok) {
-        console.warn(
-          `[ListenBrainz] Popularity API batch ${Math.floor(i / POPULARITY_BATCH_SIZE) + 1} failed: ${response.status} ${response.statusText}`
+        listenbrainzLogger.warn(
+          { batch: Math.floor(i / POPULARITY_BATCH_SIZE) + 1, statusCode: response.status, statusText: response.statusText },
+          'Popularity API batch failed'
         );
         continue;
       }
@@ -238,9 +245,9 @@ export async function fetchArtistPopularity(
         }
       }
     } catch (error) {
-      console.warn(
-        `[ListenBrainz] Popularity API batch ${Math.floor(i / POPULARITY_BATCH_SIZE) + 1} error:`,
-        error instanceof Error ? error.message : error
+      listenbrainzLogger.warn(
+        { batch: Math.floor(i / POPULARITY_BATCH_SIZE) + 1, error: error instanceof Error ? error.message : String(error) },
+        'Popularity API batch error'
       );
       continue;
     }
@@ -275,8 +282,9 @@ export async function filterByArtistPopularity(
     ),
   ];
 
-  console.log(
-    `[ListenBrainz] Looking up popularity for ${uniqueMbids.length} unique artists...`
+  listenbrainzLogger.info(
+    { uniqueArtists: uniqueMbids.length },
+    'Looking up artist popularity'
   );
 
   // 2. Batch fetch popularity
@@ -284,9 +292,7 @@ export async function filterByArtistPopularity(
 
   // Graceful degradation: if we got nothing back, skip filtering
   if (popularityMap.size === 0) {
-    console.warn(
-      '[ListenBrainz] Popularity API returned no data, skipping artist filter'
-    );
+    listenbrainzLogger.warn('Popularity API returned no data, skipping artist filter');
     return releases;
   }
 
@@ -309,8 +315,9 @@ export async function filterByArtistPopularity(
     return bCount - aCount;
   });
 
-  console.log(
-    `[ListenBrainz] ${filtered.length} releases passed artist popularity filter (>= ${minArtistListeners} listeners)`
+  listenbrainzLogger.info(
+    { passedCount: filtered.length, minArtistListeners },
+    'Releases passed artist popularity filter'
   );
 
   return filtered;

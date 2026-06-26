@@ -2,7 +2,6 @@
 // src/lib/graphql/resolvers/mutations.ts
 // Mutation resolvers for GraphQL API
 
-import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
 import {
@@ -230,7 +229,7 @@ export const mutationResolvers: MutationResolvers = {
           await job.retry();
           retriedCount++;
         } catch (error) {
-          console.error(`Failed to retry job ${job.id}:`, error);
+          graphqlLogger.error({ jobId: job.id, error: (error as Error).message }, 'Failed to retry job');
         }
       }
 
@@ -502,8 +501,9 @@ export const mutationResolvers: MutationResolvers = {
         ),
       ];
 
-      console.log(
-        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: Found ${albumIds.length} albums from SyncJob ${syncJobId}`
+      graphqlLogger.info(
+        { syncJobId, albumCount: albumIds.length, dryRun },
+        'Rollback: albums found from SyncJob'
       );
 
       // 3. Find artists that would become orphaned (no other albums)
@@ -522,8 +522,9 @@ export const mutationResolvers: MutationResolvers = {
         }
       }
 
-      console.log(
-        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: ${artistsToDelete.length} artists would become orphaned`
+      graphqlLogger.info(
+        { syncJobId, orphanedArtistCount: artistsToDelete.length, dryRun },
+        'Rollback: orphaned artists identified'
       );
 
       // 4. If dry run, return what would be deleted
@@ -544,14 +545,14 @@ export const mutationResolvers: MutationResolvers = {
         where: { id: { in: albumIds } },
       });
 
-      console.log(`🗑️  Deleted ${deleteAlbumsResult.count} albums`);
+      graphqlLogger.info({ count: deleteAlbumsResult.count }, 'Rollback: albums deleted');
 
       // Delete orphaned artists
       const deleteArtistsResult = await prisma.artist.deleteMany({
         where: { id: { in: artistsToDelete } },
       });
 
-      console.log(`🗑️  Deleted ${deleteArtistsResult.count} orphaned artists`);
+      graphqlLogger.info({ count: deleteArtistsResult.count }, 'Rollback: orphaned artists deleted');
 
       // 6. Update SyncJob status to CANCELLED to indicate rollback
       await prisma.syncJob.update({
@@ -740,15 +741,15 @@ export const mutationResolvers: MutationResolvers = {
           jobOptions
         );
       } catch (queueError) {
-        console.warn(
-          'Failed to queue enrichment check for new track:',
-          queueError
+        graphqlLogger.warn(
+          { error: (queueError as Error).message },
+          'Failed to queue enrichment check for new track'
         );
       }
 
       return track;
     } catch (error) {
-      console.error('Error creating track:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error creating track');
       throw new GraphQLError('Failed to create track', {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -801,7 +802,7 @@ export const mutationResolvers: MutationResolvers = {
 
       return updatedTrack;
     } catch (error) {
-      console.error('Error updating track:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error updating track');
       throw new GraphQLError('Failed to update track', {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -834,7 +835,7 @@ export const mutationResolvers: MutationResolvers = {
 
       return true;
     } catch (error) {
-      console.error('Error deleting track:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error deleting track');
       throw new GraphQLError('Failed to delete track', {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -865,8 +866,9 @@ export const mutationResolvers: MutationResolvers = {
         });
 
         if (existingAlbum) {
-          console.log(
-            `🔄 Album already exists by MBID: "${existingAlbum.title}" (${existingAlbum.id})`
+          graphqlLogger.debug(
+            { albumId: existingAlbum.id, title: existingAlbum.title, musicbrainzId: input.musicbrainzId },
+            'Album already exists by MBID'
           );
           return existingAlbum;
         }
@@ -901,8 +903,9 @@ export const mutationResolvers: MutationResolvers = {
         });
 
         if (existingByTitleArtist) {
-          console.log(
-            `🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" by ${primaryArtistName} (${existingByTitleArtist.id})`
+          graphqlLogger.debug(
+            { albumId: existingByTitleArtist.id, title: existingByTitleArtist.title, artist: primaryArtistName },
+            'Album already exists by title+artist'
           );
           return existingByTitleArtist;
         }
@@ -1012,9 +1015,9 @@ export const mutationResolvers: MutationResolvers = {
             jobOptions.delay
           );
         } catch (queueError) {
-          console.warn(
-            'Failed to queue enrichment check for new album:',
-            queueError
+          graphqlLogger.warn(
+            { error: (queueError as Error).message },
+            'Failed to queue enrichment check for new album'
           );
         }
       });
@@ -1032,7 +1035,7 @@ export const mutationResolvers: MutationResolvers = {
         },
       })) as any;
     } catch (error) {
-      console.error('Error creating album:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error creating album');
       throw new GraphQLError('Failed to create album', {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -1093,14 +1096,14 @@ export const mutationResolvers: MutationResolvers = {
               { source: 'manual_add' }
             );
           } catch (err) {
-            console.warn('Failed to track artist activity:', err);
+            graphqlLogger.warn({ error: (err as Error).message }, 'Failed to track artist activity');
           }
         });
       }
 
       return artist as any;
     } catch (error) {
-      console.error('Error creating artist:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error creating artist');
       throw new GraphQLError('Failed to create artist', {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -1169,7 +1172,7 @@ export const mutationResolvers: MutationResolvers = {
       if (error instanceof GraphQLError) {
         throw error;
       }
-      console.error('Error deleting artist:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error deleting artist');
       throw new GraphQLError(`Failed to delete artist: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -1422,6 +1425,7 @@ export const mutationResolvers: MutationResolvers = {
         invalidateCollectionCache(collectionId, user.id),
         invalidateAlbumCache(albumId),
       ]);
+      graphqlLogger.info({ collectionId, albumId, userId: user.id }, 'Album removed from collection');
       return true;
     } catch (error) {
       throw new GraphQLError(
@@ -1729,9 +1733,9 @@ export const mutationResolvers: MutationResolvers = {
           },
         });
       } catch (logError) {
-        console.warn(
-          '[LlamaLogger] Failed to log recommendation creation:',
-          logError
+        graphqlLogger.warn(
+          { error: (logError as Error).message },
+          'Failed to log recommendation creation'
         );
       }
 
@@ -1755,9 +1759,9 @@ export const mutationResolvers: MutationResolvers = {
             dataQualityAfter: 'LOW',
           });
         } catch (logError) {
-          console.warn(
-            '[LlamaLogger] Failed to log artist creation:',
-            logError
+          graphqlLogger.warn(
+            { error: (logError as Error).message },
+            'Failed to log artist creation'
           );
         }
       }
@@ -1824,16 +1828,15 @@ export const mutationResolvers: MutationResolvers = {
                 attempts: 3,
               }
             );
-            console.log(
-              chalk.magenta(
-                `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" from createRecommendation mutation`
-              )
+            graphqlLogger.debug(
+              { artistId: artist.id, artistName: artist.name },
+              'Queued artist enrichment check from createRecommendation'
             );
           }
         } catch (queueError) {
-          console.warn(
-            'Failed to queue enrichment checks for recommendation creation:',
-            queueError
+          graphqlLogger.warn(
+            { error: (queueError as Error).message },
+            'Failed to queue enrichment checks for recommendation creation'
           );
         }
       });
@@ -1893,6 +1896,7 @@ export const mutationResolvers: MutationResolvers = {
         return rec;
       });
 
+      graphqlLogger.info({ recommendationId: id, score, userId: user.id }, 'Recommendation score updated');
       return updatedRecommendation;
     } catch (error) {
       throw new GraphQLError(`Failed to update recommendation: ${error}`);
@@ -1937,6 +1941,7 @@ export const mutationResolvers: MutationResolvers = {
       );
       await invalidateUserRecsCache(user.id);
 
+      graphqlLogger.info({ recommendationId: id, userId: user.id }, 'Recommendation deleted');
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to delete recommendation: ${error}`);
@@ -2119,6 +2124,7 @@ export const mutationResolvers: MutationResolvers = {
         }
       });
 
+      graphqlLogger.info({ userId: user.id, targetUserId: userId }, 'User unfollowed');
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to unfollow user: ${error}`);
@@ -2146,6 +2152,11 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
+      const updates = {
+        ...(username !== undefined && { username }),
+        ...(bio !== undefined && { bio }),
+        ...(image !== undefined && { image }),
+      };
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -2155,6 +2166,7 @@ export const mutationResolvers: MutationResolvers = {
           profileUpdatedAt: new Date(),
         },
       });
+      graphqlLogger.info({ userId: user.id, fields: Object.keys(updates) }, 'Profile updated');
       return updatedUser;
     } catch (error) {
       throw new GraphQLError(`Failed to update profile: ${error}`);
@@ -2493,26 +2505,18 @@ export const mutationResolvers: MutationResolvers = {
 
   // User Settings mutations
   updateDashboardLayout: async (_, { layout }, context) => {
-    console.log('=== updateDashboardLayout mutation called ===');
-    console.log('Full context:', context);
-    console.log('Context keys:', Object.keys(context));
-    console.log('Context user:', context.user);
-    console.log('Context prisma:', context.prisma);
-    console.log('Layout received:', layout);
+    graphqlLogger.debug({ layout }, 'updateDashboardLayout mutation called');
 
     const { user, prisma } = context;
 
     if (!user) {
-      console.error('No user in context!');
       throw new GraphQLError('Authentication required');
     }
     if (!prisma) {
-      console.error('No prisma client in context!');
       throw new GraphQLError('Database connection error');
     }
 
     try {
-      console.log(`Upserting settings for user ${user.id}`);
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
         update: {
@@ -2535,10 +2539,10 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      console.log(`Updated dashboard layout for user ${user.id}`);
+      graphqlLogger.info({ userId: user.id }, 'Dashboard layout updated');
       return settings;
     } catch (error) {
-      console.error('Failed to update dashboard layout:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Failed to update dashboard layout');
       throw new GraphQLError(`Failed to update dashboard layout: ${error}`);
     }
   },
@@ -2748,8 +2752,9 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      console.log(
-        `Admin ${user.id} updated showOnboardingTour for user ${userId} to ${showOnboardingTour}`
+      graphqlLogger.info(
+        { adminUserId: user.id, targetUserId: userId, showOnboardingTour },
+        'Admin updated showOnboardingTour'
       );
 
       return {
@@ -2863,7 +2868,7 @@ export const mutationResolvers: MutationResolvers = {
       if (error instanceof GraphQLError) {
         throw error;
       }
-      console.error('Error deleting album:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error deleting album');
       throw new GraphQLError(`Failed to delete album: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -3130,7 +3135,7 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in correctionApply:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error in correctionApply');
       throw new GraphQLError(
         'Correction apply failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -3331,15 +3336,14 @@ export const mutationResolvers: MutationResolvers = {
                 attempts: 3,
               });
             }
-            console.log(
-              chalk.magenta(
-                `[ARTIST-HELPER] Queued enrichment for ${newlyCreatedArtistIds.length} new artist(s) from manualCorrectionApply`
-              )
+            graphqlLogger.debug(
+              { count: newlyCreatedArtistIds.length },
+              'Queued artist enrichment from manualCorrectionApply'
             );
           } catch (err) {
-            console.warn(
-              'Failed to queue artist enrichment after manual correction:',
-              err
+            graphqlLogger.warn(
+              { error: (err as Error).message },
+              'Failed to queue artist enrichment after manual correction'
             );
           }
         });
@@ -3354,7 +3358,7 @@ export const mutationResolvers: MutationResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in manualCorrectionApply:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error in manualCorrectionApply');
       throw new GraphQLError(
         'Manual correction failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -3474,7 +3478,7 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       if (error instanceof GraphQLError) throw error;
-      console.error('Error in artistCorrectionApply:', error);
+      graphqlLogger.error({ error: (error as Error).message }, 'Error in artistCorrectionApply');
       throw new GraphQLError(
         'Artist correction apply failed: ' +
           (error instanceof Error ? error.message : 'Unknown error'),
@@ -4080,8 +4084,9 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      console.log(
-        `[ADMIN] Owner ${context.user.id} soft-deleted user ${userId} (${targetUser.username || targetUser.email})`
+      graphqlLogger.info(
+        { adminUserId: context.user.id, targetUserId: userId, targetUsername: targetUser.username || targetUser.email },
+        'User soft-deleted'
       );
 
       return {
@@ -4091,7 +4096,7 @@ export const mutationResolvers: MutationResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error soft-deleting user:', error);
+      graphqlLogger.error({ error: (error as Error).message, userId }, 'Error soft-deleting user');
       throw new GraphQLError(`Failed to soft-delete user: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -4189,10 +4194,17 @@ export const mutationResolvers: MutationResolvers = {
         };
       });
 
-      console.log(
-        `[ADMIN] Owner ${context.user.id} HARD-DELETED user ${userId} (${targetUser.username || targetUser.email}). ` +
-          `Removed: ${result.collections} collections, ${result.recommendations} recommendations, ` +
-          `${result.follows} follows, ${result.activities} activities`
+      graphqlLogger.info(
+        {
+          adminUserId: context.user.id,
+          targetUserId: userId,
+          targetUsername: targetUser.username || targetUser.email,
+          collections: result.collections,
+          recommendations: result.recommendations,
+          follows: result.follows,
+          activities: result.activities,
+        },
+        'User hard-deleted'
       );
 
       return {
@@ -4204,7 +4216,7 @@ export const mutationResolvers: MutationResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error hard-deleting user:', error);
+      graphqlLogger.error({ error: (error as Error).message, userId }, 'Error hard-deleting user');
       throw new GraphQLError(`Failed to hard-delete user: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });
@@ -4234,8 +4246,9 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      console.log(
-        `[ADMIN] Owner ${context.user.id} restored user ${userId} (${targetUser.username || targetUser.email})`
+      graphqlLogger.info(
+        { adminUserId: context.user.id, targetUserId: userId, targetUsername: targetUser.username || targetUser.email },
+        'User restored'
       );
 
       return {
@@ -4245,7 +4258,7 @@ export const mutationResolvers: MutationResolvers = {
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      console.error('Error restoring user:', error);
+      graphqlLogger.error({ error: (error as Error).message, userId }, 'Error restoring user');
       throw new GraphQLError(`Failed to restore user: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });

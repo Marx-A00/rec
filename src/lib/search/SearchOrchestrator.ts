@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import chalk from 'chalk';
 
 import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
+import { searchLogger } from '@/lib/logger';
 import { getCAAUrl, getCAAUrlForRelease } from '@/lib/cover-art-archive';
 import type {
   UnifiedSearchResult,
@@ -117,16 +117,7 @@ export class SearchOrchestrator {
       resolveArtistImages = false,
     } = options;
 
-    // Prettified search start log with background
-    const border = chalk.bgCyan.black('═'.repeat(60));
-    console.log('\n' + border);
-    console.log(chalk.bgCyan.black.bold('  🔍 SEARCH ORCHESTRATOR START  '));
-    console.log(border);
-    console.log(chalk.cyan('  Query:   ') + chalk.white(`"${query}"`));
-    console.log(chalk.cyan('  Types:   ') + chalk.white(types.join(', ')));
-    console.log(chalk.cyan('  Sources: ') + chalk.white(sources.join(', ')));
-    console.log(chalk.cyan('  Limit:   ') + chalk.white(limit));
-    console.log(border + '\n');
+    searchLogger.info({ query, types, sources, limit }, 'Search started');
 
     const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
     const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
@@ -182,39 +173,26 @@ export class SearchOrchestrator {
     let finalResults = allResults;
     let duplicatesRemoved = 0;
 
-    // Prettified results summary
-    const resultsBorder = chalk.cyan('─'.repeat(60));
-    console.log('\n' + resultsBorder);
-    console.log(chalk.bold.cyan('📦 RESULTS BEFORE DEDUPLICATION'));
-    console.log(resultsBorder);
-    console.log(chalk.cyan('  Total:       ') + chalk.white(allResults.length));
-    console.log(
-      chalk.cyan('  Local:       ') +
-        chalk.white(sourceResults.local?.results.length || 0)
+    searchLogger.debug(
+      {
+        query,
+        total: allResults.length,
+        local: sourceResults.local?.results.length || 0,
+        musicbrainz: sourceResults.musicbrainz?.results.length || 0,
+        spotify: sourceResults.spotify?.results.length || 0,
+      },
+      'Results before deduplication'
     );
-    console.log(
-      chalk.cyan('  MusicBrainz: ') +
-        chalk.white(sourceResults.musicbrainz?.results.length || 0)
-    );
-    console.log(
-      chalk.cyan('  Spotify:     ') +
-        chalk.white(sourceResults.spotify?.results.length || 0)
-    );
-    console.log(resultsBorder + '\n');
 
     if (deduplicateResults && allResults.length > 0) {
       const dedupeResult = this.deduplicateResults(allResults);
       finalResults = dedupeResult.results;
       duplicatesRemoved = dedupeResult.duplicatesRemoved;
 
-      console.log(resultsBorder);
-      console.log(chalk.bold.cyan('🔗 RESULTS AFTER DEDUPLICATION'));
-      console.log(resultsBorder);
-      console.log(
-        chalk.cyan('  Final:    ') + chalk.white(finalResults.length)
+      searchLogger.debug(
+        { query, finalCount: finalResults.length, duplicatesRemoved },
+        'Results after deduplication'
       );
-      console.log(chalk.cyan('  Removed:  ') + chalk.yellow(duplicatesRemoved));
-      console.log(resultsBorder + '\n');
     }
 
     const endTime = Date.now();
@@ -230,14 +208,18 @@ export class SearchOrchestrator {
     // Combine limited display results with ALL enrichment results (don't limit Spotify)
     const slicedResults = [...limitedDisplayResults, ...enrichmentResults];
 
-    console.log(
-      `\n🎯 [SearchOrchestrator] RETURNING RESULTS: ${slicedResults.length} total (${limitedDisplayResults.length} display + ${enrichmentResults.length} enrichment)`
-    );
-    console.log(
-      `   Display results (limited to ${limit}): ${limitedDisplayResults.filter(r => r.type === 'track').length} tracks, ${limitedDisplayResults.filter(r => r.type === 'album').length} albums, ${limitedDisplayResults.filter(r => r.type === 'artist').length} artists`
-    );
-    console.log(
-      `   Enrichment results (Spotify, no limit): ${enrichmentResults.length} artists for image matching\n`
+    searchLogger.info(
+      {
+        query,
+        resultCount: slicedResults.length,
+        displayCount: limitedDisplayResults.length,
+        enrichmentCount: enrichmentResults.length,
+        tracks: limitedDisplayResults.filter(r => r.type === 'track').length,
+        albums: limitedDisplayResults.filter(r => r.type === 'album').length,
+        artists: limitedDisplayResults.filter(r => r.type === 'artist').length,
+        limit,
+      },
+      'Returning search results'
     );
 
     const searchResult: OrchestratedSearchResult = {
@@ -258,6 +240,15 @@ export class SearchOrchestrator {
     // Cache successful non-empty results
     if (searchResult.totalResults > 0) {
       await cache.set(cacheKey, searchResult, CACHE_TTLS.SEARCH_RESULTS);
+    }
+
+    searchLogger.info(
+      { query, resultCount: searchResult.totalResults, duration: endTime - startTime, sources },
+      'Search completed'
+    );
+
+    if (searchResult.totalResults === 0) {
+      searchLogger.warn({ query }, 'Zero results');
     }
 
     return searchResult;
@@ -359,24 +350,10 @@ export class SearchOrchestrator {
           orderBy: [{ title: 'asc' }],
         });
 
-        console.log(
-          `[SearchOrchestrator] Local track search: Found ${tracks.length} tracks for "${query}"`
+        searchLogger.debug(
+          { source: 'local', resultCount: tracks.length, query },
+          'Local track results received'
         );
-        if (tracks.length > 0) {
-          console.log(
-            `[SearchOrchestrator] Sample track data:`,
-            JSON.stringify(
-              {
-                id: tracks[0].id,
-                musicbrainzId: tracks[0].musicbrainzId,
-                isrc: tracks[0].isrc,
-                title: tracks[0].title,
-              },
-              null,
-              2
-            )
-          );
-        }
 
         results.push(
           ...tracks.map(track => this.mapTrackToUnifiedResult(track))
@@ -466,7 +443,7 @@ export class SearchOrchestrator {
               );
             })
             .catch(err => {
-              console.error('Error searching MusicBrainz albums:', err);
+              searchLogger.error({ error: err.message, source: 'musicbrainz', type: 'album' }, 'Source search error');
             })
         );
       }
@@ -481,16 +458,10 @@ export class SearchOrchestrator {
           this.musicbrainzService
             .searchArtists(query, artistSearchLimit)
             .then(async artists => {
-              // === LOGGING: MusicBrainz Raw Results ===
-              console.log(
-                `\n🎵 [MB Raw] MusicBrainz returned ${artists.length} artists for "${query}"`
+              searchLogger.debug(
+                { source: 'musicbrainz', resultCount: artists.length, query },
+                'MusicBrainz artist results received'
               );
-              artists.forEach((a, i) => {
-                console.log(
-                  `  [${i + 1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score} Type: ${a.type || 'unknown'}`
-                );
-              });
-              // === END LOGGING ===
 
               const resolveImages = opts?.resolveArtistImages === true;
               const imageCap = Math.max(
@@ -505,16 +476,10 @@ export class SearchOrchestrator {
                 limit: artistMaxResults,
               });
 
-              // === LOGGING: After Filtering ===
-              console.log(
-                `\n🔍 [MB Filter] After filtering: ${filtered.length}/${artists.length} artists kept (limit: ${artistMaxResults})`
+              searchLogger.debug(
+                { source: 'musicbrainz', filteredCount: filtered.length, totalCount: artists.length, limit: artistMaxResults },
+                'MusicBrainz artist results filtered'
               );
-              filtered.forEach((a, i) => {
-                console.log(
-                  `  [${i + 1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score}`
-                );
-              });
-              // === END LOGGING ===
 
               if (resolveImages && imageCap > 0) {
                 const withImages = filtered.slice(
@@ -545,7 +510,7 @@ export class SearchOrchestrator {
               }
             })
             .catch(err => {
-              console.error('Error searching MusicBrainz artists:', err);
+              searchLogger.error({ error: err.message, source: 'musicbrainz', type: 'artist' }, 'Source search error');
             })
         );
       }
@@ -555,49 +520,19 @@ export class SearchOrchestrator {
           this.musicbrainzService
             .searchRecordings(query, limit)
             .then(recordings => {
-              console.log(
-                `[SearchOrchestrator] MusicBrainz found ${recordings.length} recordings for "${query}"`
+              searchLogger.debug(
+                { source: 'musicbrainz', resultCount: recordings.length, query, type: 'track' },
+                'MusicBrainz recording results received'
               );
-              if (recordings.length > 0) {
-                console.log(
-                  `[SearchOrchestrator] First recording:`,
-                  JSON.stringify(
-                    {
-                      id: recordings[0].id,
-                      title: recordings[0].title,
-                      releases: recordings[0].releases,
-                      isrcs: recordings[0].isrcs,
-                    },
-                    null,
-                    2
-                  )
-                );
-              }
 
               const mapped = recordings.map(rec =>
                 this.mapMusicBrainzRecordingToUnifiedResult(rec)
               );
 
-              if (mapped.length > 0) {
-                console.log(
-                  `[SearchOrchestrator] First mapped result:`,
-                  JSON.stringify(
-                    {
-                      id: mapped[0].id,
-                      title: mapped[0].title,
-                      imageUrl: mapped[0].image?.url,
-                      _musicbrainz: (mapped[0] as any)._musicbrainz,
-                    },
-                    null,
-                    2
-                  )
-                );
-              }
-
               results.push(...mapped);
             })
             .catch(err => {
-              console.error('Error searching MusicBrainz tracks:', err);
+              searchLogger.error({ error: err.message, source: 'musicbrainz', type: 'track' }, 'Source search error');
             })
         );
       }
@@ -618,7 +553,7 @@ export class SearchOrchestrator {
       };
     } catch (error) {
       const endTime = Date.now();
-      console.error('MusicBrainz search error:', error);
+      searchLogger.error({ error: (error as Error).message, source: 'musicbrainz' }, 'MusicBrainz search error');
       return {
         source: SearchSource.MUSICBRAINZ,
         results: [],
@@ -683,7 +618,7 @@ export class SearchOrchestrator {
       };
     } catch (error) {
       const endTime = Date.now();
-      console.error('Discogs search error:', error);
+      searchLogger.error({ error: (error as Error).message, source: 'discogs' }, 'Discogs search error');
       return {
         source: SearchSource.DISCOGS,
         results: [],
@@ -709,22 +644,11 @@ export class SearchOrchestrator {
 
       // Spotify only supports artist search currently
       if (types.includes('artist')) {
-        const spotifyBorder = chalk.magenta('─'.repeat(60));
-        console.log('\n' + spotifyBorder);
-        console.log(chalk.bold.magenta('🎵 SEARCHING SPOTIFY'));
-        console.log(spotifyBorder);
-        console.log(chalk.magenta('  Query: ') + chalk.white(`"${query}"`));
-        console.log(spotifyBorder + '\n');
+        searchLogger.debug({ source: 'spotify', query }, 'Searching Spotify');
 
         const artists = await searchSpotifyArtists(query);
 
-        console.log(spotifyBorder);
-        console.log(chalk.bold.green('✅ SPOTIFY RESULTS'));
-        console.log(spotifyBorder);
-        console.log(
-          chalk.green('  Artists found: ') + chalk.white(artists.length)
-        );
-        console.log(spotifyBorder + '\n');
+        searchLogger.debug({ source: 'spotify', resultCount: artists.length }, 'Spotify results received');
 
         results.push(
           ...artists.map(artist => this.mapSpotifyArtistToUnifiedResult(artist))
@@ -744,7 +668,7 @@ export class SearchOrchestrator {
       };
     } catch (error) {
       const endTime = Date.now();
-      console.error('Spotify search error:', error);
+      searchLogger.error({ error: (error as Error).message, source: 'spotify' }, 'Spotify search error');
       return {
         source: SearchSource.SPOTIFY,
         results: [],
@@ -831,45 +755,13 @@ export class SearchOrchestrator {
     const dedupedResults: UnifiedSearchResult[] = [];
     let duplicatesRemoved = 0;
 
-    console.log(
-      `[Deduplication] Starting with ${results.length} results (${results.filter(r => r.type === 'track').length} tracks)`
+    searchLogger.debug(
+      { totalResults: results.length, tracks: results.filter(r => r.type === 'track').length },
+      'Deduplication started'
     );
-
-    // === LOGGING: Before Deduplication ===
-    if (results.some(r => r.type === 'artist')) {
-      const artists = results.filter(r => r.type === 'artist');
-      console.log(
-        `\n🎨 [Before Dedup] ${artists.length} artists before deduplication:`
-      );
-      artists.forEach((a, i) => {
-        const idPreview =
-          a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
-        console.log(
-          `  [${i + 1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`
-        );
-      });
-    }
-    // === END LOGGING ===
 
     for (const result of results) {
       const keys = this.getDeduplicationKeys(result);
-
-      // === LOGGING: Deduplication Keys ===
-      if (result.type === 'artist') {
-        const idPreview =
-          result.id.length > 12
-            ? result.id.substring(0, 12) + '...'
-            : result.id;
-        console.log(
-          `\n[Dedup Keys] Artist: "${result.title}" (ID: ${idPreview})`
-        );
-        console.log(`  Keys: [${keys.join(', ')}]`);
-      }
-      // === END LOGGING ===
-
-      if (result.type === 'track' && dedupedResults.length < 3) {
-        console.log(`[Deduplication] Track "${result.title}" keys:`, keys);
-      }
 
       // Separate keys into unique IDs (high-confidence) and name-based (low-confidence)
       const uniqueIdKeys = keys.filter(
@@ -889,12 +781,6 @@ export class SearchOrchestrator {
         if (seen.has(key)) {
           duplicatesRemoved++;
           isDuplicate = true;
-
-          if (result.type === 'artist') {
-            console.log(
-              `[Deduplication] ❌ Artist "${result.title}" is duplicate (matched unique ID key: ${key})`
-            );
-          }
 
           const existing = seen.get(key)!;
           if (this.shouldReplaceResult(existing, result)) {
@@ -918,36 +804,13 @@ export class SearchOrchestrator {
           seen.set(key, result);
         }
 
-        if (result.type === 'artist') {
-          console.log(
-            `[Deduplication] ✅ Artist "${result.title}" added (unique ID keys: [${uniqueIdKeys.join(', ')}])`
-          );
-        }
       }
     }
 
-    console.log(
-      `[Deduplication] Result: ${dedupedResults.length} unique (removed ${duplicatesRemoved} duplicates)`
+    searchLogger.debug(
+      { uniqueCount: dedupedResults.length, duplicatesRemoved, tracks: dedupedResults.filter(r => r.type === 'track').length },
+      'Deduplication completed'
     );
-    console.log(
-      `[Deduplication] Final track count: ${dedupedResults.filter(r => r.type === 'track').length}`
-    );
-
-    // === LOGGING: After Deduplication ===
-    if (dedupedResults.some(r => r.type === 'artist')) {
-      const artists = dedupedResults.filter(r => r.type === 'artist');
-      console.log(
-        `\n✅ [After Dedup] ${artists.length} artists after deduplication:`
-      );
-      artists.forEach((a, i) => {
-        const idPreview =
-          a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
-        console.log(
-          `  [${i + 1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`
-        );
-      });
-    }
-    // === END LOGGING ===
 
     return {
       results: dedupedResults,
@@ -1212,7 +1075,7 @@ export class SearchOrchestrator {
       const url = this.buildWikimediaThumbUrl(filename, 600);
       return url;
     } catch (error) {
-      console.warn('Wikidata image resolution failed:', error);
+      searchLogger.warn({ error: (error as Error).message }, 'Wikidata image resolution failed');
       return undefined;
     }
   }
@@ -1233,13 +1096,7 @@ export class SearchOrchestrator {
     // Use release-group endpoint which works with MusicBrainz release group IDs
     const coverArtUrl = getCAAUrl(release.id, '500');
 
-    // Purple borders for cover art URL generation (distinct from other logs)
-    const border = chalk.magenta('─'.repeat(60));
-    console.log(border);
-    console.log(
-      `${chalk.magenta('🎨 [SEARCH LAYER]')} ${chalk.white('Cover Art URL')} ${chalk.magenta('•')} ${chalk.cyan(`"${release.title}"`)} ${chalk.gray('→')} ${chalk.blue(coverArtUrl)}`
-    );
-    console.log(border);
+    searchLogger.debug({ releaseId: release.id, title: release.title, coverArtUrl }, 'Cover art URL generated');
 
     return {
       id: release.id,

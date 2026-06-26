@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import chalk from 'chalk';
 import { Client } from 'disconnect';
 
+import { withApiLogging } from '@/lib/api-utils';
 import {
   searchQuerySchema,
   validateQueryParams,
@@ -29,8 +29,6 @@ import {
   DeduplicationOptions,
 } from '@/lib/search-utils';
 
-const log = console.log;
-
 // Initialize Discogs client - move this to a separate file in production
 const db = new Client({
   userAgent: 'REC/1.0',
@@ -41,7 +39,7 @@ const db = new Client({
 // Default placeholder image for albums without images
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export const GET = withApiLogging(async (request: NextRequest): Promise<NextResponse> => {
   const startTime = performance.now();
   let discogsApiStartTime: number;
 
@@ -52,7 +50,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   );
 
   if (!validation.success) {
-    console.error('Invalid search query parameters:', validation.details);
     const { response, status } = createErrorResponse(
       validation.error,
       400,
@@ -94,10 +91,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   };
 
   try {
-    log(
-      chalk.yellow('Enhanced Search for: '),
-      `"${query}" (type: ${type}, context: ${context}, dedupe: ${deduplicate})`
-    );
+    // Enhanced search
 
     // ===========================
     // PHASE 3: Enhanced Search Logic
@@ -126,12 +120,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     performance_metrics.discogsApiTime =
       performance.now() - discogsApiStartTime;
 
-    console.log(
-      `Found ${searchResults.results?.length || 0} results on page ${page}`
-    );
-
     if (!searchResults.results || searchResults.results.length === 0) {
-      console.log('No results found');
       const emptyResponse: SearchResponse = {
         results: [],
         grouped: { albums: [], artists: [], labels: [], other: [] },
@@ -471,7 +460,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(searchResponse);
   } catch (error) {
-    console.error('Error in enhanced search route:', error);
     const { response, status } = createErrorResponse(
       'Failed to search',
       500,
@@ -480,4 +468,4 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-}
+});

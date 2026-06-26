@@ -1,6 +1,7 @@
 // src/lib/monitoring/websocket.ts
 import { EventEmitter } from 'events';
 
+import { logger } from '@/lib/logger';
 import { getMusicBrainzQueue } from '@/lib/queue';
 
 import { metricsCollector } from './metrics-collector';
@@ -99,7 +100,7 @@ export class MonitoringWebSocket extends EventEmitter {
           timestamp: new Date(),
         });
       } catch (error) {
-        console.error('Failed to get queue status:', error);
+        logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to get queue status');
       }
     };
 
@@ -129,7 +130,7 @@ export class MonitoringWebSocket extends EventEmitter {
           timestamp: new Date(),
         });
       } catch (error) {
-        console.error('Failed to get health status:', error);
+        logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to get health status');
       }
     };
 
@@ -203,7 +204,7 @@ export class MonitoringWebSocket extends EventEmitter {
           this.unsubscribe(key);
         }
       } catch (error) {
-        console.error(`Failed to check job ${jobId}:`, error);
+        logger.error({ jobId, error: error instanceof Error ? error.message : String(error) }, 'Failed to check job');
       }
     };
 

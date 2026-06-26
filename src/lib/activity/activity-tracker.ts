@@ -5,6 +5,8 @@ import { randomUUID } from 'crypto';
 
 import { PrismaClient } from '@prisma/client';
 
+import { logger } from '@/lib/logger';
+
 export interface UserActivityData {
   userId: string | null;
   sessionId: string;
@@ -65,7 +67,7 @@ export class ActivityTracker {
         },
       });
     } catch (error) {
-      console.warn('Failed to track user activity:', error);
+      logger.warn({ error: error instanceof Error ? error.message : String(error) }, 'Failed to track user activity');
       // Don't throw - activity tracking shouldn't break the app
     }
   }
@@ -97,7 +99,7 @@ export class ActivityTracker {
         },
       });
     } catch (error) {
-      console.warn('Failed to record entity interaction:', error);
+      logger.warn({ error: error instanceof Error ? error.message : String(error) }, 'Failed to record entity interaction');
     }
   }
 

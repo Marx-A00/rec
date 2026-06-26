@@ -9,6 +9,7 @@ import { CredentialsSignin } from 'next-auth';
 
 import prisma from '@/lib/prisma';
 import { initializeNewUser } from '@/lib/users';
+import { authLogger } from '@/lib/logger';
 import { AUTH_ERROR_CODES } from '@/types/auth';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -26,9 +27,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user.id) {
         try {
           await initializeNewUser(user.id);
-          console.log(`[auth] Initialized new user: ${user.id}`);
+          authLogger.info({ userId: user.id }, 'New user initialized');
         } catch (error) {
-          console.error(`[auth] Failed to initialize user ${user.id}:`, error);
+          authLogger.error({ userId: user.id, error: error instanceof Error ? error.message : String(error) }, 'Failed to initialize user');
         }
       }
     },
@@ -47,10 +48,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (existingUser) {
             // Block soft-deleted users from signing in
             if (existingUser.deletedAt) {
-              console.error(
-                `[auth] OAuth sign-in attempt for soft-deleted user: ${existingUser.id}`,
-                new Date().toISOString()
-              );
+              authLogger.warn({ userId: existingUser.id, provider: account.provider }, 'OAuth sign-in attempt for soft-deleted user');
               return false;
             }
 
@@ -78,16 +76,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   session_state: account.session_state as string | null,
                 },
               });
-              console.log(
-                `[auth] Linked ${account.provider} account to existing user: ${existingUser.id}`
-              );
+              authLogger.info({ userId: existingUser.id, provider: account.provider }, 'Linked OAuth account to existing user');
             }
 
             // Existing user — check if they completed onboarding
             if (!existingUser.profileUpdatedAt) {
-              console.log(
-                `[auth] User ${existingUser.id} has not completed onboarding, redirecting to complete-profile`
-              );
+              authLogger.debug({ userId: existingUser.id }, 'User has not completed onboarding, redirecting to complete-profile');
               return '/complete-profile';
             }
           }
@@ -133,9 +127,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               where: { id: token.sub },
               data: { lastActive: now },
             });
-            console.log('[auth] Updated lastActive for user:', token.sub);
+            authLogger.debug({ userId: token.sub }, 'Updated lastActive');
           } catch (err) {
-            console.error('[auth] Failed to update lastActive:', err);
+            authLogger.error({ userId: token.sub, error: err instanceof Error ? err.message : String(err) }, 'Failed to update lastActive');
           }
         }
 
@@ -218,10 +212,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const identifier = (rawCredentials?.identifier ||
           rawCredentials?.email) as string | undefined;
         if (!identifier || !credentials?.password) {
-          console.error(
-            '[auth] Sign-in attempt with missing credentials',
-            new Date().toISOString()
-          );
+          authLogger.warn('Sign-in attempt with missing credentials');
           throw new CredentialsSignin(AUTH_ERROR_CODES.MISSING_CREDENTIALS);
         }
 
@@ -253,10 +244,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (matchingUsers.length > 1) {
             // Multiple users with same username exist (data integrity issue)
             // Log the issue and fail safely rather than returning wrong account
-            console.error(
-              `[auth] SECURITY: Multiple users found with username "${identifier}". Login blocked to prevent account confusion.`,
-              new Date().toISOString()
-            );
+            authLogger.error({ identifierType: 'username' }, 'SECURITY: Multiple users found with same username — login blocked');
             throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
           }
 
@@ -267,28 +255,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // User not found
         if (!user) {
-          console.error(
-            `[auth] Sign-in attempt for non-existent user: ${identifier}`,
-            new Date().toISOString()
-          );
+          authLogger.warn({ identifierType: isEmail ? 'email' : 'username' }, 'Sign-in attempt for non-existent user');
           throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
         }
 
         // User is soft-deleted
         if (user.deletedAt) {
-          console.error(
-            `[auth] Sign-in attempt for soft-deleted user: ${identifier}`,
-            new Date().toISOString()
-          );
+          authLogger.warn({ userId: user.id, identifierType: isEmail ? 'email' : 'username' }, 'Sign-in attempt for soft-deleted user');
           throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
         }
 
         // User exists but has no password (OAuth-only account)
         if (!user.hashedPassword) {
-          console.error(
-            `[auth] Sign-in attempt with password for OAuth-only account: ${identifier}`,
-            new Date().toISOString()
-          );
+          authLogger.warn({ userId: user.id, identifierType: isEmail ? 'email' : 'username' }, 'Sign-in attempt with password for OAuth-only account');
           throw new CredentialsSignin(AUTH_ERROR_CODES.NO_PASSWORD_SET);
         }
 
@@ -299,18 +278,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
 
         if (!passwordMatch) {
-          console.error(
-            `[auth] Failed sign-in attempt for user: ${identifier}`,
-            new Date().toISOString()
-          );
+          authLogger.warn({ userId: user.id, identifierType: isEmail ? 'email' : 'username' }, 'Failed sign-in attempt — invalid password');
           throw new CredentialsSignin(AUTH_ERROR_CODES.INVALID_PASSWORD);
         }
 
         // Success - return user data
-        console.log(
-          `[auth] Successful sign-in for user: ${identifier}`,
-          new Date().toISOString()
-        );
+        authLogger.info({ userId: user.id, identifierType: isEmail ? 'email' : 'username' }, 'Successful credentials sign-in');
         return {
           id: user.id,
           email: user.email,

@@ -5,6 +5,7 @@ import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
+import { queueLogger } from '@/lib/logger';
 
 import type {
   CacheAlbumCoverArtJobData,
@@ -179,7 +180,7 @@ export async function handleCacheAlbumCoverArt(
       data: { cloudflareImageId: result.id },
     });
 
-    console.log(`✅ Cached cover art for "${album.title}" (${albumId})`);
+    queueLogger.info({ albumId, albumTitle: album.title }, 'Cached cover art');
 
     await llamaLogger.logEnrichment({
       entityType: 'ALBUM',
@@ -218,10 +219,7 @@ export async function handleCacheAlbumCoverArt(
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
-    console.error(
-      `❌ Error caching cover art for album ${albumId}:`,
-      errorMessage
-    );
+    queueLogger.error({ albumId, error: errorMessage }, 'Error caching cover art for album');
 
     // Only log if we haven't already logged (album not found case)
     if (!errorMessage.includes('not found')) {
@@ -423,7 +421,7 @@ export async function handleCacheArtistImage(
       data: { cloudflareImageId: result.id },
     });
 
-    console.log(`✅ Cached image for "${artist.name}" (${artistId})`);
+    queueLogger.info({ artistId, artistName: artist.name }, 'Cached artist image');
 
     await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -462,10 +460,7 @@ export async function handleCacheArtistImage(
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
-    console.error(
-      `❌ Error caching image for artist ${artistId}:`,
-      errorMessage
-    );
+    queueLogger.error({ artistId, error: errorMessage }, 'Error caching artist image');
 
     // Only log if we haven't already logged (artist not found case)
     if (!errorMessage.includes('not found')) {

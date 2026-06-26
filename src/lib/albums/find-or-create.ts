@@ -11,10 +11,10 @@
 // After finding an existing album, missing external IDs are backfilled.
 // Side effects (enrichment queueing, LlamaLog) only run outside transactions.
 
-import chalk from 'chalk';
 import type { Album, Prisma, LlamaLogCategory } from '@prisma/client';
 
 import { getInitialQuality } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
 import { redis } from '@/lib/queue/redis';
 import { publishEnrichmentEvent } from '@/lib/queue/enrichment-events';
@@ -169,19 +169,11 @@ export async function findOrCreateAlbum(
           where: { id: album.id },
           data: updates,
         });
-        console.log(
-          chalk.cyan(
-            `[ALBUM-HELPER] Backfilled ${Object.keys(updates).join(', ')} on "${album.title}" via ${caller}`
-          )
-        );
+        logger.debug({ module: 'album-helper', fields: Object.keys(updates), title: album.title, caller }, 'Backfilled external IDs');
       }
     }
 
-    console.log(
-      chalk.cyan(
-        `[ALBUM-HELPER] FOUND "${album.title}" via ${caller} (dedup: ${dedupMethod})`
-      )
-    );
+    logger.debug({ module: 'album-helper', title: album.title, caller, dedupMethod }, 'Found existing album');
     return { album, created: false, dedupMethod, artistsCreated: 0 };
   }
 
@@ -211,11 +203,7 @@ export async function findOrCreateAlbum(
     },
   });
 
-  console.log(
-    chalk.cyan(
-      `[ALBUM-HELPER] CREATED "${album.title}" via ${caller} (enrichment: ${enrichment})`
-    )
-  );
+  logger.info({ module: 'album-helper', title: album.title, caller, enrichment }, 'Created new album');
 
   // ------------------------------------------------------------------
   // 6. Create artist associations
@@ -277,12 +265,7 @@ export async function findOrCreateAlbum(
   // ------------------------------------------------------------------
   if (!insideTransaction && enrichment !== 'none') {
     await runPostCreateSideEffects(album, options).catch(err =>
-      console.warn(
-        chalk.cyan(
-          `[ALBUM-HELPER] Side effect error for "${album!.title}" (${album!.id}):`
-        ),
-        err
-      )
+      logger.warn({ module: 'album-helper', albumId: album!.id, err: err instanceof Error ? err.message : String(err) }, 'Side effect error')
     );
   }
 
@@ -365,11 +348,7 @@ export async function runPostCreateSideEffects(
         entityName: album.title,
       });
 
-      console.log(
-        chalk.cyan(
-          `[ALBUM-HELPER] Queued CHECK_ALBUM_ENRICHMENT for "${album.title}" via ${caller}`
-        )
-      );
+      logger.debug({ module: 'album-helper', title: album.title, caller }, 'Queued CHECK_ALBUM_ENRICHMENT');
 
       // Queue cover art caching
       if (album.coverArtUrl) {
@@ -385,11 +364,7 @@ export async function runPostCreateSideEffects(
           backoff: { type: 'exponential', delay: 2000 },
         });
 
-        console.log(
-          chalk.cyan(
-            `[ALBUM-HELPER] Queued CACHE_ALBUM_COVER_ART for "${album.title}" via ${caller}`
-          )
-        );
+        logger.debug({ module: 'album-helper', title: album.title, caller }, 'Queued CACHE_ALBUM_COVER_ART');
       }
     }
 
@@ -429,9 +404,6 @@ export async function runPostCreateSideEffects(
       });
     }
   } catch (error) {
-    console.warn(
-      chalk.cyan(`[ALBUM-HELPER] Side effect error for album ${album.id}:`),
-      error
-    );
+    logger.warn({ module: 'album-helper', albumId: album.id, err: error instanceof Error ? error.message : String(error) }, 'Side effect error');
   }
 }

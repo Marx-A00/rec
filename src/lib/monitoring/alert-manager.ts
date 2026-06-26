@@ -1,6 +1,7 @@
 // src/lib/monitoring/alert-manager.ts
 import { EventEmitter } from 'events';
 
+import { logger } from '@/lib/logger';
 import { metricsCollector } from './metrics-collector';
 import type { SystemMetrics } from './metrics-collector';
 
@@ -213,16 +214,16 @@ export class AlertManager extends EventEmitter {
     // Log based on level
     switch (level) {
       case AlertLevel.CRITICAL:
-        console.error(`🚨 CRITICAL ALERT: ${message}`);
+        logger.error({ alertType: type, alertId: alert.id }, `CRITICAL ALERT: ${message}`);
         break;
       case AlertLevel.ERROR:
-        console.error(`❌ ERROR ALERT: ${message}`);
+        logger.error({ alertType: type, alertId: alert.id }, `ERROR ALERT: ${message}`);
         break;
       case AlertLevel.WARNING:
-        console.warn(`⚠️ WARNING: ${message}`);
+        logger.warn({ alertType: type, alertId: alert.id }, `WARNING: ${message}`);
         break;
       case AlertLevel.INFO:
-        console.log(`ℹ️ INFO: ${message}`);
+        logger.info({ alertType: type, alertId: alert.id }, `INFO: ${message}`);
         break;
     }
 
@@ -293,7 +294,7 @@ export class AlertManager extends EventEmitter {
    */
   addRule(rule: AlertRule): void {
     this.rules.set(rule.type, rule);
-    console.log(`📊 Added alert rule: ${rule.type}`);
+    logger.info({ ruleType: rule.type }, 'Added alert rule');
   }
 
   /**
@@ -317,7 +318,7 @@ export class AlertManager extends EventEmitter {
     this.alerts.clear();
     this.alertHistory = [];
     this.emit('alerts:cleared');
-    console.log('📊 Cleared all alerts');
+    logger.info('Cleared all alerts');
   }
 
   /**

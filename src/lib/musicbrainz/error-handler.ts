@@ -4,7 +4,7 @@
  * Provides logging, metrics, and graceful degradation capabilities
  */
 
-import chalk from 'chalk';
+import { mbLogger } from '@/lib/logger';
 
 import {
   MusicBrainzAPIError,
@@ -58,8 +58,9 @@ class MusicBrainzErrorHandler {
     try {
       // Check if service is degraded
       if (this.isServiceDegraded) {
-        console.warn(
-          `🚨 MusicBrainz service degraded - proceeding with ${operationName} cautiously`
+        mbLogger.warn(
+          { operation: operationName },
+          'MusicBrainz service degraded - proceeding cautiously'
         );
       }
 
@@ -73,12 +74,10 @@ class MusicBrainzErrorHandler {
       const duration = Date.now() - startTime;
       const metrics = this.getBasicMetrics();
 
-      const border = chalk.magenta('─'.repeat(60));
-      console.log(border);
-      console.log(
-        `${chalk.green('✅')} ${chalk.magenta('[API LAYER]')} MusicBrainz ${chalk.white(operationName)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Success: ${metrics.successRate}% • Failures: ${metrics.failures}`)}`
+      mbLogger.info(
+        { operation: operationName, durationMs: duration, successRate: metrics.successRate, failures: metrics.failures },
+        'MusicBrainz request succeeded'
       );
-      console.log(border);
 
       return result;
     } catch (error: any) {
@@ -141,26 +140,25 @@ class MusicBrainzErrorHandler {
     // Different log levels based on error severity
     if (error instanceof MusicBrainzNotFoundError) {
       // 404s are often expected, log as info
-      console.info(`ℹ️ MusicBrainz resource not found:`, errorInfo);
+      mbLogger.info(errorInfo, 'MusicBrainz resource not found');
     } else if (error instanceof MusicBrainzRateLimitError) {
       // Rate limits are important but handled by library
-      console.warn(`⏱️ MusicBrainz rate limit hit:`, {
-        ...errorInfo,
-        retryAfter: error.retryAfter,
-      });
+      mbLogger.warn(
+        { ...errorInfo, retryAfter: error.retryAfter },
+        'MusicBrainz rate limit hit'
+      );
     } else if (error instanceof MusicBrainzServiceUnavailableError) {
       // Service issues are concerning
-      console.error(`🚨 MusicBrainz service unavailable:`, {
-        ...errorInfo,
-        retryAfter: error.retryAfter,
-        consecutiveFailures: this.metrics.consecutiveFailures,
-      });
+      mbLogger.error(
+        { ...errorInfo, retryAfter: error.retryAfter, consecutiveFailures: this.metrics.consecutiveFailures },
+        'MusicBrainz service unavailable'
+      );
     } else if (error instanceof MusicBrainzTimeoutError) {
       // Timeouts indicate network/performance issues
-      console.warn(`⏰ MusicBrainz request timeout:`, errorInfo);
+      mbLogger.warn(errorInfo, 'MusicBrainz request timeout');
     } else {
       // Generic API errors
-      console.error(`❌ MusicBrainz API error:`, errorInfo);
+      mbLogger.error(errorInfo, 'MusicBrainz API error');
     }
   }
 
@@ -172,25 +170,30 @@ class MusicBrainzErrorHandler {
     operationName: string
   ) {
     if (error instanceof MusicBrainzRateLimitError) {
-      console.log(
-        `🔄 Rate limit recovery: Library will handle retry after ${error.retryAfter}s`
+      mbLogger.debug(
+        { operation: operationName, retryAfter: error.retryAfter },
+        'Rate limit recovery: library will handle retry'
       );
     } else if (error instanceof MusicBrainzServiceUnavailableError) {
-      console.log(
-        `🔄 Service unavailable recovery: Library will retry with backoff`
+      mbLogger.debug(
+        { operation: operationName },
+        'Service unavailable recovery: library will retry with backoff'
       );
       if (this.metrics.consecutiveFailures >= this.maxConsecutiveFailures) {
-        console.warn(
-          `🚨 Consider switching to degraded mode or fallback data source`
+        mbLogger.warn(
+          { consecutiveFailures: this.metrics.consecutiveFailures },
+          'Consider switching to degraded mode or fallback data source'
         );
       }
     } else if (error instanceof MusicBrainzTimeoutError) {
-      console.log(
-        `🔄 Timeout recovery: Library will retry with timeout handling`
+      mbLogger.debug(
+        { operation: operationName },
+        'Timeout recovery: library will retry with timeout handling'
       );
     } else if (error instanceof MusicBrainzNotFoundError) {
-      console.log(
-        `🔍 Not found recovery: No retry needed, resource doesn't exist`
+      mbLogger.debug(
+        { operation: operationName },
+        'Not found recovery: no retry needed, resource does not exist'
       );
     }
   }
@@ -201,13 +204,14 @@ class MusicBrainzErrorHandler {
   private markServiceDegraded() {
     if (!this.isServiceDegraded) {
       this.isServiceDegraded = true;
-      console.error(
-        `🚨 MusicBrainz service marked as DEGRADED after ${this.metrics.consecutiveFailures} consecutive failures`
+      mbLogger.error(
+        { consecutiveFailures: this.metrics.consecutiveFailures },
+        'MusicBrainz service marked as DEGRADED'
       );
 
       // Set timer to check for recovery
       setTimeout(() => {
-        console.log(`🔄 Checking MusicBrainz service recovery...`);
+        mbLogger.info('Checking MusicBrainz service recovery');
         // Service will be marked as recovered on next successful request
       }, this.degradationTimeout);
     }

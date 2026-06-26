@@ -1,6 +1,7 @@
 // @ts-nocheck - Schema migration broke API routes, needs GraphQL rewrite
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -30,10 +31,10 @@ interface TopRecommendation {
   };
 }
 
-export async function GET(
+export const GET = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     await auth();
     const { id: targetUserId } = await params;
@@ -213,10 +214,9 @@ export async function GET(
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error fetching top recommendations:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});

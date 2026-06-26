@@ -4,6 +4,7 @@
  * Follows "Add First → Enrich Later" pattern for immediate user feedback
  */
 
+import { spotifyLogger } from '@/lib/logger';
 import { spotifyClient } from '@/lib/spotify/client';
 import { getInitialQuality } from '@/lib/db';
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
@@ -72,7 +73,7 @@ export function parseSpotifyDate(dateString: string): DateParseResult {
       }
     }
   } catch (error) {
-    console.warn(`Failed to parse Spotify date: "${dateString}"`, error);
+    spotifyLogger.warn({ dateString, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to parse Spotify date');
   }
 
   return { date: null, precision: 'invalid' };
@@ -268,7 +269,7 @@ export async function processSpotifyAlbum(
   artistsCreated: number;
   tracksCreated?: number;
 }> {
-  console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
+  spotifyLogger.info({ album: spotifyAlbum.name }, 'Processing Spotify album');
 
   // 1. Transform album data
   const albumData = transformSpotifyAlbum(spotifyAlbum);
@@ -345,7 +346,7 @@ export async function processSpotifyAlbum(
   });
 
   if (!created) {
-    console.log(`⏭️  Album already existed: "${album.title}" (${album.id})`);
+    spotifyLogger.debug({ albumId: album.id, title: album.title }, 'Album already existed');
   }
 
   // Fetch artist IDs for return value
@@ -379,7 +380,7 @@ export async function processSpotifyAlbums(
   },
   artistImageMap?: Map<string, string>
 ): Promise<SpotifyProcessingResult> {
-  console.log(`🚀 Processing ${spotifyAlbums.length} Spotify albums...`);
+  spotifyLogger.info({ count: spotifyAlbums.length }, 'Processing Spotify albums');
 
   const results: {
     albumId: string;
@@ -398,9 +399,7 @@ export async function processSpotifyAlbums(
         });
 
         if (existingBySpotifyId) {
-          console.log(
-            `⏭️  Skipping duplicate (Spotify ID): "${spotifyAlbum.name}"`
-          );
+          spotifyLogger.debug({ spotifyId: spotifyAlbum.id, title: spotifyAlbum.name }, 'Skipping duplicate (Spotify ID)');
           duplicatesSkipped++;
           continue;
         }
@@ -431,9 +430,7 @@ export async function processSpotifyAlbums(
         });
 
         if (existingAlbum) {
-          console.log(
-            `⏭️  Skipping duplicate: "${spotifyAlbum.name}" by ${firstArtist}`
-          );
+          spotifyLogger.debug({ title: spotifyAlbum.name, artist: firstArtist }, 'Skipping duplicate (title+artist)');
           duplicatesSkipped++;
           continue;
         }
@@ -449,7 +446,7 @@ export async function processSpotifyAlbums(
       results.push(result);
     } catch (error) {
       const errorMsg = `Failed to process "${spotifyAlbum.name}": ${error instanceof Error ? error.message : String(error)}`;
-      console.error(`❌ ${errorMsg}`);
+      spotifyLogger.error({ error: errorMsg }, 'Failed to process Spotify album');
       errors.push(errorMsg);
     }
   }
@@ -461,7 +458,7 @@ export async function processSpotifyAlbums(
     errors,
   };
 
-  console.log(`✅ Spotify processing complete:`, stats);
+  spotifyLogger.info(stats, 'Spotify processing complete');
 
   return {
     albums: [], // We don't need to return the full processed data structure
@@ -475,7 +472,7 @@ export async function processSpotifyAlbums(
 export async function processCachedSpotifyData(
   cacheKey: string = 'spotify_trending'
 ): Promise<SpotifyProcessingResult> {
-  console.log(`📦 Loading cached Spotify data: ${cacheKey}`);
+  spotifyLogger.info({ cacheKey }, 'Loading cached Spotify data');
 
   const cached = await prisma.cacheData.findUnique({
     where: { key: cacheKey },
@@ -491,9 +488,7 @@ export async function processCachedSpotifyData(
     throw new Error('Invalid cached Spotify data structure');
   }
 
-  console.log(
-    `📊 Found ${spotifyData.newReleases.length} new releases in cache`
-  );
+  spotifyLogger.info({ count: spotifyData.newReleases.length }, 'Found new releases in cache');
 
   return await processSpotifyAlbums(spotifyData.newReleases, 'spotify_cache');
 }
@@ -537,10 +532,10 @@ export async function fetchSpotifyAlbumTracks(
       is_playable: track.is_playable,
     }));
 
-    console.log(`🎵 Fetched ${tracks.length} tracks for album ${albumId}`);
+    spotifyLogger.info({ albumId, trackCount: tracks.length }, 'Fetched Spotify album tracks');
     return tracks;
   } catch (error) {
-    console.error(`❌ Failed to fetch tracks for album ${albumId}:`, error);
+    spotifyLogger.error({ albumId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch Spotify album tracks');
     return []; // Return empty array on failure
   }
 }
@@ -655,7 +650,7 @@ export async function createTrackRecord(
       },
     });
   } catch (err) {
-    console.warn('[LlamaLog] Failed to log track creation:', err);
+    spotifyLogger.warn({ error: err instanceof Error ? err.message : 'Unknown error' }, 'LlamaLog failed to log track creation');
   }
 
   return track.id;
@@ -680,9 +675,7 @@ export async function processSpotifyTracks(
   const trackIds: string[] = [];
   const errors: string[] = [];
 
-  console.log(
-    `🎵 Processing ${spotifyTracks.length} tracks for album ${albumId}`
-  );
+  spotifyLogger.info({ albumId, trackCount: spotifyTracks.length }, 'Processing Spotify tracks for album');
 
   for (const spotifyTrack of spotifyTracks) {
     try {
@@ -712,19 +705,15 @@ export async function processSpotifyTracks(
         backoff: { type: 'exponential', delay: 2000 },
       });
 
-      console.log(
-        `✅ Created track: "${trackData.title}" (${trackData.trackNumber}) + queued enrichment`
-      );
+      spotifyLogger.debug({ title: trackData.title, trackNumber: trackData.trackNumber }, 'Created track and queued enrichment');
     } catch (error) {
       const errorMsg = `Failed to create track "${spotifyTrack.name}": ${error instanceof Error ? error.message : 'Unknown error'}`;
-      console.error(`❌ ${errorMsg}`);
+      spotifyLogger.error({ error: errorMsg }, 'Failed to create track');
       errors.push(errorMsg);
     }
   }
 
-  console.log(
-    `📊 Track processing complete: ${trackIds.length} created, ${errors.length} errors`
-  );
+  spotifyLogger.info({ tracksCreated: trackIds.length, errors: errors.length }, 'Track processing complete');
 
   return {
     tracksCreated: trackIds.length,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -29,10 +30,10 @@ interface AnalyticsData {
   };
 }
 
-export async function GET(
+export const GET = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     await auth();
     const { id: targetUserId } = await params;
@@ -262,10 +263,9 @@ export async function GET(
       granularity,
     });
   } catch (error) {
-    console.error('Error fetching user analytics:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});

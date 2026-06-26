@@ -1,6 +1,7 @@
 // src/lib/queue/redis.ts
 import Redis from 'ioredis';
-import chalk from 'chalk';
+
+import { queueLogger } from '@/lib/logger';
 
 export interface RedisConfig {
   host: string;
@@ -186,16 +187,10 @@ class RedisManager {
 
       if (isTransient) {
         // Transient proxy/network blip — ioredis will auto-reconnect
-        console.log(
-          chalk.yellow(
-            `⚡ Redis: ${err.message} (transient — will reconnect automatically)`
-          )
-        );
+        queueLogger.debug({ error: err.message }, 'Redis transient error (will reconnect)');
       } else {
         // Unexpected error — this one deserves attention
-        console.error(
-          chalk.red.bold('❌ Redis Error:') + chalk.red(` ${err.message}`)
-        );
+        queueLogger.error({ error: err.message }, 'Redis error');
       }
     });
 
@@ -204,7 +199,7 @@ class RedisManager {
     });
 
     client.on('reconnecting', (time: number) => {
-      console.log(chalk.gray(`↻ Redis reconnecting (${time}ms)`));
+      queueLogger.debug({ reconnectInMs: time }, 'Redis reconnecting');
     });
 
     client.on('end', () => {
@@ -221,10 +216,7 @@ class RedisManager {
       await client.ping();
       return true;
     } catch (error) {
-      console.error(
-        chalk.red.bold('❌ Redis') + chalk.red(' connection test failed:'),
-        chalk.red(error as NodeJS.ErrnoException)
-      );
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Redis connection test failed');
       return false;
     }
   }

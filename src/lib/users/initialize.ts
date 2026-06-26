@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import prisma from '@/lib/prisma';
 
 /**
@@ -31,9 +32,7 @@ export async function initializeNewUser(userId: string): Promise<void> {
           },
         ],
       });
-      console.log(
-        `[user-init] Created default collections for user: ${userId}`
-      );
+      logger.info({ module: 'user-init', userId }, 'Created default collections');
     }
 
     // 2. Create default user settings (upsert to be idempotent)
@@ -57,8 +56,8 @@ export async function initializeNewUser(userId: string): Promise<void> {
         autoplayPreviews: false,
       },
     });
-    console.log(`[user-init] Ensured user settings exist for user: ${userId}`);
+    logger.debug({ module: 'user-init', userId }, 'Ensured user settings exist');
   });
 
-  console.log(`[user-init] User initialization complete: ${userId}`);
+  logger.info({ module: 'user-init', userId }, 'User initialization complete');
 }

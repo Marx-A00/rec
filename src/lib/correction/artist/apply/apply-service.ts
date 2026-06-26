@@ -36,6 +36,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { Artist } from '@prisma/client';
 
+import { logger } from '@/lib/logger';
 import { prisma as defaultPrisma } from '@/lib/prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 
@@ -397,10 +398,7 @@ export class ArtistCorrectionApplyService {
       });
     } catch (error) {
       // Log warning but don't fail the correction
-      console.warn(
-        '[ArtistCorrectionApplyService] Failed to log correction:',
-        error
-      );
+      logger.warn({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to log artist correction');
     }
   }
 
@@ -425,15 +423,10 @@ export class ArtistCorrectionApplyService {
         }
       );
 
-      console.log(
-        `[ArtistCorrectionApplyService] Queued image caching for artist ${artistId}`
-      );
+      logger.debug({ module: 'correction', artistId }, 'Queued image caching for artist');
     } catch (error) {
       // Log warning but don't fail the correction
-      console.warn(
-        '[ArtistCorrectionApplyService] Failed to queue image caching:',
-        error
-      );
+      logger.warn({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to queue artist image caching');
     }
   }
 

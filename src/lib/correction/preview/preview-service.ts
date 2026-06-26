@@ -9,6 +9,7 @@ import type { Album, Artist, Prisma, Track } from '@prisma/client';
 
 import { getCAAUrl } from '@/lib/cover-art-archive';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
+import { logger } from '@/lib/logger';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
 import { PRIORITY_TIERS } from '@/lib/queue';
@@ -165,21 +166,7 @@ export class CorrectionPreviewService {
       summary,
     };
 
-    // Debug logging for correction workflow tracing
-    console.log('[Correction Preview] Generated:', {
-      albumId,
-      fieldDiffs: fieldDiffs.map(d => ({
-        field: d.field,
-        changeType: d.changeType,
-      })),
-      artistDiff: {
-        changeType: artistDiff.changeType,
-        current: artistDiff.currentDisplay,
-        source: artistDiff.sourceDisplay,
-      },
-      trackSummary,
-      summary,
-    });
+    logger.debug({ module: 'correction', albumId, changedFields: summary.changedFields, hasTrackChanges: summary.hasTrackChanges }, 'Correction preview generated');
 
     return preview;
   }
@@ -265,14 +252,14 @@ export class CorrectionPreviewService {
       } | null;
 
       if (!releaseGroup) {
-        console.error('Release group not found:', releaseGroupMbid);
+        logger.error({ module: 'correction', releaseGroupMbid }, 'Release group not found');
         return null;
       }
 
       // Find the best release (prefer official releases, then by date)
       const releases = releaseGroup.releases || [];
       if (releases.length === 0) {
-        console.warn('Release group has no releases:', releaseGroupMbid);
+        logger.warn({ module: 'correction', releaseGroupMbid }, 'Release group has no releases');
         // Return basic data from release group without tracks
         return {
           id: releaseGroup.id,
@@ -318,7 +305,7 @@ export class CorrectionPreviewService {
       // Transform raw MusicBrainz data to MBReleaseData format
       return this.transformMBRelease(data);
     } catch (error) {
-      console.error('Failed to fetch MusicBrainz release data:', error);
+      logger.error({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to fetch MusicBrainz release data');
       return null;
     }
   }
@@ -339,7 +326,7 @@ export class CorrectionPreviewService {
 
       return this.transformDiscogsMaster(master);
     } catch (error) {
-      console.error('Failed to fetch Discogs master data:', error);
+      logger.error({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs master data');
       return null;
     }
   }

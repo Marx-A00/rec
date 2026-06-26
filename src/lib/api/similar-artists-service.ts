@@ -2,6 +2,7 @@ import { getSimilarArtists as getLastFmSimilarArtists } from '@/lib/lastfm/searc
 import { fetchSimilarArtists as getListenBrainzSimilarArtists } from '@/lib/listenbrainz/api';
 import { findOrCreateArtist } from '@/lib/artists/find-or-create';
 import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
+import { apiLogger } from '@/lib/logger';
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';
 import { prisma } from '@/lib/prisma';
 
@@ -57,10 +58,7 @@ export async function fetchSimilarArtistsFromAPIs(
     r => r.mbid && r.mbid.trim() !== ''
   );
 
-  console.log(
-    `[Similar Artists] Last.fm: ${lastfmResults.length} total, ${lastfmWithMbid.length} with MBID`
-  );
-  console.log(`[Similar Artists] ListenBrainz: ${listenbrainzResults.length}`);
+  apiLogger.debug({ lastfmTotal: lastfmResults.length, lastfmWithMbid: lastfmWithMbid.length, listenbrainz: listenbrainzResults.length }, 'Similar artists API results');
 
   // Normalize ListenBrainz scores to 0-1 range
   const maxLbScore = Math.max(...listenbrainzResults.map(r => r.score), 1);
@@ -100,7 +98,7 @@ export async function fetchSimilarArtistsFromAPIs(
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, limit);
 
-  console.log(`[Similar Artists] Merged ${merged.length} unique results`);
+  apiLogger.debug({ mergedCount: merged.length }, 'Similar artists merged results');
   return merged;
 }
 
@@ -124,7 +122,7 @@ export async function syncSimilarArtists(
   );
 
   if (results.length === 0) {
-    console.log(`[Similar Artists] No results to sync for ${artistName}`);
+    apiLogger.debug({ artistName }, 'No similar artists to sync');
     return { created: 0, updated: 0 };
   }
 
@@ -147,9 +145,7 @@ export async function syncSimilarArtists(
   let artistsCreated = 0;
 
   if (missingResults.length > 0) {
-    console.log(
-      `[Similar Artists] Creating ${missingResults.length} new artist records...`
-    );
+    apiLogger.info({ count: missingResults.length }, 'Creating new artist records for similar artists');
 
     const { getMusicBrainzQueue } = await import('@/lib/queue');
     const queue = getMusicBrainzQueue();
@@ -186,16 +182,11 @@ export async function syncSimilarArtists(
           );
         }
       } catch (error) {
-        console.warn(
-          `[Similar Artists] Failed to create artist "${result.name}":`,
-          error instanceof Error ? error.message : error
-        );
+        apiLogger.warn({ artistName: result.name, err: error instanceof Error ? error.message : String(error) }, 'Failed to create similar artist');
       }
     }
 
-    console.log(
-      `[Similar Artists] Created ${artistsCreated} new artists, queued enrichment`
-    );
+    apiLogger.info({ created: artistsCreated }, 'Created new artists and queued enrichment');
   }
 
   // Re-lookup all local artist IDs (now includes newly created ones)
@@ -224,8 +215,6 @@ export async function syncSimilarArtists(
     })),
   });
 
-  console.log(
-    `[Similar Artists] Synced ${results.length} similar artists for ${artistName} (${artistsCreated} new)`
-  );
+  apiLogger.info({ synced: results.length, artistName, created: artistsCreated }, 'Synced similar artists');
   return { created: results.length, updated: 0 };
 }

@@ -1,8 +1,8 @@
 // src/lib/queue/musicbrainz-queue.ts
 import { Queue, QueueEvents, Worker, Job } from 'bullmq';
-import chalk from 'chalk';
 
 import { createRedisConnection } from './redis';
+import { queueLogger } from '@/lib/logger';
 import { getQueueConfig } from './config';
 import {
   JOB_TYPES,
@@ -40,7 +40,7 @@ export class MusicBrainzQueue {
 
     // Set up error handling
     this.queue.on('error', error => {
-      console.error('❌ MusicBrainz Queue Error:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'MusicBrainz queue error');
     });
   }
 
@@ -93,26 +93,18 @@ export class MusicBrainzQueue {
       if (jobDataAny.limit) queryInfo += ` • Limit: ${jobDataAny.limit}`;
     }
 
-    // Color-coded queue logging (cyan borders for job queuing)
+    // Structured queue logging
     if (!options.silent) {
-      const border = chalk.cyan('─'.repeat(60));
-      console.log('\n' + border);
-      console.log(
-        `${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`
+      queueLogger.info(
+        {
+          jobId: job.id,
+          type,
+          requestId: 'requestId' in jobData ? jobData.requestId : undefined,
+          priority: jobOptions.priority,
+          details: queryInfo || undefined,
+        },
+        'Job queued'
       );
-      console.log(border);
-      console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
-      console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
-      console.log(
-        `  ${chalk.cyan('Request ID:')} ${chalk.white('requestId' in jobData ? jobData.requestId : 'n/a')}`
-      );
-      console.log(
-        `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`
-      );
-      if (queryInfo) {
-        console.log(`  ${chalk.cyan('Details:')}    ${chalk.white(queryInfo)}`);
-      }
-      console.log(border + '\n');
     }
 
     return job;
@@ -153,19 +145,18 @@ export class MusicBrainzQueue {
     });
 
     this.worker.on('active', job => {
-      // Extract query info for active job
-      const jobData = job.data as any;
-      let queryInfo = '';
-      if (jobData.query) {
-        queryInfo = ` • Query: "${jobData.query}"`;
-      } else if (jobData.mbid) {
-        queryInfo = ` • MBID: ${jobData.mbid.substring(0, 8)}...`;
-      } else if (jobData.artistMbid) {
-        queryInfo = ` • Artist MBID: ${jobData.artistMbid.substring(0, 8)}...`;
-      }
+      const jobData = job.data as Record<string, unknown>;
+      const queryInfo = jobData.query
+        ? `Query: "${jobData.query}"`
+        : jobData.mbid
+          ? `MBID: ${String(jobData.mbid).substring(0, 8)}...`
+          : jobData.artistMbid
+            ? `Artist MBID: ${String(jobData.artistMbid).substring(0, 8)}...`
+            : undefined;
 
-      console.log(
-        `🔄 [Queue] Processing ${job.name} (ID: ${job.id})${queryInfo}`
+      queueLogger.info(
+        { jobId: job.id, jobName: job.name, details: queryInfo },
+        'Processing job'
       );
     });
 
@@ -177,33 +168,32 @@ export class MusicBrainzQueue {
           : 1
         : 0;
 
-      console.log(
-        `✅ Completed ${job.name} (ID: ${job.id}) in ${duration}ms • Results: ${resultCount}`
+      queueLogger.info(
+        { jobId: job.id, jobName: job.name, duration, resultCount },
+        'Job completed'
       );
     });
 
     this.worker.on('failed', (job, error) => {
-      // Extract query info for failed job
-      const jobData = job?.data as any;
-      let queryInfo = '';
-      if (jobData?.query) {
-        queryInfo = ` • Query: "${jobData.query}"`;
-      } else if (jobData?.mbid) {
-        queryInfo = ` • MBID: ${jobData.mbid.substring(0, 8)}...`;
-      }
+      const jobData = job?.data as Record<string, unknown> | undefined;
+      const queryInfo = jobData?.query
+        ? `Query: "${jobData.query}"`
+        : jobData?.mbid
+          ? `MBID: ${String(jobData.mbid).substring(0, 8)}...`
+          : undefined;
 
-      console.error(
-        `❌ Failed ${job?.name} (ID: ${job?.id})${queryInfo}:`,
-        error.message
+      queueLogger.error(
+        { jobId: job?.id, jobName: job?.name, details: queryInfo, error: error.message },
+        'Job failed'
       );
     });
 
     this.worker.on('stalled', jobId => {
-      console.warn(`⚠️ Job ${jobId} stalled`);
+      queueLogger.warn({ jobId }, 'Job stalled');
     });
 
     this.worker.on('error', error => {
-      console.error('❌ MusicBrainz Worker Error:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'MusicBrainz worker error');
     });
 
     return this.worker;
@@ -274,7 +264,7 @@ export class MusicBrainzQueue {
    */
   async pause(): Promise<void> {
     await this.queue.pause();
-    console.log('⏸️ MusicBrainz queue paused');
+    queueLogger.info('MusicBrainz queue paused');
   }
 
   /**
@@ -282,7 +272,7 @@ export class MusicBrainzQueue {
    */
   async resume(): Promise<void> {
     await this.queue.resume();
-    console.log('▶️ MusicBrainz queue resumed');
+    queueLogger.info('MusicBrainz queue resumed');
   }
 
   /**
@@ -294,9 +284,7 @@ export class MusicBrainzQueue {
     await this.queue.clean(cutoff, 100, 'completed');
     await this.queue.clean(cutoff, 50, 'failed');
 
-    console.log(
-      `🧹 Cleaned up MusicBrainz queue jobs older than ${olderThan}ms`
-    );
+    queueLogger.info({ olderThanMs: olderThan }, 'Cleaned up MusicBrainz queue jobs');
   }
 
   // ============================================================================
@@ -310,7 +298,7 @@ export class MusicBrainzQueue {
     if (this.worker) {
       await this.worker.close();
       this.worker = null;
-      console.log('✅ MusicBrainz worker closed');
+      queueLogger.info('MusicBrainz worker closed');
     }
 
     if (this.queueEvents) {
@@ -319,7 +307,7 @@ export class MusicBrainzQueue {
     }
 
     await this.queue.close();
-    console.log('✅ MusicBrainz queue closed');
+    queueLogger.info('MusicBrainz queue closed');
   }
 
   /**
@@ -333,7 +321,7 @@ export class MusicBrainzQueue {
         // Worker may already be dead from connection loss — that's fine
       }
       this.worker = null;
-      console.log('✅ MusicBrainz worker destroyed');
+      queueLogger.info('MusicBrainz worker destroyed');
     }
   }
 

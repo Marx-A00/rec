@@ -3,6 +3,8 @@
 
 import type { Redis } from 'ioredis';
 
+import { queueLogger } from '@/lib/logger';
+
 export const ENRICHMENT_CHANNEL = 'enrichment:status';
 
 export interface EnrichmentStatusEvent {
@@ -31,6 +33,6 @@ export async function publishEnrichmentEvent(
   try {
     await redisClient.publish(ENRICHMENT_CHANNEL, JSON.stringify(event));
   } catch (error) {
-    console.warn('Failed to publish enrichment event:', error);
+    queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, 'Failed to publish enrichment event');
   }
 }

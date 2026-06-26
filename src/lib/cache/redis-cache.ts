@@ -1,3 +1,4 @@
+import { cacheLogger } from '@/lib/logger';
 import { redis } from '@/lib/queue/redis';
 
 const MISS_SENTINEL = '__MISS__';
@@ -33,13 +34,15 @@ class RedisCache {
       const raw = await redis.get(key);
       if (raw === null) {
         this.metrics.misses++;
+        cacheLogger.debug({ key, hit: false }, 'Cache miss');
         return null;
       }
       this.metrics.hits++;
+      cacheLogger.debug({ key, hit: true }, 'Cache hit');
       return JSON.parse(raw) as T;
     } catch (error) {
       this.metrics.errors++;
-      console.error(`[cache] get error for key=${key}:`, error);
+      cacheLogger.error({ key, error: (error as Error).message }, 'Cache error');
       return null;
     }
   }
@@ -48,8 +51,9 @@ class RedisCache {
     if (!isCacheEnabled()) return;
     try {
       await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+      cacheLogger.debug({ key, ttl: ttlSeconds }, 'Cache set');
     } catch (error) {
-      console.error(`[cache] set error for key=${key}:`, error);
+      cacheLogger.error({ key, error: (error as Error).message }, 'Cache error');
     }
   }
 
@@ -57,8 +61,9 @@ class RedisCache {
     if (!isCacheEnabled()) return;
     try {
       await redis.set(key, JSON.stringify(MISS_SENTINEL), 'EX', ttlSeconds);
+      cacheLogger.debug({ key, ttl: ttlSeconds }, 'Cache set (miss sentinel)');
     } catch (error) {
-      console.error(`[cache] setMiss error for key=${key}:`, error);
+      cacheLogger.error({ key, error: (error as Error).message }, 'Cache error');
     }
   }
 
@@ -69,14 +74,16 @@ class RedisCache {
   async invalidate(key: string): Promise<void> {
     try {
       await redis.del(key);
+      cacheLogger.debug({ key }, 'Cache invalidated');
     } catch (error) {
-      console.error(`[cache] invalidate error for key=${key}:`, error);
+      cacheLogger.error({ key, error: (error as Error).message }, 'Cache error');
     }
   }
 
   async invalidatePattern(pattern: string): Promise<void> {
     try {
       let cursor = '0';
+      let count = 0;
       do {
         const [nextCursor, keys] = await redis.scan(
           cursor,
@@ -88,12 +95,14 @@ class RedisCache {
         cursor = nextCursor;
         if (keys.length > 0) {
           await redis.del(...keys);
+          count += keys.length;
         }
       } while (cursor !== '0');
+      cacheLogger.debug({ pattern, count }, 'Cache invalidated');
     } catch (error) {
-      console.error(
-        `[cache] invalidatePattern error for pattern=${pattern}:`,
-        error
+      cacheLogger.error(
+        { pattern, error: (error as Error).message },
+        'Cache error'
       );
     }
   }

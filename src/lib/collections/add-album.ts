@@ -1,8 +1,8 @@
-import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
 import { createCollectionAddActivity } from '@/lib/activities';
 import { findOrCreateAlbum } from '@/lib/albums';
+import { logger } from '@/lib/logger';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import type {
@@ -186,7 +186,7 @@ export async function addAlbumToCollection(
       },
     });
   } catch (logError) {
-    console.warn('[LlamaLogger] Failed to log collection add:', logError);
+    logger.warn({ module: 'collection', err: logError instanceof Error ? logError.message : String(logError) }, 'Failed to log collection add');
   }
 
   // Log artist:created for each new artist
@@ -209,7 +209,7 @@ export async function addAlbumToCollection(
         dataQualityAfter: 'LOW',
       });
     } catch (logError) {
-      console.warn('[LlamaLogger] Failed to log artist creation:', logError);
+      logger.warn({ module: 'collection', err: logError instanceof Error ? logError.message : String(logError) }, 'Failed to log artist creation');
     }
   }
 
@@ -253,14 +253,10 @@ export async function addAlbumToCollection(
           priority: 10,
           attempts: 3,
         });
-        console.log(
-          chalk.magenta(
-            `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" from ${caller}`
-          )
-        );
+        logger.debug({ module: 'collection', artistName: artist.name, caller }, 'Queued CHECK_ARTIST_ENRICHMENT');
       }
     } catch (queueError) {
-      console.warn('Failed to queue enrichment jobs:', queueError);
+      logger.warn({ module: 'collection', err: queueError instanceof Error ? queueError.message : String(queueError) }, 'Failed to queue enrichment jobs');
     }
   }
 

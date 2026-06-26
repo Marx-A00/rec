@@ -1,5 +1,6 @@
 // src/lib/dashboard/PanelRegistry.ts
 
+import { logger } from '@/lib/logger';
 import { PanelDefinition, PanelType } from '@/types/mosaic';
 
 class PanelRegistry {
@@ -7,9 +8,7 @@ class PanelRegistry {
 
   register(definition: PanelDefinition): void {
     if (this.panels.has(definition.type)) {
-      console.warn(
-        `Panel type "${definition.type}" is already registered. Overwriting.`
-      );
+      logger.warn({ module: 'dashboard', panelType: definition.type }, 'Panel type already registered, overwriting');
     }
     this.panels.set(definition.type, definition);
   }

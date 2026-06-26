@@ -9,6 +9,8 @@ import {
   LlamaLogCategory,
 } from '@prisma/client';
 
+import { logger as pinoLogger } from '@/lib/logger';
+
 // Operation types - extend this as needed
 export const OPERATIONS = {
   // External API enrichment operations
@@ -204,7 +206,7 @@ export async function logActivity({
     await prisma.llamaLog.create({ data: data as never });
   } catch (error) {
     // Log the error but don't throw - we don't want logging failures to break the main operation
-    console.error('Failed to log activity:', error);
+    pinoLogger.error({ module: 'activity-logger', err: error instanceof Error ? error.message : String(error) }, 'Failed to log activity');
   }
 }
 

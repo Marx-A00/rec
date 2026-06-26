@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
@@ -29,10 +30,10 @@ function formatFavorites(
   }));
 }
 
-export async function GET(
+export const GET = withApiLogging(async (
   _request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user || !isAdmin(session.user.role)) {
@@ -109,18 +110,17 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching taste profile:', error);
     return NextResponse.json(
       { error: 'Failed to fetch taste profile' },
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(
+export const POST = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user || !isAdmin(session.user.role)) {
@@ -213,10 +213,9 @@ export async function POST(
 
     return NextResponse.json({ favorites: formatFavorites(newFavorites) });
   } catch (error) {
-    console.error('Error updating taste profile:', error);
     return NextResponse.json(
       { error: 'Failed to update taste profile' },
       { status: 500 }
     );
   }
-}
+});

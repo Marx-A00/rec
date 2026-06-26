@@ -23,6 +23,7 @@ import { ExpressAdapter } from '@bull-board/express';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/processors';
 import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
+import { queueLogger } from '@/lib/logger';
 import {
   initializeMusicBrainzScheduler,
   shutdownMusicBrainzScheduler,
@@ -83,12 +84,14 @@ class MusicBrainzWorkerService {
   async start() {
     const line = '═'.repeat(60);
 
-    console.log('');
+    // Startup banner (visual dev feedback — kept alongside structured logs)
+    console.log(''); // eslint-disable-line no-console
     const purple = chalk.hex('#A78BFA');
 
-    console.log(chalk.bold.hex('#A78BFA')(`  Rec Worker`));
-    console.log(purple(line));
-    console.log('');
+    console.log(chalk.bold.hex('#A78BFA')(`  Rec Worker`)); // eslint-disable-line no-console
+    console.log(purple(line)); // eslint-disable-line no-console
+    console.log(''); // eslint-disable-line no-console
+    queueLogger.info('Worker starting');
 
     // Initialize Prisma
     this.prisma = new PrismaClient();
@@ -98,76 +101,75 @@ class MusicBrainzWorkerService {
 
     // Start queue activity monitor
     startQueueActivityMonitor(this.prisma, 15000); // Check every 15 seconds
-    console.log('  🔄 Queue activity monitor started (checking every 15s)');
+    queueLogger.info('Queue activity monitor started (15s interval)');
 
     // Initialize schedulers
-    console.log('');
-    console.log(chalk.gray('  ── Schedulers ──'));
-    console.log('');
 
     // MusicBrainz scheduler
     const mbSchedulerStarted = await initializeMusicBrainzScheduler();
     if (mbSchedulerStarted) {
-      console.log('  ✅ MusicBrainz scheduler enabled');
+      queueLogger.info({ scheduler: 'musicbrainz' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  MusicBrainz scheduler disabled');
+      queueLogger.info({ scheduler: 'musicbrainz' }, 'Scheduler disabled');
     }
 
     // Uncover daily challenge scheduler
     const uncoverSchedulerStarted = await initializeUncoverScheduler();
     if (uncoverSchedulerStarted) {
-      console.log('  ✅ Uncover scheduler enabled (7 AM Central daily)');
+      queueLogger.info({ scheduler: 'uncover' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  Uncover scheduler failed to start');
+      queueLogger.warn({ scheduler: 'uncover' }, 'Scheduler failed to start');
     }
 
     // ListenBrainz scheduler
     const lbSchedulerStarted = await initializeListenBrainzScheduler();
     if (lbSchedulerStarted) {
-      console.log('  ✅ ListenBrainz scheduler enabled');
+      queueLogger.info({ scheduler: 'listenbrainz' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  ListenBrainz scheduler disabled');
+      queueLogger.info({ scheduler: 'listenbrainz' }, 'Scheduler disabled');
     }
 
     // Deezer Editorial scheduler
     const deezerEditorialStarted = await initializeDeezerEditorialScheduler();
     if (deezerEditorialStarted) {
-      console.log('  ✅ Deezer Editorial scheduler enabled');
+      queueLogger.info({ scheduler: 'deezer-editorial' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  Deezer Editorial scheduler disabled');
+      queueLogger.info({ scheduler: 'deezer-editorial' }, 'Scheduler disabled');
     }
 
     // Last.fm user sync scheduler
     const lastfmStarted = await initializeLastfmScheduler();
     if (lastfmStarted) {
-      console.log('  ✅ Last.fm scheduler enabled');
+      queueLogger.info({ scheduler: 'lastfm' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  Last.fm scheduler disabled');
+      queueLogger.info({ scheduler: 'lastfm' }, 'Scheduler disabled');
     }
 
     // Taste match scheduler
     const tasteMatchStarted = await initializeTasteMatchScheduler();
     if (tasteMatchStarted) {
-      console.log('  ✅ Taste match scheduler enabled (every 12h)');
+      queueLogger.info({ scheduler: 'taste-match' }, 'Scheduler enabled');
     } else {
-      console.log('  ⏸️  Taste match scheduler failed to start');
+      queueLogger.warn({ scheduler: 'taste-match' }, 'Scheduler failed to start');
     }
 
     // Start HTTP server for Bull Board dashboard + API endpoints
     this.startHttpServer();
 
-    // Final ready banner
-    console.log('');
-    console.log(
-      chalk.bold.green('  ✅ Ready') +
+    // Final ready banner (visual dev feedback — kept alongside structured logs)
+    console.log(''); // eslint-disable-line no-console
+    console.log( // eslint-disable-line no-console
+      chalk.bold.green('  Ready') +
         chalk.gray(' | ') +
         chalk.white('Rate: 1/sec') +
         chalk.gray(' | ') +
         chalk.white(`Dashboard: http://localhost:${HTTP_PORT}`)
     );
-    console.log('');
-    console.log(purple(line));
-    console.log('');
+    console.log(''); // eslint-disable-line no-console
+    console.log(purple(line)); // eslint-disable-line no-console
+    console.log(''); // eslint-disable-line no-console
+
+    queueLogger.info({ port: HTTP_PORT, rateLimit: '1/sec' }, 'Worker ready');
 
     // Keep process alive
     this.keepAlive();
@@ -191,7 +193,6 @@ class MusicBrainzWorkerService {
 
       this.worker.on('active', (job: any) => {
         const jobData = job.data as any;
-        const query = jobData.query || job.name;
         const queryInfo = jobData.query
           ? `Query: "${jobData.query}"`
           : jobData.mbid
@@ -202,25 +203,13 @@ class MusicBrainzWorkerService {
                 ? `Artist ID: ${jobData.artistId}`
                 : null;
 
-        const border = chalk.blue('─'.repeat(50));
-
-        console.log('\n' + border);
-        console.log(
-          `${chalk.bold.white('PROCESSING')} ${chalk.blue('[WORKER LAYER]')}`
+        queueLogger.info(
+          { jobId: job.id, jobName: job.name, details: queryInfo },
+          'Job active'
         );
-        console.log(border);
-        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(job.name)}`);
-        console.log(
-          `  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`
-        );
-        if (queryInfo) {
-          console.log(`  ${chalk.cyan('Details:')}  ${chalk.white(queryInfo)}`);
-        }
-        console.log(border + '\n');
       });
 
       this.worker.on('completed', (job: any, result: any) => {
-        const jobData = job.data as any;
         const duration = Date.now() - job.processedOn;
         const resultCount = result?.data
           ? Array.isArray(result.data)
@@ -228,74 +217,33 @@ class MusicBrainzWorkerService {
             : 1
           : 0;
 
-        // Extract job details
-        let jobInfo = job.name;
-        if (jobData.query) {
-          jobInfo = `${job.name} • Query: "${jobData.query}"`;
-        } else if (jobData.mbid) {
-          jobInfo = `${job.name} • MBID: ${jobData.mbid.substring(0, 8)}...`;
-        } else if (jobData.artistMbid) {
-          jobInfo = `${job.name} • Artist MBID: ${jobData.artistMbid.substring(0, 8)}...`;
-        }
-
-        const border = chalk.green('─'.repeat(50));
-
-        console.log('\n' + border);
-        console.log(
-          `${chalk.bold.green('COMPLETED')} ${chalk.green('[WORKER LAYER]')}`
+        queueLogger.info(
+          { jobId: job.id, jobName: job.name, duration, resultCount },
+          'Job completed'
         );
-        console.log(border);
-        console.log(`  ${chalk.cyan('Job ID:')}   ${chalk.white(job.id)}`);
-        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(jobInfo)}`);
-        console.log(
-          `  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`
-        );
-        console.log(`  ${chalk.cyan('Results:')}  ${chalk.white(resultCount)}`);
-        console.log(border + '\n');
       });
 
       this.worker.on('failed', (job: any, err: Error) => {
-        const jobData = job?.data as any;
-
-        // Extract job details
-        let jobInfo = job?.name || 'Unknown';
-        if (jobData?.query) {
-          jobInfo = `${job.name} • Query: "${jobData.query}"`;
-        } else if (jobData?.mbid) {
-          jobInfo = `${job.name} • MBID: ${jobData.mbid.substring(0, 8)}...`;
-        } else if (jobData?.artistMbid) {
-          jobInfo = `${job.name} • Artist MBID: ${jobData.artistMbid.substring(0, 8)}...`;
-        }
-
-        const border = chalk.red('─'.repeat(50));
-
-        console.log('\n' + border);
-        console.log(
-          `${chalk.bold.red('FAILED')} ${chalk.red('[WORKER LAYER]')}`
+        queueLogger.error(
+          { jobId: job?.id, jobName: job?.name, error: err.message },
+          'Job failed'
         );
-        console.log(border);
-        console.log(
-          `  ${chalk.cyan('Job ID:')} ${chalk.white(job?.id || 'Unknown')}`
-        );
-        console.log(`  ${chalk.cyan('Job:')}    ${chalk.white(jobInfo)}`);
-        console.log(`  ${chalk.cyan('Error:')}  ${chalk.red(err.message)}`);
-        console.log(border + '\n');
       });
 
       this.worker.on('error', (err: Error) => {
-        console.error('🚨 Worker error:', err.message);
+        queueLogger.error({ error: err.message }, 'Worker error');
         if (!this.isShuttingDown) {
           this.handleWorkerCrash(err);
         }
       });
 
       this.worker.on('stalled', (jobId: string) => {
-        console.warn(`⚠️ Job #${jobId} stalled`);
+        queueLogger.warn({ jobId }, 'Job stalled');
       });
 
       // Worker initialized - no extra logging needed
     } catch (error) {
-      console.error('❌ Failed to create worker:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to create worker');
       if (!this.isShuttingDown) {
         this.handleWorkerCrash(error as Error);
       }
@@ -360,7 +308,7 @@ class MusicBrainzWorkerService {
         serverAdapter: serverAdapter,
       });
     } catch (error) {
-      console.error('❌ Failed to configure Bull Board:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to configure Bull Board');
     }
 
     app.use('/admin/queues', serverAdapter.getRouter());
@@ -990,7 +938,7 @@ class MusicBrainzWorkerService {
           totalItems: totalJobs,
         });
       } catch (error) {
-        console.error('Job history error:', error);
+        queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Job history error');
         res.status(500).json({
           error: 'Failed to fetch job history',
           message: error instanceof Error ? error.message : 'Unknown error',
@@ -1070,7 +1018,7 @@ class MusicBrainzWorkerService {
         res: express.Response,
         _next: express.NextFunction
       ) => {
-        console.error('💥 Express error:', error);
+        queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Express error');
         res.status(500).json({
           error: 'Internal Server Error',
           message: error.message,
@@ -1088,7 +1036,7 @@ class MusicBrainzWorkerService {
     });
 
     this.server.on('error', (err: Error) => {
-      console.error('❌ HTTP server error:', err.message);
+      queueLogger.error({ error: err.message }, 'HTTP server error');
     });
   }
 
@@ -1103,14 +1051,13 @@ class MusicBrainzWorkerService {
       this.restartAttempts++;
 
       if (this.restartAttempts > this.maxRestartAttempts) {
-        console.error(
-          `💀 Worker failed ${this.maxRestartAttempts} times. Giving up.`
-        );
+        queueLogger.error({ maxAttempts: this.maxRestartAttempts }, 'Worker exceeded max restart attempts, exiting');
         process.exit(1);
       }
 
-      console.warn(
-        `🔄 Restarting worker (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`
+      queueLogger.warn(
+        { attempt: this.restartAttempts, maxAttempts: this.maxRestartAttempts },
+        'Restarting worker'
       );
 
       // Clean up current worker — destroyWorker handles close + null internally
@@ -1130,7 +1077,7 @@ class MusicBrainzWorkerService {
 
   private setupGracefulShutdown() {
     const shutdown = async (signal: string) => {
-      console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+      queueLogger.info({ signal }, 'Received shutdown signal');
       this.isShuttingDown = true;
 
       try {
@@ -1139,44 +1086,44 @@ class MusicBrainzWorkerService {
 
         // Close HTTP server
         if (this.server) {
-          console.log('🛑 Closing HTTP server...');
+          queueLogger.info('Closing HTTP server');
           this.server.close();
         }
 
         // Stop MusicBrainz scheduler
-        console.log('🛑 Stopping MusicBrainz scheduler...');
+        queueLogger.info('Stopping MusicBrainz scheduler');
         shutdownMusicBrainzScheduler();
 
         // Stop Uncover scheduler
-        console.log('🛑 Stopping Uncover scheduler...');
+        queueLogger.info('Stopping Uncover scheduler');
         await shutdownUncoverScheduler();
 
         // Stop ListenBrainz scheduler
-        console.log('🛑 Stopping ListenBrainz scheduler...');
+        queueLogger.info('Stopping ListenBrainz scheduler');
         await shutdownListenBrainzScheduler();
 
         // Stop Deezer Editorial scheduler
-        console.log('🛑 Stopping Deezer Editorial scheduler...');
+        queueLogger.info('Stopping Deezer Editorial scheduler');
         await shutdownDeezerEditorialScheduler();
 
         // Stop Last.fm scheduler
-        console.log('🛑 Stopping Last.fm scheduler...');
+        queueLogger.info('Stopping Last.fm scheduler');
         await shutdownLastfmScheduler();
 
         // Stop Taste match scheduler
-        console.log('🛑 Stopping Taste match scheduler...');
+        queueLogger.info('Stopping Taste match scheduler');
         await shutdownTasteMatchScheduler();
 
         if (this.worker) {
-          console.log('⏳ Waiting for current jobs to complete...');
+          queueLogger.info('Waiting for current jobs to complete');
           await this.worker.close();
-          console.log('✅ Worker stopped gracefully');
+          queueLogger.info('Worker stopped gracefully');
         }
       } catch (error) {
-        console.error('❌ Error during shutdown:', error);
+        queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Error during shutdown');
       }
 
-      console.log('👋 Queue Worker shutdown complete');
+      queueLogger.info('Queue Worker shutdown complete');
       process.exit(0);
     };
 
@@ -1187,12 +1134,12 @@ class MusicBrainzWorkerService {
 
     // Handle uncaught exceptions
     process.on('uncaughtException', error => {
-      console.error('💥 Uncaught Exception:', error);
+      queueLogger.error({ error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, 'Uncaught exception');
       shutdown('uncaughtException');
     });
 
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+    process.on('unhandledRejection', (reason, _promise) => {
+      queueLogger.warn({ reason: reason instanceof Error ? reason.message : String(reason) }, 'Unhandled rejection');
       // Log but don't shutdown — unhandled rejections from third-party libs
       // (e.g. google-auth-library) should not take down the worker
     });
@@ -1220,7 +1167,7 @@ class MusicBrainzWorkerService {
 if (require.main === module) {
   const worker = new MusicBrainzWorkerService();
   worker.start().catch(error => {
-    console.error('❌ Failed to start Queue Worker:', error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to start Queue Worker');
     process.exit(1);
   });
 }

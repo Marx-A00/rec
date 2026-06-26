@@ -10,7 +10,6 @@
 // If you need to add/modify field resolvers (like Artist.needsEnrichment),
 // add them to the type resolver sections below (e.g., Artist: { ... })
 
-import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
 import { Resolvers } from '@/generated/graphql';
@@ -567,10 +566,6 @@ export const resolvers: Resolvers = {
 
       const { cache, CACHE_KEYS } = await import('@/lib/cache');
 
-      const orange = chalk.hex('#E67E22');
-      const cacheBorder = orange('─'.repeat(60));
-      const cacheTag = orange('[CACHE LAYER]');
-
       const cacheKey = CACHE_KEYS.similarArtists(id);
       const cached = await cache.get<
         Array<{
@@ -583,11 +578,7 @@ export const resolvers: Resolvers = {
 
       // Cache miss — queue background job and return empty (frontend polls)
       if (cached === null) {
-        console.log(cacheBorder);
-        console.log(
-          `${orange('❄ CACHE MISS')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— queuing background fetch')}`
-        );
-        console.log(cacheBorder);
+        graphqlLogger.debug({ artistName, cacheKey }, 'Cache miss for similar-artists, queuing background fetch');
         const { getMusicBrainzQueue, JOB_TYPES } = await import('@/lib/queue');
         const queue = getMusicBrainzQueue();
         await queue.addJob(JOB_TYPES.FETCH_SIMILAR_ARTISTS, {
@@ -598,11 +589,7 @@ export const resolvers: Resolvers = {
         return [];
       }
 
-      console.log(cacheBorder);
-      console.log(
-        `${orange('⚡ CACHE HIT')} ${cacheTag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
-      );
-      console.log(cacheBorder);
+      graphqlLogger.debug({ artistName, resultCount: cached.length }, 'Cache hit for similar-artists');
 
       // Cache hit — enrich with local artist data
       const mbids = cached.map(r => r.mbid);
@@ -720,33 +707,12 @@ export const resolvers: Resolvers = {
         });
 
         // Use deduplicated results from orchestrator instead of raw source results
-        console.log(
-          `\n🔍 [GraphQL Resolver] Using deduplicated results from orchestrator`
-        );
-        console.log(
-          `   Total deduplicated results: ${searchResult.results.length}`
-        );
-        console.log(
-          `   Breakdown: ${searchResult.results.filter(r => r.type === 'track').length} tracks, ${searchResult.results.filter(r => r.type === 'album').length} albums, ${searchResult.results.filter(r => r.type === 'artist').length} artists`
-        );
-
-        // Debug: log source values
-        if (searchResult.results.length > 0) {
-          console.log(
-            `   First result source: "${searchResult.results[0].source}"`
-          );
-          console.log(`   Source distribution:`, {
-            local: searchResult.results.filter(r => r.source === 'local')
-              .length,
-            musicbrainz: searchResult.results.filter(
-              r => r.source === 'musicbrainz'
-            ).length,
-            spotify: searchResult.results.filter(r => r.source === 'spotify')
-              .length,
-            undefined: searchResult.results.filter(r => !r.source).length,
-          });
-        }
-        console.log();
+        graphqlLogger.debug({
+          totalResults: searchResult.results.length,
+          tracks: searchResult.results.filter(r => r.type === 'track').length,
+          albums: searchResult.results.filter(r => r.type === 'album').length,
+          artists: searchResult.results.filter(r => r.type === 'artist').length,
+        }, 'Using deduplicated results from orchestrator');
 
         // Separate deduplicated results by source
         // Since these are external MB results, they won't have 'source' set in the result object
@@ -1096,30 +1062,16 @@ export const resolvers: Resolvers = {
             !existingMbTrackIds.has(r.id) &&
             !dbTrackIds.has(r.id)
         );
-        console.log(
-          `\n🎵 [Track Filtering] Found ${mbTracks.length} MusicBrainz tracks before score filter`
-        );
         const scoreFiltered = mbTracks.filter(
           r =>
             (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) >=
             MIN_TRACK_MB_SCORE
         );
-        console.log(
-          `   After score filter (>=${MIN_TRACK_MB_SCORE}): ${scoreFiltered.length} tracks`
-        );
-        console.log(
-          `   Filtered out: ${mbTracks.length - scoreFiltered.length} tracks`
-        );
-        if (mbTracks.length > scoreFiltered.length) {
-          const rejected = mbTracks.filter(
-            r =>
-              (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) <
-              MIN_TRACK_MB_SCORE
-          );
-          console.log(
-            `   Rejected track scores: ${rejected.map(r => `"${r.title}" (${r.relevanceScore || 0})`).join(', ')}\n`
-          );
-        }
+        graphqlLogger.debug({
+          beforeFilter: mbTracks.length,
+          afterFilter: scoreFiltered.length,
+          threshold: MIN_TRACK_MB_SCORE,
+        }, 'Track score filtering');
 
         const newMbTracks = scoreFiltered
           // Filter out obvious noise where the recording title equals the artist name
@@ -1326,21 +1278,7 @@ export const resolvers: Resolvers = {
         // Name-level deduplication REMOVED - SearchOrchestrator already handles
         // deduplication correctly using unique IDs (MBIDs, Spotify IDs).
         // Multiple artists with the same name are intentionally kept as separate results.
-        console.log(
-          `\n🎯 [GraphQL] Keeping all ${artists.length} artists (name-level dedup removed):`
-        );
-        artists.forEach((a, i) => {
-          const idPreview =
-            String(a.id).length > 12
-              ? String(a.id).substring(0, 12) + '...'
-              : String(a.id);
-          const mbidPreview = a.musicbrainzId
-            ? a.musicbrainzId.substring(0, 8) + '...'
-            : 'none';
-          console.log(
-            `  [${i + 1}] "${a.name}" (ID: ${idPreview}) MBID: ${mbidPreview} Source: ${a.source || 'unknown'}`
-          );
-        });
+        graphqlLogger.debug({ artistCount: artists.length }, 'Keeping all artists (name-level dedup removed)');
 
         // Use rankedArtists directly (no additional dedup)
         artists = rankedArtists;
@@ -1397,7 +1335,7 @@ export const resolvers: Resolvers = {
           hasMore: currentCount < totalAvailable,
         };
       } catch (error) {
-        console.error('Search error:', error);
+        graphqlLogger.error({ err: error instanceof Error ? error.message : String(error) }, 'Search error');
         return {
           artists: [],
           albums: [],

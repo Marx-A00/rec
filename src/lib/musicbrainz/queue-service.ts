@@ -5,7 +5,8 @@
  */
 
 import { QueueEvents, Worker } from 'bullmq';
-import chalk from 'chalk';
+
+import { mbLogger } from '@/lib/logger';
 
 import { getMusicBrainzQueue } from '../queue/musicbrainz-queue';
 import { JOB_TYPES, PRIORITY_TIERS, type PriorityTier } from '../queue/jobs';
@@ -84,7 +85,7 @@ export class QueuedMusicBrainzService {
    * This is what connects the queue results back to our service
    */
   private setupEventListeners(): void {
-    console.log('Setting up QueueEvents listeners...');
+    mbLogger.debug('Setting up QueueEvents listeners');
 
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
@@ -120,38 +121,14 @@ export class QueuedMusicBrainzService {
         if (preview) resultPreview = '"' + preview + '"';
       }
 
-      // Green borders for job completion events
-      const border = chalk.green('-'.repeat(60));
-      console.log('\n' + border);
-      console.log(
-        chalk.bold.green('JOB COMPLETED') +
-          ' ' +
-          chalk.green('[QUEUE EVENTS LAYER]')
+      mbLogger.info(
+        { jobId, success, resultCount, preview: resultPreview || undefined },
+        'Job completed'
       );
-      console.log(border);
-      console.log('  ' + chalk.green('Job ID:') + '     ' + chalk.white(jobId));
-      console.log(
-        '  ' +
-          chalk.green('Success:') +
-          '    ' +
-          (success ? chalk.green('Yes') : chalk.red('No'))
-      );
-      console.log(
-        '  ' +
-          chalk.green('Results:') +
-          '    ' +
-          chalk.white(String(resultCount))
-      );
-      if (resultPreview) {
-        console.log(
-          '  ' + chalk.green('Preview:') + '    ' + chalk.cyan(resultPreview)
-        );
-      }
-      console.log(border + '\n');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(chalk.green('Resolving pending job ' + jobId));
+        mbLogger.debug({ jobId }, 'Resolving pending job');
         pending.resolve(result);
         this.pendingJobs.delete(jobId);
       }
@@ -160,33 +137,20 @@ export class QueuedMusicBrainzService {
     });
 
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {
-      // Red borders for job failure events
-      const border = chalk.red('-'.repeat(60));
-      console.log('\n' + border);
-      console.log(
-        chalk.bold.red('JOB FAILED') + ' ' + chalk.red('[QUEUE EVENTS LAYER]')
-      );
-      console.log(border);
-      console.log('  ' + chalk.red('Job ID:') + ' ' + chalk.white(jobId));
-      console.log(
-        '  ' + chalk.red('Reason:') + ' ' + chalk.white(failedReason)
-      );
-      console.log(border + '\n');
+      mbLogger.error({ jobId, reason: failedReason }, 'Job failed');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(chalk.red('Rejecting pending job ' + jobId));
+        mbLogger.debug({ jobId }, 'Rejecting pending job');
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(
-          chalk.yellow('No pending promise found for failed job ' + jobId)
-        );
+        mbLogger.debug({ jobId }, 'No pending promise found for failed job');
       }
     });
 
     this.queueEvents.on('error', error => {
-      console.error('QueueEvents error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'QueueEvents error');
     });
   }
 
@@ -227,7 +191,7 @@ export class QueuedMusicBrainzService {
 
       return (result.data as ArtistSearchResult[]) || [];
     } catch (error) {
-      console.error('Queued MusicBrainz artist search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued artist search failed');
       throw new Error(
         'Failed to search artists: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -266,7 +230,7 @@ export class QueuedMusicBrainzService {
 
       return (result.data as ReleaseGroupSearchResult[]) || [];
     } catch (error) {
-      console.error('Queued MusicBrainz release search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued release search failed');
       throw new Error(
         'Failed to search releases: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -300,16 +264,16 @@ export class QueuedMusicBrainzService {
       const result = await this.waitForJobViaEvents(job.id!);
 
       if (!result.success) {
-        console.warn(
-          'MusicBrainz recording search failed:',
-          result.error?.message
+        mbLogger.warn(
+          { error: result.error?.message },
+          'MusicBrainz recording search failed'
         );
         return []; // Return empty array instead of throwing - allow search to continue
       }
 
       return (result.data as RecordingSearchResult[]) || [];
     } catch (error) {
-      console.error('Queued MusicBrainz recording search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued recording search failed');
       // Return empty array instead of throwing - allow search to continue with other sources
       return [];
     }
@@ -345,7 +309,7 @@ export class QueuedMusicBrainzService {
 
       return result.data;
     } catch (error) {
-      console.error('Queued MusicBrainz artist lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued artist lookup failed');
       throw new Error(
         'Failed to lookup artist: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -383,7 +347,7 @@ export class QueuedMusicBrainzService {
 
       return result.data;
     } catch (error) {
-      console.error('Queued MusicBrainz release lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued release lookup failed');
       throw new Error(
         'Failed to lookup release: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -421,7 +385,7 @@ export class QueuedMusicBrainzService {
 
       return result.data;
     } catch (error) {
-      console.error('Queued MusicBrainz release group lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued release group lookup failed');
       throw new Error(
         'Failed to lookup release group: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -462,15 +426,15 @@ export class QueuedMusicBrainzService {
         const count = Array.isArray(releaseGroups)
           ? releaseGroups.length
           : (data?.count ?? 'unknown');
-        console.log('MB browse RG by artist ' + artistMbid + ': got ' + count);
+        mbLogger.debug({ artistMbid, count }, 'Browse release groups by artist');
       } catch {
         // Ignore logging errors
       }
       return result.data;
     } catch (error) {
-      console.error(
-        'Queued MusicBrainz browse release-groups by artist error:',
-        error
+      mbLogger.error(
+        { artistMbid, error: error instanceof Error ? error.message : 'Unknown error' },
+        'Queued browse release-groups by artist failed'
       );
       throw new Error(
         'Failed to browse release groups: ' +
@@ -509,7 +473,7 @@ export class QueuedMusicBrainzService {
 
       return result.data;
     } catch (error) {
-      console.error('Queued MusicBrainz recording lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Queued recording lookup failed');
       throw new Error(
         'Failed to lookup recording: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -571,7 +535,7 @@ export class QueuedMusicBrainzService {
         estimatedWaitMs: (position + 1) * 1000,
       };
     } catch (error) {
-      console.error('Failed to get queue position:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get queue position');
       return null;
     }
   }
@@ -648,7 +612,7 @@ export class QueuedMusicBrainzService {
 
     // Don't start worker in web process - only in dedicated worker service
     if (process.env.DISABLE_EMBEDDED_WORKER === 'true') {
-      console.log('Embedded worker disabled, using separate worker service');
+      mbLogger.debug('Embedded worker disabled, using separate worker service');
       return;
     }
 
@@ -656,14 +620,14 @@ export class QueuedMusicBrainzService {
     if (!this.workerStartPromise) {
       this.workerStartPromise = (async () => {
         try {
-          console.log('Starting MusicBrainz queue worker...');
+          mbLogger.info('Starting MusicBrainz queue worker');
           const { processMusicBrainzJob } = await import('../queue/processors');
           this.worker = this.queue.createWorker(processMusicBrainzJob);
           this.isWorkerRunning = true;
-          console.log('MusicBrainz queue worker started');
+          mbLogger.info('MusicBrainz queue worker started');
         } catch (error) {
           this.workerStartPromise = null;
-          console.error('Failed to start MusicBrainz worker:', error);
+          mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to start MusicBrainz worker');
           throw error;
         }
       })();
@@ -680,7 +644,7 @@ export class QueuedMusicBrainzService {
       await this.queue.destroyWorker();
       this.worker = null;
       this.isWorkerRunning = false;
-      console.log('MusicBrainz worker stopped');
+      mbLogger.info('MusicBrainz worker stopped');
     }
   }
 
@@ -725,20 +689,7 @@ export class QueuedMusicBrainzService {
         }
       }, timeoutMs);
 
-      // Yellow borders for waiting events
-      const border = chalk.yellow('-'.repeat(60));
-      console.log('\n' + border);
-      console.log(
-        chalk.bold.yellow('WAITING FOR JOB') +
-          ' ' +
-          chalk.yellow('[QUEUE EVENTS LAYER]')
-      );
-      console.log(border);
-      console.log('  ' + chalk.yellow('Job ID:') + ' ' + chalk.white(jobId));
-      console.log(
-        '  ' + chalk.yellow('Timeout:') + ' ' + chalk.white(timeoutMs + 'ms')
-      );
-      console.log(border + '\n');
+      mbLogger.debug({ jobId, timeoutMs }, 'Waiting for job via QueueEvents');
     });
   }
 
@@ -760,7 +711,7 @@ export class QueuedMusicBrainzService {
    * Graceful shutdown
    */
   async shutdown(): Promise<void> {
-    console.log('Shutting down MusicBrainz service...');
+    mbLogger.info('Shutting down MusicBrainz service');
 
     // Reject any pending jobs
     this.pendingJobs.forEach(({ reject }) => {
@@ -773,11 +724,11 @@ export class QueuedMusicBrainzService {
       await this.queueEvents.close();
       this.queueEvents = null;
     }
-    console.log('QueueEvents closed');
+    mbLogger.debug('QueueEvents closed');
 
     await this.stopWorker();
     await this.queue.close();
-    console.log('MusicBrainz service shutdown complete');
+    mbLogger.info('MusicBrainz service shutdown complete');
   }
 }
 

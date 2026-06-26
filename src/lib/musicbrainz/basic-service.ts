@@ -1,4 +1,5 @@
 // src/lib/musicbrainz/service.ts
+import { mbLogger } from '@/lib/logger';
 import { MusicBrainzApi } from 'musicbrainz-api';
 
 // Configure MusicBrainz API client
@@ -154,7 +155,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz artist search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz artist search failed');
       throw new Error(
         `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -216,7 +217,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz release group search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz release group search failed');
       throw new Error(
         `Failed to search release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -260,7 +261,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz album search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz album search failed');
       throw new Error(
         `Failed to search albums: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -304,7 +305,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz single search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz single search failed');
       throw new Error(
         `Failed to search singles: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -348,7 +349,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz EP search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz EP search failed');
       throw new Error(
         `Failed to search EPs: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -394,7 +395,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz recording search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz recording search failed');
       throw new Error(
         `Failed to search recordings: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -452,7 +453,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz release search error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz release search failed');
       throw new Error(
         `Failed to search releases: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -504,7 +505,7 @@ export class MusicBrainzService {
         })) || []
       );
     } catch (error) {
-      console.error('MusicBrainz browse release-group releases error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz browse release-group releases failed');
       throw new Error(
         `Failed to browse release-group releases: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -518,7 +519,7 @@ export class MusicBrainzService {
     try {
       return await this.api.lookup('artist', mbid, includes as any);
     } catch (error) {
-      console.error('MusicBrainz artist lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz artist lookup failed');
       throw new Error(
         `Failed to lookup artist: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -532,7 +533,7 @@ export class MusicBrainzService {
     try {
       return await this.api.lookup('release-group', mbid, includes as any);
     } catch (error) {
-      console.error('MusicBrainz release group lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz release group lookup failed');
       throw new Error(
         `Failed to lookup release group: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -546,7 +547,7 @@ export class MusicBrainzService {
     try {
       return await this.api.lookup('recording', mbid, includes as any);
     } catch (error) {
-      console.error('MusicBrainz recording lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz recording lookup failed');
       throw new Error(
         `Failed to lookup recording: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -560,7 +561,7 @@ export class MusicBrainzService {
     try {
       return await this.api.lookup('release', mbid, includes as any);
     } catch (error) {
-      console.error('MusicBrainz release lookup error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz release lookup failed');
       throw new Error(
         `Failed to lookup release: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -578,7 +579,7 @@ export class MusicBrainzService {
         offset,
       });
     } catch (error) {
-      console.error('MusicBrainz browse artist release groups error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz browse artist release groups failed');
       throw new Error(
         `Failed to browse artist release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -596,7 +597,7 @@ export class MusicBrainzService {
         offset,
       });
     } catch (error) {
-      console.error('MusicBrainz browse release recordings error:', error);
+      mbLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'MusicBrainz browse release recordings failed');
       throw new Error(
         `Failed to browse release recordings: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

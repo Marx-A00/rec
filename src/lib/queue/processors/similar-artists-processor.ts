@@ -1,8 +1,8 @@
 import type { Job } from 'bullmq';
-import chalk from 'chalk';
 
 import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
 import { fetchSimilarArtistsFromAPIs } from '@/lib/api/similar-artists-service';
+import { queueLogger } from '@/lib/logger';
 
 import { JOB_TYPES, type FetchSimilarArtistsJobData } from '../jobs';
 import { getMusicBrainzQueue } from '../index';
@@ -14,10 +14,6 @@ interface CachedSimilarArtist {
   source: string;
 }
 
-const orange = chalk.hex('#E67E22');
-const border = () => orange('─'.repeat(60));
-const tag = orange('[CACHE LAYER]');
-
 export async function handleFetchSimilarArtists(
   job: Job<FetchSimilarArtistsJobData>
 ) {
@@ -27,32 +23,17 @@ export async function handleFetchSimilarArtists(
   // Check cache
   const cached = await cache.get<CachedSimilarArtist[]>(cacheKey);
   if (cached !== null) {
-    console.log(border());
-    console.log(
-      `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray(`(${cached.length} results)`)}`
-    );
-    console.log(border());
+    queueLogger.debug({ artistName, mbid, cacheHit: true, count: cached.length }, 'Similar artists cache hit');
     return { success: true, cached: true, count: cached.length };
   }
 
   // Cache miss — fetch from Last.fm + ListenBrainz APIs
-  console.log(border());
-  console.log(
-    `${orange('❄ CACHE MISS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
-  );
-  console.log(
-    `  ${orange('Action:')}  ${chalk.white('Fetching from Last.fm + ListenBrainz APIs...')}`
-  );
-  console.log(border());
+  queueLogger.debug({ artistName, mbid }, 'Similar artists cache miss, fetching from APIs');
 
   const results = await fetchSimilarArtistsFromAPIs(artistName, mbid);
 
   if (results.length === 0) {
-    console.log(border());
-    console.log(
-      `${orange('📭 NO RESULTS')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— caching empty result')}`
-    );
-    console.log(border());
+    queueLogger.debug({ artistName, mbid }, 'No similar artists found, caching empty result');
     await cache.set(cacheKey, [], CACHE_TTLS.SIMILAR_ARTISTS);
     return { success: true, cached: false, count: 0 };
   }
@@ -76,24 +57,7 @@ export async function handleFetchSimilarArtists(
     });
   }
 
-  const artistNames = toCache
-    .slice(0, 5)
-    .map(a => a.name)
-    .join(', ');
-  const suffix = toCache.length > 5 ? `, +${toCache.length - 5} more` : '';
-
-  console.log(border());
-  console.log(
-    `${orange('💾 CACHED')} ${tag} ${chalk.white('similar-artists')} ${chalk.magenta(`["${artistName}"]`)}`
-  );
-  console.log(
-    `  ${orange('Results:')} ${chalk.white(String(toCache.length))} ${chalk.gray('(7-day TTL)')}`
-  );
-  console.log(`  ${orange('Artists:')} ${chalk.white(artistNames + suffix)}`);
-  console.log(
-    `  ${orange('Images:')}  ${chalk.white(`${toCache.length} fetch jobs queued`)}`
-  );
-  console.log(border());
+  queueLogger.info({ artistName, mbid, count: toCache.length, imageJobsQueued: toCache.length }, 'Similar artists cached');
 
   return { success: true, cached: false, count: toCache.length };
 }

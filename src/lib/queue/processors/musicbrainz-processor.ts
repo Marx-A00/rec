@@ -2,6 +2,7 @@
 // MusicBrainz API search and lookup handlers
 
 import { prisma } from '@/lib/prisma';
+import { queueLogger } from '@/lib/logger';
 
 import { getSchedulerEnabled } from '../../config/app-config';
 import { musicBrainzService } from '../../musicbrainz/musicbrainz-service';
@@ -60,7 +61,7 @@ export async function handleLookupArtist(data: MusicBrainzLookupArtistJobData) {
 
   // Log warning if MBID was redirected (but return raw data for consumers)
   if (hasIdProperty(result) && result.id !== data.mbid) {
-    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+    queueLogger.warn({ originalMbid: data.mbid, redirectedMbid: result.id }, 'MBID redirect detected');
   }
 
   return result;
@@ -73,7 +74,7 @@ export async function handleLookupRelease(
 
   // Log warning if MBID was redirected (but return raw data for consumers)
   if (hasIdProperty(result) && result.id !== data.mbid) {
-    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+    queueLogger.warn({ originalMbid: data.mbid, redirectedMbid: result.id }, 'MBID redirect detected');
   }
 
   return result;
@@ -89,7 +90,7 @@ export async function handleLookupRecording(
 
   // Log warning if MBID was redirected (but return raw data for consumers)
   if (hasIdProperty(result) && result.id !== data.mbid) {
-    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+    queueLogger.warn({ originalMbid: data.mbid, redirectedMbid: result.id }, 'MBID redirect detected');
   }
 
   return result;
@@ -105,7 +106,7 @@ export async function handleLookupReleaseGroup(
 
   // Log warning if MBID was redirected (but return raw data for consumers)
   if (hasIdProperty(result) && result.id !== data.mbid) {
-    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+    queueLogger.warn({ originalMbid: data.mbid, redirectedMbid: result.id }, 'MBID redirect detected');
   }
 
   return result;
@@ -140,20 +141,15 @@ export async function handleMusicBrainzSyncNewReleases(
   if (data.source === 'scheduled') {
     const enabled = await getSchedulerEnabled('musicbrainz');
     if (!enabled) {
-      console.log(
-        '⏭️  Skipping MusicBrainz sync — scheduler is disabled in DB (orphaned job)'
-      );
+      queueLogger.info('Skipping MusicBrainz sync — scheduler disabled (orphaned job)');
       return { success: true, skipped: true, reason: 'scheduler_disabled' };
     }
   }
 
-  console.log(
-    `🎵 Syncing MusicBrainz new releases (limit: ${data.limit || 50})`
+  queueLogger.info(
+    { limit: data.limit || 50, dateRange: data.dateRange, genres: data.genres },
+    'Syncing MusicBrainz new releases'
   );
-  console.log(
-    `   Date range: ${data.dateRange?.from} to ${data.dateRange?.to}`
-  );
-  console.log(`   Genres: ${data.genres?.join(', ')}`);
 
   try {
     // Search for release-groups using the Lucene query
@@ -163,9 +159,7 @@ export async function handleMusicBrainzSyncNewReleases(
       0
     );
 
-    console.log(
-      `📀 Found ${searchResult.length} new releases from MusicBrainz`
-    );
+    queueLogger.info({ count: searchResult.length }, 'Found new releases from MusicBrainz');
 
     if (searchResult.length === 0) {
       return {
@@ -187,7 +181,7 @@ export async function handleMusicBrainzSyncNewReleases(
         const primaryArtist = artistCredit[0]?.artist;
 
         if (!primaryArtist) {
-          console.log(`⚠️  Skipping ${releaseGroup.title} - no artist info`);
+          queueLogger.debug({ title: releaseGroup.title }, 'Skipping release group — no artist info');
           continue;
         }
 
@@ -199,9 +193,7 @@ export async function handleMusicBrainzSyncNewReleases(
         });
 
         if (existingAlbum) {
-          console.log(
-            `⏭️  Skipping ${releaseGroup.title} - already in database`
-          );
+          queueLogger.debug({ title: releaseGroup.title }, 'Skipping release group — already in database');
           continue;
         }
 
@@ -210,17 +202,12 @@ export async function handleMusicBrainzSyncNewReleases(
           artist: primaryArtist,
         });
       } catch (error) {
-        console.error(
-          `❌ Error processing release-group ${releaseGroup.id}:`,
-          error
-        );
+        queueLogger.error({ releaseGroupId: releaseGroup.id, error: error instanceof Error ? error.message : String(error) }, 'Error processing release-group');
         continue;
       }
     }
 
-    console.log(
-      `📊 Processing ${albumsToProcess.length} new albums (after deduplication)`
-    );
+    queueLogger.info({ count: albumsToProcess.length }, 'Processing new albums after deduplication');
 
     let albumsCreated = 0;
     let artistsCreated = 0;
@@ -288,26 +275,19 @@ export async function handleMusicBrainzSyncNewReleases(
         if (albumWasCreated) {
           albumsCreated++;
           artistsCreated += newArtistsCreated;
-          console.log(
-            `✨ Created album: ${releaseGroup.title} by ${artist.name} (${newArtistsCreated} new artist(s))`
-          );
+          queueLogger.info({ title: releaseGroup.title, artist: artist.name, newArtists: newArtistsCreated }, 'Created album');
         } else {
-          console.log(
-            `⏭️  Album already existed: "${album.title}" (${album.id})`
-          );
+          queueLogger.debug({ title: album.title, albumId: album.id }, 'Album already existed');
         }
       } catch (error) {
-        const errorMsg = `Failed to process ${releaseGroup.title}: ${error}`;
-        console.error(`❌ ${errorMsg}`);
+        const errorMsg = `Failed to process ${releaseGroup.title}: ${error instanceof Error ? error.message : String(error)}`;
+        queueLogger.error({ title: releaseGroup.title, error: error instanceof Error ? error.message : String(error) }, 'Failed to process release');
         errors.push(errorMsg);
         continue;
       }
     }
 
-    console.log(`✅ MusicBrainz new releases sync complete`);
-    console.log(
-      `   Albums created: ${albumsCreated}, Artists created: ${artistsCreated}`
-    );
+    queueLogger.info({ albumsCreated, artistsCreated }, 'MusicBrainz new releases sync complete');
 
     return {
       success: true,
@@ -325,7 +305,7 @@ export async function handleMusicBrainzSyncNewReleases(
       },
     };
   } catch (error) {
-    console.error('❌ MusicBrainz new releases sync failed:', error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'MusicBrainz new releases sync failed');
 
     return {
       success: false,

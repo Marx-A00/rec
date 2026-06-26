@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import {
@@ -9,10 +10,10 @@ import {
   createSuccessResponse,
 } from '@/lib/validations/api';
 
-export async function GET(
+export const GET = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
 
@@ -37,18 +38,17 @@ export async function GET(
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Error fetching user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});
 
-export async function PUT(
+export const PUT = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const session = await auth();
     const { id } = await params;
@@ -132,7 +132,6 @@ export async function PUT(
     );
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('Error updating profile:', error);
     const { response, status } = createErrorResponse(
       'Failed to update profile',
       500,
@@ -140,12 +139,12 @@ export async function PUT(
     );
     return NextResponse.json(response, { status });
   }
-}
+});
 
-export async function PATCH(
+export const PATCH = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const session = await auth();
     const { id } = await params;
@@ -230,7 +229,6 @@ export async function PATCH(
     );
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('Error updating user profile:', error);
     const { response, status } = createErrorResponse(
       'Failed to update profile',
       500,
@@ -238,4 +236,4 @@ export async function PATCH(
     );
     return NextResponse.json(response, { status });
   }
-}
+});

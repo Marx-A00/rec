@@ -1,4 +1,6 @@
 // src/lib/musicbrainz/mbid-verifier.ts
+import { mbLogger } from '@/lib/logger';
+
 /**
  * MBID verification utility
  * Detects when MusicBrainz returns a redirected (canonical) MBID
@@ -45,7 +47,7 @@ export function verifyMbid<T extends { id: string }>(
   const wasRedirected = requestedMbid !== result.id;
 
   if (wasRedirected) {
-    console.warn(`🔀 MBID redirect detected: ${requestedMbid} -> ${result.id}`);
+    mbLogger.warn({ requestedMbid, returnedMbid: result.id }, 'MBID redirect detected');
   }
 
   return {

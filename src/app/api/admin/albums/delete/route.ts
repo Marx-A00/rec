@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withApiLogging(async (request: NextRequest) => {
   try {
     // Check authentication
     const session = await auth();
@@ -63,14 +64,6 @@ export async function DELETE(request: NextRequest) {
         where: { id: albumId },
       });
 
-      console.log('Album deletion completed:', {
-        albumId,
-        albumTitle: deletedAlbum.title,
-        deletedCollectionAlbums: deletedCollectionAlbums.count,
-        deletedAlbumArtists: deletedAlbumArtists.count,
-        deletedTracks: deletedTracks.count,
-        deletedRecommendations: deletedRecommendations.count,
-      });
     });
 
     return NextResponse.json({
@@ -78,7 +71,6 @@ export async function DELETE(request: NextRequest) {
       message: 'Album deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting album:', error);
     return NextResponse.json(
       {
         error: 'Failed to delete album',
@@ -87,4 +79,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

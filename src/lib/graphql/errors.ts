@@ -3,6 +3,8 @@
 
 import { GraphQLError } from 'graphql';
 
+import { graphqlLogger } from '@/lib/logger';
+
 // Custom error codes for consistent error handling
 export enum ErrorCode {
   AUTHENTICATION_REQUIRED = 'AUTHENTICATION_REQUIRED',
@@ -93,24 +95,21 @@ export class ExternalAPIError extends GraphQLError {
 
 // Error formatting function for Apollo Server
 export function formatError(error: GraphQLError) {
-  // Log error details in development
+  // Log error with appropriate detail level
   if (process.env.NODE_ENV === 'development') {
-    console.error('GraphQL Error:', {
+    graphqlLogger.error({
       message: error.message,
       code: error.extensions?.code,
       path: error.path,
-      source: error.source?.body,
       positions: error.positions,
-      stack: error.stack,
-    });
+    }, 'GraphQL error');
   } else {
-    // In production, log without sensitive details
-    console.error('GraphQL Error:', {
+    graphqlLogger.error({
       message: error.message,
       code: error.extensions?.code,
       path: error.path,
       requestId: error.extensions?.requestId,
-    });
+    }, 'GraphQL error');
   }
 
   // Return sanitized error to client

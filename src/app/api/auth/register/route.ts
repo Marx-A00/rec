@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
 import prisma from '@/lib/prisma';
+import { authLogger } from '@/lib/logger';
 import { initializeNewUser } from '@/lib/users';
 import {
   userRegistrationSchema,
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     const validation = validateRequestBody(userRegistrationSchema, requestBody);
 
     if (!validation.success) {
-      console.error('Invalid registration request body:', validation.details);
+      authLogger.warn({ details: validation.details }, 'Invalid registration request body');
       const { response, status } = createErrorResponse(
         validation.error,
         400,
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('Registration error:', error);
+    authLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Registration error');
     const { response, status } = createErrorResponse(
       'Failed to create account',
       500,

@@ -1,6 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+import { withApiLogging } from '@/lib/api-utils';
+
+export const GET = withApiLogging(async (
+  request: NextRequest,
+): Promise<NextResponse> => {
   // Temporary stub while migrating to GraphQL
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -10,9 +14,10 @@ export async function GET(request: Request) {
     pagination: { page, per_page: perPage, total: 0, has_more: false },
     success: true,
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiLogging(async (
+): Promise<NextResponse> => {
   // Temporary stub: accept but do nothing
   return NextResponse.json({ success: true }, { status: 201 });
-}
+});

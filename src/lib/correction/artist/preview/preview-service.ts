@@ -8,6 +8,7 @@
 import type { Artist, PrismaClient } from '@prisma/client';
 
 import { unifiedArtistService } from '@/lib/api/unified-artist-service';
+import { logger } from '@/lib/logger';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma as defaultPrisma } from '@/lib/prisma';
 import { PRIORITY_TIERS } from '@/lib/queue';
@@ -240,7 +241,7 @@ export class ArtistCorrectionPreviewService {
 
       return this.transformDiscogsArtist(discogsArtist, discogsId);
     } catch (error) {
-      console.error('Failed to fetch Discogs artist data:', error);
+      logger.error({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to fetch Discogs artist data');
       return null;
     }
   }

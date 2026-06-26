@@ -1,6 +1,7 @@
 // src/app/api/collections/[collectionId]/reorder/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -8,10 +9,10 @@ interface ReorderAlbumRequest {
   albumIds: string[];
 }
 
-export async function PUT(
+export const PUT = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ collectionId: string }> }
-) {
+) => {
   try {
     const session = await auth();
 
@@ -66,10 +67,9 @@ export async function PUT(
       message: 'Album order updated successfully',
     });
   } catch (error) {
-    console.error('Error updating album order:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+});

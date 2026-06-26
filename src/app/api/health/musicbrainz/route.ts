@@ -6,9 +6,10 @@
 
 import { NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { musicBrainzService } from '@/lib/musicbrainz/musicbrainz-service';
 
-export async function GET() {
+export const GET = withApiLogging(async () => {
   try {
     const healthStatus = musicBrainzService.getHealthStatus();
     const metrics = musicBrainzService.getMetrics();
@@ -66,8 +67,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('❌ MusicBrainz health check failed:', error);
-
     return NextResponse.json(
       {
         service: 'musicbrainz',
@@ -91,4 +90,4 @@ export async function GET() {
       }
     );
   }
-}
+});

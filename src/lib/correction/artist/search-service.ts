@@ -6,6 +6,7 @@
  * Includes top releases for each artist to help disambiguate common names.
  */
 
+import { logger } from '@/lib/logger';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { PRIORITY_TIERS } from '@/lib/queue';
 import type { ArtistSearchResult as MBArtistSearchResult } from '@/lib/musicbrainz/basic-service';
@@ -67,10 +68,7 @@ export class ArtistCorrectionSearchService {
           };
         } catch (error) {
           // If release fetch fails, return artist without releases
-          console.warn(
-            `[ArtistCorrectionSearchService] Failed to fetch releases for artist ${artist.id}:`,
-            error instanceof Error ? error.message : 'Unknown error'
-          );
+          logger.warn({ module: 'correction', artistId: artist.id, err: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to fetch releases for artist');
           return baseResult;
         }
       })

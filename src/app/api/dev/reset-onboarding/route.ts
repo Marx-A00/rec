@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -10,7 +11,7 @@ import prisma from '@/lib/prisma';
  * Usage: GET /api/dev/reset-onboarding
  * Then navigate to /complete-profile
  */
-export async function GET() {
+export const GET = withApiLogging(async () => {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
       { error: 'Not available in production' },
@@ -52,4 +53,4 @@ export async function GET() {
     success: true,
     message: 'Onboarding reset. Navigate to /complete-profile to start fresh.',
   });
-}
+});

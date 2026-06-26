@@ -1,6 +1,7 @@
 // src/lib/monitoring/metrics-collector.ts
 import { EventEmitter } from 'events';
 
+import { logger } from '@/lib/logger';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import type { QueueStats, JobType } from '@/lib/queue/jobs';
 import { redis } from '@/lib/queue/redis';
@@ -93,7 +94,7 @@ export class MetricsCollector extends EventEmitter {
    */
   startCollecting(intervalMs: number = 10000): void {
     if (this.collectionInterval) {
-      console.warn('⚠️ Metrics collection already running');
+      logger.warn('Metrics collection already running');
       return;
     }
 
@@ -115,7 +116,7 @@ export class MetricsCollector extends EventEmitter {
     if (this.collectionInterval) {
       clearInterval(this.collectionInterval);
       this.collectionInterval = undefined;
-      console.log('📊 Stopped metrics collection');
+      logger.info('Stopped metrics collection');
     }
   }
 
@@ -200,7 +201,7 @@ export class MetricsCollector extends EventEmitter {
 
       return metrics;
     } catch (error) {
-      console.error('❌ Failed to collect metrics:', error);
+      logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to collect metrics');
       throw error;
     }
   }
@@ -232,7 +233,7 @@ export class MetricsCollector extends EventEmitter {
           parseInfo(info, 'instantaneous_ops_per_sec') || undefined,
       };
     } catch (error) {
-      console.error('❌ Failed to get Redis metrics:', error);
+      logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to get Redis metrics');
       return { connected: false };
     }
   }
@@ -282,7 +283,7 @@ export class MetricsCollector extends EventEmitter {
         alerts,
         metrics,
       });
-      console.warn('⚠️ System alerts:', alerts);
+      logger.warn({ alerts }, 'System alerts triggered');
     }
   }
 
@@ -354,7 +355,7 @@ export class MetricsCollector extends EventEmitter {
    */
   updateThresholds(thresholds: Partial<AlertThresholds>): void {
     Object.assign(this.thresholds, thresholds);
-    console.log('📊 Updated alert thresholds:', this.thresholds);
+    logger.info({ thresholds: this.thresholds }, 'Updated alert thresholds');
   }
 
   /**
@@ -370,7 +371,7 @@ export class MetricsCollector extends EventEmitter {
   clearHistory(): void {
     this.metricsHistory = [];
     this.jobMetrics.clear();
-    console.log('📊 Cleared metrics history');
+    logger.info('Cleared metrics history');
   }
 }
 

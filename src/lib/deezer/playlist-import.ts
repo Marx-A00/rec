@@ -21,6 +21,7 @@ import {
   DeezerErrorResponse,
 } from 'deezer-ts';
 
+import { deezerLogger } from '@/lib/logger';
 import prisma from '@/lib/prisma';
 import {
   detectSuspiciousTitle,
@@ -133,7 +134,7 @@ async function fetchPlaylistWithTracks(
     deezerUrl: playlist.link,
   };
 
-  console.log(`📋 Playlist "${metadata.name}" — ${metadata.trackCount} tracks`);
+  deezerLogger.info({ playlistName: metadata.name, trackCount: metadata.trackCount }, 'Fetched playlist metadata');
   onProgress?.({
     phase: 'playlist',
     name: metadata.name,
@@ -154,9 +155,7 @@ async function fetchPlaylistWithTracks(
       });
     }
     if (tracks.length % 100 === 0) {
-      console.log(
-        `📄 Fetched ${tracks.length} of ${metadata.trackCount} tracks`
-      );
+      deezerLogger.debug({ fetched: tracks.length, total: metadata.trackCount }, 'Fetching playlist tracks');
     }
   }
 
@@ -202,9 +201,7 @@ async function extractUniqueAlbumsWithDetails(
   }
 
   const totalUniqueAlbums = albumMap.size;
-  console.log(
-    `📀 Found ${totalUniqueAlbums} unique albums from ${tracks.length} tracks`
-  );
+  deezerLogger.info({ uniqueAlbums: totalUniqueAlbums, totalTracks: tracks.length }, 'Found unique albums from tracks');
 
   const albums: DeezerPreviewAlbum[] = [];
   const failures: AlbumFetchFailure[] = [];
@@ -281,7 +278,7 @@ async function extractUniqueAlbumsWithDetails(
       total: totalUniqueAlbums,
     });
     if (processed % 20 === 0) {
-      console.log(`📀 Processed ${processed}/${totalUniqueAlbums} albums...`);
+      deezerLogger.debug({ processed, total: totalUniqueAlbums }, 'Processing album details');
     }
   }
 
@@ -307,7 +304,7 @@ async function extractUniqueAlbumsWithDetails(
       parts.push(`  Examples: ${examples.join(', ')}`);
     }
 
-    console.warn(parts.join('\n'));
+    deezerLogger.warn({ failureCount: failures.length, totalAlbums: totalUniqueAlbums, delisted: delisted.length, errors: errors.length }, 'Failed to fetch details for some albums (using fallback data)');
   }
 
   return { albums, singlesFiltered, compilationsFiltered };
@@ -471,7 +468,7 @@ export async function previewDeezerPlaylistAlbums(
   options?: { onProgress?: PreviewProgressCallback }
 ): Promise<DeezerPlaylistPreviewResult> {
   const onProgress = options?.onProgress;
-  console.log(`🔍 Previewing Deezer playlist: ${playlistId}`);
+  deezerLogger.info({ playlistId }, 'Previewing Deezer playlist');
 
   // Fetch playlist + all tracks (SDK handles pagination + rate limiting)
   const { metadata, tracks } = await fetchPlaylistWithTracks(
@@ -488,20 +485,21 @@ export async function previewDeezerPlaylistAlbums(
     tracks.filter(t => t.album).map(t => t.album.id)
   );
 
-  console.log(
-    `📀 ${uniqueAlbumIds.size} unique albums → ${albums.length} after filtering (${singlesFiltered} singles, ${compilationsFiltered} compilations removed)`
+  deezerLogger.info(
+    { uniqueAlbums: uniqueAlbumIds.size, afterFilter: albums.length, singlesFiltered, compilationsFiltered },
+    'Albums filtered'
   );
 
   // Check which albums already exist in the local database
   const { matched } = await annotateExistingAlbums(albums);
   if (matched > 0) {
-    console.log(`🔍 ${matched}/${albums.length} albums already in database`);
+    deezerLogger.info({ matched, total: albums.length }, 'Albums already in database');
   }
 
   // Flag albums with suspicious titles (compilations, deluxe, remastered, etc.)
   const { warned } = annotateSuspiciousAlbums(albums);
   if (warned > 0) {
-    console.log(`⚠️ ${warned}/${albums.length} albums flagged as suspicious`);
+    deezerLogger.info({ warned, total: albums.length }, 'Albums flagged as suspicious');
   }
 
   const result: DeezerPlaylistPreviewResult = {
@@ -561,7 +559,7 @@ export async function importDeezerPlaylistAlbums(
     selectedDeezerIds?: string[];
   }
 ): Promise<DeezerPlaylistImportResult> {
-  console.log(`🚀 Importing Deezer playlist: ${playlistId}`);
+  deezerLogger.info({ playlistId }, 'Importing Deezer playlist');
 
   // Use preview to get the filtered album list
   const preview = await previewDeezerPlaylistAlbums(playlistId);
@@ -571,9 +569,7 @@ export async function importDeezerPlaylistAlbums(
   if (options?.selectedDeezerIds && options.selectedDeezerIds.length > 0) {
     const selectedSet = new Set(options.selectedDeezerIds);
     albumsToImport = preview.albums.filter(a => selectedSet.has(a.deezerId));
-    console.log(
-      `🎯 User selected ${albumsToImport.length} of ${preview.albums.length} albums`
-    );
+    deezerLogger.info({ selected: albumsToImport.length, total: preview.albums.length }, 'User selected albums for import');
   }
 
   if (albumsToImport.length === 0) {
@@ -609,7 +605,7 @@ export async function importDeezerPlaylistAlbums(
     stats.errors.length > 0 ? `, ${stats.errors.length} errors` : '',
   ].join(' ');
 
-  console.log(`✅ ${message}`);
+  deezerLogger.info({ message }, 'Playlist import complete');
 
   return {
     success: stats.errors.length === 0,

@@ -5,9 +5,9 @@
  */
 
 import { QueueEvents } from 'bullmq';
-import chalk from 'chalk';
 
 import type { ArtistSearchResult } from '@/lib/correction/artist/types';
+import { discogsLogger } from '@/lib/logger';
 import type { CorrectionSearchResult } from '@/lib/correction/types';
 import { getMusicBrainzQueue, JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue';
 import { createRedisConnection } from '@/lib/queue/redis';
@@ -91,18 +91,9 @@ export class QueuedDiscogsService {
     if (!this.queueEvents) return;
 
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
-      // Debug: log raw returnvalue
-      console.log(
-        chalk.yellow(
-          '[QueuedDiscogsService] Raw returnvalue type:',
-          typeof returnvalue
-        )
-      );
-      console.log(
-        chalk.yellow(
-          '[QueuedDiscogsService] Raw returnvalue:',
-          JSON.stringify(returnvalue)?.substring(0, 500)
-        )
+      discogsLogger.debug(
+        { jobId, returnvalueType: typeof returnvalue },
+        'Job completed raw returnvalue'
       );
 
       const result =
@@ -110,17 +101,13 @@ export class QueuedDiscogsService {
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(
-          chalk.green('[QueuedDiscogsService] Job ' + jobId + ' completed')
-        );
+        discogsLogger.info({ jobId }, 'Job completed');
         // Job results are wrapped in { success, data, metadata } structure
         // Extract the actual data payload
         const actualResult = result?.data ?? result;
-        console.log(
-          chalk.yellow(
-            '[QueuedDiscogsService] Extracted result keys:',
-            actualResult ? Object.keys(actualResult) : 'null'
-          )
+        discogsLogger.debug(
+          { jobId, resultKeys: actualResult ? Object.keys(actualResult) : null },
+          'Extracted result'
         );
         pending.resolve(actualResult);
         this.pendingJobs.delete(jobId);
@@ -130,18 +117,14 @@ export class QueuedDiscogsService {
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(
-          chalk.red(
-            '[QueuedDiscogsService] Job ' + jobId + ' failed: ' + failedReason
-          )
-        );
+        discogsLogger.error({ jobId, reason: failedReason }, 'Job failed');
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       }
     });
 
     this.queueEvents.on('error', error => {
-      console.error('[QueuedDiscogsService] QueueEvents error:', error);
+      discogsLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'QueueEvents error');
     });
   }
 
@@ -160,11 +143,7 @@ export class QueuedDiscogsService {
 
     const { albumId, albumTitle, artistName, limit = 10 } = options;
 
-    console.log(
-      chalk.cyan(
-        '[QueuedDiscogsService] Queuing album search for "' + albumTitle + '"'
-      )
-    );
+    discogsLogger.info({ albumTitle }, 'Queuing album search');
 
     try {
       const job = await this.queue.addJob(
@@ -186,7 +165,7 @@ export class QueuedDiscogsService {
 
       return result as DiscogsAlbumSearchResponse;
     } catch (error) {
-      console.error('[QueuedDiscogsService] Album search failed:', error);
+      discogsLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Album search failed');
       throw new Error(
         'Failed to search Discogs albums: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -212,11 +191,7 @@ export class QueuedDiscogsService {
 
     const { artistName, limit = 10 } = options;
 
-    console.log(
-      chalk.cyan(
-        '[QueuedDiscogsService] Queuing artist search for "' + artistName + '"'
-      )
-    );
+    discogsLogger.info({ artistName }, 'Queuing artist search');
 
     try {
       // Use existing DISCOGS_SEARCH_ARTIST job type
@@ -255,7 +230,7 @@ export class QueuedDiscogsService {
         results: mappedResults,
       };
     } catch (error) {
-      console.error('[QueuedDiscogsService] Artist search failed:', error);
+      discogsLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Artist search failed');
       throw new Error(
         'Failed to search Discogs artists: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -273,11 +248,7 @@ export class QueuedDiscogsService {
   ): Promise<DiscogsMaster> {
     this.ensureInitialized();
 
-    console.log(
-      chalk.cyan(
-        '[QueuedDiscogsService] Queuing master fetch for ID ' + masterId
-      )
-    );
+    discogsLogger.info({ masterId }, 'Queuing master fetch');
 
     try {
       const job = await this.queue.addJob(
@@ -297,7 +268,7 @@ export class QueuedDiscogsService {
       const result = await this.waitForJobViaEvents(job.id!, timeoutMs);
       return result as DiscogsMaster;
     } catch (error) {
-      console.error('[QueuedDiscogsService] Master fetch failed:', error);
+      discogsLogger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Master fetch failed');
       throw new Error(
         'Failed to fetch Discogs master: ' +
           (error instanceof Error ? error.message : 'Unknown error')
@@ -331,9 +302,7 @@ export class QueuedDiscogsService {
         }
       }, timeoutMs);
 
-      console.log(
-        chalk.yellow('[QueuedDiscogsService] Waiting for job ' + jobId + '...')
-      );
+      discogsLogger.debug({ jobId }, 'Waiting for job');
     });
   }
 
@@ -341,7 +310,7 @@ export class QueuedDiscogsService {
    * Graceful shutdown
    */
   async shutdown(): Promise<void> {
-    console.log('[QueuedDiscogsService] Shutting down...');
+    discogsLogger.info('Shutting down Discogs service');
 
     this.pendingJobs.forEach(({ reject }) => {
       reject(new Error('Service shutting down'));
@@ -353,7 +322,7 @@ export class QueuedDiscogsService {
       this.queueEvents = null;
     }
 
-    console.log('[QueuedDiscogsService] Shutdown complete');
+    discogsLogger.info('Discogs service shutdown complete');
   }
 }
 

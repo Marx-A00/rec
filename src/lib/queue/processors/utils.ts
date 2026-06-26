@@ -3,6 +3,8 @@
  * Shared utility functions for job processors
  */
 
+import { queueLogger } from '@/lib/logger';
+
 import { calculateStringSimilarity as fuzzyMatch } from '../../utils/string-similarity';
 import {
   MusicBrainzApiError,
@@ -260,9 +262,7 @@ export function findMatchingTrack(
   );
 
   if (match) {
-    console.log(
-      `🎯 Position match: Track ${match.trackNumber} "${match.title}" → "${mbTrackData.title}"`
-    );
+    queueLogger.debug({ trackNumber: match.trackNumber, existingTitle: match.title, mbTitle: mbTrackData.title }, 'Track position match');
     return match;
   }
 
@@ -276,9 +276,7 @@ export function findMatchingTrack(
 
     // Try exact normalized match first
     if (normalizedSpotifyTitle === normalizedMBTitle) {
-      console.log(
-        `🎯 Exact normalized match: "${track.title}" → "${mbTrackData.title}"`
-      );
+      queueLogger.debug({ existingTitle: track.title, mbTitle: mbTrackData.title }, 'Track exact normalized match');
       return track;
     }
 

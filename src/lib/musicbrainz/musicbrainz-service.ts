@@ -4,6 +4,8 @@
  * Wraps the basic service with production-ready error handling capabilities
  */
 
+import { mbLogger } from '@/lib/logger';
+
 import { musicbrainzService as basicMusicBrainzService } from './basic-service';
 import { musicbrainzErrorHandler } from './error-handler';
 import type {
@@ -173,20 +175,19 @@ export class MusicBrainzService {
     try {
       return await this.searchArtists(query, limit, offset);
     } catch (error) {
-      console.warn(
-        `🔄 Primary artist search failed for "${query}", trying fallback strategies`
+      mbLogger.warn(
+        { query },
+        'Primary artist search failed, trying fallback strategies'
       );
 
       // Fallback 1: Try with simplified query (remove special characters)
       const simplifiedQuery = query.replace(/[^\w\s]/g, '').trim();
       if (simplifiedQuery !== query && simplifiedQuery.length > 0) {
         try {
-          console.log(`🔄 Trying simplified query: "${simplifiedQuery}"`);
+          mbLogger.debug({ query: simplifiedQuery }, 'Trying simplified query');
           return await this.searchArtists(simplifiedQuery, limit, offset);
         } catch (fallbackError) {
-          console.warn(
-            `🔄 Simplified query also failed for "${simplifiedQuery}"`
-          );
+          mbLogger.warn({ query: simplifiedQuery }, 'Simplified query also failed');
         }
       }
 
@@ -194,16 +195,17 @@ export class MusicBrainzService {
       const firstWord = query.split(' ')[0];
       if (firstWord !== query && firstWord.length > 2) {
         try {
-          console.log(`🔄 Trying first word only: "${firstWord}"`);
+          mbLogger.debug({ query: firstWord }, 'Trying first word only');
           return await this.searchArtists(firstWord, limit, offset);
         } catch (fallbackError) {
-          console.warn(`🔄 First word search also failed for "${firstWord}"`);
+          mbLogger.warn({ query: firstWord }, 'First word search also failed');
         }
       }
 
       // If all fallbacks fail, return empty array instead of throwing
-      console.error(
-        `❌ All search strategies failed for "${query}", returning empty results`
+      mbLogger.error(
+        { query },
+        'All search strategies failed, returning empty results'
       );
       return [];
     }
@@ -220,8 +222,9 @@ export class MusicBrainzService {
     try {
       return await this.searchReleaseGroups(query, limit, offset);
     } catch (error) {
-      console.warn(
-        `🔄 Primary release group search failed for "${query}", trying fallback strategies`
+      mbLogger.warn(
+        { query },
+        'Primary release group search failed, trying fallback strategies'
       );
 
       // Similar fallback strategies as artists
@@ -230,12 +233,13 @@ export class MusicBrainzService {
         try {
           return await this.searchReleaseGroups(simplifiedQuery, limit, offset);
         } catch (fallbackError) {
-          console.warn(`🔄 Simplified release group query also failed`);
+          mbLogger.warn({ query: simplifiedQuery }, 'Simplified release group query also failed');
         }
       }
 
-      console.error(
-        `❌ All release group search strategies failed for "${query}", returning empty results`
+      mbLogger.error(
+        { query },
+        'All release group search strategies failed, returning empty results'
       );
       return [];
     }
@@ -257,14 +261,16 @@ export class MusicBrainzService {
       error?: string;
     }[] = [];
 
-    console.log(
-      `🔍 Starting batch search for ${queries.length} artists (batch size: ${batchSize})`
+    mbLogger.info(
+      { totalQueries: queries.length, batchSize },
+      'Starting batch artist search'
     );
 
     for (let i = 0; i < queries.length; i += batchSize) {
       const batch = queries.slice(i, i + batchSize);
-      console.log(
-        `🔍 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(queries.length / batchSize)}`
+      mbLogger.debug(
+        { batch: Math.floor(i / batchSize) + 1, totalBatches: Math.ceil(queries.length / batchSize) },
+        'Processing batch'
       );
 
       for (const query of batch) {
@@ -275,7 +281,7 @@ export class MusicBrainzService {
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
           results.push({ query, results: [], error: errorMessage });
-          console.error(`❌ Batch search failed for "${query}":`, errorMessage);
+          mbLogger.error({ query, error: errorMessage }, 'Batch search failed');
         }
 
         // Add delay between requests within batch to respect rate limits
@@ -286,14 +292,15 @@ export class MusicBrainzService {
 
       // Longer delay between batches
       if (i + batchSize < queries.length) {
-        console.log(`⏳ Waiting before next batch...`);
+        mbLogger.debug('Waiting before next batch');
         await new Promise(resolve => setTimeout(resolve, delayMs * 2));
       }
     }
 
     const successCount = results.filter(r => !r.error).length;
-    console.log(
-      `✅ Batch search completed: ${successCount}/${queries.length} successful`
+    mbLogger.info(
+      { successCount, totalQueries: queries.length },
+      'Batch search completed'
     );
 
     return results;

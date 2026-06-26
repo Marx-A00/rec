@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 import { createRedisSubscriber } from '@/lib/queue/redis';
@@ -10,7 +11,7 @@ import { ENRICHMENT_CHANNEL } from '@/lib/queue/enrichment-events';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   const session = await auth();
   if (!session?.user || !isAdmin(session.user.role)) {
     return new Response('Unauthorized', { status: 401 });
@@ -27,10 +28,9 @@ export async function GET(request: NextRequest) {
       subscriber
         .subscribe(ENRICHMENT_CHANNEL)
         .then(() => {
-          console.log('[SSE] Client subscribed to enrichment events');
+          // Client subscribed to enrichment events
         })
-        .catch((err: unknown) => {
-          console.error('[SSE] Failed to subscribe:', err);
+        .catch(() => {
           controller.close();
         });
 
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
           // Validate JSON before forwarding
           JSON.parse(message);
           controller.enqueue(encoder.encode(`data: ${message}\n\n`));
-        } catch (err) {
-          console.warn('[SSE] Invalid message on enrichment channel:', err);
+        } catch {
+          // Invalid message on enrichment channel
         }
       });
 
@@ -60,13 +60,13 @@ export async function GET(request: NextRequest) {
         clearInterval(keepalive);
         subscriber.unsubscribe(ENRICHMENT_CHANNEL).catch(() => {});
         subscriber.disconnect();
-        console.log('[SSE] Client disconnected, cleaned up subscriber');
+        // Client disconnected, cleaned up subscriber
       });
     },
     cancel() {
       subscriber.unsubscribe(ENRICHMENT_CHANNEL).catch(() => {});
       subscriber.disconnect();
-      console.log('[SSE] Stream cancelled, cleaned up subscriber');
+      // Stream cancelled, cleaned up subscriber
     },
   });
 
@@ -78,4 +78,4 @@ export async function GET(request: NextRequest) {
       'X-Accel-Buffering': 'no',
     },
   });
-}
+});

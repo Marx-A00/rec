@@ -10,6 +10,7 @@ import type { Prisma } from '@prisma/client';
 import type { LastFmSyncUserJobData, JobResult } from '@/lib/queue/jobs';
 import { JOB_TYPES } from '@/lib/queue/jobs';
 import { prisma } from '@/lib/prisma';
+import { queueLogger } from '@/lib/logger';
 
 export async function handleLastFmSyncUser(
   job: Job<LastFmSyncUserJobData>
@@ -17,9 +18,7 @@ export async function handleLastFmSyncUser(
   const { userId, lastfmUsername } = job.data;
   const startTime = Date.now();
 
-  console.log(
-    `[Last.fm Sync] Starting sync for user ${userId} (${lastfmUsername})`
-  );
+  queueLogger.info({ userId, lastfmUsername }, 'Last.fm sync started');
 
   try {
     const { getUserInfo, getTopArtists, getTopAlbums, getRecentTracks } =
@@ -29,9 +28,7 @@ export async function handleLastFmSyncUser(
     const userInfoResult = await getUserInfo(lastfmUsername);
 
     if (!userInfoResult.success) {
-      console.error(
-        `[Last.fm Sync] Failed to fetch user info: ${userInfoResult.error.message}`
-      );
+      queueLogger.error({ lastfmUsername, error: userInfoResult.error.message, code: userInfoResult.error.code }, 'Last.fm sync failed to fetch user info');
       return {
         success: false,
         error: {
@@ -128,16 +125,12 @@ export async function handleLastFmSyncUser(
           });
         }
 
-        console.log(
-          `[Last.fm Sync] Queued ${needsImage.length} image fetch jobs for top artists missing images`
-        );
+        queueLogger.info({ count: needsImage.length }, 'Last.fm sync queued image fetch jobs for top artists');
       }
     }
 
     const duration = Date.now() - startTime;
-    console.log(
-      `[Last.fm Sync] Completed sync for ${lastfmUsername} in ${duration}ms`
-    );
+    queueLogger.info({ lastfmUsername, duration }, 'Last.fm sync completed');
 
     return {
       success: true,
@@ -149,9 +142,7 @@ export async function handleLastFmSyncUser(
   } catch (error) {
     const duration = Date.now() - startTime;
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error(
-      `[Last.fm Sync] Error syncing ${lastfmUsername}: ${message} (${duration}ms)`
-    );
+    queueLogger.error({ lastfmUsername, error: message, duration }, 'Last.fm sync error');
 
     return {
       success: false,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { cache } from '@/lib/cache';
 
@@ -23,7 +24,7 @@ function suggestCacheKey(query: string): string {
   return `cache:suggest:${query.toLowerCase().trim()}`;
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   const q = request.nextUrl.searchParams.get('q')?.trim();
   const limit = Math.min(
     parseInt(request.nextUrl.searchParams.get('limit') || '8', 10),
@@ -100,4 +101,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(response);
-}
+});

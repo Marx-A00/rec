@@ -1,6 +1,7 @@
 import { Client, DiscogsImage } from 'disconnect';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { artistParamsSchema } from '@/lib/validations/params';
 import {
   createErrorResponse,
@@ -18,16 +19,15 @@ const db = new Client({
 // Default placeholder image for artists without images
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
-export async function GET(
+export const GET = withApiLogging(async (
   request: NextRequest,
   { params }: ArtistRouteContext
-): Promise<NextResponse> {
+): Promise<NextResponse> => {
   const rawParams = await params;
 
   // Validate parameters
   const paramsResult = artistParamsSchema.safeParse(rawParams);
   if (!paramsResult.success) {
-    console.error('Invalid artist parameters:', paramsResult.error);
     const { response, status } = createErrorResponse(
       'Invalid artist ID format',
       400,
@@ -40,15 +40,11 @@ export async function GET(
   const { id } = paramsResult.data;
 
   try {
-    console.log(`Fetching artist details for ID: ${id}`);
-
     // Try to get the artist details
     let artistDetails;
     try {
       artistDetails = await db.getArtist(id);
-      console.log(`Found artist: ${artistDetails.name}`);
-    } catch (artistError) {
-      console.error('Error fetching artist details:', artistError);
+    } catch {
       const { response, status } = createErrorResponse(
         'Artist not found',
         404,
@@ -57,8 +53,6 @@ export async function GET(
       );
       return NextResponse.json(response, { status });
     }
-
-    console.log('Raw artist data:', JSON.stringify(artistDetails, null, 2));
 
     // Get the best image URL
     let imageUrl = PLACEHOLDER_IMAGE;
@@ -102,8 +96,6 @@ export async function GET(
       },
     };
 
-    console.log(`Successfully formatted artist: ${artist.title}`);
-
     const { response, status } = createSuccessResponse(
       'Artist details retrieved successfully',
       { artist },
@@ -111,7 +103,6 @@ export async function GET(
     );
     return NextResponse.json(response, { status });
   } catch (error) {
-    console.error('Unexpected error in artist details API:', error);
     const { response, status } = createErrorResponse(
       'Failed to fetch artist details',
       500,
@@ -120,4 +111,4 @@ export async function GET(
     );
     return NextResponse.json(response, { status });
   }
-}
+});

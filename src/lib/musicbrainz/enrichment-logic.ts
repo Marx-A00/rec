@@ -4,6 +4,7 @@
  * Determines when MusicBrainz enrichment is needed based on data quality and recency
  */
 
+import { mbLogger, enrichmentLogger } from '@/lib/logger';
 import { LlamaLogger } from '@/lib/logging/llama-logger';
 
 export interface EnrichmentDecision {
@@ -92,6 +93,7 @@ export function shouldEnrichAlbum(
 function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
   // Skip if enrichment is already in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
+    enrichmentLogger.debug({ albumId: album.id, reason: 'in_progress' }, 'Enrichment skipped');
     return {
       shouldEnrich: false,
       reason: 'Enrichment already in progress',
@@ -101,12 +103,13 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
 
   // Always enrich if never enriched or failed
   if (!album.lastEnriched || album.enrichmentStatus === 'FAILED') {
+    const reason = album.enrichmentStatus === 'FAILED'
+      ? 'Previous enrichment failed'
+      : 'Never enriched';
+    enrichmentLogger.info({ albumId: album.id, source: 'sync' }, 'Enrichment triggered');
     return {
       shouldEnrich: true,
-      reason:
-        album.enrichmentStatus === 'FAILED'
-          ? 'Previous enrichment failed'
-          : 'Never enriched',
+      reason,
       confidence: 0.95,
     };
   }
@@ -117,6 +120,7 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
   if (!album.releaseDate) missingFields.push('releaseDate');
 
   if (missingFields.length > 0) {
+    enrichmentLogger.info({ albumId: album.id, source: 'missing_fields', missingFields }, 'Enrichment triggered');
     return {
       shouldEnrich: true,
       reason: `Missing critical fields: ${missingFields.join(', ')}`,
@@ -124,13 +128,13 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
     };
   }
 
-  // 🎵 NEW: Re-enrich if album has no tracks (for pure MusicBrainz track approach)
-  // Check if the album has any tracks at all
+  // Re-enrich if album has no tracks (for pure MusicBrainz track approach)
   if (
     'tracks' in album &&
     Array.isArray(album.tracks) &&
     album.tracks.length === 0
   ) {
+    enrichmentLogger.info({ albumId: album.id, source: 'no_tracks' }, 'Enrichment triggered');
     return {
       shouldEnrich: true,
       reason: 'Album has no tracks - needs track enrichment',
@@ -145,6 +149,7 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
         (1000 * 60 * 60 * 24)
     );
     if (daysSinceEnrichment > 30) {
+      enrichmentLogger.info({ albumId: album.id, source: 'stale_data', daysSinceEnrichment }, 'Enrichment triggered');
       return {
         shouldEnrich: true,
         reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
@@ -153,6 +158,7 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
     }
   }
 
+  enrichmentLogger.debug({ albumId: album.id, reason: 'high_quality' }, 'Enrichment skipped');
   return {
     shouldEnrich: false,
     reason: `High quality data enriched ${album.lastEnriched ? 'recently' : 'previously'}`,
@@ -174,8 +180,9 @@ async function shouldEnrichAlbumAsync(
     90
   );
   if (hasNoData) {
-    console.log(
-      `⏭️  Album ${album.id} (${album.title}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
+    mbLogger.debug(
+      { albumId: album.id, title: album.title },
+      'Album marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment'
     );
     return {
       shouldEnrich: false,
@@ -190,8 +197,9 @@ async function shouldEnrichAlbumAsync(
     7
   );
   if (hasRecentFailure) {
-    console.log(
-      `⏭️  Album ${album.id} (${album.title}) failed enrichment within 7 days, skipping (cooldown period)`
+    mbLogger.debug(
+      { albumId: album.id, title: album.title },
+      'Album failed enrichment within 7 days, skipping (cooldown period)'
     );
     return {
       shouldEnrich: false,
@@ -231,6 +239,7 @@ function shouldEnrichArtistSync(
 ): EnrichmentDecision {
   // Skip if enrichment is already in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
+    enrichmentLogger.debug({ artistId: artist.id, reason: 'in_progress' }, 'Enrichment skipped');
     return {
       shouldEnrich: false,
       reason: 'Enrichment already in progress',
@@ -240,6 +249,7 @@ function shouldEnrichArtistSync(
 
   // Always enrich if never enriched or failed
   if (!artist.lastEnriched || artist.enrichmentStatus === 'FAILED') {
+    enrichmentLogger.info({ artistId: artist.id, source: 'sync' }, 'Enrichment triggered');
     return {
       shouldEnrich: true,
       reason:
@@ -257,6 +267,7 @@ function shouldEnrichArtistSync(
   if (!artist.imageUrl) missingFields.push('imageUrl');
 
   if (missingFields.length > 0) {
+    enrichmentLogger.info({ artistId: artist.id, source: 'missing_fields', missingFields }, 'Enrichment triggered');
     return {
       shouldEnrich: true,
       reason: `Missing critical fields: ${missingFields.join(', ')}`,
@@ -271,6 +282,7 @@ function shouldEnrichArtistSync(
         (1000 * 60 * 60 * 24)
     );
     if (daysSinceEnrichment > 30) {
+      enrichmentLogger.info({ artistId: artist.id, source: 'stale_data', daysSinceEnrichment }, 'Enrichment triggered');
       return {
         shouldEnrich: true,
         reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
@@ -279,6 +291,7 @@ function shouldEnrichArtistSync(
     }
   }
 
+  enrichmentLogger.debug({ artistId: artist.id, reason: 'high_quality' }, 'Enrichment skipped');
   return {
     shouldEnrich: false,
     reason: `High quality data enriched ${artist.lastEnriched ? 'recently' : 'previously'}`,
@@ -300,8 +313,9 @@ async function shouldEnrichArtistAsync(
     90
   );
   if (hasNoData) {
-    console.log(
-      `⏭️  Artist ${artist.id} (${artist.name}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
+    mbLogger.debug(
+      { artistId: artist.id, name: artist.name },
+      'Artist marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment'
     );
     return {
       shouldEnrich: false,
@@ -316,8 +330,9 @@ async function shouldEnrichArtistAsync(
     7
   );
   if (hasRecentFailure) {
-    console.log(
-      `⏭️  Artist ${artist.id} (${artist.name}) failed enrichment within 7 days, skipping (cooldown period)`
+    mbLogger.debug(
+      { artistId: artist.id, name: artist.name },
+      'Artist failed enrichment within 7 days, skipping (cooldown period)'
     );
     return {
       shouldEnrich: false,

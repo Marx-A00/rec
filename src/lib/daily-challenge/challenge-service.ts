@@ -13,6 +13,7 @@
 
 import { UncoverChallenge, Prisma } from '@prisma/client';
 
+import { schedulerLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { detectAnswerRegions } from '@/lib/vision/text-detection';
 
@@ -190,20 +191,13 @@ export async function getOrCreateDailyChallenge(
           artistName
         );
         const regionCount = textRegions?.length ?? 0;
-        console.log(
-          `[DailyChallenge] Text detection: ${regionCount} answer-revealing region(s) found`
-        );
+        schedulerLogger.debug({ regionCount }, 'Text detection complete');
       } else {
-        console.log(
-          '[DailyChallenge] No image URL available, skipping text detection'
-        );
+        schedulerLogger.debug('No image URL available, skipping text detection');
       }
     }
   } catch (error) {
-    console.warn(
-      '[DailyChallenge] Text detection failed, using fallback:',
-      error
-    );
+    schedulerLogger.warn({ err: error instanceof Error ? error.message : String(error) }, 'Text detection failed, using fallback');
     // textRegions stays null — fallback heuristic will apply during gameplay
   }
 
@@ -220,7 +214,7 @@ export async function getOrCreateDailyChallenge(
     });
 
     const dateStr = formatDateUTC(normalizedDate);
-    console.log('[DailyChallenge] Created challenge for ' + dateStr);
+    schedulerLogger.info({ date: dateStr }, 'Created daily challenge');
     return created as DailyChallengeWithAlbum;
   } catch (error) {
     // Handle race condition: another request created it first
@@ -229,9 +223,7 @@ export async function getOrCreateDailyChallenge(
       error.code === 'P2002'
     ) {
       const dateStr = formatDateUTC(normalizedDate);
-      console.log(
-        '[DailyChallenge] Race condition on ' + dateStr + ', fetching existing'
-      );
+      schedulerLogger.debug({ date: dateStr }, 'Race condition on challenge creation, fetching existing');
 
       const raceResolved = await prisma.uncoverChallenge.findUnique({
         where: { date: normalizedDate },

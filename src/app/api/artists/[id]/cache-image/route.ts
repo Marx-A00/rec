@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import prisma from '@/lib/prisma';
 import { cacheArtistImage } from '@/lib/cloudflare-images';
 
@@ -7,10 +8,10 @@ import { cacheArtistImage } from '@/lib/cloudflare-images';
  * POST /api/artists/[id]/cache-image
  * Cache artist image from external URL to Cloudflare Images CDN
  */
-export async function POST(
+export const POST = withApiLogging(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
 
@@ -80,10 +81,9 @@ export async function POST(
       cloudflareUrl: result.url,
     });
   } catch (error) {
-    console.error('Error caching artist image:', error);
     return NextResponse.json(
       { error: 'Failed to cache artist image' },
       { status: 500 }
     );
   }
-}
+});

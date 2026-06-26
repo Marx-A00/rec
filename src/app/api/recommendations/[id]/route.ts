@@ -1,10 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { withApiLogging } from '@/lib/api-utils';
 
 // GET /api/recommendations/[id] - Get single recommendation
-export async function GET(
-  request: Request,
+export const GET = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   // Temporary stub while migrating to GraphQL
   const { id } = await params;
   if (!id) {
@@ -14,13 +16,13 @@ export async function GET(
     );
   }
   return NextResponse.json({ recommendation: null, success: true });
-}
+});
 
 // PATCH /api/recommendations/[id] - Update recommendation
-export async function PATCH(
-  request: Request,
+export const PATCH = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   // Temporary stub: accept but do nothing
   const { id } = await params;
   if (!id) {
@@ -30,13 +32,13 @@ export async function PATCH(
     );
   }
   return NextResponse.json({ success: true });
-}
+});
 
 // DELETE /api/recommendations/[id] - Delete recommendation
-export async function DELETE(
-  request: Request,
+export const DELETE = withApiLogging(async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   // Temporary stub: accept but do nothing
   const { id } = await params;
   if (!id) {
@@ -46,4 +48,4 @@ export async function DELETE(
     );
   }
   return NextResponse.json({ success: true });
-}
+});

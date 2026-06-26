@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import {
   SearchOrchestrator,
   SearchSource,
@@ -8,7 +9,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import type { SearchResponse, GroupedSearchResults } from '@/types/search';
 
-export async function GET(request: Request) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
   const sources = searchParams.get('sources')?.split(',') || ['local'];
@@ -19,7 +20,6 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
   if (!query) {
-    console.log('Missing query parameter');
     return NextResponse.json(
       { error: 'Query parameter is required' },
       { status: 400 }
@@ -27,8 +27,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log(`Searching for: "${query}" in sources: ${sources.join(', ')}`);
-
     // Create SearchOrchestrator instance
     const orchestrator = new SearchOrchestrator(prisma);
 
@@ -129,7 +127,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error searching:', error);
     return NextResponse.json(
       {
         error: 'Failed to search',
@@ -138,4 +135,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+});

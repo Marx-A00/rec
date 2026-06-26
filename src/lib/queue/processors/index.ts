@@ -2,7 +2,8 @@
 // Main router that imports all processor files and routes job types to handlers
 
 import { Job } from 'bullmq';
-import chalk from 'chalk';
+
+import { queueLogger } from '@/lib/logger';
 
 import type { ListenBrainzSyncFreshReleasesJobData } from '@/lib/listenbrainz/types';
 import type { DeezerEditorialSyncJobData } from '@/lib/deezer/editorial-sync/types';
@@ -114,7 +115,7 @@ export async function processMusicBrainzJob(
     if (isSlowJob) {
       const delaySeconds = (jobData.delaySeconds as number) || 10;
       const query = (jobData.query as string) || 'slow job';
-      console.log(`🐌 ${query} (${delaySeconds}s delay)`);
+      queueLogger.debug({ query, delaySeconds }, 'Slow job started');
 
       // Simulate slow processing
       await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
@@ -409,13 +410,10 @@ export async function processMusicBrainzJob(
       queryInfo = `Artist: ${jobData.artistId}`;
     }
 
-    // Success logging with colored borders
-    const border = chalk.yellow('─'.repeat(60));
-    console.log(border);
-    console.log(
-      `${chalk.green('✅ Completed')} ${chalk.yellow('[PROCESSOR LAYER]')} ${chalk.white(job.name)} ${queryInfo ? chalk.magenta(`[${queryInfo}]`) + ' ' : ''}${chalk.gray(`(ID: ${job.id})`)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Results: ${resultCount}`)}`
+    queueLogger.info(
+      { jobId: job.id, jobName: job.name, queryInfo: queryInfo || undefined, duration, resultCount },
+      'Job processed successfully'
     );
-    console.log(border + '\n');
 
     return {
       success: true,
@@ -433,32 +431,17 @@ export async function processMusicBrainzJob(
     // This provides error.code, error.retryable, and error.retryAfterMs
     const structuredError = toStructuredJobError(error);
 
-    // Log error with structured info
-    const errorBorder = chalk.red('─'.repeat(60));
-    console.log(errorBorder);
-    console.log(
-      chalk.red('❌ Failed') +
-        ' ' +
-        chalk.yellow('[PROCESSOR LAYER]') +
-        ' ' +
-        chalk.white(job.name) +
-        ' ' +
-        chalk.gray('(ID: ' + job.id + ')') +
-        ' ' +
-        chalk.cyan('in ' + duration + 'ms')
+    queueLogger.error(
+      {
+        jobId: job.id,
+        jobName: job.name,
+        duration,
+        errorCode: structuredError.code,
+        retryable: structuredError.retryable,
+        error: structuredError.message,
+      },
+      'Job processing failed'
     );
-    console.log(
-      '   ' +
-        chalk.red('Code:') +
-        ' ' +
-        structuredError.code +
-        ' | ' +
-        chalk.red('Retryable:') +
-        ' ' +
-        structuredError.retryable
-    );
-    console.log('   ' + chalk.red('Message:') + ' ' + structuredError.message);
-    console.log(errorBorder + '\n');
 
     return {
       success: false,

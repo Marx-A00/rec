@@ -8,6 +8,7 @@
  *   - Reconciliation on boot (cleans orphaned jobs if DB says disabled)
  */
 
+import { deezerLogger } from '@/lib/logger';
 import {
   getDeezerEditorialConfig,
   getSchedulerEnabled,
@@ -54,7 +55,7 @@ class DeezerEditorialScheduler {
    */
   async start() {
     if (this.isRunning) {
-      console.log('🔄 Deezer Editorial scheduler is already running');
+      deezerLogger.debug('Deezer Editorial scheduler is already running');
       return;
     }
 
@@ -77,7 +78,7 @@ class DeezerEditorialScheduler {
    * Persists enabled=false to the database.
    */
   async stop() {
-    console.log('🛑 Stopping Deezer Editorial scheduler...');
+    deezerLogger.info('Stopping Deezer Editorial scheduler');
 
     await setSchedulerEnabled('deezer-editorial', false);
     await this.removeExistingSchedules();
@@ -85,7 +86,7 @@ class DeezerEditorialScheduler {
 
     this.isRunning = false;
 
-    console.log('✅ Deezer Editorial scheduler stopped');
+    deezerLogger.info('Deezer Editorial scheduler stopped');
   }
 
   /**
@@ -127,14 +128,14 @@ class DeezerEditorialScheduler {
    * Re-reads config from DB so manual triggers respect current values.
    */
   async triggerSync() {
-    console.log('🔄 Manually triggering Deezer Editorial releases sync...');
+    deezerLogger.info('Manually triggering Deezer Editorial releases sync');
 
     // Re-read config from DB > defaults
     this.config = await readDeezerEditorialConfig();
 
     await this.queueSync('manual');
 
-    console.log('✅ Deezer Editorial manual sync triggered');
+    deezerLogger.info('Deezer Editorial manual sync triggered');
   }
 
   // --------------------------------------------------------------------------
@@ -176,10 +177,7 @@ class DeezerEditorialScheduler {
         }
       }
     } catch (error) {
-      console.warn(
-        '⚠️  Failed to remove existing Deezer Editorial schedules:',
-        error
-      );
+      deezerLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to remove existing Deezer Editorial schedules');
     }
   }
 
@@ -204,12 +202,10 @@ class DeezerEditorialScheduler {
       }
 
       if (removed > 0) {
-        console.log(
-          `  🗑️  Drained ${removed} queued Deezer Editorial sync job(s)`
-        );
+        deezerLogger.info({ removed }, 'Drained queued Deezer Editorial sync jobs');
       }
     } catch (error) {
-      console.warn('⚠️  Failed to drain queued Deezer Editorial jobs:', error);
+      deezerLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to drain queued Deezer Editorial jobs');
     }
   }
 
@@ -252,10 +248,7 @@ async function readDeezerEditorialConfig(): Promise<DeezerEditorialScheduleConfi
   try {
     dbConfig = await getDeezerEditorialConfig();
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to read Deezer Editorial config from DB, using defaults:',
-      error
-    );
+    deezerLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to read Deezer Editorial config from DB, using defaults');
   }
 
   return {
@@ -285,10 +278,7 @@ export async function initializeDeezerEditorialScheduler(): Promise<boolean> {
   try {
     dbEnabled = await getSchedulerEnabled('deezer-editorial');
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to read Deezer Editorial scheduler state from DB, defaulting to disabled:',
-      error
-    );
+    deezerLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to read Deezer Editorial scheduler state from DB, defaulting to disabled');
     return false;
   }
 
@@ -301,10 +291,7 @@ export async function initializeDeezerEditorialScheduler(): Promise<boolean> {
       job.key.includes(REPEATABLE_JOB_KEY)
     );
   } catch (error) {
-    console.warn(
-      '⚠️  Failed to check BullMQ for Deezer Editorial jobs:',
-      error
-    );
+    deezerLogger.warn({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to check BullMQ for Deezer Editorial jobs');
   }
 
   // Reconcile DB state with BullMQ state

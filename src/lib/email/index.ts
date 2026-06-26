@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 
+import { logger } from '@/lib/logger';
+
 import {
   getPasswordResetEmailHtml,
   getPasswordResetEmailText,
@@ -33,13 +35,13 @@ export async function sendPasswordResetEmail(
     });
 
     if (error) {
-      console.error('[email] Failed to send password reset email:', error);
+      logger.error({ module: 'email', err: error.message }, 'Failed to send password reset email');
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (err) {
-    console.error('[email] Unexpected error sending email:', err);
+    logger.error({ module: 'email', err: err instanceof Error ? err.message : String(err) }, 'Unexpected error sending email');
     return { success: false, error: 'Failed to send email' };
   }
 }

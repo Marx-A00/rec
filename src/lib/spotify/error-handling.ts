@@ -4,6 +4,8 @@
  * Handles rate limiting, network issues, and API failures with proper retry logic
  */
 
+import { spotifyLogger } from '@/lib/logger';
+
 export interface SpotifyErrorInfo {
   type: 'rate_limit' | 'network' | 'auth' | 'api_error' | 'unknown';
   message: string;
@@ -154,14 +156,15 @@ export async function withSpotifyRetry<T>(
 
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
     try {
-      console.log(
-        `🔄 ${operationName} (attempt ${attempt}/${config.maxAttempts})`
+      spotifyLogger.debug(
+        { operation: operationName, attempt, maxAttempts: config.maxAttempts },
+        'Spotify API attempt'
       );
 
       const result = await operation();
 
       if (attempt > 1) {
-        console.log(`✅ ${operationName} succeeded after ${attempt} attempts`);
+        spotifyLogger.info({ operation: operationName, attempt }, 'Spotify API succeeded after retry');
       }
 
       return result;
@@ -169,32 +172,28 @@ export async function withSpotifyRetry<T>(
       lastError = error;
       const errorInfo = analyzeSpotifyError(error);
 
-      console.log(
-        `❌ ${operationName} failed (attempt ${attempt}/${config.maxAttempts}):`,
-        {
-          type: errorInfo.type,
-          message: errorInfo.message,
-          retryable: errorInfo.retryable,
-          statusCode: errorInfo.statusCode,
-        }
+      spotifyLogger.warn(
+        { operation: operationName, attempt, maxAttempts: config.maxAttempts, errorType: errorInfo.type, message: errorInfo.message, retryable: errorInfo.retryable, statusCode: errorInfo.statusCode },
+        'Spotify API attempt failed'
       );
 
       // Don't retry if error is not retryable
       if (!errorInfo.retryable) {
-        console.log(`🚫 ${operationName} - Error not retryable, giving up`);
+        spotifyLogger.warn({ operation: operationName }, 'Error not retryable, giving up');
         throw error;
       }
 
       // Don't retry if this was the last attempt
       if (attempt >= config.maxAttempts) {
-        console.log(`🚫 ${operationName} - Max attempts reached, giving up`);
+        spotifyLogger.warn({ operation: operationName }, 'Max attempts reached, giving up');
         break;
       }
 
       // Calculate delay and wait
       const delay = calculateRetryDelay(attempt, config, errorInfo.retryAfter);
-      console.log(
-        `⏳ ${operationName} - Waiting ${Math.round(delay)}ms before retry...`
+      spotifyLogger.debug(
+        { operation: operationName, delayMs: Math.round(delay) },
+        'Waiting before retry'
       );
 
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -318,7 +317,7 @@ export async function withSpotifyMetrics<T>(
     const responseTime = Date.now() - startTime;
 
     spotifyMetrics.recordRequest(true, responseTime);
-    console.log(`📊 ${operationName} completed in ${responseTime}ms`);
+    spotifyLogger.info({ operation: operationName, durationMs: responseTime }, 'Spotify operation completed');
 
     return result;
   } catch (error) {
@@ -326,10 +325,7 @@ export async function withSpotifyMetrics<T>(
     const errorInfo = analyzeSpotifyError(error);
 
     spotifyMetrics.recordRequest(false, responseTime, errorInfo);
-    console.log(
-      `📊 ${operationName} failed after ${responseTime}ms:`,
-      errorInfo.type
-    );
+    spotifyLogger.error({ operation: operationName, durationMs: responseTime, errorType: errorInfo.type }, 'Spotify operation failed');
 
     throw error;
   }

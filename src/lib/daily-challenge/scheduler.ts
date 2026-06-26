@@ -13,6 +13,7 @@ import {
   getCentralToday,
   formatDateUTC,
 } from '@/lib/daily-challenge/date-utils';
+import { schedulerLogger } from '@/lib/logger';
 
 /**
  * Initialize the daily challenge scheduler.
@@ -74,7 +75,7 @@ export async function initializeUncoverScheduler(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Failed to initialize Uncover scheduler:', error);
+    schedulerLogger.error({ scheduler: 'uncover', error: error instanceof Error ? error.message : String(error) }, 'Failed to initialize Uncover scheduler');
     return false;
   }
 }
@@ -90,10 +91,10 @@ export async function shutdownUncoverScheduler(): Promise<void> {
     for (const job of repeatableJobs) {
       if (job.id === 'uncover-daily-challenge-schedule') {
         await queue.removeRepeatableByKey(job.key);
-        console.log('🛑 Uncover daily challenge scheduler stopped');
+        schedulerLogger.info({ scheduler: 'uncover' }, 'Uncover daily challenge scheduler stopped');
       }
     }
   } catch (error) {
-    console.error('Failed to shut down Uncover scheduler:', error);
+    schedulerLogger.error({ scheduler: 'uncover', error: error instanceof Error ? error.message : String(error) }, 'Failed to shut down Uncover scheduler');
   }
 }

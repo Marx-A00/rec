@@ -2,6 +2,7 @@ import { Client } from 'disconnect';
 
 import { getCAAUrl } from '@/lib/cover-art-archive';
 import { cache, CACHE_KEYS, CACHE_TTLS } from '@/lib/cache';
+import { apiLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
@@ -63,32 +64,29 @@ class UnifiedArtistService {
           ? mbArtist.relations
           : [];
 
-        console.log('[WikidataImage] MB artist relations', {
+        apiLogger.debug({
           mbid,
           relationCount: rels.length,
           relationTypes: rels
             .slice(0, 5)
             .map((r: any) => r?.type)
             .filter(Boolean),
-        });
+        }, 'MB artist relations for Wikidata image');
       } catch {}
       const qid = this.extractWikidataQid(mbArtist);
 
-      console.log('[WikidataImage] Extracted QID', { mbid, qid: qid || null });
+      apiLogger.debug({ mbid, qid: qid || null }, 'Extracted Wikidata QID');
       if (!qid) return undefined;
       const filename = await this.fetchWikidataP18Filename(qid);
 
-      console.log('[WikidataImage] P18 filename', {
-        qid,
-        filename: filename || null,
-      });
+      apiLogger.debug({ qid, filename: filename || null }, 'Wikidata P18 filename');
       if (!filename) return undefined;
       const url = this.buildWikimediaThumbUrl(filename, 600);
 
-      console.log('[WikidataImage] Wikimedia URL', { qid, url });
+      apiLogger.debug({ qid, url }, 'Wikimedia URL resolved');
       return url;
     } catch (error) {
-      console.warn('Wikidata image resolution failed:', error);
+      apiLogger.warn({ err: error instanceof Error ? error.message : String(error) }, 'Wikidata image resolution failed');
       return undefined;
     }
   }
@@ -198,10 +196,7 @@ class UnifiedArtistService {
 
       if (localArtist) {
         if (localArtist.imageUrl) {
-          console.log('[MBArtist] Returning existing local with image', {
-            id: localArtist.id,
-            mbid,
-          });
+          apiLogger.debug({ id: localArtist.id, mbid }, 'Returning existing local artist with image');
           return this.getLocalArtist(localArtist.id);
         }
 
@@ -214,18 +209,13 @@ class UnifiedArtistService {
               data: { imageUrl: enrichedImage },
             });
 
-            console.log(
-              '[MBArtist] Persisted enriched image for local artist',
-              { id: localArtist.id }
-            );
+            apiLogger.debug({ id: localArtist.id }, 'Persisted enriched image for local artist');
           } catch (e) {
-            console.warn('Failed to persist enriched artist image:', e);
+            apiLogger.warn({ err: e instanceof Error ? e.message : String(e) }, 'Failed to persist enriched artist image');
           }
         }
 
-        console.log('[MBArtist] Returning local after attempted image enrich', {
-          id: localArtist.id,
-        });
+        apiLogger.debug({ id: localArtist.id }, 'Returning local artist after attempted image enrichment');
         return this.getLocalArtist(localArtist.id);
       }
 
@@ -237,15 +227,11 @@ class UnifiedArtistService {
           ? mbArtist.relations
           : [];
 
-        console.log('[MBArtist] getArtist response', {
+        apiLogger.debug({
           mbid,
           includes,
           relationCount: rels.length,
-          relationTypes: rels
-            .slice(0, 5)
-            .map((r: any) => r?.type)
-            .filter(Boolean),
-        });
+        }, 'MusicBrainz getArtist response');
       } catch {}
 
       // Try Spotify first (preferred, better images)
@@ -285,36 +271,20 @@ class UnifiedArtistService {
               bestMatch.name.toLowerCase() === mbArtist.name.toLowerCase()
                 ? 'exact'
                 : 'fuzzy';
-            console.log('[MBArtist] Spotify image found', {
-              mbid,
-              artistName: mbArtist.name,
-              spotifyMatch: bestMatch.name,
-              matchType,
-              score: `${(bestScore * 100).toFixed(1)}%`,
-            });
+            apiLogger.debug({ mbid, artistName: mbArtist.name, spotifyMatch: bestMatch.name, matchType, score: bestScore }, 'Spotify image found');
           } else if (spotifyResults.length > 0) {
-            console.log(
-              '[MBArtist] Spotify returned results but no match met threshold',
-              {
-                mbid,
-                artistName: mbArtist.name,
-                resultCount: spotifyResults.length,
-              }
-            );
+            apiLogger.debug({ mbid, artistName: mbArtist.name, resultCount: spotifyResults.length }, 'Spotify returned results but no match met threshold');
           }
         }
       } catch (error) {
-        console.warn('[MBArtist] Spotify image fetch failed:', error);
+        apiLogger.warn({ err: error instanceof Error ? error.message : String(error) }, 'Spotify image fetch failed');
       }
 
       // Fallback to Wikidata if no Spotify image
       if (!finalImageUrl) {
         finalImageUrl = await this.resolveArtistImageFromWikidata(mbid);
 
-        console.log('[MBArtist] Wikidata image resolved', {
-          mbid,
-          hasImage: !!finalImageUrl,
-        });
+        apiLogger.debug({ mbid, hasImage: !!finalImageUrl }, 'Wikidata image resolved');
       }
 
       return {
@@ -342,7 +312,7 @@ class UnifiedArtistService {
           })) || [],
       };
     } catch (error) {
-      console.error('Error fetching MusicBrainz artist:', error);
+      apiLogger.error({ err: error instanceof Error ? error.message : String(error), mbid }, 'Error fetching MusicBrainz artist');
       throw new Error(`Failed to fetch artist from MusicBrainz: ${mbid}`);
     }
   }
@@ -407,7 +377,7 @@ class UnifiedArtistService {
         },
       };
     } catch (error) {
-      console.error('Error fetching Discogs artist:', error);
+      apiLogger.error({ err: error instanceof Error ? error.message : String(error), discogsId }, 'Error fetching Discogs artist');
       throw new Error(`Failed to fetch artist from Discogs: ${discogsId}`);
     }
   }
@@ -432,21 +402,14 @@ class UnifiedArtistService {
             return this.getMusicBrainzDiscography(localArtist.musicbrainzId);
           }
           // No MBID available → return empty
-          console.warn(
-            `[UnifiedArtistService] Local artist has no MusicBrainz ID: ${id}`
-          );
+          apiLogger.warn({ artistId: id }, 'Local artist has no MusicBrainz ID');
           return [];
         }
         // Artist not found in local DB
-        console.warn(
-          `[UnifiedArtistService] Artist not found in local DB: ${id}`
-        );
+        apiLogger.warn({ artistId: id }, 'Artist not found in local DB');
         return [];
       } catch (e) {
-        console.error(
-          '[UnifiedArtistService] Error fetching local artist discography:',
-          e
-        );
+        apiLogger.error({ err: e instanceof Error ? e.message : String(e), artistId: id }, 'Error fetching local artist discography');
         return [];
       }
     }
@@ -458,9 +421,7 @@ class UnifiedArtistService {
 
     if (source === 'discogs') {
       // TODO: Implement Discogs discography fetching
-      console.warn(
-        '[UnifiedArtistService] Discogs discography not yet implemented'
-      );
+      apiLogger.warn('Discogs discography not yet implemented');
       return [];
     }
 
@@ -501,14 +462,7 @@ class UnifiedArtistService {
         100,
         0
       );
-    console.log(
-      '🎶 MB queue browse response keys:',
-      Object.keys(groupsResp || {})
-    );
-    console.log(
-      '🎶 MB queue browse sample item:',
-      groupsResp?.['release-groups']?.[0]
-    );
+    apiLogger.debug({ keys: Object.keys(groupsResp || {}), count: groupsResp?.['release-groups']?.length ?? 0 }, 'MB queue browse response');
     const groups: any[] = groupsResp['release-groups'] || [];
 
     // Normalize all releases (no filtering)

@@ -7,6 +7,7 @@ import { type DataQuality } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { getInitialQuality } from '@/lib/db';
+import { queueLogger } from '@/lib/logger';
 
 import { redis } from '../redis';
 import { publishEnrichmentEvent } from '../enrichment-events';
@@ -85,9 +86,7 @@ export async function handleCheckAlbumEnrichment(
   // Propagate parentJobId if present (for manual adds, this links back to album:created)
   // CHECK_* jobs are dispatchers - they pass through the parent context
 
-  console.log(
-    `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
-  );
+  queueLogger.debug({ albumId: data.albumId, source: data.source, force: data.force || false }, 'Checking album enrichment');
 
   // Get album with current enrichment status (include tracks to check if enrichment needed)
   const album = await prisma.album.findUnique({
@@ -99,7 +98,7 @@ export async function handleCheckAlbumEnrichment(
   });
 
   if (!album) {
-    console.warn(`Album ${data.albumId} not found for enrichment check`);
+    queueLogger.warn({ albumId: data.albumId }, 'Album not found for enrichment check');
     return {
       albumId: data.albumId,
       action: 'skipped',
@@ -117,9 +116,7 @@ export async function handleCheckAlbumEnrichment(
   const needsEnrichment = data.force || shouldEnrichAlbum(album);
 
   if (needsEnrichment) {
-    console.log(
-      `✅ Album ${data.albumId} ${data.force ? 'force re-enrichment requested' : 'needs enrichment'}, queueing enrichment job`
-    );
+    queueLogger.info({ albumId: data.albumId, force: data.force }, 'Album queued for enrichment');
 
     // Queue the actual enrichment job
     const queue = await import('../musicbrainz-queue').then(m =>
@@ -167,7 +164,7 @@ export async function handleCheckAlbumEnrichment(
       force: data.force,
     };
   } else {
-    console.log(`⏭️ Album ${data.albumId} doesn't need enrichment, skipping`);
+    queueLogger.debug({ albumId: data.albumId }, 'Album enrichment not needed, skipping');
 
     // Reset from QUEUED back to COMPLETED since enrichment was skipped
     if (album.enrichmentStatus === 'QUEUED') {
@@ -202,9 +199,7 @@ export async function handleCheckArtistEnrichment(
   // Propagate parentJobId if present (for manual adds, this links back to album:created)
   // CHECK_* jobs are dispatchers - they pass through the parent context
 
-  console.log(
-    `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
-  );
+  queueLogger.debug({ artistId: data.artistId, source: data.source, force: data.force || false }, 'Checking artist enrichment');
 
   // Get artist with current enrichment status
   const artist = await prisma.artist.findUnique({
@@ -212,7 +207,7 @@ export async function handleCheckArtistEnrichment(
   });
 
   if (!artist) {
-    console.warn(`Artist ${data.artistId} not found for enrichment check`);
+    queueLogger.warn({ artistId: data.artistId }, 'Artist not found for enrichment check');
     return {
       artistId: data.artistId,
       action: 'skipped',
@@ -230,9 +225,7 @@ export async function handleCheckArtistEnrichment(
   const needsEnrichment = data.force || shouldEnrichArtist(artist);
 
   if (needsEnrichment) {
-    console.log(
-      `✅ Artist ${data.artistId} ${data.force ? 'force re-enrichment requested' : 'needs enrichment'}, queueing enrichment job`
-    );
+    queueLogger.info({ artistId: data.artistId, force: data.force }, 'Artist queued for enrichment');
 
     // Queue the actual enrichment job
     const queue = await import('../musicbrainz-queue').then(m =>
@@ -262,7 +255,7 @@ export async function handleCheckArtistEnrichment(
       force: data.force,
     };
   } else {
-    console.log(`⏭️ Artist ${data.artistId} doesn't need enrichment, skipping`);
+    queueLogger.debug({ artistId: data.artistId }, 'Artist enrichment not needed, skipping');
 
     // Reset from QUEUED back to COMPLETED since enrichment was skipped
     if (artist.enrichmentStatus === 'QUEUED') {
@@ -297,9 +290,7 @@ export async function handleCheckTrackEnrichment(
   // Propagate parentJobId if present (for album enrichment, this links back to parent job)
   // CHECK_* jobs are dispatchers - they pass through the parent context
 
-  console.log(
-    `🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`
-  );
+  queueLogger.debug({ trackId: data.trackId, source: data.source }, 'Checking track enrichment');
 
   // Get track with current enrichment status
   const track = await (prisma.track as any).findUnique({
@@ -313,7 +304,7 @@ export async function handleCheckTrackEnrichment(
   });
 
   if (!track) {
-    console.error(`❌ Track ${data.trackId} not found`);
+    queueLogger.error({ trackId: data.trackId }, 'Track not found');
     return {
       success: false,
       error: {
@@ -333,7 +324,7 @@ export async function handleCheckTrackEnrichment(
   const needsEnrichment = !track.musicbrainzId;
 
   if (!needsEnrichment) {
-    console.log(`✅ Track "${track.title}" already enriched`);
+    queueLogger.debug({ trackId: track.id, title: track.title }, 'Track already enriched');
     return {
       success: true,
       data: {
@@ -369,7 +360,7 @@ export async function handleCheckTrackEnrichment(
     backoff: { type: 'exponential', delay: 2000 },
   });
 
-  console.log(`⚡ Queued track enrichment for "${track.title}"`);
+  queueLogger.debug({ trackId: track.id, title: track.title }, 'Queued track enrichment');
 
   return {
     success: true,
@@ -461,7 +452,7 @@ async function fetchAndProcessTracks(
           sum + (medium.tracks?.length || 0),
         0
       );
-      console.log(`✅ Fetched ${totalTracks} tracks for "${albumTitle}"`);
+      queueLogger.debug(`✅ Fetched ${totalTracks} tracks for "${albumTitle}"`);
 
       await processMusicBrainzTracksForAlbum(
         albumId,
@@ -472,7 +463,7 @@ async function fetchAndProcessTracks(
     }
     return false;
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch tracks for album "${albumTitle}":`, error);
+    queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `⚠️ Failed to fetch tracks for album "${albumTitle}":`);
     return false;
   }
 }
@@ -510,10 +501,10 @@ async function searchAndEnrichFromMusicBrainz(
   // Analyze the title for edition/version indicators
   const titleAnalysis = analyzeTitle(album.title);
   if (titleAnalysis.isEditionOrVersion) {
-    console.log(
+    queueLogger.debug(
       `📀 Edition detected: "${album.title}" (keywords: ${titleAnalysis.detectedKeywords.join(', ')})`
     );
-    console.log(`   Base title: "${titleAnalysis.baseTitle}"`);
+    queueLogger.debug(`   Base title: "${titleAnalysis.baseTitle}"`);
   }
 
   // Step 1: Try full title search on release-groups (current behavior)
@@ -526,15 +517,15 @@ async function searchAndEnrichFromMusicBrainz(
 
   let bestMatch = null;
   if (searchResults && searchResults.length > 0) {
-    console.log(
+    queueLogger.debug(
       `🔍 Found ${searchResults.length} release-group results for "${album.title}"`
     );
-    console.log(
+    queueLogger.debug(
       `📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map((ac: { name: string }) => ac.name).join(', ')} (score: ${searchResults[0].score})`
     );
 
     bestMatch = findBestAlbumMatch(album, searchResults);
-    console.log(
+    queueLogger.debug(
       `🎯 Best release-group match: ${
         bestMatch
           ? `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
@@ -546,7 +537,7 @@ async function searchAndEnrichFromMusicBrainz(
   // Step 2: If edition detected AND no good release-group match, try release search
   let releaseMatch = null;
   if (!bestMatch && titleAnalysis.isEditionOrVersion) {
-    console.log(
+    queueLogger.debug(
       `🔍 No release-group match, trying direct release search for edition...`
     );
     apiCalls++;
@@ -557,7 +548,7 @@ async function searchAndEnrichFromMusicBrainz(
     );
 
     if (releaseResults && releaseResults.length > 0) {
-      console.log(
+      queueLogger.debug(
         `📀 Found ${releaseResults.length} release results for "${album.title}"`
       );
       // Find best match based on title similarity
@@ -568,7 +559,7 @@ async function searchAndEnrichFromMusicBrainz(
         );
         if (titleSimilarity > 0.8) {
           releaseMatch = release;
-          console.log(
+          queueLogger.debug(
             `🎯 Found release match: "${release.title}" (${(titleSimilarity * 100).toFixed(1)}% similar)`
           );
           break;
@@ -579,7 +570,7 @@ async function searchAndEnrichFromMusicBrainz(
 
   // Step 3: If still no match AND edition detected, search with base title
   if (!bestMatch && !releaseMatch && titleAnalysis.isEditionOrVersion) {
-    console.log(`🔍 Trying base title search: "${titleAnalysis.baseTitle}"`);
+    queueLogger.debug(`🔍 Trying base title search: "${titleAnalysis.baseTitle}"`);
     apiCalls++;
     // Build query with base title
     const baseAlbum = { ...album, title: titleAnalysis.baseTitle };
@@ -592,7 +583,7 @@ async function searchAndEnrichFromMusicBrainz(
     if (baseResults && baseResults.length > 0) {
       const baseMatch = findBestAlbumMatch(baseAlbum, baseResults);
       if (baseMatch && baseMatch.score > 0.8) {
-        console.log(
+        queueLogger.debug(
           `🎯 Found base title match: "${baseMatch.result.title}" (${(baseMatch.score * 100).toFixed(1)}%)`
         );
 
@@ -602,13 +593,13 @@ async function searchAndEnrichFromMusicBrainz(
           baseMatch.result.id,
           50
         );
-        console.log(
+        queueLogger.debug(
           `📀 Found ${releases.length} releases under "${baseMatch.result.title}"`
         );
 
         const specificRelease = findBestReleaseMatch(releases, album.title);
         if (specificRelease) {
-          console.log(
+          queueLogger.debug(
             `✅ Found specific edition: "${specificRelease.release.title}" (${(specificRelease.score * 100).toFixed(1)}% match)`
           );
           releaseMatch = {
@@ -617,7 +608,7 @@ async function searchAndEnrichFromMusicBrainz(
             releaseGroup: { id: baseMatch.result.id },
           };
         } else {
-          console.log(
+          queueLogger.debug(
             `⚠️ No specific edition found, using first official release`
           );
           // Use base match, tracks will come from first release
@@ -654,7 +645,7 @@ async function searchAndEnrichFromMusicBrainz(
     }
   } else if (releaseMatch) {
     // We found a specific release (edition), fetch its data
-    console.log(
+    queueLogger.debug(
       `🎵 Fetching tracks from specific release: "${releaseMatch.title}"`
     );
     apiCalls++;
@@ -687,7 +678,7 @@ async function searchAndEnrichFromMusicBrainz(
             sum + (medium.tracks?.length || 0),
           0
         );
-        console.log(
+        queueLogger.debug(
           `✅ Fetched ${totalTracks} tracks from edition "${releaseMatch.title}"`
         );
 
@@ -734,7 +725,7 @@ async function trySpotifyTrackFallback(
     rootJobId: string | null;
   }
 ): Promise<SpotifyFallbackResult> {
-  console.log(
+  queueLogger.debug(
     `📀 No MusicBrainz tracks found for "${album.title}", trying Spotify fallback...`
   );
 
@@ -745,11 +736,11 @@ async function trySpotifyTrackFallback(
   const spotifyTracks = await fetchSpotifyAlbumTracks(album.spotifyId);
 
   if (spotifyTracks.length === 0) {
-    console.log(`⚠️ No tracks available from Spotify for "${album.title}"`);
+    queueLogger.debug(`⚠️ No tracks available from Spotify for "${album.title}"`);
     return { tracksCreated: 0, sourcesUsed: [], fieldsEnriched: [] };
   }
 
-  console.log(
+  queueLogger.debug(
     `🎵 Found ${spotifyTracks.length} tracks from Spotify for "${album.title}"`
   );
 
@@ -772,7 +763,7 @@ async function trySpotifyTrackFallback(
   );
 
   if (result.tracksCreated > 0) {
-    console.log(
+    queueLogger.debug(
       `✅ Created ${result.tracksCreated} tracks from Spotify fallback for "${album.title}"`
     );
     return {
@@ -782,7 +773,7 @@ async function trySpotifyTrackFallback(
     };
   }
 
-  console.warn(
+  queueLogger.warn(
     `⚠️ Spotify returned tracks but none were created for "${album.title}"`
   );
   return { tracksCreated: 0, sourcesUsed: [], fieldsEnriched: [] };
@@ -839,10 +830,10 @@ async function finalizeAlbumEnrichment(ctx: {
     entityName: ctx.albumTitle,
   });
 
-  console.log(`✅ Album enrichment completed for ${ctx.albumId}`, {
-    hadResult: !!ctx.enrichmentResult,
-    dataQuality: ctx.newDataQuality,
-  });
+  queueLogger.debug(
+    { albumId: ctx.albumId, hadResult: !!ctx.enrichmentResult, dataQuality: ctx.newDataQuality },
+    'Album enrichment completed'
+  );
 
   // Log successful enrichment
   await ctx.llamaLogger.logEnrichment({
@@ -896,12 +887,9 @@ async function finalizeAlbumEnrichment(ctx: {
         backoff: { type: 'exponential', delay: 2000 },
       });
 
-      console.log(`📤 Queued album cover art caching for ${ctx.albumId}`);
+      queueLogger.debug(`📤 Queued album cover art caching for ${ctx.albumId}`);
     } catch (cacheError) {
-      console.warn(
-        `Failed to queue album cover art caching for ${ctx.albumId}:`,
-        cacheError
-      );
+      queueLogger.warn({ detail: cacheError }, `Failed to queue album cover art caching for ${ctx.albumId}:`);
     }
   }
 }
@@ -914,7 +902,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
   const data = job.data;
   const rootJobId = data.parentJobId || job.id;
 
-  console.log(`🎵 Starting album enrichment for album ${data.albumId}`);
+  queueLogger.debug(`🎵 Starting album enrichment for album ${data.albumId}`);
 
   // Initialize enrichment logger
   const llamaLogger = createLlamaLogger(prisma);
@@ -947,7 +935,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
   if (!data.force) {
     const enrichmentDecision = await shouldEnrichAlbum(album, llamaLogger);
     if (!enrichmentDecision.shouldEnrich) {
-      console.log(
+      queueLogger.debug(
         `⏭️ Album ${data.albumId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
       );
 
@@ -1000,7 +988,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       };
     }
   } else {
-    console.log(
+    queueLogger.debug(
       `🔄 Force re-enrichment requested for album ${data.albumId}, bypassing checks`
     );
   }
@@ -1055,10 +1043,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
           if (tracksProcessed) fieldsEnriched.push('tracks');
         }
       } catch (mbError) {
-        console.warn(
-          `MusicBrainz lookup failed for album ${data.albumId}:`,
-          mbError
-        );
+        queueLogger.warn({ detail: mbError }, `MusicBrainz lookup failed for album ${data.albumId}:`);
       }
     }
 
@@ -1087,10 +1072,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
         fieldsEnriched.push(...searchResult.fieldsEnriched);
         apiCallCount += searchResult.apiCalls;
       } catch (searchError) {
-        console.warn(
-          `MusicBrainz search failed for album ${data.albumId}:`,
-          searchError
-        );
+        queueLogger.warn({ detail: searchError }, `MusicBrainz search failed for album ${data.albumId}:`);
       }
     }
 
@@ -1143,10 +1125,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
           });
         }
       } catch (spotifyError) {
-        console.warn(
-          `⚠️ Spotify track fallback failed for "${album.title}":`,
-          spotifyError
-        );
+        queueLogger.warn({ detail: spotifyError }, `⚠️ Spotify track fallback failed for "${album.title}":`);
       }
     }
 
@@ -1237,7 +1216,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   const data = job.data;
   const rootJobId = data.parentJobId || job.id;
 
-  console.log(`🎤 Starting artist enrichment for artist ${data.artistId}`);
+  queueLogger.debug(`🎤 Starting artist enrichment for artist ${data.artistId}`);
 
   // Initialize enrichment logger
   const llamaLogger = createLlamaLogger(prisma);
@@ -1265,7 +1244,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   if (!data.force) {
     const enrichmentDecision = await shouldEnrichArtist(artist, llamaLogger);
     if (!enrichmentDecision.shouldEnrich) {
-      console.log(
+      queueLogger.debug(
         `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
       );
 
@@ -1317,7 +1296,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       };
     }
   } else {
-    console.log(
+    queueLogger.debug(
       `🔄 Force re-enrichment requested for artist ${data.artistId}, bypassing checks`
     );
   }
@@ -1366,10 +1345,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
             fieldsEnriched.push('biography');
         }
       } catch (mbError) {
-        console.warn(
-          `MusicBrainz lookup failed for artist ${data.artistId}:`,
-          mbError
-        );
+        queueLogger.warn({ detail: mbError }, `MusicBrainz lookup failed for artist ${data.artistId}:`);
       }
     }
 
@@ -1386,15 +1362,15 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
         );
 
         if (searchResults && searchResults.length > 0) {
-          console.log(
+          queueLogger.debug(
             `🔍 Found ${searchResults.length} artist search results for "${artist.name}"`
           );
-          console.log(
+          queueLogger.debug(
             `📊 First result: "${searchResults[0].name}" (score: ${searchResults[0].score})`
           );
 
           const bestMatch = findBestArtistMatch(artist, searchResults);
-          console.log(
+          queueLogger.debug(
             `🎯 Best artist match: ${
               bestMatch
                 ? `"${bestMatch.result.name}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
@@ -1426,16 +1402,13 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           }
         }
       } catch (searchError) {
-        console.warn(
-          `MusicBrainz search failed for artist ${data.artistId}:`,
-          searchError
-        );
+        queueLogger.warn({ detail: searchError }, `MusicBrainz search failed for artist ${data.artistId}:`);
       }
     }
 
     // Queue Discogs search as fallback if no Discogs ID and no image yet
     if (!enrichmentResult.updateData && !artist.discogsId && !artist.imageUrl) {
-      console.log(
+      queueLogger.debug(
         `🔍 No Discogs ID found for "${artist.name}", queueing Discogs search as fallback`
       );
       try {
@@ -1456,12 +1429,9 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
             backoff: { type: 'exponential', delay: 3000 },
           }
         );
-        console.log(`📤 Queued Discogs search for "${artist.name}"`);
+        queueLogger.debug(`📤 Queued Discogs search for "${artist.name}"`);
       } catch (searchError) {
-        console.warn(
-          `Failed to queue Discogs search for artist ${artist.id}:`,
-          searchError
-        );
+        queueLogger.warn({ detail: searchError }, `Failed to queue Discogs search for artist ${artist.id}:`);
       }
     }
 
@@ -1498,11 +1468,10 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       entityName: artist.name,
     });
 
-    console.log(`✅ Artist enrichment completed for ${data.artistId}`, {
-      hadResult: !!enrichmentResult.updateData,
-      dataQuality: newDataQuality,
-      fieldChanges: allFieldChanges.length,
-    });
+    queueLogger.debug(
+      { artistId: data.artistId, hadResult: !!enrichmentResult.updateData, dataQuality: newDataQuality, fieldChanges: allFieldChanges.length },
+      'Artist enrichment completed'
+    );
 
     // Log successful enrichment
     await llamaLogger.logEnrichment({
@@ -1555,12 +1524,9 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           backoff: { type: 'exponential', delay: 2000 },
         });
 
-        console.log(`📤 Queued artist image caching for ${data.artistId}`);
+        queueLogger.debug(`📤 Queued artist image caching for ${data.artistId}`);
       } catch (cacheError) {
-        console.warn(
-          `Failed to queue artist image caching for ${data.artistId}:`,
-          cacheError
-        );
+        queueLogger.warn({ detail: cacheError }, `Failed to queue artist image caching for ${data.artistId}:`);
       }
     }
 
@@ -1571,7 +1537,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
         const { syncSimilarArtists } = await import(
           '@/lib/api/similar-artists-service'
         );
-        console.log(
+        queueLogger.debug(
           `[Enrichment] Syncing similar artists for ${artist.name}...`
         );
         const syncResult = await syncSimilarArtists(
@@ -1581,7 +1547,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           20,
           job.id
         );
-        console.log(
+        queueLogger.debug(
           `[Enrichment] Similar artists synced: ${syncResult.created} created`
         );
 
@@ -1606,10 +1572,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           triggeredBy: data.source || 'manual',
         });
       } catch (similarError) {
-        console.error(
-          `[Enrichment] Failed to sync similar artists: ${similarError instanceof Error ? similarError.message : 'unknown'}`,
-          similarError
-        );
+        queueLogger.error({ detail: similarError }, `[Enrichment] Failed to sync similar artists: ${similarError instanceof Error ? similarError.message : 'unknown'}`);
 
         // Log the failure too
         await llamaLogger.logEnrichment({
@@ -1699,7 +1662,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
 
 export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
   const data = job.data;
-  console.log(`🎵 Enriching track ${data.trackId}`);
+  queueLogger.debug(`🎵 Enriching track ${data.trackId}`);
 
   // Initialize enrichment logger
   const llamaLogger = createLlamaLogger(prisma);
@@ -1743,7 +1706,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
       try {
         sourcesAttempted.push('MUSICBRAINZ');
         apiCallCount++;
-        console.log(`🔍 Looking up track by ISRC: ${track.isrc}`);
+        queueLogger.debug(`🔍 Looking up track by ISRC: ${track.isrc}`);
         const recordings = await musicBrainzService.searchRecordings(
           `isrc:${track.isrc}`,
           1
@@ -1751,13 +1714,13 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
 
         if (recordings.length > 0) {
           const recording = recordings[0];
-          console.log(`✅ Found track by ISRC with score ${recording.score}`);
+          queueLogger.debug(`✅ Found track by ISRC with score ${recording.score}`);
           musicbrainzData = recording;
           matchFound = true;
           fieldsEnriched.push('musicbrainzId');
         }
       } catch (error) {
-        console.warn(`⚠️ ISRC lookup failed for ${track.isrc}:`, error);
+        queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `⚠️ ISRC lookup failed for ${track.isrc}:`);
       }
     }
 
@@ -1770,7 +1733,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
         apiCallCount++;
         const searchQuery = `recording:"${track.title}" AND artist:"${artistName}"`;
 
-        console.log(`🔍 Searching MusicBrainz for: ${searchQuery}`);
+        queueLogger.debug(`🔍 Searching MusicBrainz for: ${searchQuery}`);
 
         const recordings = await musicBrainzService.searchRecordings(
           searchQuery,
@@ -1780,14 +1743,14 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
         if (recordings.length > 0) {
           const bestMatch = findBestTrackMatch(track, recordings);
           if (bestMatch) {
-            console.log(`✅ Found track match with score ${bestMatch.score}`);
+            queueLogger.debug(`✅ Found track match with score ${bestMatch.score}`);
             musicbrainzData = bestMatch;
             matchFound = true;
             fieldsEnriched.push('musicbrainzId');
           }
         }
       } catch (error) {
-        console.warn(`⚠️ Track search failed:`, error);
+        queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `⚠️ Track search failed:`);
       }
     }
 
@@ -1808,7 +1771,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
       });
 
       if (existingTrack) {
-        console.warn(
+        queueLogger.warn(
           `⚠️ Skipping musicbrainzId - already used by track "${existingTrack.title}" on same album`
         );
         matchFound = false; // Don't count as enriched
@@ -1826,12 +1789,12 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
         );
 
         if (detailedRecording) {
-          console.log(`🎵 Enhanced track data fetched for "${track.title}"`);
+          queueLogger.debug(`🎵 Enhanced track data fetched for "${track.title}"`);
           if (detailedRecording.length) fieldsEnriched.push('durationMs');
           if (detailedRecording.isrcs?.length) fieldsEnriched.push('isrc');
         }
       } catch (error) {
-        console.warn(`⚠️ Failed to fetch detailed recording data:`, error);
+        queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `⚠️ Failed to fetch detailed recording data:`);
       }
     }
 
@@ -1851,7 +1814,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
     }
 
     const duration = Date.now() - startTime;
-    console.log(
+    queueLogger.debug(
       `✅ Track enrichment completed in ${duration}ms (${matchFound ? 'enriched' : 'no match'})`
     );
 
@@ -1896,7 +1859,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`❌ Track enrichment failed:`, error);
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, `❌ Track enrichment failed:`);
 
     // Get track for logging (in case error happened before we fetched it)
     let trackTitle = 'Unknown Track';
@@ -2049,10 +2012,7 @@ async function updateAlbumFromMusicBrainz(
         after: mbData['first-release-date'],
       });
     } catch (e) {
-      console.warn(
-        'Invalid release date from MusicBrainz:',
-        mbData['first-release-date']
-      );
+      queueLogger.warn({ detail: mbData['first-release-date'] }, 'Invalid release date from MusicBrainz:');
     }
   }
 
@@ -2135,7 +2095,7 @@ async function updateAlbumFromMusicBrainz(
       }
     } catch {
       // Cover Art Archive may not have art for this release group - that's fine
-      console.log(`No cover art found for release group ${mbData.id}`);
+      queueLogger.debug(`No cover art found for release group ${mbData.id}`);
     }
   }
 
@@ -2147,10 +2107,10 @@ async function updateAlbumFromMusicBrainz(
       });
 
       if (existingAlbum && existingAlbum.id !== album.id) {
-        console.log(
+        queueLogger.debug(
           `⚠️ Duplicate MusicBrainz ID detected: Album ${album.id} ("${album.title}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by album ${existingAlbum.id} ("${existingAlbum.title}")`
         );
-        console.log(
+        queueLogger.debug(
           `   → Skipping MusicBrainz ID update to avoid constraint violation`
         );
 
@@ -2162,7 +2122,7 @@ async function updateAlbumFromMusicBrainz(
         if (mbIdIndex !== -1) fieldChanges.splice(mbIdIndex, 1);
 
         if (Object.keys(updateData).length === 0) {
-          console.log(
+          queueLogger.debug(
             `   → No other fields to update, skipping database update`
           );
           return { updateData: null, fieldChanges: [] };
@@ -2242,10 +2202,7 @@ async function enrichArtistMetadata(
         after: formedYear,
       });
     } catch (e) {
-      console.warn(
-        'Invalid formed year from MusicBrainz:',
-        mbData['life-span']?.begin
-      );
+      queueLogger.warn({ detail: mbData['life-span']?.begin }, 'Invalid formed year from MusicBrainz:');
     }
   }
 
@@ -2309,7 +2266,7 @@ async function enrichArtistMetadata(
           before: artist.discogsId,
           after: discogsMatch[1],
         });
-        console.log(
+        queueLogger.debug(
           `🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`
         );
       }
@@ -2338,7 +2295,7 @@ async function enrichArtistMetadata(
         });
       }
     } catch (error) {
-      console.warn(`Failed to fetch biography for artist ${artist.id}:`, error);
+      queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `Failed to fetch biography for artist ${artist.id}:`);
     }
   }
 
@@ -2397,7 +2354,7 @@ async function enrichArtistMetadata(
           bestMatch.nameScore === 1.0
             ? 'exact name match'
             : 'multi-factor match';
-        console.log(
+        queueLogger.debug(
           `📸 Got artist image from Spotify for "${artist.name}" ` +
             `(${matchType}: ${(bestScore * 100).toFixed(1)}% - ` +
             `name: ${(bestMatch.nameScore * 100).toFixed(0)}%, ` +
@@ -2407,10 +2364,7 @@ async function enrichArtistMetadata(
       }
     }
   } catch (error) {
-    console.warn(
-      `Failed to fetch Spotify image for artist ${artist.id}:`,
-      error
-    );
+    queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `Failed to fetch Spotify image for artist ${artist.id}:`);
   }
 
   // 2. Try Discogs (only if no Spotify image)
@@ -2428,15 +2382,12 @@ async function enrichArtistMetadata(
       );
       if (discogsArtist.imageUrl) {
         imageUrl = discogsArtist.imageUrl;
-        console.log(
+        queueLogger.debug(
           `📸 Got artist image from Discogs for "${artist.name}" ${artist.imageUrl ? '(upgrading from Wikimedia)' : ''}`
         );
       }
     } catch (error) {
-      console.warn(
-        `Failed to fetch Discogs image for artist ${artist.id}:`,
-        error
-      );
+      queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `Failed to fetch Discogs image for artist ${artist.id}:`);
     }
   }
 
@@ -2457,17 +2408,14 @@ async function enrichArtistMetadata(
           if (filename) {
             const encoded = encodeURIComponent(filename);
             imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=600`;
-            console.log(
+            queueLogger.debug(
               `📸 Got artist image from Wikimedia Commons for "${artist.name}"`
             );
           }
         }
       }
     } catch (error) {
-      console.warn(
-        `Failed to fetch Wikimedia image for artist ${artist.id}:`,
-        error
-      );
+      queueLogger.warn({ error: error instanceof Error ? error.message : String(error) }, `Failed to fetch Wikimedia image for artist ${artist.id}:`);
     }
   }
 
@@ -2488,10 +2436,10 @@ async function enrichArtistMetadata(
       });
 
       if (existingArtist && existingArtist.id !== artist.id) {
-        console.log(
+        queueLogger.debug(
           `⚠️ Duplicate MusicBrainz ID detected: Artist ${artist.id} ("${artist.name}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by artist ${existingArtist.id} ("${existingArtist.name}")`
         );
-        console.log(
+        queueLogger.debug(
           `   → Skipping MusicBrainz ID update to avoid constraint violation`
         );
 
@@ -2503,7 +2451,7 @@ async function enrichArtistMetadata(
         if (mbIdIndex !== -1) fieldChanges.splice(mbIdIndex, 1);
 
         if (Object.keys(updateData).length === 0) {
-          console.log(
+          queueLogger.debug(
             `   → No other fields to update, skipping database update`
           );
           return { updateData: null, fieldChanges: [] };
@@ -2569,7 +2517,7 @@ async function processMusicBrainzTracksForAlbum(
 ) {
   // Initialize logger for track creation logging
   const llamaLogger = createLlamaLogger(prisma);
-  console.log(
+  queueLogger.debug(
     `🎵 Processing tracks for album ${albumId} from MusicBrainz release`
   );
 
@@ -2604,7 +2552,7 @@ async function processMusicBrainzTracksForAlbum(
       return true;
     });
 
-    console.log(
+    queueLogger.debug(
       `📀 Found ${mbRelease.media?.length || 0} total media, ${audioMedia.length} audio media (filtered out video formats)`
     );
 
@@ -2645,7 +2593,7 @@ async function processMusicBrainzTracksForAlbum(
                   : null;
               if (isrc) {
                 updateData.isrc = isrc;
-                console.log(
+                queueLogger.debug(
                   `🏷️ Found ISRC for "${matchingTrack.title}": ${isrc}`
                 );
               }
@@ -2656,12 +2604,12 @@ async function processMusicBrainzTracksForAlbum(
               );
               if (youtubeUrl) {
                 updateData.youtubeUrl = youtubeUrl;
-                console.log(
+                queueLogger.debug(
                   `🎬 Found YouTube URL for "${matchingTrack.title}": ${youtubeUrl}`
                 );
               }
 
-              console.log(
+              queueLogger.debug(
                 `🔗 Linking track "${matchingTrack.title}" to MusicBrainz ID: ${mbRecording.id}`
               );
               tracksMatched++;
@@ -2698,7 +2646,7 @@ async function processMusicBrainzTracksForAlbum(
 
               if (existingTrackWithSameMbId) {
                 // Log duplicate for investigation
-                console.warn(
+                queueLogger.warn(
                   `⚠️ DUPLICATE RECORDING DETECTED: "${mbRecording.title}" at position ${trackNumber} ` +
                     `has same MusicBrainz ID (${mbRecording.id}) as existing track ` +
                     `"${existingTrackWithSameMbId.title}" at position ${existingTrackWithSameMbId.trackNumber}. ` +
@@ -2708,7 +2656,7 @@ async function processMusicBrainzTracksForAlbum(
                 continue; // Skip this duplicate track
               }
 
-              console.log(
+              queueLogger.debug(
                 `🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`
               );
 
@@ -2722,12 +2670,12 @@ async function processMusicBrainzTracksForAlbum(
               );
 
               if (isrc) {
-                console.log(
+                queueLogger.debug(
                   `🏷️ Found ISRC for "${mbRecording.title}": ${isrc}`
                 );
               }
               if (youtubeUrl) {
-                console.log(
+                queueLogger.debug(
                   `🎬 Found YouTube URL for "${mbRecording.title}": ${youtubeUrl}`
                 );
               }
@@ -2787,10 +2735,7 @@ async function processMusicBrainzTracksForAlbum(
                   },
                 });
               } catch (logErr) {
-                console.warn(
-                  '[LlamaLog] Failed to log track creation:',
-                  logErr
-                );
+                queueLogger.warn({ detail: logErr }, '[LlamaLog] Failed to log track creation:');
               }
 
               // Create track-artist relationships
@@ -2857,15 +2802,12 @@ async function processMusicBrainzTracksForAlbum(
               tracksUpdated++;
 
               if (youtubeUrl) {
-                console.log(
+                queueLogger.debug(
                   `🎬 Added YouTube URL for new track "${mbRecording.title}": ${youtubeUrl}`
                 );
               }
             } catch (trackError) {
-              console.error(
-                `❌ Failed to create track "${mbRecording.title}":`,
-                trackError
-              );
+              queueLogger.error({ detail: trackError }, `❌ Failed to create track "${mbRecording.title}":`);
 
               // Log track creation failure
               try {
@@ -2891,30 +2833,24 @@ async function processMusicBrainzTracksForAlbum(
                   },
                 });
               } catch (logErr) {
-                console.warn('[LlamaLog] Failed to log track failure:', logErr);
+                queueLogger.warn({ detail: logErr }, '[LlamaLog] Failed to log track failure:');
               }
             }
           }
 
           tracksProcessed++;
         } catch (error) {
-          console.error(
-            `❌ Failed to process track ${mbTrack.position}:`,
-            error
-          );
+          queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, `❌ Failed to process track ${mbTrack.position}:`);
         }
       }
     }
 
-    console.log(`✅ Bulk track processing complete:`);
-    console.log(`   - ${tracksProcessed} tracks processed`);
-    console.log(`   - ${tracksMatched} tracks matched to MusicBrainz`);
-    console.log(`   - ${tracksUpdated} tracks updated`);
+    queueLogger.debug(`✅ Bulk track processing complete:`);
+    queueLogger.debug(`   - ${tracksProcessed} tracks processed`);
+    queueLogger.debug(`   - ${tracksMatched} tracks matched to MusicBrainz`);
+    queueLogger.debug(`   - ${tracksUpdated} tracks updated`);
   } catch (error) {
-    console.error(
-      `❌ Bulk track processing failed for album ${albumId}:`,
-      error
-    );
+    queueLogger.error({ error: error instanceof Error ? error.message : String(error) }, `❌ Bulk track processing failed for album ${albumId}:`);
   }
 }
 
@@ -2940,7 +2876,7 @@ function extractYouTubeUrl(
     if (!relationUrl) continue;
 
     if (relationType === 'youtube' && relationUrl) {
-      console.log(`🎬 Found direct YouTube relation: ${relationUrl}`);
+      queueLogger.debug(`🎬 Found direct YouTube relation: ${relationUrl}`);
       return relationUrl;
     }
 
@@ -2949,7 +2885,7 @@ function extractYouTubeUrl(
         relationUrl.includes('youtube.com') ||
         relationUrl.includes('youtu.be')
       ) {
-        console.log(`🎬 Found YouTube in streaming music: ${relationUrl}`);
+        queueLogger.debug(`🎬 Found YouTube in streaming music: ${relationUrl}`);
         return relationUrl;
       }
     }
@@ -2959,7 +2895,7 @@ function extractYouTubeUrl(
         relationUrl.includes('youtube.com') ||
         relationUrl.includes('youtu.be')
       ) {
-        console.log(`🎬 Found YouTube in free streaming: ${relationUrl}`);
+        queueLogger.debug(`🎬 Found YouTube in free streaming: ${relationUrl}`);
         return relationUrl;
       }
     }
@@ -2969,7 +2905,7 @@ function extractYouTubeUrl(
         relationUrl.includes('youtube.com') ||
         relationUrl.includes('youtu.be')
       ) {
-        console.log(`🎬 Found YouTube in performance: ${relationUrl}`);
+        queueLogger.debug(`🎬 Found YouTube in performance: ${relationUrl}`);
         return relationUrl;
       }
     }

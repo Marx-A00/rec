@@ -33,6 +33,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { Album, AlbumArtist, Artist, Track } from '@prisma/client';
 
+import { logger } from '@/lib/logger';
 import { prisma as defaultPrisma } from '@/lib/prisma';
 import { getInitialQuality } from '@/lib/db';
 
@@ -709,7 +710,7 @@ export class ApplyCorrectionService {
       });
     } catch (error) {
       // Log warning but don't fail the correction
-      console.warn('[ApplyCorrectionService] Failed to log correction:', error);
+      logger.warn({ module: 'correction', err: error instanceof Error ? error.message : String(error) }, 'Failed to log album correction');
     }
   }
 

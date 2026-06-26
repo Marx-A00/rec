@@ -1,14 +1,11 @@
 import type { Job } from 'bullmq';
-import chalk from 'chalk';
 
 import { cache, CACHE_KEYS } from '@/lib/cache';
 import { tryFetchSpotifyArtistImage } from '@/lib/spotify/artist-image-helper';
 import prisma from '@/lib/prisma';
+import { queueLogger } from '@/lib/logger';
 
 import type { FetchArtistImageJobData } from '../jobs';
-
-const orange = chalk.hex('#E67E22');
-const tag = orange('[CACHE LAYER]');
 
 export async function handleFetchArtistImage(
   job: Job<FetchArtistImageJobData>
@@ -20,9 +17,7 @@ export async function handleFetchArtistImage(
   const cached = await cache.get<{ imageUrl: string }>(cacheKey);
   if (cached !== null) {
     if (cache.isMiss(cached)) {
-      console.log(
-        `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(no image — sentinel)')}`
-      );
+      queueLogger.debug({ artistName, mbid, cacheHit: true, sentinel: true }, 'Artist image cache hit (sentinel)');
       return { success: true, cached: true, imageUrl: null };
     }
 
@@ -33,16 +28,12 @@ export async function handleFetchArtistImage(
       });
     }
 
-    console.log(
-      `${orange('⚡ CACHE HIT')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('(image found)')}`
-    );
+    queueLogger.debug({ artistName, mbid, cacheHit: true }, 'Artist image cache hit');
     return { success: true, cached: true, imageUrl: cached.imageUrl };
   }
 
   // Cache miss — fetch from Spotify
-  console.log(
-    `${orange('❄ CACHE MISS')} ${tag} ${chalk.white('artist-image')} ${chalk.magenta(`["${artistName}"]`)} ${chalk.gray('— fetching from Spotify')}`
-  );
+  queueLogger.debug({ artistName, mbid }, 'Artist image cache miss, fetching from Spotify');
 
   const result = await tryFetchSpotifyArtistImage(artistName, mbid);
 

@@ -1,6 +1,7 @@
 // src/app/api/admin/analytics/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+import { withApiLogging } from '@/lib/api-utils';
 import { auth } from '@/../auth';
 import { isAdmin } from '@/lib/permissions';
 
@@ -63,7 +64,7 @@ async function fetchUmamiData(
   return response.json();
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     // Check admin auth
     const session = await auth();
@@ -146,7 +147,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Analytics API error:', error);
     return NextResponse.json(
       {
         error:
@@ -155,4 +155,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Edge-compatible structured logger (Pino uses Node.js APIs, can't run in Edge)
+const mwLog = {
+  _emit(level: string, data: Record<string, unknown>, msg: string) {
+    const entry = { level, module: 'middleware', msg, ...data, time: Date.now() };
+    if (level === 'ERROR') console.error(JSON.stringify(entry));
+    else if (level === 'WARN') console.warn(JSON.stringify(entry));
+    else console.log(JSON.stringify(entry));
+  },
+  debug(data: Record<string, unknown>, msg: string) { this._emit('DEBUG', data, msg); },
+  info(data: Record<string, unknown>, msg: string) { this._emit('INFO', data, msg); },
+  warn(data: Record<string, unknown>, msg: string) { this._emit('WARN', data, msg); },
+  error(data: Record<string, unknown>, msg: string) { this._emit('ERROR', data, msg); },
+};
+
 // ===========================
 // MOBILE DETECTION
 // ===========================
@@ -259,7 +273,7 @@ function handlePreflight(request: NextRequest): NextResponse {
   // Check if origin is allowed
   if (!isOriginAllowed(origin)) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`   CORS preflight rejected: ${origin}`);
+      mwLog.warn({ origin, path: request.nextUrl.pathname }, 'CORS preflight rejected');
     }
     return new NextResponse(null, {
       status: 403,
@@ -272,7 +286,7 @@ function handlePreflight(request: NextRequest): NextResponse {
   setCorsHeaders(response, origin);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`   CORS preflight OK: ${origin}`);
+    mwLog.debug({ origin, path: request.nextUrl.pathname }, 'CORS preflight OK');
   }
   return response;
 }
@@ -501,9 +515,7 @@ function checkRateLimit(
   // Check if currently blocked
   if (entry.blockedUntil && now < entry.blockedUntil) {
     const blockedFor = Math.ceil((entry.blockedUntil - now) / 1000);
-    console.warn(
-      `   Rate limit BLOCKED • ${key} • ${bucket} • ${blockedFor}s remaining`
-    );
+    mwLog.warn({ key, bucket, blockedFor }, 'Rate limit blocked');
     return { allowed: false, entry, config };
   }
 
@@ -520,18 +532,14 @@ function checkRateLimit(
   // Log when approaching the limit (>75% used)
   const usage = entry.count / config.maxRequests;
   if (usage > 0.75) {
-    console.warn(
-      `   Rate limit ${Math.round(usage * 100)}% • ${key} • ${bucket} • ${entry.count}/${config.maxRequests}`
-    );
+    mwLog.warn({ key, bucket, usage: Math.round(usage * 100), current: entry.count, max: config.maxRequests }, 'Rate limit approaching');
   }
 
   // Check if limit exceeded
   if (entry.count > config.maxRequests) {
     entry.blockedUntil = now + config.blockDurationMs;
     rateLimitStore.set(key, entry);
-    console.error(
-      `   Rate limit EXCEEDED • ${key} • ${bucket} • blocking ${config.blockDurationMs / 1000}s`
-    );
+    mwLog.error({ key, bucket, blockDuration: config.blockDurationMs / 1000 }, 'Rate limit exceeded');
     return { allowed: false, entry, config };
   }
 
@@ -706,7 +714,7 @@ async function handleAuthentication(
     // User is authenticated and has username, return user ID for rate limiting
     return { response: null, userID: session.user.id };
   } catch (error) {
-    console.error('Authentication check failed:', error);
+    mwLog.error({ error: error instanceof Error ? error.message : String(error) }, 'Authentication check failed');
 
     // Handle auth errors gracefully
     if (pathname.startsWith('/api/')) {
@@ -742,7 +750,7 @@ export async function middleware(request: NextRequest) {
       request.headers.get('user-agent') || ''
     );
     const device = isMobile ? 'mobile' : 'desktop';
-    console.log(`${border}\nMW • ${method} ${pathname} • ${device}\n${border}`);
+    mwLog.debug({ method, path: pathname, device }, `${border}\nMW • ${method} ${pathname} • ${device}\n${border}`);
   }
 
   // 0. Mobile detection and redirect
@@ -760,7 +768,7 @@ export async function middleware(request: NextRequest) {
 
     if (!rateLimitResult.allowed) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`   Rate limited: ${getRateLimitKey(request)}`);
+        mwLog.warn({ key: getRateLimitKey(request) }, 'Rate limited');
       }
       return createRateLimitResponse(
         rateLimitResult.entry,
@@ -783,7 +791,7 @@ export async function middleware(request: NextRequest) {
     // For actual requests, check origin and set CORS headers
     if (origin && !isNextAuthRoute && !isOriginAllowed(origin)) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`   CORS rejected: ${origin} -> ${pathname}`);
+        mwLog.warn({ origin, path: pathname }, 'CORS rejected');
       }
       return new NextResponse(
         JSON.stringify({
