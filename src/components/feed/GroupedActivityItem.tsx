@@ -55,11 +55,13 @@ const defaultGetScoreColors = (score: number) => {
 interface GroupedActivityItemProps {
   group: GroupedActivity;
   className?: string;
+  priority?: boolean;
 }
 
 export default function GroupedActivityItem({
   group,
   className = '',
+  priority = false,
 }: GroupedActivityItemProps) {
   const colorOverride = useContext(ScoreColorOverrideContext);
   const getScoreColors = colorOverride || defaultGetScoreColors;
@@ -70,6 +72,7 @@ export default function GroupedActivityItem({
       <SingleActivityDisplay
         activity={group.activities[0]}
         className={className}
+        priority={priority}
       />
     );
   }
@@ -151,6 +154,7 @@ export default function GroupedActivityItem({
         <ExpandedRecGrid
           activities={group.activities}
           getScoreColors={getScoreColors}
+          priority={priority}
         />
       )}
 
@@ -192,9 +196,11 @@ export default function GroupedActivityItem({
 function SingleActivityDisplay({
   activity,
   className = '',
+  priority = false,
 }: {
   activity: TransformedActivity;
   className?: string;
+  priority?: boolean;
 }) {
   const colorOverride = useContext(ScoreColorOverrideContext);
   const getScoreColors = colorOverride || defaultGetScoreColors;
@@ -321,8 +327,9 @@ function SingleActivityDisplay({
                       width={180}
                       height={180}
                       className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
-                      tooltip={(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}
+                      tooltip={`${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title} by ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.artists?.[0]?.artist?.name || 'Unknown Artist'}`}
                       tooltipSide='left'
+                      priority={priority}
                     />
                   </div>
                 </Link>
@@ -337,12 +344,13 @@ function SingleActivityDisplay({
                   <AlbumImage
                     src={activity.albumImage}
                     cloudflareImageId={activity.albumCloudflareImageId}
-                    alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                    alt={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
                     width={220}
                     height={220}
                     className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
-                    tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
+                    tooltip={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
                     tooltipSide='right'
+                    priority={priority}
                   />
                 </div>
               </Link>
@@ -424,11 +432,12 @@ function SingleActivityDisplay({
             <AlbumImage
               src={activity.albumImage}
               cloudflareImageId={activity.albumCloudflareImageId}
-              alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+              alt={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
               width={150}
               height={150}
               className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-cosmic-latte/50 transition-all shadow-xl'
-              tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
+              tooltip={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
+              priority={priority}
             />
           </Link>
         </div>
@@ -478,16 +487,18 @@ const BADGE_CENTER_Y = (BASIS_SIZE / 2 + REC_SIZE / 2) / 2;
 function RecPairItem({
   activity,
   getScoreColors,
+  priority = false,
 }: {
   activity: TransformedActivity;
   getScoreColors: ScoreColorFn;
+  priority?: boolean;
 }) {
   const metadata = activity.metadata as TransformedActivityMetadata;
   return (
     <div className='flex items-center gap-3'>
       {/* Basis album details - left */}
       {metadata?.basisAlbum && (
-        <div className='max-w-20 text-right'>
+        <div className='w-24 min-w-0 text-right'>
           <Link
             href={`/albums/${metadata.basisAlbum.id}?source=local`}
             className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight hover:underline'
@@ -524,8 +535,9 @@ function RecPairItem({
               height={BASIS_SIZE}
               className='rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
               style={{ width: BASIS_SIZE, height: BASIS_SIZE }}
-              tooltip={metadata.basisAlbum.title}
+              tooltip={`${metadata.basisAlbum.title} by ${metadata.basisAlbum.artists?.[0]?.artist?.name || 'Unknown Artist'}`}
               tooltipSide='left'
+              priority={priority}
             />
           </Link>
         )}
@@ -537,12 +549,13 @@ function RecPairItem({
           <AlbumImage
             src={activity.albumImage}
             cloudflareImageId={activity.albumCloudflareImageId}
-            alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+            alt={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
             width={REC_SIZE}
             height={REC_SIZE}
             className='rounded-lg shadow-2xl border-2 border-cosmic-latte/30 hover:border-cosmic-latte/50 transition-all'
             style={{ width: REC_SIZE, height: REC_SIZE }}
-            tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
+            tooltip={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
+            priority={priority}
           />
         </Link>
         {metadata?.score && (() => {
@@ -568,7 +581,7 @@ function RecPairItem({
       </div>
 
       {/* Recommended album details - right */}
-      <div className='max-w-20'>
+      <div className='w-24 min-w-0'>
         <Link
           href={`/albums/${activity.albumId}?source=local`}
           className='text-xs text-zinc-300 font-medium line-clamp-2 leading-tight hover:underline'
@@ -599,9 +612,11 @@ function RecPairItem({
 function ExpandedRecGrid({
   activities,
   getScoreColors,
+  priority = false,
 }: {
   activities: TransformedActivity[];
   getScoreColors: ScoreColorFn;
+  priority?: boolean;
 }) {
   const PAGE_SIZE = 3;
 
@@ -628,7 +643,7 @@ function ExpandedRecGrid({
         <div className='flex flex-wrap justify-center items-start gap-x-8 gap-y-8 px-4'>
           {activities.map(activity => (
             <div key={activity.id} className='shrink-0'>
-              <RecPairItem activity={activity} getScoreColors={getScoreColors} />
+              <RecPairItem activity={activity} getScoreColors={getScoreColors} priority={priority} />
             </div>
           ))}
         </div>
@@ -644,8 +659,8 @@ function ExpandedRecGrid({
             <CarouselItem key={pageIdx}>
               <div className='flex justify-center items-start gap-x-6'>
                 {page.map(activity => (
-                  <div key={activity.id} className='shrink-0'>
-                    <RecPairItem activity={activity} getScoreColors={getScoreColors} />
+                  <div key={activity.id} className='min-w-0'>
+                    <RecPairItem activity={activity} getScoreColors={getScoreColors} priority={priority && pageIdx === 0} />
                   </div>
                 ))}
               </div>
@@ -714,11 +729,11 @@ function CollectionItem({ activity }: { activity: TransformedActivity }) {
           <AlbumImage
             src={activity.albumImage || '/placeholder-album.png'}
             cloudflareImageId={activity.albumCloudflareImageId}
-            alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+            alt={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
             width={110}
             height={110}
             className='w-[110px] h-[110px] rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105 shadow-lg'
-            tooltip={`${activity.albumTitle} by ${activity.albumArtist}`}
+            tooltip={`${activity.albumTitle} by ${activity.albumArtist || 'Unknown Artist'}`}
           />
         </Link>
       )}
